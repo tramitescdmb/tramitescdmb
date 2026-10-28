@@ -2,7 +2,9 @@ import Link from "next/link";
 import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree } from "lucide-react";
+import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree, Workflow } from "lucide-react";
+import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
+import { puedeOperarFlujos, usuarioFlujo } from "@/lib/flujos";
 import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
@@ -167,6 +169,7 @@ export default async function ExpedienteDetallePage({
   const indiceIntegro = hashRecalculado !== null && hashRecalculado === expediente.indiceHash;
 
   const abierto = expediente.estado === "ABIERTO";
+  const usuarioFlujoActual = await usuarioFlujo(session.userId, permisos);
   const puedeSubir = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeEditar = abierto && puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId);
   const puedeCerrarEste = abierto && puedeCerrarExpediente(permisos) && documentosActivos.length > 0;
@@ -606,6 +609,19 @@ export default async function ExpedienteDetallePage({
             )}
 
               </>
+            ),
+          },
+          {
+            id: "flujo-trabajo",
+            label: "Flujo de trabajo",
+            icono: <Workflow className="h-4 w-4" aria-hidden />,
+            contenido: (
+              <FlujoTrabajoComunicacion
+                expedienteId={expediente.id}
+                estado={expediente.estado}
+                puedeOperar={puedeOperarFlujos(permisos) || puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)}
+                usuario={usuarioFlujoActual}
+              />
             ),
           },
           {

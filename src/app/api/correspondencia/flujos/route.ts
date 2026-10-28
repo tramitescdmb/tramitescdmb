@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import type { TipoComunicacion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
-import { crearFlujo, cargarPlantillasFlujo, puedeAdministrarFlujos } from "@/lib/flujos";
+import { crearFlujo, cargarPlantillasFlujo, puedeAdministrarFlujos, aplicaAFormulario } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
-
-const TIPOS: TipoComunicacion[] = ["RECIBIDA", "ENVIADA", "INTERNA"];
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -31,10 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.redirect(volver, { status: 303 });
     }
 
-    const aplicaARaw = String(form.get("aplicaA") || "");
-    const aplicaA = TIPOS.includes(aplicaARaw as TipoComunicacion) ? (aplicaARaw as TipoComunicacion) : null;
     const flujo = await crearFlujo(
-      { nombre: String(form.get("nombre") || ""), descripcion: String(form.get("descripcion") || ""), aplicaA },
+      { nombre: String(form.get("nombre") || ""), descripcion: String(form.get("descripcion") || ""), ...aplicaAFormulario(String(form.get("aplicaA") || "")) },
       session.userId,
     );
     return NextResponse.redirect(new URL(`/correspondencia/admin/flujos/${flujo.id}?ok=Flujo+creado`, req.url), { status: 303 });

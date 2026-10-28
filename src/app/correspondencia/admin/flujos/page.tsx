@@ -106,7 +106,7 @@ export default async function FlujosPage({ searchParams }: { searchParams: Promi
                 </p>
                 {f.descripcion && <p className="mt-0.5 truncate text-xs text-stone-500">{f.descripcion}</p>}
                 <p className="mt-1 text-[11px] text-stone-400">
-                  {ETIQUETA_APLICA_A[f.aplicaA ?? ""]} · {f._count.pasos} paso{f._count.pasos === 1 ? "" : "s"} ·{" "}
+                  {ETIQUETA_APLICA_A[f.ambito === "EXPEDIENTE" ? "EXPEDIENTE" : (f.aplicaA ?? "")]} · {f._count.pasos} paso{f._count.pasos === 1 ? "" : "s"} ·{" "}
                   {f._count.instancias} aplicación{f._count.instancias === 1 ? "" : "es"}
                 </p>
               </div>

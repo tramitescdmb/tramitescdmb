@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
+import { aplicaAFormulario, objetivoDeInstancia, esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
 import { validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 
 const ctx: ContextoResponsable = {
@@ -78,5 +78,23 @@ describe("paso de firma del flujo", () => {
     expect(esSalidaRechazo("Rechazado")).toBe(true);
     expect(esSalidaRechazo("Devolver con observaciones")).toBe(true);
     expect(esSalidaRechazo("Firmado")).toBe(false);
+  });
+
+  it("un flujo de expediente toma la dependencia y el creador del expediente como responsables", () => {
+    const objetivo = objetivoDeInstancia({
+      comunicacion: null,
+      expedienteDocumental: { id: "e1", numero: "EXP-1", asunto: "Contratos 2026", dependenciaId: "dep-archivo", creadoPorId: "u-creo" },
+    });
+    expect(objetivo.esComunicacion).toBe(false);
+    expect(objetivo.href).toBe("/correspondencia/expedientes/e1#flujo");
+    const c = { asignadoAId: null, responsableAnteriorId: null, comunicacion: objetivo.ctx };
+    expect(esResponsablePaso(paso("DEPENDENCIA_COMUNICACION"), c, usuario({ dependenciaId: "dep-archivo" }))).toBe(true);
+    expect(esResponsablePaso(paso("RADICADOR"), c, usuario({ usuarioId: "u-creo" }))).toBe(true);
+  });
+
+  it("el formulario distingue flujos de comunicaciones y de expedientes", () => {
+    expect(aplicaAFormulario("EXPEDIENTE")).toEqual({ aplicaA: null, ambito: "EXPEDIENTE" });
+    expect(aplicaAFormulario("RECIBIDA")).toEqual({ aplicaA: "RECIBIDA", ambito: "COMUNICACION" });
+    expect(aplicaAFormulario("")).toEqual({ aplicaA: null, ambito: "COMUNICACION" });
   });
 });

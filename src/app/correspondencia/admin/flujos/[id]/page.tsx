@@ -104,14 +104,14 @@ export default async function FlujoEditorPage({
           <Field label="Nombre" required><input name="nombre" defaultValue={flujo.nombre} className={inputCls} required /></Field>
         </div>
         <Field label="Aplica a">
-          <select name="aplicaA" className={inputCls} defaultValue={flujo.aplicaA ?? ""}>
+          <select name="aplicaA" className={inputCls} defaultValue={flujo.ambito === "EXPEDIENTE" ? "EXPEDIENTE" : (flujo.aplicaA ?? "")}>
             {Object.entries(ETIQUETA_APLICA_A).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
           </select>
         </Field>
         <div className="sm:col-span-3">
           <Field label="Descripción"><input name="descripcion" defaultValue={flujo.descripcion ?? ""} className={inputCls} /></Field>
         </div>
-        <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-3">
+        {flujo.ambito === "COMUNICACION" && <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-3">
           <input type="checkbox" name="inicioAutomatico" defaultChecked={flujo.inicioAutomatico} className="mt-0.5 rounded border-stone-300" />
           <span>
             Iniciar automáticamente al radicar
@@ -119,7 +119,7 @@ export default async function FlujoEditorPage({
               Mientras esté activo, se aplica solo a cada comunicación nueva del tipo indicado en «Aplica a». Solo puede haber un flujo automático activo por tipo.
             </span>
           </span>
-        </label>
+        </label>}
         <div className="sm:col-span-3">
           <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar datos</button>
         </div>

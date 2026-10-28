@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import type { AsignacionPaso, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
+import type { AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import {
@@ -16,10 +16,10 @@ import {
   duplicarFlujo,
   guardarDependenciasOperadoras,
   puedeAdministrarFlujos,
+  aplicaAFormulario,
 } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 
-const TIPOS: TipoComunicacion[] = ["RECIBIDA", "ENVIADA", "INTERNA"];
 const TIPOS_PASO: TipoPasoFlujo[] = ["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"];
 const ASIGNACIONES: AsignacionPaso[] = [
   "DEPENDENCIA_COMUNICACION",
@@ -53,11 +53,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     switch (accion) {
       case "editar": {
-        const aplicaARaw = String(form.get("aplicaA") || "");
         await actualizarFlujo(id, {
           nombre: String(form.get("nombre") || ""),
           descripcion: String(form.get("descripcion") || ""),
-          aplicaA: TIPOS.includes(aplicaARaw as TipoComunicacion) ? (aplicaARaw as TipoComunicacion) : null,
+          ...aplicaAFormulario(String(form.get("aplicaA") || "")),
           inicioAutomatico: form.get("inicioAutomatico") === "on",
         });
         detalle.searchParams.set("ok", "Flujo actualizado.");

@@ -28,7 +28,7 @@ export default async function PasosFlujoACargoPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-500">
-                <th className="px-4 py-2 font-medium">Radicado</th>
+                <th className="px-4 py-2 font-medium">Radicado o expediente</th>
                 <th className="px-2 py-2 font-medium">Flujo y paso</th>
                 <th className="px-2 py-2 font-medium">Desde</th>
                 <th className="px-4 py-2 font-medium">Término</th>
@@ -40,10 +40,11 @@ export default async function PasosFlujoACargoPage() {
                 return (
                   <tr key={i.id} className="border-b border-stone-100 last:border-0">
                     <td className="px-4 py-2">
-                      <Link href={`/correspondencia/${i.comunicacion.id}#flujo`} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
-                        {i.comunicacion.radicado}
+                      <Link href={i.objetivo.href} className="font-mono text-xs font-medium text-cdmb-700 hover:underline">
+                        {i.objetivo.etiqueta}
                       </Link>
-                      <span className="block max-w-xs truncate text-xs text-stone-500">{i.comunicacion.asunto}</span>
+                      {!i.objetivo.esComunicacion && <span className="ml-1.5 rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Expediente</span>}
+                      <span className="block max-w-xs truncate text-xs text-stone-500">{i.objetivo.asunto}</span>
                     </td>
                     <td className="px-2 py-2">
                       <span className="text-stone-800">{i.pasoActual?.nombre}</span>

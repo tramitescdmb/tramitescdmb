@@ -3,6 +3,7 @@ import type { TipoComunicacion } from "@prisma/client";
 import {
   flujosAplicables,
   obtenerInstanciasDeComunicacion,
+  obtenerInstanciasDeExpediente,
   estadoTerminoPaso,
   describirResponsablePaso,
   puedeCompletarPaso,
@@ -19,25 +20,29 @@ import { formatearFecha, formatearFechaHora } from "@/lib/fecha";
 
 export async function FlujoTrabajoComunicacion({
   comunicacionId,
+  expedienteId,
   tipo,
   estado,
   puedeOperar,
   usuario,
 }: {
-  comunicacionId: string;
-  tipo: TipoComunicacion;
+  comunicacionId?: string;
+  expedienteId?: string;
+  tipo?: TipoComunicacion;
   estado: string;
   puedeOperar: boolean;
   usuario: UsuarioFlujo;
 }) {
+  const enExpediente = Boolean(expedienteId);
+  const habilitado = enExpediente ? estado === "ABIERTO" : estado !== "ANULADA";
   const [{ comunicacion, instancias }, aplicables, calendario] = await Promise.all([
-    obtenerInstanciasDeComunicacion(comunicacionId),
-    puedeOperar && estado !== "ANULADA" ? flujosAplicables(tipo) : Promise.resolve([]),
+    enExpediente ? obtenerInstanciasDeExpediente(expedienteId!) : obtenerInstanciasDeComunicacion(comunicacionId!),
+    puedeOperar && habilitado ? flujosAplicables(enExpediente ? "EXPEDIENTE" : tipo!) : Promise.resolve([]),
     getCalendarioLaboral(),
   ]);
   const enCurso = instancias.find((i) => i.estado === "EN_CURSO");
   const historial = instancias.filter((i) => i !== enCurso);
-  const accion = `/api/correspondencia/${comunicacionId}/flujo`;
+  const accion = enExpediente ? `/api/correspondencia/expedientes/${expedienteId}/flujo` : `/api/correspondencia/${comunicacionId}/flujo`;
 
   const termino =
     enCurso?.pasoActual && comunicacion
@@ -59,8 +64,8 @@ export async function FlujoTrabajoComunicacion({
         usuario
       )
   );
-  const esPasoFirma = enCurso?.pasoActual?.tipo === "FIRMA";
-  const firmas = esPasoFirma ? await estadoFirmasDeComunicacion(comunicacionId) : null;
+  const esPasoFirma = !enExpediente && enCurso?.pasoActual?.tipo === "FIRMA";
+  const firmas = esPasoFirma ? await estadoFirmasDeComunicacion(comunicacionId!) : null;
   const pasosPorId = new Map((enCurso?.flujo.pasos ?? []).map((p) => [p.id, p]));
   const opciones = (enCurso?.pasoActual?.transiciones ?? []).map((t) => {
     const destino = pasosPorId.get(t.haciaPasoId);
@@ -230,7 +235,7 @@ export async function FlujoTrabajoComunicacion({
         </div>
       ) : (
         <div className="mt-3 space-y-3">
-          {puedeOperar && aplicables.length > 0 && estado !== "ANULADA" ? (
+          {puedeOperar && aplicables.length > 0 && habilitado ? (
             <form action={accion} method="post" className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="accion" value="iniciar" />
               <label className="text-sm">
@@ -246,8 +251,10 @@ export async function FlujoTrabajoComunicacion({
             </form>
           ) : (
             <p className="text-xs text-stone-400">
-              {aplicables.length === 0 && puedeOperar
-                ? "No hay flujos activos para este tipo de comunicación. El administrador los define en Configuración → Flujos de trabajo."
+              {aplicables.length === 0 && puedeOperar && habilitado
+                ? enExpediente
+                  ? "No hay flujos activos para expedientes documentales. El administrador los define en Administración → Flujos de trabajo."
+                  : "No hay flujos activos para este tipo de comunicación. El administrador los define en Configuración → Flujos de trabajo."
                 : "No hay un flujo de trabajo en curso."}
             </p>
           )}

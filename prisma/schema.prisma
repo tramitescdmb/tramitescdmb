@@ -1849,9 +1849,10 @@ model ExpedienteDocumental {
   creadoPor   Usuario             @relation("ExpedienteDocumentalCreadoPor", fields: [creadoPorId], references: [id])
   cerradoPor  Usuario?            @relation("ExpedienteDocumentalCerradoPor", fields: [cerradoPorId], references: [id])
 
-  documentos     DocumentoArchivo[]
-  comunicaciones Comunicacion[]
-  prestamos      PrestamoExpediente[]
+  documentos      DocumentoArchivo[]
+  comunicaciones  Comunicacion[]
+  prestamos       PrestamoExpediente[]
+  instanciasFlujo InstanciaFlujo[]
 
   @@index([dependenciaId])
   @@index([serieId])
@@ -1965,11 +1966,17 @@ enum EstadoInstanciaFlujo {
   CANCELADO
 }
 
+enum AmbitoFlujo {
+  COMUNICACION
+  EXPEDIENTE
+}
+
 model FlujoTrabajo {
   id                     String            @id @default(cuid())
   nombre                 String
   descripcion            String?           @db.Text
   aplicaA                TipoComunicacion?
+  ambito                 AmbitoFlujo       @default(COMUNICACION)
   activo                 Boolean           @default(true)
   esPlantilla            Boolean           @default(false)
   inicioAutomatico       Boolean           @default(false)
@@ -2029,23 +2036,26 @@ model TransicionPaso {
 model InstanciaFlujo {
   id              String               @id @default(cuid())
   flujoId         String
-  comunicacionId  String
-  estado          EstadoInstanciaFlujo @default(EN_CURSO)
-  pasoActualId    String?
-  pasoActualDesde DateTime?
-  iniciadoPorId   String?
-  asignadoAId     String?
-  iniciadoEn      DateTime             @default(now())
-  finalizadoEn    DateTime?
+  comunicacionId         String?
+  expedienteDocumentalId String?
+  estado                 EstadoInstanciaFlujo @default(EN_CURSO)
+  pasoActualId           String?
+  pasoActualDesde        DateTime?
+  iniciadoPorId          String?
+  asignadoAId            String?
+  iniciadoEn             DateTime             @default(now())
+  finalizadoEn           DateTime?
 
-  flujo        FlujoTrabajo    @relation(fields: [flujoId], references: [id])
-  comunicacion Comunicacion    @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
-  pasoActual   PasoFlujo?      @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
-  iniciadoPor  Usuario?        @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
-  asignadoA    Usuario?        @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
-  ejecuciones  PasoEjecutado[]
+  flujo                FlujoTrabajo          @relation(fields: [flujoId], references: [id])
+  comunicacion         Comunicacion?         @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  pasoActual           PasoFlujo?            @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
+  iniciadoPor          Usuario?              @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
+  asignadoA            Usuario?              @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
+  ejecuciones          PasoEjecutado[]
 
   @@index([comunicacionId])
+  @@index([expedienteDocumentalId])
   @@index([estado])
 }
 

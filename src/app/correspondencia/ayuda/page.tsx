@@ -112,7 +112,7 @@ const DESCRIPCION_ACCION_BITACORA: Record<string, string> = {
   REABRE: "Se reabrió un expediente documental cerrado, con motivo obligatorio (Art. 4.3.2.4 Acuerdo 001/2024 AGN).",
   CARGA_FALLIDA: "Se rechazó un intento de agregar un documento a un expediente (validación de tipo, cierre, u otra regla).",
   ERROR_EJECUCION: "Falla registrada por el propio sistema durante una operación automática (cálculo de términos, cargue, etc.). Alimenta el aviso de incidencias del Panel.",
-  FLUJO: "Se aplicó un flujo de trabajo a una comunicación, se completó un paso o se canceló el flujo.",
+  FLUJO: "Se aplicó un flujo de trabajo a una comunicación o a un expediente, se completó un paso o se canceló el flujo.",
 };
 
 export default async function CorrespondenciaAyudaPage() {
@@ -472,6 +472,11 @@ export default async function CorrespondenciaAyudaPage() {
           <span className="font-mono text-xs">Configuración → Flujos de trabajo</span> (MoReq cap. 7). Hay
           cuatro plantillas precargables (PQRSD con visto bueno, oficio con revisión y firma, memorando
           interno, ruta genérica) que se editan y activan.
+        </p>
+        <p>
+          Con «Aplica a: Expedientes documentales» el flujo se usa sobre un expediente (revisión, préstamo, transferencia u otra tarea
+          interna) desde su pestaña «Flujo de trabajo». Ahí la dependencia responsable es la del expediente y «quien radicó» es quien lo
+          abrió; los pasos de firma se completan a mano. Sus pasos pendientes aparecen en «Pasos de flujo a mi cargo».
         </p>
         <p className="text-xs font-medium uppercase tracking-wide text-stone-400">Cómo se arma</p>
         <ul className="list-disc space-y-1.5 pl-5">
