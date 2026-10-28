@@ -1,4 +1,4 @@
-import type { AmbitoFlujo, AsignacionPaso, Prisma, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
+import type { AccionVencimientoPaso, AmbitoFlujo, AsignacionPaso, Prisma, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
@@ -96,9 +96,9 @@ export async function crearFlujo(
   return flujo;
 }
 
-async function verificarUnicoAutomatico(id: string, aplicaA: TipoComunicacion | null) {
+async function verificarUnicoAutomatico(id: string, aplicaA: TipoComunicacion | null, familia: string = id) {
   const otro = await db.flujoTrabajo.findFirst({
-    where: { id: { not: id }, activo: true, inicioAutomatico: true, ambito: "COMUNICACION", aplicaA },
+    where: { id: { not: id }, activo: true, inicioAutomatico: true, ambito: "COMUNICACION", aplicaA, NOT: { OR: [{ id: familia }, { familiaId: familia }] } },
     select: { nombre: true },
   });
   if (otro) {
@@ -146,28 +146,50 @@ export async function cambiarEstadoFlujo(id: string, activo: boolean) {
     if (flujo.problemas.length > 0) {
       throw new Error(`No se puede activar: ${flujo.problemas.map((p) => p.mensaje).join(" ")}`);
     }
-    if (flujo.inicioAutomatico) await verificarUnicoAutomatico(id, flujo.aplicaA);
+    const familia = flujo.familiaId ?? flujo.id;
+    if (flujo.inicioAutomatico) await verificarUnicoAutomatico(id, flujo.aplicaA, familia);
+    const [, actualizado] = await db.$transaction([
+      db.flujoTrabajo.updateMany({ where: { id: { not: id }, activo: true, OR: [{ id: familia }, { familiaId: familia }] }, data: { activo: false } }),
+      db.flujoTrabajo.update({ where: { id }, data: { activo: true } }),
+    ]);
+    return actualizado;
   }
   return db.flujoTrabajo.update({ where: { id }, data: { activo } });
 }
 
+export async function versionesDeFlujo(flujo: { id: string; familiaId: string | null }) {
+  const familia = flujo.familiaId ?? flujo.id;
+  return db.flujoTrabajo.findMany({
+    where: { OR: [{ id: familia }, { familiaId: familia }] },
+    orderBy: { version: "desc" },
+    select: { id: true, version: true, activo: true, createdAt: true, _count: { select: { instancias: true } } },
+  });
+}
+
 export async function eliminarFlujo(id: string) {
   const usados = await db.instanciaFlujo.count({ where: { flujoId: id } });
-  if (usados > 0) throw new Error("El flujo ya se aplicó a comunicaciones; desactívelo en vez de borrarlo.");
+  if (usados > 0) throw new Error("El flujo ya se aplicó; desactívelo en vez de borrarlo.");
   await db.flujoTrabajo.delete({ where: { id } });
 }
 
-export async function duplicarFlujo(id: string, usuarioId: string) {
+export async function duplicarFlujo(id: string, usuarioId: string, comoVersion = false) {
   const orig = await db.flujoTrabajo.findUnique({
     where: { id },
     include: { pasos: { orderBy: { orden: "asc" }, include: { transiciones: true } } },
   });
   if (!orig) throw new Error("El flujo no existe.");
+  const familia = orig.familiaId ?? orig.id;
+  const ultimaVersion = comoVersion
+    ? ((await db.flujoTrabajo.aggregate({ where: { OR: [{ id: familia }, { familiaId: familia }] }, _max: { version: true } }))._max.version ?? orig.version)
+    : 0;
   const copia = await db.flujoTrabajo.create({
     data: {
-      nombre: `${orig.nombre} (copia)`,
+      nombre: comoVersion ? orig.nombre : `${orig.nombre} (copia)`,
       descripcion: orig.descripcion,
       aplicaA: orig.aplicaA,
+      ambito: orig.ambito,
+      familiaId: comoVersion ? familia : null,
+      version: comoVersion ? ultimaVersion + 1 : 1,
       activo: false,
       esPlantilla: false,
       dependenciasOperadoras: orig.dependenciasOperadoras,
@@ -182,6 +204,8 @@ export async function duplicarFlujo(id: string, usuarioId: string) {
           dependenciaId: p.dependenciaId,
           cargoClave: p.cargoClave,
           slaDiasHabiles: p.slaDiasHabiles,
+          alVencer: p.alVencer,
+          salidaVencimiento: p.salidaVencimiento,
           posX: p.posX,
           posY: p.posY,
         })),
@@ -239,9 +263,19 @@ export async function actualizarPaso(
     dependenciaId?: string | null;
     cargoClave?: string | null;
     slaDiasHabiles?: number | null;
+    alVencer?: AccionVencimientoPaso;
+    salidaVencimiento?: string | null;
   },
 ) {
   const data: Record<string, unknown> = {};
+  if (campos.alVencer !== undefined) data.alVencer = campos.alVencer;
+  if (campos.salidaVencimiento !== undefined) data.salidaVencimiento = campos.salidaVencimiento?.trim() || null;
+  if (campos.alVencer === "AVANZAR") {
+    const paso = await db.pasoFlujo.findUnique({ where: { id: pasoId }, select: { transiciones: { select: { etiqueta: true } } } });
+    if (!paso?.transiciones.some((t) => t.etiqueta === campos.salidaVencimiento)) {
+      throw new Error("Para avanzar automáticamente al vencer, elija una de las salidas del paso.");
+    }
+  }
   if (campos.nombre !== undefined) data.nombre = campos.nombre.trim() || "Paso sin nombre";
   if (campos.instrucciones !== undefined) data.instrucciones = campos.instrucciones?.trim() || null;
   if (campos.tipo !== undefined) data.tipo = campos.tipo;
@@ -1088,6 +1122,15 @@ export async function pasosFlujoACargo(u: UsuarioFlujo, modulo: ModuloFlujo = "S
     if (i.pasoActual!.tipo !== "FIRMA" || !i.objetivo.esComunicacion || (await estadoFirmasDeComunicacion(i.objetivo.id)).estado === "SIN_FIRMANTES") resultado.push(i);
   }
   return resultado;
+}
+
+export async function resumenPasosACargo(u: UsuarioFlujo, modulo: ModuloFlujo, cal: CalendarioLaboral): Promise<{ total: number; vencidos: number }> {
+  const pasos = await pasosFlujoACargo(u, modulo);
+  const ahora = new Date();
+  return {
+    total: pasos.length,
+    vencidos: pasos.filter((p) => estadoTerminoPaso(p.pasoActualDesde, p.pasoActual?.slaDiasHabiles ?? null, cal, ahora)?.vencido).length,
+  };
 }
 
 export async function usuarioFlujo(usuarioId: string, permisos: PermisosUsuario, modulo: ModuloFlujo = "SGDEA"): Promise<UsuarioFlujo> {

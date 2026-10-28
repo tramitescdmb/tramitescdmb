@@ -5,6 +5,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { sincronizarResoluciones } from "@/lib/sinca-sync";
 import { sincaConfigurado } from "@/lib/sinca";
 import { refrescarSnapshotNit } from "@/lib/sinca-nit-stats";
+import { registrarEjecucion } from "@/lib/procesos-programados";
 
 export const maxDuration = 300;
 
@@ -20,16 +21,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "SINCA 1.0 no está configurado." }, { status: 503 });
   }
 
-  const resultado = await sincronizarResoluciones("cron");
+  const respuesta = await registrarEjecucion("sinca", "programado", null, async () => {
+    const resultado = await sincronizarResoluciones("cron");
+    let nit: { ok: boolean; error?: string } = { ok: true };
+    try {
+      await refrescarSnapshotNit();
+    } catch (err) {
+      nit = { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+    return { ...resultado, nit };
+  });
 
-  let nit: { ok: boolean; error?: string } = { ok: true };
-  try {
-    await refrescarSnapshotNit();
-  } catch (err) {
-    nit = { ok: false, error: err instanceof Error ? err.message : String(err) };
-  }
-
-  return NextResponse.json({ ...resultado, nit }, { status: resultado.ok ? 200 : 500 });
+  return NextResponse.json(respuesta, { status: respuesta.ok ? 200 : 500 });
 }
 
 export async function POST(req: NextRequest) {

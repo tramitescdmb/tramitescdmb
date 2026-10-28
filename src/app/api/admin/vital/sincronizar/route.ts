@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { ETIQUETA_CACHE_VISOR_VITAL } from "@/lib/visor-puntos-externos";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { registrarEjecucion } from "@/lib/procesos-programados";
 import { sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
 export const maxDuration = 300;
@@ -19,50 +20,53 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "VITAL no está configurado." }, { status: 503 });
   }
 
-  const fecha = /^\d{4}-\d{2}-\d{2}$/;
-  const qDesde = req.nextUrl.searchParams.get("desde");
-  const qHasta = req.nextUrl.searchParams.get("hasta");
-  const desde = qDesde && fecha.test(qDesde) ? qDesde : haceDias(45);
-  const hasta = qHasta && fecha.test(qHasta) ? qHasta : ayer();
+  const cuerpo = await registrarEjecucion("vital", "programado", null, async () => {
+    const fecha = /^\d{4}-\d{2}-\d{2}$/;
+    const qDesde = req.nextUrl.searchParams.get("desde");
+    const qHasta = req.nextUrl.searchParams.get("hasta");
+    const desde = qDesde && fecha.test(qDesde) ? qDesde : haceDias(45);
+    const hasta = qHasta && fecha.test(qHasta) ? qHasta : ayer();
 
-  const qTramites = req.nextUrl.searchParams.get("tramites");
-  const tramites = qTramites
-    ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
-    : await tramitesASincronizar();
+    const qTramites = req.nextUrl.searchParams.get("tramites");
+    const tramites = qTramites
+      ? qTramites.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n))
+      : await tramitesASincronizar();
 
-  const probe = req.nextUrl.searchParams.get("probe") === "1";
+    const probe = req.nextUrl.searchParams.get("probe") === "1";
 
-  const descubrirFull = req.nextUrl.searchParams.get("descubrir") === "full";
-  let descubiertos: number[] = [];
-  if ((!qTramites && !probe) || descubrirFull) {
-    try {
-      descubiertos = await descubrirTramitesNuevos(40, { completo: descubrirFull });
-      for (const id of descubiertos) {
-        await registrarAuditoria({
-          tipo: "CONFIGURACION_ACTUALIZADA",
-          descripcion: `VITAL: trámite nuevo detectado y agregado a la sincronización — ${nombreTramiteVital(id)}.`,
-        });
-      }
-    } catch {}
-  }
-
-  const resultados: Record<string, unknown> = {};
-  let ok = true;
-  for (const idTramite of [...new Set([...tramites, ...descubiertos])]) {
-    try {
-      if (probe) {
-        const p = await listarSolicitudes({ idTramite, fechaInicio: desde, fechaFin: hasta, registrosPeticion: 5 });
-        resultados[idTramite] = { existe: p.length > 0, muestra: p.length, actividades: [...new Set(p.map((x) => x.nombreActividad))] };
-      } else {
-        resultados[idTramite] = await sincronizarTramite({ idTramite, fechaInicio: desde, fechaFin: hasta });
-      }
-    } catch (err) {
-      ok = false;
-      resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
+    const descubrirFull = req.nextUrl.searchParams.get("descubrir") === "full";
+    let descubiertos: number[] = [];
+    if ((!qTramites && !probe) || descubrirFull) {
+      try {
+        descubiertos = await descubrirTramitesNuevos(40, { completo: descubrirFull });
+        for (const id of descubiertos) {
+          await registrarAuditoria({
+            tipo: "CONFIGURACION_ACTUALIZADA",
+            descripcion: `VITAL: trámite nuevo detectado y agregado a la sincronización — ${nombreTramiteVital(id)}.`,
+          });
+        }
+      } catch {}
     }
-  }
-  if (!probe) revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
-  return NextResponse.json({ ok, ventana: { desde, hasta }, descubiertos, resultados }, { status: ok ? 200 : 500 });
+
+    const resultados: Record<string, unknown> = {};
+    let ok = true;
+    for (const idTramite of [...new Set([...tramites, ...descubiertos])]) {
+      try {
+        if (probe) {
+          const p = await listarSolicitudes({ idTramite, fechaInicio: desde, fechaFin: hasta, registrosPeticion: 5 });
+          resultados[idTramite] = { existe: p.length > 0, muestra: p.length, actividades: [...new Set(p.map((x) => x.nombreActividad))] };
+        } else {
+          resultados[idTramite] = await sincronizarTramite({ idTramite, fechaInicio: desde, fechaFin: hasta });
+        }
+      } catch (err) {
+        ok = false;
+        resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+    if (!probe) revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
+    return { ok, ventana: { desde, hasta }, descubiertos, resultados };
+  });
+  return NextResponse.json(cuerpo, { status: cuerpo.ok ? 200 : 500 });
 }
 
 export async function POST(req: NextRequest) {

@@ -744,8 +744,8 @@ model Expediente {
    * convertir esto en una restricción real de permisos es un cambio
    * aparte, a confirmar antes de hacerlo).
    */
-  usuariosAsignados Usuario[] @relation("ExpedienteUsuariosAsignados")
-  cargosAsignados   Cargo[]   @relation("ExpedienteCargosAsignados")
+  usuariosAsignados Usuario[]        @relation("ExpedienteUsuariosAsignados")
+  cargosAsignados   Cargo[]          @relation("ExpedienteCargosAsignados")
   instanciasFlujo   InstanciaFlujo[]
 
   comunicaciones Comunicacion[]
@@ -1982,6 +1982,8 @@ model FlujoTrabajo {
   descripcion            String?           @db.Text
   aplicaA                TipoComunicacion?
   ambito                 AmbitoFlujo       @default(COMUNICACION)
+  familiaId              String?
+  version                Int               @default(1)
   activo                 Boolean           @default(true)
   esPlantilla            Boolean           @default(false)
   inicioAutomatico       Boolean           @default(false)
@@ -1996,21 +1998,43 @@ model FlujoTrabajo {
   creadoPor    Usuario?         @relation("FlujoCreadoPor", fields: [creadoPorId], references: [id])
 
   @@index([activo])
+  @@index([familiaId])
+}
+
+enum AccionVencimientoPaso {
+  NINGUNA
+  AVISAR
+  AVANZAR
+}
+
+model EjecucionProceso {
+  id             String    @id @default(cuid())
+  proceso        String
+  origen         String    @default("programado")
+  inicio         DateTime  @default(now())
+  fin            DateTime?
+  ok             Boolean?
+  resumen        String?   @db.Text
+  ejecutadoPorId String?
+
+  @@index([proceso, inicio])
 }
 
 model PasoFlujo {
-  id             String         @id @default(cuid())
-  flujoId        String
-  orden          Int
-  nombre         String
-  instrucciones  String?        @db.Text
-  tipo           TipoPasoFlujo  @default(TAREA)
-  asignacion     AsignacionPaso @default(DEPENDENCIA_COMUNICACION)
-  dependenciaId  String?
-  cargoClave     String?
-  slaDiasHabiles Int?
-  posX           Float?
-  posY           Float?
+  id                String                @id @default(cuid())
+  flujoId           String
+  orden             Int
+  nombre            String
+  instrucciones     String?               @db.Text
+  tipo              TipoPasoFlujo         @default(TAREA)
+  asignacion        AsignacionPaso        @default(DEPENDENCIA_COMUNICACION)
+  dependenciaId     String?
+  cargoClave        String?
+  slaDiasHabiles    Int?
+  alVencer          AccionVencimientoPaso @default(AVISAR)
+  salidaVencimiento String?
+  posX              Float?
+  posY              Float?
 
   flujo             FlujoTrabajo     @relation(fields: [flujoId], references: [id], onDelete: Cascade)
   dependencia       Dependencia?     @relation("PasoFlujoDependencia", fields: [dependenciaId], references: [id])
@@ -2039,29 +2063,30 @@ model TransicionPaso {
 }
 
 model InstanciaFlujo {
-  id              String               @id @default(cuid())
-  flujoId         String
+  id                      String               @id @default(cuid())
+  flujoId                 String
   comunicacionId          String?
   expedienteDocumentalId  String?
   expedienteContractualId String?
   expedienteTramiteId     String?
   estado                  EstadoInstanciaFlujo @default(EN_CURSO)
-  pasoActualId           String?
-  pasoActualDesde        DateTime?
-  iniciadoPorId          String?
-  asignadoAId            String?
-  iniciadoEn             DateTime             @default(now())
-  finalizadoEn           DateTime?
+  pasoActualId            String?
+  pasoActualDesde         DateTime?
+  iniciadoPorId           String?
+  asignadoAId             String?
+  iniciadoEn              DateTime             @default(now())
+  finalizadoEn            DateTime?
+  vencimientoAvisadoEn    DateTime?
 
-  flujo                FlujoTrabajo          @relation(fields: [flujoId], references: [id])
-  comunicacion         Comunicacion?         @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
+  flujo                 FlujoTrabajo           @relation(fields: [flujoId], references: [id])
+  comunicacion          Comunicacion?          @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
   expedienteDocumental  ExpedienteDocumental?  @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
   expedienteContractual ExpedienteContractual? @relation(fields: [expedienteContractualId], references: [id], onDelete: Cascade)
   expedienteTramite     Expediente?            @relation(fields: [expedienteTramiteId], references: [id], onDelete: Cascade)
-  pasoActual           PasoFlujo?            @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
-  iniciadoPor          Usuario?              @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
-  asignadoA            Usuario?              @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
-  ejecuciones          PasoEjecutado[]
+  pasoActual            PasoFlujo?             @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
+  iniciadoPor           Usuario?               @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
+  asignadoA             Usuario?               @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
+  ejecuciones           PasoEjecutado[]
 
   @@index([comunicacionId])
   @@index([expedienteDocumentalId])

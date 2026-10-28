@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import type { AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
+import type { AccionVencimientoPaso, AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
+
+const ACCIONES_VENCIMIENTO: AccionVencimientoPaso[] = ["NINGUNA", "AVISAR", "AVANZAR"];
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
@@ -67,13 +69,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       case "activar":
       case "desactivar": {
         await cambiarEstadoFlujo(id, accion === "activar");
-        detalle.searchParams.set("ok", accion === "activar" ? "Flujo activado." : "Flujo desactivado.");
+        detalle.searchParams.set("ok", accion === "activar" ? "Flujo activado como versión vigente; las demás versiones quedaron inactivas." : "Flujo desactivado.");
         return NextResponse.redirect(detalle, { status: 303 });
       }
       case "eliminar": {
         await eliminarFlujo(id);
         lista.searchParams.set("ok", "Flujo eliminado.");
         return NextResponse.redirect(lista, { status: 303 });
+      }
+      case "nueva-version": {
+        const version = await duplicarFlujo(id, session.userId, true);
+        return NextResponse.redirect(
+          new URL(`${RUTA_FLUJOS[modulo]}/${version.id}?ok=${encodeURIComponent(`Versión ${version.version} creada (queda inactiva hasta que la active)`)}`, req.url),
+          { status: 303 },
+        );
       }
       case "duplicar": {
         const copia = await duplicarFlujo(id, session.userId);
@@ -104,6 +113,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           dependenciaId: String(form.get("dependenciaId") || ""),
           cargoClave: String(form.get("cargoClave") || ""),
           slaDiasHabiles: num(form.get("slaDiasHabiles")),
+          alVencer: ACCIONES_VENCIMIENTO.includes(String(form.get("alVencer")) as AccionVencimientoPaso) ? (String(form.get("alVencer")) as AccionVencimientoPaso) : undefined,
+          salidaVencimiento: String(form.get("salidaVencimiento") || ""),
         });
         detalle.searchParams.set("ok", "Paso actualizado.");
         return NextResponse.redirect(detalle, { status: 303 });

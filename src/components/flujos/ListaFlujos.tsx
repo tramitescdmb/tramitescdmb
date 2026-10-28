@@ -17,7 +17,12 @@ const DESCRIPCION: Record<ModuloFlujo, string> = {
 };
 
 export async function ListaFlujos({ modulo, ok, error }: { modulo: ModuloFlujo; ok?: string; error?: string }) {
-  const flujos = await listarFlujos(modulo);
+  const todos = await listarFlujos(modulo);
+  const familias = new Map<string, typeof todos>();
+  for (const f of todos) familias.set(f.familiaId ?? f.id, [...(familias.get(f.familiaId ?? f.id) ?? []), f]);
+  const flujos = [...familias.values()]
+    .map((grupo) => ({ ...(grupo.find((f) => f.activo) ?? [...grupo].sort((a, b) => b.version - a.version)[0]!), totalVersiones: grupo.length }))
+    .sort((a, b) => Number(b.activo) - Number(a.activo) || a.nombre.localeCompare(b.nombre, "es"));
   const plantillas = plantillasDeModulo(modulo);
   const opciones = Object.entries(OPCIONES_APLICA_A[modulo]);
   const ruta = RUTA_FLUJOS[modulo];
@@ -92,10 +97,15 @@ export async function ListaFlujos({ modulo, ok, error }: { modulo: ModuloFlujo; 
                   <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-stone-800">
                     {f.activo ? <CheckCircle2 className="h-4 w-4 flex-none text-emerald-600" aria-hidden /> : <CircleDashed className="h-4 w-4 flex-none text-stone-400" aria-hidden />}
                     {f.nombre}
+                    {f.totalVersiones > 1 && (
+                      <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">
+                        Versión {f.version} de {f.totalVersiones}
+                      </span>
+                    )}
                     {f.esPlantilla && <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-normal text-stone-500">Plantilla</span>}
                     {f.inicioAutomatico && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">Inicio automático</span>}
                     <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${f.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
-                      {f.activo ? "Activo" : "Inactivo"}
+                      {f.activo ? "Vigente" : "Inactivo"}
                     </span>
                   </p>
                   {f.descripcion && <p className="mt-0.5 truncate text-xs text-stone-500">{f.descripcion}</p>}

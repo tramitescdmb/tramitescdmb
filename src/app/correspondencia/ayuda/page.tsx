@@ -478,6 +478,12 @@ export default async function CorrespondenciaAyudaPage() {
           interna) desde su pestaña «Flujo de trabajo». Ahí la dependencia responsable es la del expediente y «quien radicó» es quien lo
           abrió; los pasos de firma se completan a mano. Sus pasos pendientes aparecen en «Pasos de flujo a mi cargo».
         </p>
+        <p>
+          <strong>Versiones.</strong> «Nueva versión» copia el flujo como versión siguiente; al activarla queda vigente y las anteriores se
+          desactivan, mientras los flujos en curso terminan con su versión original. <strong>Vencimientos.</strong> En cada paso con término se
+          elige qué hacer al vencer: marcarlo como vencido para su responsable (aparece en la campana) o avanzar solo por una salida. Lo ejecuta
+          cada mañana el proceso «Vencimientos de flujos de trabajo» (Administración → Procesos programados).
+        </p>
         <p className="text-xs font-medium uppercase tracking-wide text-stone-400">Cómo se arma</p>
         <ul className="list-disc space-y-1.5 pl-5">
           <li>

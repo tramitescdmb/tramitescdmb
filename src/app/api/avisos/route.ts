@@ -4,7 +4,9 @@ import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contar
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
 import { contarInformesPorRadicarPropios, requisitosPorCargarPropios } from "@/lib/contratacion-panel";
-import { pasosFlujoACargo, usuarioFlujo } from "@/lib/flujos";
+import { resumenPasosACargo, usuarioFlujo } from "@/lib/flujos";
+import type { ModuloFlujo } from "@/lib/flujos-modulos";
+import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concepto";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
@@ -16,16 +18,28 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   const avisos: Aviso[] = [];
+  const calendario = await getCalendarioLaboral();
+  const pasosDeFlujo = (modulo: ModuloFlujo) => usuarioFlujo(session.userId, permisos, modulo).then((u) => resumenPasosACargo(u, modulo, calendario));
+  const avisarPasos = (r: { total: number; vencidos: number }, clave: string, href: string, modulo: Aviso["modulo"]) => {
+    if (r.total === 0) return;
+    avisos.push({
+      clave,
+      titulo: `${r.total} paso(s) de flujo de trabajo a su cargo`,
+      detalle: r.vencidos > 0 ? `${r.vencidos} con el término vencido` : undefined,
+      href,
+      alerta: true,
+      cantidad: r.total,
+      modulo,
+    });
+  };
 
   if (puedeAccederCorrespondencia(permisos)) {
     const [memos, firmas, pasosFlujo] = await Promise.all([
       contextoMemorandos(session.userId, permisos).then(contarMemorandos),
       contarPendientesBuzonSgdea(session.userId),
-      usuarioFlujo(session.userId, permisos).then(pasosFlujoACargo).then((l) => l.length),
+      pasosDeFlujo("SGDEA"),
     ]);
-    if (pasosFlujo > 0) {
-      avisos.push({ clave: "flujos-sgdea", titulo: `${pasosFlujo} paso(s) de flujo de trabajo a su cargo`, href: "/correspondencia/flujos-a-cargo", alerta: true, cantidad: pasosFlujo, modulo: "SGDEA" });
-    }
+    avisarPasos(pasosFlujo, "flujos-sgdea", "/correspondencia/flujos-a-cargo", "SGDEA");
     if (memos.porResponder > 0) {
       avisos.push({
         clave: "memos-responder",
@@ -69,11 +83,9 @@ export async function GET() {
       contarAlertasVisitasPropias(session.userId),
       puedePlanearVisitas(permisos) ? conceptosPorRevisar(permisos).then((l) => l.length) : 0,
       conceptosDevueltosA(session.userId).then((l) => l.length),
-      usuarioFlujo(session.userId, permisos, "TRAMITES").then((u) => pasosFlujoACargo(u, "TRAMITES")).then((l) => l.length),
+      pasosDeFlujo("TRAMITES"),
     ]);
-    if (pasosFlujo > 0) {
-      avisos.push({ clave: "flujos-tramites", titulo: `${pasosFlujo} paso(s) de flujo de trabajo a su cargo`, href: "/tramites-ambientales#pasos-flujo", alerta: true, cantidad: pasosFlujo, modulo: "TRAMITES" });
-    }
+    avisarPasos(pasosFlujo, "flujos-tramites", "/tramites-ambientales#pasos-flujo", "TRAMITES");
     if (porRevisar > 0) {
       avisos.push({ clave: "conceptos-revision", titulo: `${porRevisar} concepto(s) técnico(s) por revisar`, href: "/planeador/conceptos", alerta: true, cantidad: porRevisar, modulo: "TRAMITES" });
     }
@@ -104,11 +116,9 @@ export async function GET() {
       contarRechazosPorAtender(session.userId, false, "documentoContrato"),
       contarInformesPorRadicarPropios(permisos),
       requisitosPorCargarPropios(permisos).then((l) => l.reduce((n, r) => n + r.requisitos.length, 0)),
-      usuarioFlujo(session.userId, permisos, "GECON").then((u) => pasosFlujoACargo(u, "GECON")).then((l) => l.length),
+      pasosDeFlujo("GECON"),
     ]);
-    if (pasosFlujo > 0) {
-      avisos.push({ clave: "flujos-gecon", titulo: `${pasosFlujo} paso(s) de flujo de trabajo a su cargo`, href: "/contratacion/panel#pasos-flujo", alerta: true, cantidad: pasosFlujo, modulo: "GECON" });
-    }
+    avisarPasos(pasosFlujo, "flujos-gecon", "/contratacion/panel#pasos-flujo", "GECON");
     if (porCargar > 0) {
       avisos.push({ clave: "requisitos-gecon", titulo: `${porCargar} requisito(s) por cargar en sus contratos`, detalle: "Etapa actual de los contratos asignados o que supervisa", href: "/contratacion/panel#requisitos", alerta: false, cantidad: porCargar, modulo: "GECON" });
     }

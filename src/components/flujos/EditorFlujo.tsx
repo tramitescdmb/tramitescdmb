@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, AlertTriangle, ArrowRight } from "lucide-react";
-import { obtenerFlujo, ETIQUETA_TIPO_PASO } from "@/lib/flujos";
+import { obtenerFlujo, versionesDeFlujo, ETIQUETA_TIPO_PASO } from "@/lib/flujos";
+import { formatearFecha } from "@/lib/fecha";
 import {
   ASIGNACIONES_DE_MODULO,
   etiquetaAsignacion,
@@ -38,6 +39,7 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
   if (!flujo) notFound();
   const moduloFlujo = moduloDeAmbito(flujo.ambito);
   if (moduloFlujo !== modulo) redirect(`${RUTA_FLUJOS[moduloFlujo]}/${flujo.id}`);
+  const versiones = await versionesDeFlujo(flujo);
 
   const accion = `/api/flujos/${flujo.id}`;
   const nombrePorId = new Map(flujo.pasos.map((p) => [p.id, `${p.orden}. ${p.nombre}`]));
@@ -57,10 +59,17 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
       <div className="space-y-2">
         <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-stone-900">
           {flujo.nombre}
+          {versiones.length > 1 && <span className="rounded-sm bg-cdmb-50 px-2 py-0.5 text-[11px] font-medium text-cdmb-700">Versión {flujo.version}</span>}
           <span className={`rounded-sm px-2 py-0.5 text-[11px] font-medium ${flujo.activo ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
-            {flujo.activo ? "Activo" : "Inactivo"}
+            {flujo.activo ? "Vigente" : "Inactivo"}
           </span>
         </h2>
+        {flujo._count.instancias > 0 && (
+          <p className="rounded-md border border-cdmb-100 bg-cdmb-50/60 px-3 py-2 text-xs text-cdmb-900">
+            Este flujo ya se aplicó {flujo._count.instancias} vez(es). Para cambiar sus pasos sin afectar los expedientes en curso, cree una nueva versión: al activarla
+            queda como vigente y los flujos en curso terminan con la versión con la que empezaron.
+          </p>
+        )}
         <SectionHelp>
           El <strong>paso 1</strong> es siempre el inicial. Cada paso (salvo los de tipo «Fin») necesita al menos una <strong>salida</strong> hacia otro paso. Se
           activa solo cuando la estructura no tiene errores.
@@ -151,8 +160,11 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
           >
             {flujo.activo ? "Desactivar" : "Activar flujo"}
           </FormBoton>
+          <FormBoton accion={accion} name="accion" value="nueva-version" className="border border-menu-500 bg-white text-cdmb-700 hover:bg-cdmb-50">
+            Nueva versión
+          </FormBoton>
           <FormBoton accion={accion} name="accion" value="duplicar" className="border border-stone-200 bg-white text-stone-700 hover:bg-stone-50">
-            Duplicar
+            Duplicar como flujo nuevo
           </FormBoton>
           <a href={`/api/flujos/${flujo.id}/bpmn`} className="rounded-md border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
             Descargar BPMN
@@ -164,6 +176,29 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
           )}
         </div>
       </div>
+
+      {versiones.length > 1 && (
+        <div className="rounded-md border border-stone-200 bg-white">
+          <p className="border-b border-stone-100 px-4 py-2 text-sm font-semibold text-stone-900">Versiones de este flujo</p>
+          <ul className="divide-y divide-stone-100 text-xs">
+            {versiones.map((v) => (
+              <li key={v.id} className={`flex flex-wrap items-center gap-3 px-4 py-2 ${v.id === flujo.id ? "bg-stone-50" : ""}`}>
+                {v.id === flujo.id ? (
+                  <span className="font-semibold text-stone-900">Versión {v.version} (la que está viendo)</span>
+                ) : (
+                  <Link href={`${RUTA_FLUJOS[modulo]}/${v.id}`} className="font-medium text-cdmb-700 hover:underline">
+                    Versión {v.version}
+                  </Link>
+                )}
+                <span className={v.activo ? "font-medium text-emerald-700" : "text-stone-400"}>{v.activo ? "Vigente" : "Inactiva"}</span>
+                <span className="text-stone-500">
+                  {v._count.instancias} aplicación{v._count.instancias === 1 ? "" : "es"} · creada el {formatearFecha(v.createdAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <form action={accion} method="post" className="rounded-md border border-stone-200 bg-white p-4">
         <input type="hidden" name="accion" value="accesos" />
@@ -196,6 +231,13 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
                   {paso.asignacion === "DEPENDENCIA_FIJA" && paso.dependencia ? ` — ${paso.dependencia.nombre}` : ""}
                   {paso.asignacion === "CARGO" && paso.cargoClave ? ` — ${paso.cargoClave}` : ""}
                   {paso.slaDiasHabiles ? ` · término sugerido ${paso.slaDiasHabiles} días hábiles` : ""}
+                  {paso.slaDiasHabiles && paso.tipo !== "FIN"
+                    ? paso.alVencer === "AVANZAR" && paso.salidaVencimiento
+                      ? ` · al vencer avanza solo por «${paso.salidaVencimiento}»`
+                      : paso.alVencer === "NINGUNA"
+                        ? " · al vencer no se marca"
+                        : " · al vencer se marca como vencido"
+                    : ""}
                 </p>
               </div>
               <div className="flex flex-none items-center gap-1">
@@ -310,6 +352,23 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
                 </Field>
                 <Field label="Término sugerido (días hábiles)">
                   <input name="slaDiasHabiles" type="number" min={1} defaultValue={paso.slaDiasHabiles ?? ""} className={inputCls} />
+                </Field>
+                <Field label="Al vencer el término" help="Lo ejecuta el proceso automático diario. Solo aplica si el paso tiene término.">
+                  <select name="alVencer" defaultValue={paso.alVencer} className={inputCls}>
+                    <option value="AVISAR">Marcar como vencido para su responsable</option>
+                    <option value="AVANZAR">Avanzar automáticamente por una salida</option>
+                    <option value="NINGUNA">No hacer nada</option>
+                  </select>
+                </Field>
+                <Field label="Salida al vencer" help="Solo si avanza automáticamente.">
+                  <select name="salidaVencimiento" defaultValue={paso.salidaVencimiento ?? ""} className={inputCls}>
+                    <option value="">—</option>
+                    {paso.transiciones.map((t) => (
+                      <option key={t.id} value={t.etiqueta}>
+                        {t.etiqueta} → {nombrePorId.get(t.haciaPasoId) ?? "?"}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
                 <div className="sm:col-span-3">
                   <Field label="Instrucciones para el responsable">
