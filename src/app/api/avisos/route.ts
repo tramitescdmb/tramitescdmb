@@ -3,7 +3,7 @@ import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederCont
 import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
-import { contarInformesPorRadicarPropios } from "@/lib/contratacion-panel";
+import { contarInformesPorRadicarPropios, requisitosPorCargarPropios } from "@/lib/contratacion-panel";
 import { pasosFlujoACargo, usuarioFlujo } from "@/lib/flujos";
 import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concepto";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
@@ -95,11 +95,15 @@ export async function GET() {
   }
 
   if (permisos.modulos.has("GECON") && puedeAccederContratacion(permisos)) {
-    const [firmas, rechazos, informes] = await Promise.all([
+    const [firmas, rechazos, informes, porCargar] = await Promise.all([
       contarPendientesBuzonContratacion(session.userId),
       contarRechazosPorAtender(session.userId, false, "documentoContrato"),
       contarInformesPorRadicarPropios(permisos),
+      requisitosPorCargarPropios(permisos).then((l) => l.reduce((n, r) => n + r.requisitos.length, 0)),
     ]);
+    if (porCargar > 0) {
+      avisos.push({ clave: "requisitos-gecon", titulo: `${porCargar} requisito(s) por cargar en sus contratos`, detalle: "Etapa actual de los contratos asignados o que supervisa", href: "/contratacion/panel#requisitos", alerta: false, cantidad: porCargar, modulo: "GECON" });
+    }
     if (informes > 0) {
       avisos.push({ clave: "informes-gecon", titulo: `${informes} informe(s) de supervisión por radicar`, detalle: "De sus contratos o de los que supervisa", href: "/contratacion/panel#informes", alerta: true, cantidad: informes, modulo: "GECON" });
     }

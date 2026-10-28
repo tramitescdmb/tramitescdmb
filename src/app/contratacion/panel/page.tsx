@@ -10,9 +10,9 @@ import { hrefLista } from "@/lib/tableros";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck, TrendingUp, PieChart, Layers, Building2 } from "lucide-react";
+import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, BadgeCheck, TrendingUp, PieChart, Layers, Building2, ListTodo } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
-import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
+import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, requisitosPorCargarPropios, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { identificacionContrato } from "@/lib/codigo-proceso";
 import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
@@ -99,12 +99,15 @@ export default async function PanelPendientesGeconPage({ searchParams }: { searc
   const sp = await searchParams;
   const vigencia = vigenciaPorDefecto(permisos, sp.vigencia);
   const conVigencia = usaSelectorDeVigencia(permisos) ? vigencia ?? "todas" : null;
-  const [p, g, anios] = await Promise.all([
+  const conCargo = permisos.asignadoExpedientes.size + permisos.supervisaExpedientes.size > 0;
+  const [p, g, anios, porCargar] = await Promise.all([
     obtenerTrabajoPendienteContratacion(session.userId, permisos, gestiona),
     tableroGecon(construirWhereExpedienteContractual({ vigencia }, permisos)),
     conVigencia ? aniosDeExpedientes(construirWhereExpedienteContractual({}, permisos)) : Promise.resolve(null),
+    conCargo ? requisitosPorCargarPropios(permisos) : Promise.resolve([]),
   ]);
   const esperando = p.firmas.total - p.firmas.listos;
+  const totalPorCargar = porCargar.reduce((n, r) => n + r.requisitos.length, 0);
 
   return (
     <MarcoDashboard
@@ -121,6 +124,7 @@ export default async function PanelPendientesGeconPage({ searchParams }: { searc
         {p.sinFirmante.aplica && <Indicador icon={UserPlus} valor={p.sinFirmante.total} etiqueta="Sin firmante" tono="acento" href="#sin-firmante" />}
         {p.porValidar.aplica && <Indicador icon={BadgeCheck} valor={p.porValidar.total} etiqueta="Por validar" tono="verde" href="#por-validar" />}
         <Indicador icon={CalendarClock} valor={p.informes.total} etiqueta="Informes por radicar" tono="acento" href="#informes" />
+        {conCargo && <Indicador icon={ListTodo} valor={totalPorCargar} etiqueta="Requisitos por cargar" tono="cielo" href="#requisitos" />}
         {gestiona && <Indicador icon={UserX} valor={p.sinContratista} etiqueta="Sin contratista" tono="neutro" href="/contratacion/expedientes?contratista=sin" />}
       </RejillaIndicadores>
 
@@ -215,6 +219,40 @@ export default async function PanelPendientesGeconPage({ searchParams }: { searc
             docs={p.porValidar.lista}
             vacio="Sin documentos por validar."
           />
+        )}
+
+        {conCargo && (
+          <TarjetaTablero
+            id="requisitos"
+            className="lg:col-span-12"
+            icon={ListTodo}
+            tono="cielo"
+            titulo="Requisitos por cargar"
+            descripcion="Documentos obligatorios de la etapa actual en los contratos asignados a usted o que supervisa."
+            contador={totalPorCargar}
+            sinRelleno
+          >
+            {porCargar.length === 0 ? (
+              <VacioTablero>Sus contratos tienen cargados los requisitos de la etapa actual.</VacioTablero>
+            ) : (
+              <ListaTablero>
+                {porCargar.map((r) => (
+                  <GrupoContrato key={r.expediente.id} expediente={r.expediente} contratista={`${r.contratista ?? "Sin contratista"} · ${ETIQUETA_ETAPA[r.etapa]}`}>
+                    {r.requisitos.map((q) => (
+                      <Link
+                        key={q.id}
+                        href={`/contratacion/expedientes/${r.expediente.id}`}
+                        title={q.rechazado ? "El documento cargado fue rechazado; requiere una versión corregida" : "Sin cargar"}
+                        className={`rounded-md px-2 py-0.5 text-xs ${q.rechazado ? "bg-red-50 text-red-700 hover:bg-red-100" : "border border-stone-200 bg-white text-stone-700 hover:border-cdmb-300 hover:bg-cdmb-50"}`}
+                      >
+                        {q.nombre}
+                      </Link>
+                    ))}
+                  </GrupoContrato>
+                ))}
+              </ListaTablero>
+            )}
+          </TarjetaTablero>
         )}
 
         <TarjetaTablero

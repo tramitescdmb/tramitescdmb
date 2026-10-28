@@ -1,10 +1,10 @@
 import { CODIGO_ACTA_LIQUIDACION, estadoLiquidacion } from "@/lib/liquidacion";
 import { veTodosLosContratos, rigePorPerfil, esPersonalContratacion, veContratosDeSuDependencia, tienePermiso, esContratistaGecon } from "@/lib/permisos";
 import { resumirPendientesFirma } from "@/lib/calidad-firma";
-import type { Prisma } from "@prisma/client";
+import type { EtapaContratacion, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
-import { construirWhereExpedienteContractual } from "@/lib/contratacion";
+import { construirWhereExpedienteContractual, obtenerRequisitosDeEtapa } from "@/lib/contratacion";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { CODIGOS_FORMATO_POR_PERIODOS, calcularPeriodosInforme, etiquetaRangoPeriodo, periodosPorRadicar } from "@/lib/periodos-informe";
 import { fechaArchivoColombia } from "@/lib/fecha";
@@ -232,6 +232,57 @@ export async function obtenerResumenSistemaContratacion() {
     }),
   ]);
   return { expedientes, contratistas, documentosPorValidar, usuariosConRol, eventos };
+}
+
+export type RequisitosPorCargar = {
+  expediente: { id: string; numero: string; numeroContrato: string | null; codigoProceso: string | null };
+  contratista: string | null;
+  etapa: EtapaContratacion;
+  requisitos: { id: string; nombre: string; rechazado: boolean }[];
+};
+
+export async function requisitosPorCargarPropios(permisos: PermisosUsuario): Promise<RequisitosPorCargar[]> {
+  const ids = [...new Set([...permisos.asignadoExpedientes, ...permisos.supervisaExpedientes])];
+  if (ids.length === 0) return [];
+  const expedientes = await db.expedienteContractual.findMany({
+    where: { id: { in: ids }, eliminado: false, cerrado: false },
+    take: 200,
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      numero: true,
+      numeroContrato: true,
+      codigoProceso: true,
+      modalidadSeleccion: true,
+      etapaActual: true,
+      tipoContrato: true,
+      terminadoAnticipadamente: true,
+      contratista: { select: { nombreORazonSocial: true } },
+      documentos: { where: { requisitoId: { not: null } }, select: { requisitoId: true, etapa: true, estadoValidacion: true, createdAt: true } },
+    },
+  });
+  const resultado: RequisitosPorCargar[] = [];
+  for (const e of expedientes) {
+    const requisitos = await obtenerRequisitosDeEtapa(e.modalidadSeleccion, e.etapaActual, e.tipoContrato, e.terminadoAnticipadamente);
+    const faltan = requisitos
+      .filter((r) => r.obligatorio && !(r.codigoFormato && CODIGOS_FORMATO_POR_PERIODOS.includes(r.codigoFormato)))
+      .flatMap((r) => {
+        const ultimo = e.documentos
+          .filter((d) => d.requisitoId === r.id && d.etapa === e.etapaActual)
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+        if (ultimo && ultimo.estadoValidacion !== "RECHAZADO") return [];
+        return [{ id: r.id, nombre: r.nombre, rechazado: Boolean(ultimo) }];
+      });
+    if (faltan.length > 0) {
+      resultado.push({
+        expediente: { id: e.id, numero: e.numero, numeroContrato: e.numeroContrato, codigoProceso: e.codigoProceso },
+        contratista: e.contratista?.nombreORazonSocial ?? null,
+        etapa: e.etapaActual,
+        requisitos: faltan,
+      });
+    }
+  }
+  return resultado;
 }
 
 export async function contarInformesPorRadicarPropios(permisos: PermisosUsuario): Promise<number> {
