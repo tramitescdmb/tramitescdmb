@@ -5,7 +5,7 @@ import { RegistrarReciente } from "@/components/RegistrarReciente";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine, Workflow } from "lucide-react";
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -40,7 +40,10 @@ import {
   puedeValidarDocumentoContrato,
   esContratistaGecon,
   supervisaElExpediente,
+  puedeAdministrarGecon,
 } from "@/lib/permisos";
+import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
+import { usuarioFlujo } from "@/lib/flujos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
 import {
   listarTopesCuantia,
@@ -1136,6 +1139,21 @@ export default async function DetalleExpedienteContractualPage({
                 );
             })(),
           })),
+          {
+            id: "flujo-trabajo-pestana",
+            label: "Flujo de trabajo",
+            icono: <Workflow className="h-4 w-4" aria-hidden />,
+            oculta: esContratistaGecon(permisos),
+            contenido: (
+              <FlujoTrabajoPanel
+                destino={{ ambito: "CONTRATO", id, habilitado: !expediente.cerrado && !expediente.eliminado }}
+                accion={`/api/contratacion/expedientes/${id}/flujo`}
+                puedeOperar={puedeAdministrarGecon(permisos) || permisos.asignadoExpedientes.has(id)}
+                usuario={await usuarioFlujo(session.userId, permisos, "GECON")}
+                ancla="flujo-trabajo"
+              />
+            ),
+          },
           {
             id: "trazabilidad",
             label: "Trazabilidad",

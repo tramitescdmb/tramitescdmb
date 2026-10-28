@@ -63,14 +63,18 @@ function auto(i: number) {
   return { x: 40 + (i % 3) * 230, y: 30 + Math.floor(i / 3) * 130 };
 }
 
+const TODOS_LOS_TIPOS: Tipo[] = ["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"];
+
 function Editor({
   flujoId,
   pasos,
   transiciones,
+  tipos = TODOS_LOS_TIPOS,
 }: {
   flujoId: string;
   pasos: PasoLienzo[];
   transiciones: TransLienzo[];
+  tipos?: Tipo[];
 }) {
   const router = useRouter();
   const ordenInicial = pasos.length ? Math.min(...pasos.map((p) => p.orden)) : 1;
@@ -150,7 +154,7 @@ function Editor({
       })),
     };
     try {
-      const r = await fetch(`/api/correspondencia/flujos/${flujoId}/lienzo`, {
+      const r = await fetch(`/api/flujos/${flujoId}/lienzo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -177,7 +181,7 @@ function Editor({
     <div className="rounded-2xl border border-stone-200 bg-white shadow-soft">
       <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-2">
         <span className="text-xs font-medium text-stone-500">Agregar:</span>
-        {(["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"] as Tipo[]).map((t) => (
+        {tipos.map((t) => (
           <button
             key={t}
             type="button"
@@ -241,7 +245,7 @@ function Editor({
                   onChange={(e) => editarNodo(nodoSel.id, { tipo: e.target.value as Tipo })}
                   className="w-full rounded-md border border-stone-200 bg-white px-2 py-1"
                 >
-                  {(["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"] as Tipo[]).map((t) => (
+                  {tipos.map((t) => (
                     <option key={t} value={t}>{ETIQUETA_TIPO[t]}</option>
                   ))}
                 </select>
@@ -291,7 +295,7 @@ function Editor({
   );
 }
 
-export function FlujoLienzo(props: { flujoId: string; pasos: PasoLienzo[]; transiciones: TransLienzo[] }) {
+export function FlujoLienzo(props: { flujoId: string; pasos: PasoLienzo[]; transiciones: TransLienzo[]; tipos?: Tipo[] }) {
   const clave = useMemo(
     () =>
       props.pasos.map((p) => `${p.id}:${p.nombre}:${p.tipo}:${p.posX}:${p.posY}:${p.orden}`).join("|") +

@@ -4,8 +4,18 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import { solicitudesVigentes } from "@/lib/estado-firmas";
+import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import type { PermisosUsuario } from "@/lib/permisos";
-import { esJefeDeReparto, puedeAdministrarArchivo, puedeDistribuir } from "@/lib/permisos";
+import {
+  AMBITOS_DE_MODULO,
+  etiquetaAsignacion,
+  OPCIONES_APLICA_A,
+  puedeAdministrarFlujosModulo,
+  puedeOperarFlujosSgdea,
+  type ModuloFlujo,
+} from "@/lib/flujos-modulos";
+
+export { ETIQUETA_ASIGNACION, aplicaAFormulario } from "@/lib/flujos-modulos";
 
 export const ETIQUETA_TIPO_PASO: Record<TipoPasoFlujo, string> = {
   TAREA: "Tarea",
@@ -15,31 +25,9 @@ export const ETIQUETA_TIPO_PASO: Record<TipoPasoFlujo, string> = {
   FIN: "Fin",
 };
 
-export const ETIQUETA_ASIGNACION: Record<AsignacionPaso, string> = {
-  DEPENDENCIA_COMUNICACION: "Dependencia de la comunicación o del expediente",
-  DEPENDENCIA_FIJA: "Una dependencia fija",
-  CARGO: "Un cargo",
-  RADICADOR: "Quien radicó o abrió el expediente",
-  RESPONSABLE_PASO_ANTERIOR: "Responsable del paso anterior",
-  MANUAL: "Se asigna a mano",
-};
-
-export const ETIQUETA_APLICA_A: Record<string, string> = {
-  "": "Cualquier tipo",
-  RECIBIDA: "Solo recibidas",
-  ENVIADA: "Solo enviadas",
-  INTERNA: "Solo memorandos",
-  EXPEDIENTE: "Expedientes documentales",
-};
-
-export function aplicaAFormulario(valor: string): { aplicaA: TipoComunicacion | null; ambito: AmbitoFlujo } {
-  if (valor === "EXPEDIENTE") return { aplicaA: null, ambito: "EXPEDIENTE" };
-  const tipos: TipoComunicacion[] = ["RECIBIDA", "ENVIADA", "INTERNA"];
-  return { aplicaA: tipos.includes(valor as TipoComunicacion) ? (valor as TipoComunicacion) : null, ambito: "COMUNICACION" };
-}
-
-export async function listarFlujos() {
+export async function listarFlujos(modulo: ModuloFlujo = "SGDEA") {
   return db.flujoTrabajo.findMany({
+    where: { ambito: { in: AMBITOS_DE_MODULO[modulo] } },
     orderBy: [{ activo: "desc" }, { nombre: "asc" }],
     include: {
       _count: { select: { pasos: true, instancias: true } },
@@ -115,7 +103,7 @@ async function verificarUnicoAutomatico(id: string, aplicaA: TipoComunicacion | 
   });
   if (otro) {
     throw new Error(
-      `Ya hay un flujo automático activo para ${aplicaA ? ETIQUETA_APLICA_A[aplicaA]!.toLowerCase() : "cualquier tipo"}: «${otro.nombre}». Desactive su inicio automático primero.`
+      `Ya hay un flujo automático activo para ${aplicaA ? (OPCIONES_APLICA_A.SGDEA[aplicaA] ?? aplicaA).toLowerCase() : "cualquier tipo"}: «${otro.nombre}». Desactive su inicio automático primero.`
     );
   }
 }
@@ -392,16 +380,23 @@ export async function guardarLienzoFlujo(
   return obtenerFlujo(flujoId);
 }
 
-export async function cargarPlantillasFlujo(usuarioId: string) {
-  const existentes = new Set((await db.flujoTrabajo.findMany({ select: { nombre: true } })).map((f) => f.nombre));
+export function plantillasDeModulo(modulo: ModuloFlujo) {
+  return PLANTILLAS_FLUJO.filter((p) => AMBITOS_DE_MODULO[modulo].includes(p.ambito ?? "COMUNICACION"));
+}
+
+export async function cargarPlantillasFlujo(usuarioId: string, modulo: ModuloFlujo = "SGDEA") {
+  const existentes = new Set(
+    (await db.flujoTrabajo.findMany({ where: { ambito: { in: AMBITOS_DE_MODULO[modulo] } }, select: { nombre: true } })).map((f) => f.nombre),
+  );
   let creados = 0;
-  for (const plantilla of PLANTILLAS_FLUJO) {
+  for (const plantilla of plantillasDeModulo(modulo)) {
     if (existentes.has(plantilla.nombre)) continue;
     const flujo = await db.flujoTrabajo.create({
       data: {
         nombre: plantilla.nombre,
         descripcion: plantilla.descripcion,
         aplicaA: plantilla.aplicaA,
+        ambito: plantilla.ambito ?? "COMUNICACION",
         activo: false,
         esPlantilla: true,
         creadoPorId: usuarioId,
@@ -442,39 +437,106 @@ export async function cargarPlantillasFlujo(usuarioId: string) {
   return creados;
 }
 
-export type ContextoOperador = { esAdminArchivo: boolean; dependenciaId: string | null };
+export type ContextoOperador = { esAdministrador: boolean; dependenciaId: string | null };
 
-export type UsuarioFlujo = { usuarioId: string; dependenciaId: string | null; cargos: Set<string>; esAdminArchivo: boolean };
+export type UsuarioFlujo = { usuarioId: string; dependenciaId: string | null; cargos: Set<string>; esAdministrador: boolean };
 
 export type PasoResponsable = { asignacion: AsignacionPaso; dependenciaId: string | null; cargoClave: string | null };
 
 export type ContextoResponsable = {
   asignadoAId: string | null;
   responsableAnteriorId: string | null;
-  comunicacion: { dependenciaDestinoId: string | null; dependenciaOrigenId: string | null; radicadoPorId: string | null };
+  comunicacion: {
+    dependenciaDestinoId: string | null;
+    dependenciaOrigenId: string | null;
+    radicadoPorId: string | null;
+    asignadosIds?: string[];
+    supervisoresIds?: string[];
+  };
 };
 
 export const SELECT_OBJETIVO_FLUJO = {
   comunicacion: { select: { id: true, radicado: true, asunto: true, dependenciaDestinoId: true, dependenciaOrigenId: true, radicadoPorId: true } },
   expedienteDocumental: { select: { id: true, numero: true, asunto: true, dependenciaId: true, creadoPorId: true } },
+  expedienteContractual: {
+    select: {
+      id: true,
+      numero: true,
+      numeroContrato: true,
+      objeto: true,
+      dependenciaSolicitanteId: true,
+      creadoPorId: true,
+      asignados: { select: { usuarioId: true } },
+      supervisores: { select: { usuarioId: true } },
+    },
+  },
+  expedienteTramite: {
+    select: { id: true, numero: true, createdById: true, tramiteTipo: { select: { nombre: true } }, usuariosAsignados: { select: { id: true } } },
+  },
 } as const;
 
 type InstanciaConObjetivo = {
   comunicacion: { id: string; radicado: string; asunto: string; dependenciaDestinoId: string | null; dependenciaOrigenId: string | null; radicadoPorId: string | null } | null;
   expedienteDocumental: { id: string; numero: string; asunto: string; dependenciaId: string; creadoPorId: string } | null;
+  expedienteContractual?: {
+    id: string;
+    numero: string;
+    numeroContrato: string | null;
+    objeto: string;
+    dependenciaSolicitanteId: string;
+    creadoPorId: string;
+    asignados: { usuarioId: string }[];
+    supervisores: { usuarioId: string }[];
+  } | null;
+  expedienteTramite?: { id: string; numero: string; createdById: string; tramiteTipo: { nombre: string }; usuariosAsignados: { id: string }[] } | null;
 };
 
+export type EntidadFlujo = "Comunicacion" | "ExpedienteDocumental" | "ExpedienteContractual" | "Expediente";
+
 export type ObjetivoFlujo = {
-  entidad: "Comunicacion" | "ExpedienteDocumental";
+  entidad: EntidadFlujo;
   id: string;
   etiqueta: string;
   asunto: string;
   href: string;
   esComunicacion: boolean;
+  modulo: ModuloFlujo;
   ctx: ContextoResponsable["comunicacion"];
 };
 
 export function objetivoDeInstancia(i: InstanciaConObjetivo): ObjetivoFlujo {
+  if (i.expedienteContractual) {
+    const e = i.expedienteContractual;
+    return {
+      entidad: "ExpedienteContractual",
+      id: e.id,
+      etiqueta: e.numeroContrato ? `${e.numero} · Contrato ${e.numeroContrato}` : e.numero,
+      asunto: e.objeto,
+      href: `/contratacion/expedientes/${e.id}#flujo-trabajo`,
+      esComunicacion: false,
+      modulo: "GECON",
+      ctx: {
+        dependenciaDestinoId: e.dependenciaSolicitanteId,
+        dependenciaOrigenId: null,
+        radicadoPorId: e.creadoPorId,
+        asignadosIds: e.asignados.map((a) => a.usuarioId),
+        supervisoresIds: e.supervisores.map((s) => s.usuarioId),
+      },
+    };
+  }
+  if (i.expedienteTramite) {
+    const e = i.expedienteTramite;
+    return {
+      entidad: "Expediente",
+      id: e.id,
+      etiqueta: e.numero,
+      asunto: e.tramiteTipo.nombre,
+      href: `/expedientes/${e.id}#flujo-trabajo`,
+      esComunicacion: false,
+      modulo: "TRAMITES",
+      ctx: { dependenciaDestinoId: null, dependenciaOrigenId: null, radicadoPorId: e.createdById, asignadosIds: e.usuariosAsignados.map((u) => u.id) },
+    };
+  }
   if (i.comunicacion) {
     const c = i.comunicacion;
     return {
@@ -484,6 +546,7 @@ export function objetivoDeInstancia(i: InstanciaConObjetivo): ObjetivoFlujo {
       asunto: c.asunto,
       href: `/correspondencia/${c.id}#flujo`,
       esComunicacion: true,
+      modulo: "SGDEA",
       ctx: { dependenciaDestinoId: c.dependenciaDestinoId, dependenciaOrigenId: c.dependenciaOrigenId, radicadoPorId: c.radicadoPorId },
     };
   }
@@ -496,6 +559,7 @@ export function objetivoDeInstancia(i: InstanciaConObjetivo): ObjetivoFlujo {
     asunto: e.asunto,
     href: `/correspondencia/expedientes/${e.id}#flujo`,
     esComunicacion: false,
+    modulo: "SGDEA",
     ctx: { dependenciaDestinoId: e.dependenciaId, dependenciaOrigenId: null, radicadoPorId: e.creadoPorId },
   };
 }
@@ -516,11 +580,15 @@ export function esResponsablePaso(paso: PasoResponsable, ctx: ContextoResponsabl
       return ctx.responsableAnteriorId === u.usuarioId;
     case "MANUAL":
       return ctx.asignadoAId === u.usuarioId;
+    case "PERSONAL_ASIGNADO":
+      return Boolean(ctx.comunicacion.asignadosIds?.includes(u.usuarioId));
+    case "SUPERVISOR":
+      return Boolean(ctx.comunicacion.supervisoresIds?.includes(u.usuarioId));
   }
 }
 
 export function puedeCompletarPaso(paso: PasoResponsable, ctx: ContextoResponsable, u: UsuarioFlujo): boolean {
-  return u.esAdminArchivo || esResponsablePaso(paso, ctx, u);
+  return u.esAdministrador || esResponsablePaso(paso, ctx, u);
 }
 
 export function esDevolucion(desde: { orden: number }, hacia: { orden: number; tipo: TipoPasoFlujo }): boolean {
@@ -534,18 +602,19 @@ function verificarAccesoFlujo(
 ) {
   if (dependenciasOperadoras.length === 0) return;
   if (!ctx) return;
-  if (ctx.esAdminArchivo) return;
+  if (ctx.esAdministrador) return;
   if (ctx.dependenciaId && dependenciasOperadoras.includes(ctx.dependenciaId)) return;
   throw new Error(`El flujo «${nombreFlujo}» solo lo operan las dependencias autorizadas.`);
 }
 
-export async function flujosAplicables(tipo: TipoComunicacion | "EXPEDIENTE", ctx?: ContextoOperador) {
+export async function flujosAplicables(tipo: TipoComunicacion | Exclude<AmbitoFlujo, "COMUNICACION">, ctx?: ContextoOperador) {
+  const porAmbito = tipo === "EXPEDIENTE" || tipo === "CONTRATO" || tipo === "TRAMITE";
   const flujos = await db.flujoTrabajo.findMany({
-    where: tipo === "EXPEDIENTE" ? { activo: true, ambito: "EXPEDIENTE" } : { activo: true, ambito: "COMUNICACION", OR: [{ aplicaA: null }, { aplicaA: tipo }] },
+    where: porAmbito ? { activo: true, ambito: tipo } : { activo: true, ambito: "COMUNICACION", OR: [{ aplicaA: null }, { aplicaA: tipo }] },
     orderBy: { nombre: "asc" },
     select: { id: true, nombre: true, descripcion: true, dependenciasOperadoras: true },
   });
-  if (!ctx || ctx.esAdminArchivo) return flujos;
+  if (!ctx || ctx.esAdministrador) return flujos;
   return flujos.filter(
     (f) => f.dependenciasOperadoras.length === 0 || (ctx.dependenciaId ? f.dependenciasOperadoras.includes(ctx.dependenciaId) : false),
   );
@@ -597,51 +666,139 @@ export async function obtenerInstanciasDeComunicacion(comunicacionId: string) {
   return { comunicacion, instancias };
 }
 
-export async function obtenerInstanciasDeExpediente(expedienteDocumentalId: string) {
-  const [expediente, instancias] = await Promise.all([
-    db.expedienteDocumental.findUnique({
-      where: { id: expedienteDocumentalId },
-      select: { dependenciaId: true, creadoPorId: true, dependencia: { select: { nombre: true } }, creadoPor: { select: { nombre: true } } },
-    }),
-    db.instanciaFlujo.findMany({ where: { expedienteDocumentalId }, orderBy: { iniciadoEn: "desc" }, include: INCLUDE_INSTANCIA_DETALLE }),
+export type AmbitoExpedienteFlujo = Exclude<AmbitoFlujo, "COMUNICACION">;
+
+const CAMPO_INSTANCIA = {
+  EXPEDIENTE: "expedienteDocumentalId",
+  CONTRATO: "expedienteContractualId",
+  TRAMITE: "expedienteTramiteId",
+} as const satisfies Record<AmbitoExpedienteFlujo, keyof Prisma.InstanciaFlujoUncheckedCreateInput>;
+
+const ENTIDAD_AMBITO: Record<AmbitoExpedienteFlujo, EntidadFlujo> = { EXPEDIENTE: "ExpedienteDocumental", CONTRATO: "ExpedienteContractual", TRAMITE: "Expediente" };
+
+export type ContextoObjetoFlujo = {
+  numero: string;
+  abierto: boolean;
+  dependenciaDestinoId: string | null;
+  dependenciaOrigenId: null;
+  radicadoPorId: string | null;
+  asignadosIds: string[];
+  supervisoresIds: string[];
+  dependenciaDestino: { nombre: string } | null;
+  dependenciaOrigen: null;
+  radicadoPor: { nombre: string } | null;
+  asignados: { nombre: string }[];
+  supervisores: { nombre: string }[];
+};
+
+async function contextoObjeto(ambito: AmbitoExpedienteFlujo, id: string): Promise<ContextoObjetoFlujo | null> {
+  if (ambito === "CONTRATO") {
+    const e = await db.expedienteContractual.findUnique({
+      where: { id },
+      select: {
+        numero: true,
+        cerrado: true,
+        eliminado: true,
+        dependenciaSolicitanteId: true,
+        creadoPorId: true,
+        dependenciaSolicitante: { select: { nombre: true } },
+        creadoPor: { select: { nombre: true } },
+        asignados: { select: { usuario: { select: { id: true, nombre: true } } } },
+        supervisores: { select: { usuario: { select: { id: true, nombre: true } } } },
+      },
+    });
+    if (!e) return null;
+    return {
+      numero: e.numero,
+      abierto: !e.cerrado && !e.eliminado,
+      dependenciaDestinoId: e.dependenciaSolicitanteId,
+      dependenciaOrigenId: null,
+      radicadoPorId: e.creadoPorId,
+      asignadosIds: e.asignados.map((a) => a.usuario.id),
+      supervisoresIds: e.supervisores.map((s) => s.usuario.id),
+      dependenciaDestino: e.dependenciaSolicitante,
+      dependenciaOrigen: null,
+      radicadoPor: e.creadoPor,
+      asignados: e.asignados.map((a) => a.usuario),
+      supervisores: e.supervisores.map((s) => s.usuario),
+    };
+  }
+  if (ambito === "TRAMITE") {
+    const e = await db.expediente.findUnique({
+      where: { id },
+      select: { numero: true, estado: true, archivado: true, createdById: true, creadoPor: { select: { nombre: true } }, usuariosAsignados: { select: { id: true, nombre: true } } },
+    });
+    if (!e) return null;
+    return {
+      numero: e.numero,
+      abierto: !e.archivado && !(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(e.estado),
+      dependenciaDestinoId: null,
+      dependenciaOrigenId: null,
+      radicadoPorId: e.createdById,
+      asignadosIds: e.usuariosAsignados.map((u) => u.id),
+      supervisoresIds: [],
+      dependenciaDestino: null,
+      dependenciaOrigen: null,
+      radicadoPor: e.creadoPor,
+      asignados: e.usuariosAsignados,
+      supervisores: [],
+    };
+  }
+  const e = await db.expedienteDocumental.findUnique({
+    where: { id },
+    select: { numero: true, estado: true, dependenciaId: true, creadoPorId: true, dependencia: { select: { nombre: true } }, creadoPor: { select: { nombre: true } } },
+  });
+  if (!e) return null;
+  return {
+    numero: e.numero,
+    abierto: e.estado === "ABIERTO",
+    dependenciaDestinoId: e.dependenciaId,
+    dependenciaOrigenId: null,
+    radicadoPorId: e.creadoPorId,
+    asignadosIds: [],
+    supervisoresIds: [],
+    dependenciaDestino: e.dependencia,
+    dependenciaOrigen: null,
+    radicadoPor: e.creadoPor,
+    asignados: [],
+    supervisores: [],
+  };
+}
+
+export async function obtenerInstanciasDeObjeto(ambito: AmbitoExpedienteFlujo, id: string) {
+  const [comunicacion, instancias] = await Promise.all([
+    contextoObjeto(ambito, id),
+    db.instanciaFlujo.findMany({ where: { [CAMPO_INSTANCIA[ambito]]: id }, orderBy: { iniciadoEn: "desc" }, include: INCLUDE_INSTANCIA_DETALLE }),
   ]);
-  const comunicacion = expediente
-    ? {
-        dependenciaDestinoId: expediente.dependenciaId,
-        dependenciaOrigenId: null,
-        radicadoPorId: expediente.creadoPorId,
-        dependenciaDestino: expediente.dependencia,
-        dependenciaOrigen: null,
-        radicadoPor: expediente.creadoPor,
-      }
-    : null;
   return { comunicacion, instancias };
 }
 
-export async function iniciarInstanciaExpediente(
-  expedienteDocumentalId: string,
+export async function iniciarInstanciaEnObjeto(
+  ambito: AmbitoExpedienteFlujo,
+  objetoId: string,
   flujoId: string,
   usuarioId: string | null,
   ip?: string | null,
   ctx?: ContextoOperador,
 ) {
-  const [expediente, flujo] = await Promise.all([
-    db.expedienteDocumental.findUnique({ where: { id: expedienteDocumentalId }, select: { id: true, numero: true, estado: true } }),
+  const [objeto, flujo] = await Promise.all([
+    contextoObjeto(ambito, objetoId),
     db.flujoTrabajo.findUnique({ where: { id: flujoId }, include: { pasos: { orderBy: { orden: "asc" }, take: 1 } } }),
   ]);
-  if (!expediente) throw new Error("El expediente no existe.");
-  if (expediente.estado !== "ABIERTO") throw new Error("Solo se inician flujos en expedientes abiertos.");
+  if (!objeto) throw new Error("El expediente no existe.");
+  if (!objeto.abierto) throw new Error("Solo se inician flujos en expedientes abiertos.");
   if (!flujo || !flujo.activo) throw new Error("El flujo no está activo.");
-  if (flujo.ambito !== "EXPEDIENTE") throw new Error("Ese flujo es para comunicaciones, no para expedientes documentales.");
+  if (flujo.ambito !== ambito) throw new Error("Ese flujo no corresponde a este tipo de expediente.");
   verificarAccesoFlujo(flujo.dependenciasOperadoras, flujo.nombre, ctx);
-  if (await db.instanciaFlujo.findFirst({ where: { expedienteDocumentalId, estado: "EN_CURSO" } })) throw new Error("Este expediente ya tiene un flujo en curso.");
+  const campo = CAMPO_INSTANCIA[ambito];
+  if (await db.instanciaFlujo.findFirst({ where: { [campo]: objetoId, estado: "EN_CURSO" } })) throw new Error("Este expediente ya tiene un flujo en curso.");
   const pasoInicial = flujo.pasos[0];
   if (!pasoInicial) throw new Error("El flujo no tiene pasos.");
 
   const instancia = await db.instanciaFlujo.create({
     data: {
       flujoId,
-      expedienteDocumentalId,
+      [campo]: objetoId,
       iniciadoPorId: usuarioId,
       asignadoAId: pasoInicial.asignacion === "MANUAL" ? usuarioId : null,
       pasoActualId: pasoInicial.id,
@@ -651,12 +808,12 @@ export async function iniciarInstanciaExpediente(
     },
   });
   await registrarAuditoriaDoc({
-    entidad: "ExpedienteDocumental",
-    entidadId: expedienteDocumentalId,
+    entidad: ENTIDAD_AMBITO[ambito],
+    entidadId: objetoId,
     accion: "FLUJO",
     usuarioId,
     ip,
-    detalle: `Inició el flujo «${flujo.nombre}» sobre el expediente ${expediente.numero} — paso inicial: «${pasoInicial.nombre}»`,
+    detalle: `Inició el flujo «${flujo.nombre}» sobre el expediente ${objeto.numero} — paso inicial: «${pasoInicial.nombre}»`,
   });
   return instancia;
 }
@@ -738,7 +895,7 @@ export async function avanzarInstancia(
     responsableAnteriorId: instancia.ejecuciones[0]?.responsableId ?? instancia.iniciadoPorId,
     comunicacion: objetivo.ctx,
   };
-  if (pasoActual.tipo === "FIRMA" && objetivo.esComunicacion && !usuario.esAdminArchivo) {
+  if (pasoActual.tipo === "FIRMA" && objetivo.esComunicacion && !usuario.esAdministrador) {
     throw new Error("Este paso avanza solo cuando el documento queda firmado (o se rechaza la firma).");
   }
   if (!puedeCompletarPaso(pasoActual, contexto, usuario)) {
@@ -855,21 +1012,29 @@ export function describirResponsablePaso(
     dependenciaOrigen?: { nombre: string } | null;
     radicadoPor?: { nombre: string } | null;
     asignadoA?: { nombre: string } | null;
+    asignados?: { nombre: string }[];
+    supervisores?: { nombre: string }[];
   },
+  modulo: ModuloFlujo = "SGDEA",
 ): string {
+  const lista = (personas: { nombre: string }[] | undefined) => (personas?.length ? personas.map((p) => p.nombre).join(", ") : null);
   switch (paso.asignacion) {
     case "DEPENDENCIA_COMUNICACION":
-      return (comunicacion.dependenciaDestino ?? comunicacion.dependenciaOrigen)?.nombre ?? "Dependencia de la comunicación (sin asignar)";
+      return (comunicacion.dependenciaDestino ?? comunicacion.dependenciaOrigen)?.nombre ?? `${etiquetaAsignacion("DEPENDENCIA_COMUNICACION", modulo)} (sin asignar)`;
     case "DEPENDENCIA_FIJA":
       return paso.dependencia?.nombre ?? "Dependencia fija (sin definir)";
     case "CARGO":
       return paso.cargoClave ? `Cargo: ${paso.cargoClave}` : "Un cargo (sin definir)";
     case "RADICADOR":
-      return comunicacion.radicadoPor?.nombre ?? "Quien radicó";
+      return comunicacion.radicadoPor?.nombre ?? etiquetaAsignacion("RADICADOR", modulo);
     case "RESPONSABLE_PASO_ANTERIOR":
       return "Responsable del paso anterior";
     case "MANUAL":
       return comunicacion.asignadoA?.nombre ?? "Se asigna a mano (sin asignar)";
+    case "PERSONAL_ASIGNADO":
+      return lista(comunicacion.asignados) ?? `${etiquetaAsignacion("PERSONAL_ASIGNADO", modulo)} (sin asignar)`;
+    case "SUPERVISOR":
+      return lista(comunicacion.supervisores) ?? "Supervisor del contrato (sin designar)";
   }
 }
 
@@ -885,21 +1050,17 @@ export async function contarPasosFlujoVencidos(cal: CalendarioLaboral): Promise<
   }).length;
 }
 
-export function puedeAdministrarFlujos(permisos: PermisosUsuario) {
-  return puedeAdministrarArchivo(permisos);
+export function puedeAdministrarFlujos(permisos: PermisosUsuario, modulo: ModuloFlujo = "SGDEA") {
+  return puedeAdministrarFlujosModulo(permisos, modulo);
 }
 
 export function puedeOperarFlujos(permisos: PermisosUsuario) {
-  return (
-    puedeAdministrarArchivo(permisos) ||
-    puedeDistribuir(permisos) ||
-    esJefeDeReparto(permisos)
-  );
+  return puedeOperarFlujosSgdea(permisos);
 }
 
-export async function pasosFlujoACargo(u: UsuarioFlujo) {
+export async function pasosFlujoACargo(u: UsuarioFlujo, modulo: ModuloFlujo = "SGDEA") {
   const enCurso = await db.instanciaFlujo.findMany({
-    where: { estado: "EN_CURSO", pasoActualId: { not: null } },
+    where: { estado: "EN_CURSO", pasoActualId: { not: null }, flujo: { ambito: { in: AMBITOS_DE_MODULO[modulo] } } },
     orderBy: { pasoActualDesde: "asc" },
     take: 500,
     select: {
@@ -929,9 +1090,9 @@ export async function pasosFlujoACargo(u: UsuarioFlujo) {
   return resultado;
 }
 
-export async function usuarioFlujo(usuarioId: string, permisos: PermisosUsuario): Promise<UsuarioFlujo> {
+export async function usuarioFlujo(usuarioId: string, permisos: PermisosUsuario, modulo: ModuloFlujo = "SGDEA"): Promise<UsuarioFlujo> {
   const usuario = await db.usuario.findUnique({ where: { id: usuarioId }, select: { dependenciaId: true } });
-  return { usuarioId, dependenciaId: usuario?.dependenciaId ?? null, cargos: permisos.cargos, esAdminArchivo: puedeAdministrarArchivo(permisos) };
+  return { usuarioId, dependenciaId: usuario?.dependenciaId ?? null, cargos: permisos.cargos, esAdministrador: puedeAdministrarFlujosModulo(permisos, modulo) };
 }
 
 const PATRON_SALIDA_RECHAZO = /rechaz|devolv|no aprueb|corregir/i;

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck, Workflow } from "lucide-react";
+import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
+import { usuarioFlujo, type UsuarioFlujo } from "@/lib/flujos";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -178,6 +180,7 @@ export default async function ExpedienteDetallePage({
   let puedeValidar = false;
   let puedeCorrespondencia = false;
   let planificador = false;
+  let usuarioFlujoActual: UsuarioFlujo | null = null;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
     if (!puedeVerExpedienteTramite(permisos, expediente)) notFound();
@@ -186,6 +189,7 @@ export default async function ExpedienteDetallePage({
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
     puedeCorrespondencia = puedeAccederCorrespondencia(permisos);
     planificador = puedePlanearVisitas(permisos);
+    usuarioFlujoActual = await usuarioFlujo(session.userId, permisos, "TRAMITES");
   }
   const enEjecucion = expedienteEnEjecucion(expediente);
   const visitasVigentes = expediente.visitasProgramadas.filter((v) => v.estado !== "CANCELADA").length;
@@ -1157,6 +1161,21 @@ export default async function ExpedienteDetallePage({
               </section>
               </>
             ),
+          },
+          {
+            id: "flujo-trabajo-pestana",
+            label: "Flujo de trabajo",
+            icono: <Workflow className="h-4 w-4" aria-hidden />,
+            oculta: !usuarioFlujoActual,
+            contenido: usuarioFlujoActual ? (
+              <FlujoTrabajoPanel
+                destino={{ ambito: "TRAMITE", id: expediente.id, habilitado: enEjecucion }}
+                accion={`/api/expedientes/${expediente.id}/flujo`}
+                puedeOperar={puedeEditarPorRol}
+                usuario={usuarioFlujoActual}
+                ancla="flujo-trabajo"
+              />
+            ) : null,
           },
           {
             id: "historia",

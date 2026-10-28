@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import type { AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
 import {
@@ -15,29 +16,30 @@ import {
   eliminarTransicion,
   duplicarFlujo,
   guardarDependenciasOperadoras,
-  puedeAdministrarFlujos,
-  aplicaAFormulario,
 } from "@/lib/flujos";
+import {
+  aplicaAFormulario,
+  ASIGNACIONES_DE_MODULO,
+  moduloDeAmbito,
+  puedeAdministrarFlujosModulo,
+  RUTA_FLUJOS,
+  TIPOS_PASO_DE_MODULO,
+} from "@/lib/flujos-modulos";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
-
-const TIPOS_PASO: TipoPasoFlujo[] = ["TAREA", "REVISION", "DECISION", "FIRMA", "FIN"];
-const ASIGNACIONES: AsignacionPaso[] = [
-  "DEPENDENCIA_COMUNICACION",
-  "DEPENDENCIA_FIJA",
-  "CARGO",
-  "RADICADOR",
-  "RESPONSABLE_PASO_ANTERIOR",
-  "MANUAL",
-];
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  const detalle = new URL(`/correspondencia/admin/flujos/${id}`, req.url);
-  const lista = new URL("/correspondencia/admin/flujos", req.url);
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
+  const flujoActual = await db.flujoTrabajo.findUnique({ where: { id }, select: { ambito: true } });
+  if (!flujoActual) return NextResponse.json({ error: "El flujo no existe." }, { status: 404 });
+  const modulo = moduloDeAmbito(flujoActual.ambito);
+  const TIPOS_PASO: TipoPasoFlujo[] = TIPOS_PASO_DE_MODULO[modulo];
+  const ASIGNACIONES: AsignacionPaso[] = ASIGNACIONES_DE_MODULO[modulo];
+  const detalle = new URL(`${RUTA_FLUJOS[modulo]}/${id}`, req.url);
+  const lista = new URL(RUTA_FLUJOS[modulo], req.url);
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarFlujos(permisos)) {
+  if (!puedeAdministrarFlujosModulo(permisos, modulo)) {
     await registrarAccesoDenegadoAccion("Administrar flujos de trabajo", id, session, await headers());
     detalle.searchParams.set("error", "No tiene permiso para administrar flujos de trabajo.");
     return NextResponse.redirect(detalle, { status: 303 });
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         await actualizarFlujo(id, {
           nombre: String(form.get("nombre") || ""),
           descripcion: String(form.get("descripcion") || ""),
-          ...aplicaAFormulario(String(form.get("aplicaA") || "")),
+          ...aplicaAFormulario(String(form.get("aplicaA") || ""), modulo),
           inicioAutomatico: form.get("inicioAutomatico") === "on",
         });
         detalle.searchParams.set("ok", "Flujo actualizado.");
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
       case "duplicar": {
         const copia = await duplicarFlujo(id, session.userId);
-        return NextResponse.redirect(new URL(`/correspondencia/admin/flujos/${copia.id}?ok=Copia+creada+(queda+inactiva)`, req.url), { status: 303 });
+        return NextResponse.redirect(new URL(`${RUTA_FLUJOS[modulo]}/${copia.id}?ok=Copia+creada+(queda+inactiva)`, req.url), { status: 303 });
       }
       case "accesos": {
         await guardarDependenciasOperadoras(id, form.getAll("dependenciaId").map(String));

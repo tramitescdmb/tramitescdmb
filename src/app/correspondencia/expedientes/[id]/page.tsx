@@ -3,7 +3,7 @@ import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileText, Download, ShieldCheck, Building2, FolderOpen, Lock, Pencil, Handshake, Undo2, Printer, RotateCcw, Mail, Settings2, History, Upload, FolderTree, Workflow } from "lucide-react";
-import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
+import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
 import { puedeOperarFlujos, usuarioFlujo } from "@/lib/flujos";
 import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -616,9 +616,9 @@ export default async function ExpedienteDetallePage({
             label: "Flujo de trabajo",
             icono: <Workflow className="h-4 w-4" aria-hidden />,
             contenido: (
-              <FlujoTrabajoComunicacion
-                expedienteId={expediente.id}
-                estado={expediente.estado}
+              <FlujoTrabajoPanel
+                destino={{ ambito: "EXPEDIENTE", id: expediente.id, habilitado: expediente.estado === "ABIERTO" }}
+                accion={`/api/correspondencia/expedientes/${expediente.id}/flujo`}
                 puedeOperar={puedeOperarFlujos(permisos) || puedeGestionarExpedienteDeDependencia(permisos, expediente.dependenciaId)}
                 usuario={usuarioFlujoActual}
               />

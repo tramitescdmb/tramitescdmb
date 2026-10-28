@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aplicaAFormulario, objetivoDeInstancia, esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
+import { ASIGNACIONES_DE_MODULO, TIPOS_PASO_DE_MODULO, etiquetaAsignacion, moduloDeAmbito } from "@/lib/flujos-modulos";
+import { aplicaAFormulario, objetivoDeInstancia, plantillasDeModulo, esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
 import { validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 
 const ctx: ContextoResponsable = {
@@ -7,7 +8,7 @@ const ctx: ContextoResponsable = {
   responsableAnteriorId: "u-anterior",
   comunicacion: { dependenciaDestinoId: "dep-juridica", dependenciaOrigenId: "dep-ventanilla", radicadoPorId: "u-radico" },
 };
-const usuario = (o: Partial<UsuarioFlujo>): UsuarioFlujo => ({ usuarioId: "u-x", dependenciaId: null, cargos: new Set(), esAdminArchivo: false, ...o });
+const usuario = (o: Partial<UsuarioFlujo>): UsuarioFlujo => ({ usuarioId: "u-x", dependenciaId: null, cargos: new Set(), esAdministrador: false, ...o });
 const paso = (asignacion: Parameters<typeof esResponsablePaso>[0]["asignacion"], extra: { dependenciaId?: string; cargoClave?: string } = {}) => ({
   asignacion,
   dependenciaId: extra.dependenciaId ?? null,
@@ -34,7 +35,7 @@ describe("responsable de un paso de flujo", () => {
   });
 
   it("el administrador del archivo puede completar cualquier paso", () => {
-    expect(puedeCompletarPaso(paso("MANUAL"), ctx, usuario({ esAdminArchivo: true }))).toBe(true);
+    expect(puedeCompletarPaso(paso("MANUAL"), ctx, usuario({ esAdministrador: true }))).toBe(true);
   });
 
   it("volver a un paso anterior es una devolución; ir al fin no", () => {
@@ -90,6 +91,59 @@ describe("paso de firma del flujo", () => {
     const c = { asignadoAId: null, responsableAnteriorId: null, comunicacion: objetivo.ctx };
     expect(esResponsablePaso(paso("DEPENDENCIA_COMUNICACION"), c, usuario({ dependenciaId: "dep-archivo" }))).toBe(true);
     expect(esResponsablePaso(paso("RADICADOR"), c, usuario({ usuarioId: "u-creo" }))).toBe(true);
+  });
+
+  it("en GECON responden el personal asignado, el supervisor y la dependencia solicitante del contrato", () => {
+    const objetivo = objetivoDeInstancia({
+      comunicacion: null,
+      expedienteDocumental: null,
+      expedienteContractual: {
+        id: "c1",
+        numero: "CDMB-CTO-2026-000001",
+        numeroContrato: "050-2026",
+        objeto: "Prestación de servicios",
+        dependenciaSolicitanteId: "dep-planeacion",
+        creadoPorId: "u-creo",
+        asignados: [{ usuarioId: "u-abogado" }],
+        supervisores: [{ usuarioId: "u-super" }],
+      },
+    });
+    expect(objetivo.modulo).toBe("GECON");
+    expect(objetivo.href).toBe("/contratacion/expedientes/c1#flujo-trabajo");
+    const c = { asignadoAId: null, responsableAnteriorId: null, comunicacion: objetivo.ctx };
+    expect(esResponsablePaso(paso("PERSONAL_ASIGNADO"), c, usuario({ usuarioId: "u-abogado" }))).toBe(true);
+    expect(esResponsablePaso(paso("PERSONAL_ASIGNADO"), c, usuario({ usuarioId: "u-super" }))).toBe(false);
+    expect(esResponsablePaso(paso("SUPERVISOR"), c, usuario({ usuarioId: "u-super" }))).toBe(true);
+    expect(esResponsablePaso(paso("DEPENDENCIA_COMUNICACION"), c, usuario({ dependenciaId: "dep-planeacion" }))).toBe(true);
+  });
+
+  it("en Trámites responde el personal asignado al expediente y quien lo radicó", () => {
+    const objetivo = objetivoDeInstancia({
+      comunicacion: null,
+      expedienteDocumental: null,
+      expedienteTramite: { id: "t1", numero: "M-DA-PR21-2026-0001", createdById: "u-radico", tramiteTipo: { nombre: "Concesión de aguas" }, usuariosAsignados: [{ id: "u-tecnico" }] },
+    });
+    expect(objetivo.modulo).toBe("TRAMITES");
+    const c = { asignadoAId: null, responsableAnteriorId: null, comunicacion: objetivo.ctx };
+    expect(esResponsablePaso(paso("PERSONAL_ASIGNADO"), c, usuario({ usuarioId: "u-tecnico" }))).toBe(true);
+    expect(esResponsablePaso(paso("RADICADOR"), c, usuario({ usuarioId: "u-radico" }))).toBe(true);
+    expect(esResponsablePaso(paso("SUPERVISOR"), c, usuario({ usuarioId: "u-tecnico" }))).toBe(false);
+  });
+
+  it("cada módulo guarda sus flujos en su propio ámbito", () => {
+    expect(aplicaAFormulario("EXPEDIENTE", "GECON")).toEqual({ aplicaA: null, ambito: "CONTRATO" });
+    expect(aplicaAFormulario("RECIBIDA", "TRAMITES")).toEqual({ aplicaA: null, ambito: "TRAMITE" });
+    expect(moduloDeAmbito("CONTRATO")).toBe("GECON");
+    expect(moduloDeAmbito("EXPEDIENTE")).toBe("SGDEA");
+    expect(ASIGNACIONES_DE_MODULO.SGDEA).not.toContain("SUPERVISOR");
+    expect(TIPOS_PASO_DE_MODULO.GECON).not.toContain("FIRMA");
+    expect(etiquetaAsignacion("DEPENDENCIA_COMUNICACION", "GECON")).toBe("Dependencia solicitante del contrato");
+    for (const modulo of ["SGDEA", "GECON", "TRAMITES"] as const) {
+      for (const p of plantillasDeModulo(modulo)) {
+        expect(moduloDeAmbito(p.ambito ?? "COMUNICACION")).toBe(modulo);
+        expect(p.pasos.every((x) => ASIGNACIONES_DE_MODULO[modulo].includes(x.asignacion))).toBe(true);
+      }
+    }
   });
 
   it("el formulario distingue flujos de comunicaciones y de expedientes", () => {

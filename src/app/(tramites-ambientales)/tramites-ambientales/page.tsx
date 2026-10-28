@@ -22,6 +22,8 @@ import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SelectorTramites } from "@/components/SelectorTramites";
 import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
+import { TarjetaPasosACargo } from "@/components/flujos/TarjetaPasosACargo";
+import { usuarioFlujo } from "@/lib/flujos";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<FiltrosPeriodo & { tramite?: string }> }) {
   const sp = await searchParams;
@@ -153,6 +155,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </ListaTablero>
         </TarjetaTablero>
       )}
+
+      {session && permisos && <TarjetaPasosACargo modulo="TRAMITES" usuario={await usuarioFlujo(session.userId, permisos, "TRAMITES")} className="" />}
 
       <MisPendientes resumen={pendientes} visitas={visitas} />
     </MarcoDashboard>

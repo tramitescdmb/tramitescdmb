@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { ip } = datosPeticion(await headers());
   const usuario = await usuarioFlujo(session.userId, permisos);
-  const ctx: ContextoOperador = { esAdminArchivo: usuario.esAdminArchivo, dependenciaId: usuario.dependenciaId };
+  const ctx: ContextoOperador = { esAdministrador: usuario.esAdministrador, dependenciaId: usuario.dependenciaId };
   try {
     if (accion === "iniciar") {
       await iniciarInstancia(id, String(form.get("flujoId") || ""), session.userId, ip, ctx);
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         usuario,
         String(form.get("comentario") || "") || null,
         ip,
-        usuario.esAdminArchivo ? ctx : undefined,
+        usuario.esAdministrador ? ctx : undefined,
         String(form.get("asignarAId") || "") || null,
       );
       volver.searchParams.set("ok", "Paso completado.");

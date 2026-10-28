@@ -349,6 +349,7 @@ export default async function TramitesAyudaPage() {
           <Fila celdas={["Expedientes → Clasificación TRD", "Administrador del sistema", "Asignar la subserie documental de cada trámite."]} />
           <Fila celdas={["Planeador → Formatos de visita", "Subdirector(a) SEYCA o administrador", "Diseñar y publicar los formatos técnicos."]} />
           <Fila celdas={["Planeador → Actividades por paso", "Subdirector(a) SEYCA o administrador", "Definir la actividad de cada paso y el formato de visita que aplica."]} />
+          <Fila celdas={["Expedientes → Flujos de trabajo", "Subdirector(a) SEYCA o administrador", "Tareas internas por pasos sobre un expediente (proyección y revisión de actos, revisión de información) con responsable y término; se aplican desde la pestaña «Flujo de trabajo» del expediente y no cambian los pasos del procedimiento."]} />
           <Fila celdas={["Administración → Consecutivos", "Administrador del sistema", "Fijar el siguiente número de expedientes, conceptos EV y demás series por vigencia."]} />
           <Fila celdas={["Administración → Usuarios y Roles", "Administrador del sistema", "Módulos, roles, cargos y alcance por trámite de cada usuario."]} />
           <Fila celdas={["Ayuda → Manual de demostración", "Todos; edición: Subdirector(a) SEYCA o administrador", "Recorrido del módulo con un expediente de ejemplo."]} />

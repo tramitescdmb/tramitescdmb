@@ -1,4 +1,4 @@
-import type { TipoComunicacion } from "@prisma/client";
+import type { AmbitoFlujo, TipoComunicacion } from "@prisma/client";
 
 export type TipoPasoPlantilla = "TAREA" | "REVISION" | "DECISION" | "FIRMA" | "FIN";
 export type AsignacionPlantilla =
@@ -7,7 +7,9 @@ export type AsignacionPlantilla =
   | "CARGO"
   | "RADICADOR"
   | "RESPONSABLE_PASO_ANTERIOR"
-  | "MANUAL";
+  | "MANUAL"
+  | "PERSONAL_ASIGNADO"
+  | "SUPERVISOR";
 
 export type PasoPlantilla = {
   clave: string;
@@ -24,6 +26,7 @@ export type PlantillaFlujo = {
   nombre: string;
   descripcion: string;
   aplicaA: TipoComunicacion | null;
+  ambito?: AmbitoFlujo;
   pasos: PasoPlantilla[];
 };
 
@@ -493,6 +496,197 @@ export const PLANTILLAS_FLUJO: PlantillaFlujo[] = [
         ],
       },
       { clave: "cierre", nombre: "Cierre", tipo: "FIN", asignacion: "DEPENDENCIA_COMUNICACION" },
+    ],
+  },
+  {
+    nombre: "Transferencia documental primaria",
+    descripcion: "La dependencia prepara el expediente para transferirlo al archivo central; el archivo central lo revisa y lo acepta o lo devuelve con observaciones.",
+    aplicaA: null,
+    ambito: "EXPEDIENTE",
+    pasos: [
+      {
+        clave: "preparacion",
+        nombre: "Preparación del expediente",
+        tipo: "TAREA",
+        asignacion: "DEPENDENCIA_COMUNICACION",
+        slaDiasHabiles: 10,
+        instrucciones: "Verifique la foliación, el índice y la clasificación TRD antes de entregar.",
+        transiciones: [{ etiqueta: "Enviar al archivo central", hacia: "revision" }],
+      },
+      {
+        clave: "revision",
+        nombre: "Revisión del archivo central",
+        tipo: "REVISION",
+        asignacion: "MANUAL",
+        slaDiasHabiles: 5,
+        transiciones: [
+          { etiqueta: "Aceptar la transferencia", hacia: "cierre" },
+          { etiqueta: "Devolver con observaciones", hacia: "preparacion" },
+        ],
+      },
+      { clave: "cierre", nombre: "Transferencia recibida", tipo: "FIN", asignacion: "DEPENDENCIA_COMUNICACION" },
+    ],
+  },
+  {
+    nombre: "Revisión de estudios previos",
+    descripcion: "La dependencia solicitante elabora los estudios previos, el personal de contratación hace la revisión jurídica y quien se designe da el visto bueno final.",
+    aplicaA: null,
+    ambito: "CONTRATO",
+    pasos: [
+      {
+        clave: "elaboracion",
+        nombre: "Elaboración de estudios previos",
+        tipo: "TAREA",
+        asignacion: "DEPENDENCIA_COMUNICACION",
+        slaDiasHabiles: 5,
+        transiciones: [{ etiqueta: "Enviar a revisión jurídica", hacia: "juridica" }],
+      },
+      {
+        clave: "juridica",
+        nombre: "Revisión jurídica",
+        tipo: "REVISION",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 3,
+        transiciones: [
+          { etiqueta: "Aprobar", hacia: "visto_bueno" },
+          { etiqueta: "Devolver para ajustes", hacia: "elaboracion" },
+        ],
+      },
+      {
+        clave: "visto_bueno",
+        nombre: "Visto bueno final",
+        tipo: "REVISION",
+        asignacion: "MANUAL",
+        slaDiasHabiles: 2,
+        transiciones: [
+          { etiqueta: "Aprobar", hacia: "cierre" },
+          { etiqueta: "Devolver a revisión jurídica", hacia: "juridica" },
+        ],
+      },
+      { clave: "cierre", nombre: "Estudios previos aprobados", tipo: "FIN", asignacion: "PERSONAL_ASIGNADO" },
+    ],
+  },
+  {
+    nombre: "Aprobación del informe de supervisión",
+    descripcion: "El supervisor revisa el informe y sus soportes; el personal de contratación verifica que esté completo para el trámite de pago.",
+    aplicaA: null,
+    ambito: "CONTRATO",
+    pasos: [
+      {
+        clave: "supervisor",
+        nombre: "Revisión del supervisor",
+        tipo: "REVISION",
+        asignacion: "SUPERVISOR",
+        slaDiasHabiles: 3,
+        transiciones: [{ etiqueta: "Aprobar el informe", hacia: "verificacion" }],
+      },
+      {
+        clave: "verificacion",
+        nombre: "Verificación de contratación",
+        tipo: "REVISION",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 2,
+        transiciones: [
+          { etiqueta: "Completo para pago", hacia: "cierre" },
+          { etiqueta: "Devolver al supervisor", hacia: "supervisor" },
+        ],
+      },
+      { clave: "cierre", nombre: "Informe aprobado", tipo: "FIN", asignacion: "SUPERVISOR" },
+    ],
+  },
+  {
+    nombre: "Liquidación del contrato",
+    descripcion: "El supervisor proyecta el acta de liquidación y el personal de contratación la revisa antes de suscribirla.",
+    aplicaA: null,
+    ambito: "CONTRATO",
+    pasos: [
+      {
+        clave: "proyeccion",
+        nombre: "Proyección del acta de liquidación",
+        tipo: "TAREA",
+        asignacion: "SUPERVISOR",
+        slaDiasHabiles: 10,
+        transiciones: [{ etiqueta: "Enviar a revisión", hacia: "revision" }],
+      },
+      {
+        clave: "revision",
+        nombre: "Revisión jurídica del acta",
+        tipo: "REVISION",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 5,
+        transiciones: [
+          { etiqueta: "Aprobar", hacia: "cierre" },
+          { etiqueta: "Devolver para ajustes", hacia: "proyeccion" },
+        ],
+      },
+      { clave: "cierre", nombre: "Acta lista para suscribir", tipo: "FIN", asignacion: "PERSONAL_ASIGNADO" },
+    ],
+  },
+  {
+    nombre: "Revisión de acto administrativo",
+    descripcion: "El personal asignado proyecta el auto o la resolución, quien se designe hace la revisión jurídica y luego el visto bueno para firma.",
+    aplicaA: null,
+    ambito: "TRAMITE",
+    pasos: [
+      {
+        clave: "proyeccion",
+        nombre: "Proyección del acto administrativo",
+        tipo: "TAREA",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 5,
+        transiciones: [{ etiqueta: "Enviar a revisión jurídica", hacia: "juridica" }],
+      },
+      {
+        clave: "juridica",
+        nombre: "Revisión jurídica",
+        tipo: "REVISION",
+        asignacion: "MANUAL",
+        slaDiasHabiles: 3,
+        transiciones: [
+          { etiqueta: "Aprobar", hacia: "visto_bueno" },
+          { etiqueta: "Devolver para ajustes", hacia: "proyeccion" },
+        ],
+      },
+      {
+        clave: "visto_bueno",
+        nombre: "Visto bueno para firma",
+        tipo: "REVISION",
+        asignacion: "MANUAL",
+        slaDiasHabiles: 2,
+        transiciones: [
+          { etiqueta: "Aprobar para firma", hacia: "cierre" },
+          { etiqueta: "Devolver a revisión jurídica", hacia: "juridica" },
+        ],
+      },
+      { clave: "cierre", nombre: "Acto listo para firma", tipo: "FIN", asignacion: "PERSONAL_ASIGNADO" },
+    ],
+  },
+  {
+    nombre: "Revisión de información adicional",
+    descripcion: "El personal asignado revisa la información aportada por el solicitante; si está incompleta se prepara un nuevo requerimiento.",
+    aplicaA: null,
+    ambito: "TRAMITE",
+    pasos: [
+      {
+        clave: "revision",
+        nombre: "Revisión de la información aportada",
+        tipo: "DECISION",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 5,
+        transiciones: [
+          { etiqueta: "Información completa", hacia: "cierre" },
+          { etiqueta: "Información incompleta", hacia: "requerimiento" },
+        ],
+      },
+      {
+        clave: "requerimiento",
+        nombre: "Nuevo requerimiento al solicitante",
+        tipo: "TAREA",
+        asignacion: "PERSONAL_ASIGNADO",
+        slaDiasHabiles: 3,
+        transiciones: [{ etiqueta: "Respuesta recibida", hacia: "revision" }],
+      },
+      { clave: "cierre", nombre: "Información completa", tipo: "FIN", asignacion: "PERSONAL_ASIGNADO" },
     ],
   },
 ];

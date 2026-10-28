@@ -35,7 +35,7 @@ import { Field, SectionHelp } from "@/components/Field";
 import { ProgresoCorrespondencia } from "@/components/ProgresoCorrespondencia";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
-import { FlujoTrabajoComunicacion } from "@/components/FlujoTrabajoComunicacion";
+import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
 import { MetadatosComunicacion } from "@/components/MetadatosComunicacion";
 import { PanelFirmas } from "@/components/PanelFirmas";
 import { BotonFirmarDirecto } from "@/components/BotonFirmarDirecto";
@@ -889,10 +889,9 @@ export default async function CorrespondenciaDetallePage({
               </Tarjeta>
             )}
 
-            <FlujoTrabajoComunicacion
-              comunicacionId={c.id}
-              tipo={c.tipo}
-              estado={c.estado}
+            <FlujoTrabajoPanel
+              destino={{ ambito: "COMUNICACION", id: c.id, tipoComunicacion: c.tipo, habilitado: c.estado !== "ANULADA" }}
+              accion={`/api/correspondencia/${c.id}/flujo`}
               puedeOperar={puedeOperarFlujosUsuario}
               usuario={usuarioFlujoActual}
             />

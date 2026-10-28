@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
-import { obtenerFlujo, puedeAdministrarFlujos } from "@/lib/flujos";
+import { obtenerFlujo } from "@/lib/flujos";
+import { moduloDeAmbito, puedeAdministrarFlujosModulo } from "@/lib/flujos-modulos";
 import { flujoABpmn } from "@/lib/flujos-bpmn";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
-  const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAdministrarFlujos(permisos)) return NextResponse.json({ error: "Sin permiso." }, { status: 403 });
-
   const flujo = await obtenerFlujo(id);
   if (!flujo) return NextResponse.json({ error: "No existe." }, { status: 404 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAdministrarFlujosModulo(permisos, moduloDeAmbito(flujo.ambito))) return NextResponse.json({ error: "Sin permiso." }, { status: 403 });
 
   const xml = flujoABpmn({
     id: flujo.id,

@@ -746,6 +746,7 @@ model Expediente {
    */
   usuariosAsignados Usuario[] @relation("ExpedienteUsuariosAsignados")
   cargosAsignados   Cargo[]   @relation("ExpedienteCargosAsignados")
+  instanciasFlujo   InstanciaFlujo[]
 
   comunicaciones Comunicacion[]
 
@@ -1958,6 +1959,8 @@ enum AsignacionPaso {
   RADICADOR
   RESPONSABLE_PASO_ANTERIOR
   MANUAL
+  PERSONAL_ASIGNADO
+  SUPERVISOR
 }
 
 enum EstadoInstanciaFlujo {
@@ -1969,6 +1972,8 @@ enum EstadoInstanciaFlujo {
 enum AmbitoFlujo {
   COMUNICACION
   EXPEDIENTE
+  CONTRATO
+  TRAMITE
 }
 
 model FlujoTrabajo {
@@ -2036,9 +2041,11 @@ model TransicionPaso {
 model InstanciaFlujo {
   id              String               @id @default(cuid())
   flujoId         String
-  comunicacionId         String?
-  expedienteDocumentalId String?
-  estado                 EstadoInstanciaFlujo @default(EN_CURSO)
+  comunicacionId          String?
+  expedienteDocumentalId  String?
+  expedienteContractualId String?
+  expedienteTramiteId     String?
+  estado                  EstadoInstanciaFlujo @default(EN_CURSO)
   pasoActualId           String?
   pasoActualDesde        DateTime?
   iniciadoPorId          String?
@@ -2048,7 +2055,9 @@ model InstanciaFlujo {
 
   flujo                FlujoTrabajo          @relation(fields: [flujoId], references: [id])
   comunicacion         Comunicacion?         @relation(fields: [comunicacionId], references: [id], onDelete: Cascade)
-  expedienteDocumental ExpedienteDocumental? @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  expedienteDocumental  ExpedienteDocumental?  @relation(fields: [expedienteDocumentalId], references: [id], onDelete: Cascade)
+  expedienteContractual ExpedienteContractual? @relation(fields: [expedienteContractualId], references: [id], onDelete: Cascade)
+  expedienteTramite     Expediente?            @relation(fields: [expedienteTramiteId], references: [id], onDelete: Cascade)
   pasoActual           PasoFlujo?            @relation("InstanciaPasoActual", fields: [pasoActualId], references: [id])
   iniciadoPor          Usuario?              @relation("InstanciaFlujoIniciadoPor", fields: [iniciadoPorId], references: [id])
   asignadoA            Usuario?              @relation("InstanciaFlujoAsignadoA", fields: [asignadoAId], references: [id])
@@ -2056,6 +2065,8 @@ model InstanciaFlujo {
 
   @@index([comunicacionId])
   @@index([expedienteDocumentalId])
+  @@index([expedienteContractualId])
+  @@index([expedienteTramiteId])
   @@index([estado])
 }
 
@@ -2221,6 +2232,7 @@ model ExpedienteContractual {
   supervisores                ExpedienteContractualSupervisor[]
   secop                       SecopContratoEspejo?
   asignados                   ExpedienteContractualAsignado[]
+  instanciasFlujo             InstanciaFlujo[]
   etapas                      EtapaExpedienteContractual[]
   documentos                  DocumentoContrato[]
   periodosEventuales          PeriodoInformeEventual[]

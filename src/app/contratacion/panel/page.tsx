@@ -14,6 +14,8 @@ import { PenLine, Hourglass, CalendarClock, UserX, FileSignature, UserPlus, Badg
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeGestionarContratistas } from "@/lib/permisos";
 import { agruparPorExpediente, obtenerTrabajoPendienteContratacion, requisitosPorCargarPropios, type DocumentoPorGestionar, type InformePorRadicar } from "@/lib/contratacion-panel";
 import { identificacionContrato } from "@/lib/codigo-proceso";
+import { TarjetaPasosACargo } from "@/components/flujos/TarjetaPasosACargo";
+import { usuarioFlujo } from "@/lib/flujos";
 import { EnlaceTablero, FilaTablero, Indicador, ListaTablero, TarjetaTablero, VacioTablero } from "@/components/tablero";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
 import { textoEsperaA, textoRecordatorio } from "@/components/EsperaTurnoFirma";
@@ -220,6 +222,8 @@ export default async function PanelPendientesGeconPage({ searchParams }: { searc
             vacio="Sin documentos por validar."
           />
         )}
+
+        <TarjetaPasosACargo modulo="GECON" usuario={await usuarioFlujo(session.userId, permisos, "GECON")} />
 
         {conCargo && (
           <TarjetaTablero
