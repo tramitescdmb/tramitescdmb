@@ -91,15 +91,23 @@ export default async function EditarUsuarioPage({
         >
           {iniciales(usuario.nombre)}
         </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-semibold text-stone-900">{usuario.nombre}</h1>
-          <p className="truncate text-sm text-stone-500">
-            {usuario.directorioActivo ? `Usuario de red: ${usuario.email}` : usuario.email}
+        <div className="min-w-[16rem] flex-1">
+          <h1 className="text-xl font-semibold text-stone-900">{usuario.nombre}</h1>
+          <p className="text-sm text-stone-500">
+            {usuario.cuentaTemporal ? (
+              <span className="text-amber-700">Sin usuario de red todavía</span>
+            ) : usuario.directorioActivo ? (
+              <>
+                Usuario de red: <span className="font-medium text-stone-800">{usuario.email}</span>
+              </>
+            ) : (
+              usuario.email
+            )}
             {cargo ? ` · ${cargo}` : ""}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <BotonSincronizarDirectorio usuarioId={usuario.id} ultima={usuario.sincronizadoDirectorioEn ? formatearFechaHora(usuario.sincronizadoDirectorioEn) : null} />
+        <BotonSincronizarDirectorio usuarioId={usuario.id} ultima={usuario.sincronizadoDirectorioEn ? formatearFechaHora(usuario.sincronizadoDirectorioEn) : null} />
+        <div className="flex basis-full flex-wrap items-center gap-1.5">
           <Link
             href={`/usuarios/${usuario.id}/roles`}
             title={rolesAsignados.map((r) => r.perfil.nombre).join(", ") || "Sin roles"}
@@ -132,6 +140,7 @@ export default async function EditarUsuarioPage({
       {ok && <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{ok}</div>}
 
       <EditarUsuarioAccesoForm
+        key={`${usuario.id}-${usuario.sincronizadoDirectorioEn?.getTime() ?? 0}-${usuario.email}`}
         usuarioId={usuario.id}
         usuarioRed={usuario.email}
         personaActual={personaDesdeUsuario(usuario)}

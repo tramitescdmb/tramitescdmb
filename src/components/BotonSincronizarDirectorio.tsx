@@ -25,18 +25,20 @@ export function BotonSincronizarDirectorio({ usuarioId, ultima }: { usuarioId: s
   }
 
   return (
-    <span className="inline-flex flex-col items-end gap-1">
+    <>
       <button
         type="button"
         onClick={sincronizar}
         disabled={enviando}
         title={ultima ? `Última sincronización: ${ultima}` : "Trae los datos del directorio activo por la cédula del usuario"}
-        className="inline-flex items-center gap-1.5 rounded border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+        className="inline-flex flex-none items-center gap-1.5 rounded border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
       >
         <RefreshCw className={`h-4 w-4 ${enviando ? "animate-spin" : ""}`} aria-hidden />
         Sincronizar con el directorio
       </button>
-      {mensaje && <span className={`max-w-xs text-right text-xs ${mensaje.ok ? "text-emerald-700" : "text-amber-800"}`}>{mensaje.texto}</span>}
-    </span>
+      {mensaje && (
+        <p className={`order-last basis-full rounded-md px-3 py-1.5 text-xs ${mensaje.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>{mensaje.texto}</p>
+      )}
+    </>
   );
 }
