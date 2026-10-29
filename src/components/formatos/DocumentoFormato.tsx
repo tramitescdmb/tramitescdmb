@@ -19,7 +19,9 @@ import { desdeLatLon, planasOrigenBogota } from "@/lib/coordenadas";
 import { MapaEstatico } from "@/components/formatos/MapaEstatico";
 
 export type FotoDocumento = { id: string; url: string; pie?: string };
-export type FirmanteDocumento = { titulo: string; nombre: string; cargo: string };
+export type FirmaElectronicaFila = { estado: "FIRMADO" | "VISTO_BUENO" | "PENDIENTE" | "RECHAZADO"; fecha?: string | null };
+export type FirmanteDocumento = { titulo: string; nombre: string; cargo: string; usuarioId?: string; firma?: FirmaElectronicaFila | null };
+export type VerificacionDocumento = { csv: string; url: string };
 
 export type EncabezadoFormato = {
   codigo: string;
@@ -41,6 +43,7 @@ export function DocumentoFormato({
   enBlanco = false,
   numeroConcepto = null,
   firmantes,
+  verificacion = null,
 }: {
   encabezado: EncabezadoFormato;
   estructura: EstructuraFormato;
@@ -50,6 +53,7 @@ export function DocumentoFormato({
   enBlanco?: boolean;
   numeroConcepto?: string | null;
   firmantes?: FirmanteDocumento[];
+  verificacion?: VerificacionDocumento | null;
 }) {
   const fotosEnCampo = estructura.secciones.some((s) => s.campos.some((c) => c.tipo === "fotos"));
   return (
@@ -93,6 +97,12 @@ export function DocumentoFormato({
                         ]
                   }
                 />
+                {verificacion && (
+                  <p className="border border-stone-400 px-2 py-1.5 text-[10px] leading-snug text-stone-700">
+                    Documento firmado electrónicamente conforme al artículo 7 de la Ley 527 de 1999 y al Decreto 1074 de 2015. Código seguro de verificación (CSV):{" "}
+                    <b className="font-mono text-cdmb-800">{verificacion.csv}</b>. Verifique su autenticidad en <span className="break-all">{verificacion.url}</span>.
+                  </p>
+                )}
               </section>
             </td>
           </tr>
@@ -421,7 +431,22 @@ function BloqueComplejo({
   return null;
 }
 
+function TextoFirma({ firma }: { firma: FirmaElectronicaFila | null | undefined }) {
+  if (!firma) return <span className="text-stone-400">—</span>;
+  if (firma.estado === "FIRMADO" || firma.estado === "VISTO_BUENO") {
+    return (
+      <span className="text-[11px] font-semibold text-cdmb-800">
+        {firma.estado === "VISTO_BUENO" ? "Visto bueno electrónico" : "Firmado electrónicamente"}
+        {firma.fecha && <span className="block font-normal text-stone-600">{firma.fecha}</span>}
+      </span>
+    );
+  }
+  if (firma.estado === "RECHAZADO") return <span className="text-[11px] font-semibold text-red-700">Rechazó la firma</span>;
+  return <span className="text-[11px] text-amber-800">Pendiente de firma</span>;
+}
+
 function TablaResponsables({ filas }: { filas: FirmanteDocumento[] }) {
+  const conFirma = filas.some((f) => f.firma);
   return (
     <table className="w-full border-collapse" data-pdf-bloque>
       <thead>
@@ -429,6 +454,7 @@ function TablaResponsables({ filas }: { filas: FirmanteDocumento[] }) {
           <th className={`${celda} w-[30%] text-left`}>Responsabilidad</th>
           <th className={`${celda} text-left`}>Nombre</th>
           <th className={`${celda} text-left`}>Cargo</th>
+          {conFirma && <th className={`${celda} w-[22%] text-left`}>Firma electrónica</th>}
         </tr>
       </thead>
       <tbody>
@@ -437,11 +463,16 @@ function TablaResponsables({ filas }: { filas: FirmanteDocumento[] }) {
             <td className={`${celda} font-bold italic`}>{f.titulo}</td>
             <td className={celda}>{f.nombre}</td>
             <td className={celda}>{f.cargo}</td>
+            {conFirma && (
+              <td className={celda}>
+                <TextoFirma firma={f.firma} />
+              </td>
+            )}
           </tr>
         ))}
         <tr>
           <td className={`${celda} font-bold italic`}>Oficina responsable</td>
-          <td className={celda} colSpan={2}>
+          <td className={celda} colSpan={conFirma ? 3 : 2}>
             Subdirección de Evaluación y Control Ambiental - SEYCA
           </td>
         </tr>

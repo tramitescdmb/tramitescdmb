@@ -8,7 +8,10 @@ import { AsignarNumeroConcepto } from "@/components/formatos/AsignarNumeroConcep
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { estructuraDesdeJson, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { sanearRespuestas } from "@/lib/formato-visita";
-import { DocumentoFormato } from "@/components/formatos/DocumentoFormato";
+import { DocumentoFormato, type FirmanteDocumento } from "@/components/formatos/DocumentoFormato";
+import { headers } from "next/headers";
+import { codigoVerificacion } from "@/lib/validar-firma";
+import { formatearFechaHora } from "@/lib/fecha";
 import { EstiloImpresionFormato } from "@/components/formatos/EstiloImpresionFormato";
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { FinalizarConcepto } from "@/components/formatos/FinalizarConcepto";
@@ -85,6 +88,25 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
   const filasFirma = vt.documentoConcepto ? construirFilasFirmantes(vt.documentoConcepto.solicitudesFirma, vt.documentoConcepto.firmas, "TRAMITES") : [];
   const faltan = filasFirma.filter((f) => f.estado === "TURNO" || f.estado === "EN_ESPERA");
   const rechazados = filasFirma.filter((f) => f.estado === "RECHAZADO");
+  const firmantesConFirma: FirmanteDocumento[] = vt.documentoConcepto
+    ? firmantesDoc.map((fd) => {
+        const fila = filasFirma.find((x) => x.usuarioId === fd.usuarioId && x.estado !== "LECTURA");
+        if (!fila) return { ...fd, firma: null };
+        const fecha = fila.fecha ? formatearFechaHora(fila.fecha) : null;
+        if (fila.estado === "FIRMADO" || fila.estado === "VISTO_BUENO") return { ...fd, firma: { estado: fila.estado, fecha } };
+        if (fila.estado === "RECHAZADO") return { ...fd, firma: { estado: "RECHAZADO" as const, fecha } };
+        return { ...fd, firma: { estado: "PENDIENTE" as const } };
+      })
+    : firmantesDoc;
+  const h = await headers();
+  const baseUrl = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const todoFirmado = Boolean(vt.documentoConceptoId) && filasFirma.length > 0 && faltan.length === 0 && rechazados.length === 0;
+  const verificacion = todoFirmado
+    ? (() => {
+        const csv = codigoVerificacion("T", vt.documentoConceptoId!);
+        return { csv, url: `${baseUrl}/validar-firma?csv=${encodeURIComponent(csv)}` };
+      })()
+    : null;
   const miSolicitud = vt.documentoConcepto?.solicitudesFirma.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA");
   const miTurno = miSolicitud && puedeActuarSolicitud(vt.documentoConcepto!.solicitudesFirma, miSolicitud);
   const puedeRecordar =
@@ -178,7 +200,8 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           precarga={precarga}
           numeroConcepto={vt.conceptoNumero ? etiquetaConcepto(vt.conceptoNumero, vt.conceptoFecha) : null}
           fotos={vt.fotos.map((foto) => ({ id: foto.id, url: `/api/visitas-fotos/${foto.id}?directo`, pie: foto.pie ?? undefined }))}
-          firmantes={firmantesDoc}
+          firmantes={firmantesConFirma}
+          verificacion={verificacion}
         />
       </div>
     </div>

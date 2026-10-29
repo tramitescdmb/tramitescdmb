@@ -34,6 +34,7 @@ export function firmantesParaDocumento(
       const persona = porId.get(p.usuarioId);
       return {
         titulo: TITULO_BLOQUE_FIRMA[p.rol],
+        usuarioId: p.usuarioId,
         nombre: persona?.nombre ?? "",
         cargo: persona ? cargoDelFirmante(persona, "TRAMITES") : "",
       };
