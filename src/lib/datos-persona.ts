@@ -110,7 +110,7 @@ export const REQUERIDOS_CONTRATISTA: readonly CampoPersona[] = ["identificacion"
 // persona todavía no existe como Usuario del sistema (ver crearContratistaMinimo en contratacion.ts).
 // Persona jurídica no exige celular propio aquí porque esos datos de contacto los trae
 // el representante legal (ver faltantesRepresentanteLegal).
-export const REQUERIDOS_CONTRATISTA_MINIMO_NATURAL: readonly CampoPersona[] = ["identificacion", "nombre", "celular"];
+export const REQUERIDOS_CONTRATISTA_MINIMO_NATURAL: readonly CampoPersona[] = ["identificacion", "nombre"];
 export const REQUERIDOS_CONTRATISTA_MINIMO_JURIDICA: readonly CampoPersona[] = ["identificacion", "nombre"];
 
 function texto(v: unknown, max = 200): string {

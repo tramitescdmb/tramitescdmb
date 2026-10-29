@@ -49,18 +49,15 @@ describe("validarFormatoSecop", () => {
 });
 
 describe("faltantesContratistaMinimo", () => {
-  it("persona natural exige documento, nombres y apellidos y celular; el teléfono es opcional", () => {
+  it("persona natural solo exige documento y nombres y apellidos; teléfono y celular son opcionales", () => {
     const faltan = faltantesContratistaMinimo(personaVacia());
-    expect(faltan).toEqual(expect.arrayContaining(["documento de identificación", "nombres y apellidos", "celular"]));
+    expect(faltan).toEqual(expect.arrayContaining(["documento de identificación", "nombres y apellidos"]));
     expect(faltan).not.toContain("teléfono");
+    expect(faltan).not.toContain("celular");
   });
 
-  it("persona natural completa no tiene faltantes", () => {
-    expect(
-      faltantesContratistaMinimo(
-        personaVacia({ identificacion: "123", nombres: "Ana", apellidos: "Ruiz", telefono: "6071234567", celular: "3001234567" })
-      )
-    ).toEqual([]);
+  it("persona natural con cédula y nombre no tiene faltantes", () => {
+    expect(faltantesContratistaMinimo(personaVacia({ identificacion: "123", nombres: "Ana", apellidos: "Ruiz" }))).toEqual([]);
   });
 
   it("persona jurídica solo exige NIT y razón social (no teléfono/celular propios: los trae el representante legal)", () => {

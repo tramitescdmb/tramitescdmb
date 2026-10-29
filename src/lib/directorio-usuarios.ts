@@ -25,12 +25,35 @@ export async function resolverDependenciaIdPorNombre(nombre: string): Promise<st
   return coincidencias.length === 1 ? coincidencias[0]!.id : null;
 }
 
-export async function actualizarUsuarioDesdeDirectorio(usuarioId: string, perfil: PerfilDirectorio): Promise<string[]> {
+function palabras(t: string | null | undefined): Set<string> {
+  return new Set(normalizar(t ?? "").split(/\s+/).filter((p) => p.length > 1));
+}
+
+function comparten(a: Set<string>, b: Set<string>) {
+  for (const p of a) if (b.has(p)) return true;
+  return false;
+}
+
+export function nombreDistintoEnDirectorio(perfil: PerfilDirectorio, nombres: string | null | undefined, apellidos: string | null | undefined): boolean {
+  const propios = { n: palabras(nombres), a: palabras(apellidos) };
+  const directorio = { n: palabras(perfil.nombres), a: palabras(perfil.apellidos) };
+  if (!propios.n.size || !directorio.n.size) return false;
+  return !comparten(propios.n, directorio.n) || (propios.a.size > 0 && directorio.a.size > 0 && !comparten(propios.a, directorio.a));
+}
+
+export function avisoNombreDistinto(perfil: PerfilDirectorio, registrado: string): string {
+  const enDirectorio = [perfil.nombres, perfil.apellidos].filter(Boolean).join(" ") || perfil.nombreCompleto || "";
+  return `El nombre registrado (${registrado}) se reemplazó por el del dominio para esta cédula (${enDirectorio}); verifique que la cédula registrada sea la correcta.`;
+}
+
+export type ActualizacionDirectorio = { cambios: string[]; aviso: string | null };
+
+export async function actualizarUsuarioDesdeDirectorio(usuarioId: string, perfil: PerfilDirectorio): Promise<ActualizacionDirectorio> {
   const u = await db.usuario.findUnique({
     where: { id: usuarioId },
-    select: { nombres: true, apellidos: true, correoNotificacion: true, celular: true, telefono: true, cedulaONit: true, direccion: true, dependenciaId: true },
+    select: { nombre: true, nombres: true, apellidos: true, correoNotificacion: true, celular: true, telefono: true, cedulaONit: true, direccion: true, dependenciaId: true },
   });
-  if (!u) return [];
+  if (!u) return { cambios: [], aviso: null };
   const datos: Record<string, string> = {};
   const cambios: string[] = [];
   const poner = (campo: string, etiqueta: string, nuevo: string | undefined, actual: string | null) => {
@@ -39,6 +62,7 @@ export async function actualizarUsuarioDesdeDirectorio(usuarioId: string, perfil
       cambios.push(etiqueta);
     }
   };
+  const aviso = nombreDistintoEnDirectorio(perfil, u.nombres, u.apellidos) ? avisoNombreDistinto(perfil, u.nombre) : null;
   if (perfil.nombres && perfil.apellidos) {
     poner("nombres", "nombres", perfil.nombres, u.nombres);
     poner("apellidos", "apellidos", perfil.apellidos, u.apellidos);
@@ -58,10 +82,10 @@ export async function actualizarUsuarioDesdeDirectorio(usuarioId: string, perfil
     if (dependenciaId && dependenciaId !== u.dependenciaId) cambios.push("dependencia");
     else dependenciaId = null;
   }
-  if (cambios.length === 0) return [];
+  if (cambios.length === 0) return { cambios, aviso };
   await db.usuario.update({ where: { id: usuarioId }, data: { ...datos, ...(dependenciaId ? { dependenciaId } : {}), sincronizadoDirectorioEn: new Date() } });
   await sincronizarContratistaDeUsuario(usuarioId).catch(() => {});
-  return cambios;
+  return { cambios, aviso };
 }
 
 export type IndiceDirectorio = { porDocumento: Map<string, PerfilDirectorio>; porUsuarioRed: Map<string, PerfilDirectorio>; porCorreo: Map<string, PerfilDirectorio> };
@@ -128,11 +152,11 @@ const SELECT_CRUCE = {
 async function aplicarDirectorio(
   u: UsuarioParaCruce & { id: string; rol: string; cuentaTemporal: boolean },
   coincidencia: { perfil: PerfilDirectorio; por: "cedula" | "usuarioRed" | "correo" },
-): Promise<{ cambios: string[]; usuarioRed: string | null }> {
-  const cambios = await actualizarUsuarioDesdeDirectorio(u.id, coincidencia.perfil);
+): Promise<{ cambios: string[]; aviso: string | null; usuarioRed: string | null }> {
+  const { cambios, aviso } = await actualizarUsuarioDesdeDirectorio(u.id, coincidencia.perfil);
   const usuarioRed = u.cuentaTemporal && coincidencia.por === "cedula" && u.rol !== "ADMIN" ? await convertirCuentaTemporal(u.id, coincidencia.perfil) : null;
   if (!cambios.length && !usuarioRed) await db.usuario.update({ where: { id: u.id }, data: { sincronizadoDirectorioEn: new Date() } });
-  return { cambios, usuarioRed };
+  return { cambios, aviso, usuarioRed };
 }
 
 export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promise<{ ok: boolean; mensaje: string }> {
@@ -151,15 +175,16 @@ export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promis
   if (!coincidencia) {
     return { ok: false, mensaje: "Todavía no está en el directorio activo. Si es una cuenta temporal, se actualizará sola cuando sistemas cree sus credenciales de red." };
   }
-  const { cambios, usuarioRed } = await aplicarDirectorio(u, coincidencia);
+  const { cambios, aviso, usuarioRed } = await aplicarDirectorio(u, coincidencia);
   const partes = [
     usuarioRed ? `La cuenta temporal pasó al dominio con el usuario de red ${usuarioRed}.` : null,
     cambios.length ? `Actualizado desde el directorio activo: ${cambios.join(", ")}.` : null,
+    aviso,
   ].filter(Boolean);
   return { ok: true, mensaje: partes.join(" ") || "Los datos ya coinciden con el directorio activo." };
 }
 
-export type ResultadoContratistaDominio = { ok: boolean; mensaje: string; vinculado?: boolean; usuarioRed?: string };
+export type ResultadoContratistaDominio = { ok: boolean; mensaje: string; vinculado?: boolean; usuarioRed?: string; aviso?: string | null };
 
 export async function sincronizarContratistaConDominio(contratistaId: string, tokenServicio?: string): Promise<ResultadoContratistaDominio> {
   const c = await db.contratista.findUnique({ where: { id: contratistaId } });
@@ -174,6 +199,7 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
   }
   const perfil = consulta.perfil;
   const usuarioRed = perfil.usuarioRed!.trim().toLowerCase();
+  const distinto = nombreDistintoEnDirectorio(perfil, c.nombres, c.apellidos);
 
   let usuarioId = c.usuarioId;
   if (!usuarioId) {
@@ -183,7 +209,8 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
   if (!usuarioId) return { ok: false, mensaje: `No se pudo crear el usuario ${usuarioRed} en la plataforma.` };
 
   const u = await db.usuario.findUniqueOrThrow({ where: { id: usuarioId }, select: SELECT_CRUCE });
-  await aplicarDirectorio(u, { perfil, por: "cedula" });
+  const { aviso: avisoUsuario } = await aplicarDirectorio(u, { perfil, por: "cedula" });
+  const aviso = distinto ? avisoNombreDistinto(perfil, c.nombreORazonSocial) : avisoUsuario;
   let vinculado = Boolean(c.usuarioId);
   if (!c.usuarioId) vinculado = await vincularPerfilConUsuario(c, usuarioId);
   if (vinculado) await sincronizarContratistaDeUsuario(usuarioId);
@@ -199,9 +226,15 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
     ok: true,
     vinculado,
     usuarioRed,
-    mensaje: vinculado
-      ? `Sincronizado con el dominio: usuario de red ${usuarioRed}, datos actualizados en el contratista y en Usuarios.`
-      : `Se encontró la cuenta ${usuarioRed}, pero no se pudo vincular: ese usuario tiene otro rol en GECON o un documento distinto.`,
+    aviso,
+    mensaje: [
+      vinculado
+        ? `Sincronizado con el dominio: usuario de red ${usuarioRed}, datos actualizados en el contratista y en Usuarios.`
+        : `Se encontró la cuenta ${usuarioRed}, pero no se pudo vincular: ese usuario tiene otro rol en GECON o un documento distinto.`,
+      aviso,
+    ]
+      .filter(Boolean)
+      .join(" "),
   };
 }
 
