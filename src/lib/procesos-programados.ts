@@ -31,7 +31,7 @@ export const PROCESOS_PROGRAMADOS: ProcesoProgramado[] = [
     clave: "directorio",
     nombre: "Sincronización con el directorio activo",
     descripcion:
-      "Lee el directorio completo y cruza a cada usuario por cédula, usuario de red o correo: actualiza sus datos, pasa al dominio las cuentas temporales cuya cédula ya existe y crea el usuario de los contratistas que ya están en la red.",
+      "Consulta por cédula solo las cuentas temporales creadas desde GECON: las que ya tienen credenciales en el dominio pasan a ingresar con su usuario de red y toman sus datos del directorio.",
     horario: "Todos los días, 3:30 a. m.",
     rutaManual: "/api/usuarios/directorio/sincronizar",
   },

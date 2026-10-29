@@ -3,6 +3,7 @@ import {
   abrirSesionServicioDirectorio,
   cerrarSesionDirectorioActivo,
   consultaDirectorioDisponible,
+  consultarDirectorioPorDocumento,
   listarDirectorioCompleto,
   type PerfilDirectorio,
 } from "@/lib/directorio-activo";
@@ -136,11 +137,18 @@ async function aplicarDirectorio(
 export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promise<{ ok: boolean; mensaje: string }> {
   const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_CRUCE });
   if (!u) return { ok: false, mensaje: "El usuario no existe." };
-  const lista = await listarDirectorioCompleto();
-  if (!lista.ok) return { ok: false, mensaje: lista.mensaje };
-  const coincidencia = cruzarUsuarioConDirectorio(u, indexarDirectorio(lista.perfiles));
+  const documento = u.cedulaONit ?? (u.contratista?.tipoPersona === "NATURAL" ? u.contratista.identificacion : null);
+  let coincidencia: ReturnType<typeof cruzarUsuarioConDirectorio> = null;
+  if (documento) {
+    const consulta = await consultarDirectorioPorDocumento(documento);
+    if (consulta.ok) coincidencia = { perfil: consulta.perfil, por: "cedula" };
+  } else {
+    const lista = await listarDirectorioCompleto();
+    if (!lista.ok) return { ok: false, mensaje: lista.mensaje };
+    coincidencia = cruzarUsuarioConDirectorio(u, indexarDirectorio(lista.perfiles));
+  }
   if (!coincidencia) {
-    return { ok: false, mensaje: "No se encontró en el directorio activo por cédula, usuario de red ni correo. Si es una cuenta temporal, se actualizará sola cuando exista en el dominio." };
+    return { ok: false, mensaje: "Todavía no está en el directorio activo. Si es una cuenta temporal, se actualizará sola cuando sistemas cree sus credenciales de red." };
   }
   const { cambios, usuarioRed } = await aplicarDirectorio(u, coincidencia);
   const partes = [
@@ -153,50 +161,33 @@ export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promis
 type ResultadoSincronizacion = {
   ok: boolean;
   disponible: boolean;
-  enDirectorio: number;
-  revisados: number;
-  encontrados: number;
-  actualizados: number;
+  temporales: number;
   convertidos: number;
-  creados: number;
-  vinculados: number;
+  pendientes: number;
   mensaje?: string;
 };
 
 export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincronizacion> {
-  const vacio = { disponible: false, enDirectorio: 0, revisados: 0, encontrados: 0, actualizados: 0, convertidos: 0, creados: 0, vinculados: 0 };
-  if (!consultaDirectorioDisponible()) return { ok: true, ...vacio };
+  const temporales = await db.usuario.findMany({ where: { activo: true, cuentaTemporal: true, cedulaONit: { not: null } }, select: SELECT_CRUCE });
+  const vacio = { disponible: consultaDirectorioDisponible(), temporales: temporales.length, convertidos: 0, pendientes: temporales.length };
+  if (temporales.length === 0 || !vacio.disponible) return { ok: true, ...vacio };
   const sesion = await abrirSesionServicioDirectorio();
   if (!sesion.ok) return { ok: false, ...vacio, mensaje: sesion.mensaje };
-  let lista: Awaited<ReturnType<typeof listarDirectorioCompleto>>;
+  const r = { ok: true, ...vacio };
   try {
-    lista = await listarDirectorioCompleto(sesion.token);
+    for (const u of temporales) {
+      const consulta = await consultarDirectorioPorDocumento(u.cedulaONit!, sesion.token);
+      if (!consulta.ok || !consulta.perfil.usuarioRed) continue;
+      const { usuarioRed } = await aplicarDirectorio(u, { perfil: consulta.perfil, por: "cedula" });
+      if (usuarioRed) {
+        r.convertidos++;
+        r.pendientes--;
+      }
+    }
   } finally {
     await cerrarSesionDirectorioActivo(sesion.token).catch(() => {});
   }
-  if (!lista.ok) return { ok: false, ...vacio, mensaje: lista.mensaje };
-  const indice = indexarDirectorio(lista.perfiles);
-  const r = { ok: true, disponible: true, enDirectorio: lista.perfiles.length, revisados: 0, encontrados: 0, actualizados: 0, convertidos: 0, creados: 0, vinculados: 0 };
-
-  const usuarios = await db.usuario.findMany({ where: { activo: true }, select: SELECT_CRUCE });
-  for (const u of usuarios) {
-    r.revisados++;
-    const coincidencia = cruzarUsuarioConDirectorio(u, indice);
-    if (!coincidencia) continue;
-    r.encontrados++;
-    const { cambios, usuarioRed } = await aplicarDirectorio(u, coincidencia);
-    if (cambios.length) r.actualizados++;
-    if (usuarioRed) r.convertidos++;
-  }
-
-  const pendientes = await db.contratista.findMany({ where: { usuarioId: null, tipoPersona: "NATURAL" }, select: { identificacion: true } });
-  for (const c of pendientes) {
-    const perfil = indice.porDocumento.get(c.identificacion.replace(/\D/g, ""));
-    if (!perfil?.usuarioRed) continue;
-    if (await db.usuario.findFirst({ where: { cedulaONit: c.identificacion }, select: { id: true } })) continue;
-    if (await crearUsuarioDeDominio(perfil, c.identificacion, ["GECON"])) r.creados++;
-  }
-  r.vinculados = await autovincularPerfilesPorDocumento();
+  if (r.convertidos > 0) await autovincularPerfilesPorDocumento();
   return r;
 }
 

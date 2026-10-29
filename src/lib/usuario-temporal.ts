@@ -1,29 +1,14 @@
-import { randomInt } from "node:crypto";
 import { db } from "@/lib/db";
-import { hashPassword } from "@/lib/password";
-import { validarPoliticaPassword } from "@/lib/password-policy";
-import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { asignarRolBase } from "@/lib/perfiles";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { consultaDirectorioDisponible, consultarDirectorioPorDocumento } from "@/lib/directorio-activo";
 import { crearUsuarioDeDominio } from "@/lib/directorio-usuarios";
 
-const GRUPOS = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "#$%&*+-=?@"];
-
-export function generarPasswordProvisional(longitud = 14): string {
-  const todos = GRUPOS.join("");
-  const caracteres = GRUPOS.map((g) => g[randomInt(g.length)]!);
-  while (caracteres.length < longitud) caracteres.push(todos[randomInt(todos.length)]!);
-  for (let i = caracteres.length - 1; i > 0; i--) {
-    const j = randomInt(i + 1);
-    [caracteres[i], caracteres[j]] = [caracteres[j]!, caracteres[i]!];
-  }
-  return caracteres.join("");
-}
+const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
 export type ResultadoUsuarioContratista =
   | { ok: true; modo: "dominio"; usuarioId: string; usuarioRed: string }
-  | { ok: true; modo: "temporal"; usuarioId: string; correo: string; password: string }
+  | { ok: true; modo: "temporal"; usuarioId: string }
   | { ok: false; mensaje: string };
 
 async function vincularComoContratista(contratistaId: string, usuarioId: string) {
@@ -62,22 +47,16 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
     }
   }
 
-  const correo = c.contactoEmail?.trim().toLowerCase() ?? "";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-    return { ok: false, mensaje: "Registre primero un correo válido del contratista: con él ingresa a la cuenta temporal." };
-  }
-  if (await db.usuario.findUnique({ where: { email: correo }, select: { id: true } })) {
-    return { ok: false, mensaje: `El correo ${correo} ya lo usa otra cuenta de la plataforma.` };
-  }
   if (!c.nombres?.trim() || !c.apellidos?.trim()) return { ok: false, mensaje: "Registre los nombres y apellidos del contratista." };
-
-  const politica = await getConfiguracionSitio();
-  let password = generarPasswordProvisional();
-  for (let i = 0; i < 5 && validarPoliticaPassword(password, politica); i++) password = generarPasswordProvisional(Math.max(14, politica.passwordLongitudMinima ?? 14));
+  const correo = c.contactoEmail?.trim().toLowerCase() || null;
+  const identificador = `temporal.${c.identificacion.replace(/\D/g, "")}`;
+  if (await db.usuario.findUnique({ where: { email: identificador }, select: { id: true } })) {
+    return { ok: false, mensaje: "Ya existe una cuenta temporal con ese número de documento." };
+  }
 
   const usuario = await db.usuario.create({
     data: {
-      email: correo,
+      email: identificador,
       nombre: `${c.nombres.trim()} ${c.apellidos.trim()}`,
       nombres: c.nombres.trim(),
       apellidos: c.apellidos.trim(),
@@ -86,8 +65,7 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
       celular: c.contactoCelular,
       telefono: c.contactoTelefono,
       direccion: c.direccion,
-      passwordHash: await hashPassword(password),
-      passwordCambiadaEn: new Date(),
+      passwordHash: SIN_CONTRASENA_LOCAL,
       cuentaTemporal: true,
       modulosAcceso: ["GECON"],
     },
@@ -96,8 +74,8 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
   await vincularComoContratista(c.id, usuario.id);
   await registrarAuditoria({
     tipo: "USUARIO_CREADO",
-    descripcion: `${actor.nombre} creó desde GECON una cuenta temporal para el contratista ${c.nombreORazonSocial} (${correo}); pasará al directorio activo cuando su cédula exista en el dominio.`,
+    descripcion: `${actor.nombre} creó desde GECON una cuenta temporal para el contratista ${c.nombreORazonSocial} (C.C. ${c.identificacion}); se actualizará con su usuario de red cuando sistemas cree sus credenciales en el dominio.`,
     usuarioId: actor.id,
   });
-  return { ok: true, modo: "temporal", usuarioId: usuario.id, correo, password };
+  return { ok: true, modo: "temporal", usuarioId: usuario.id };
 }

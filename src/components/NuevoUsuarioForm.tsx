@@ -176,13 +176,16 @@ export function NuevoUsuarioForm({
           {(
             [
               { valor: "DIRECTORIO_ACTIVO", titulo: "Usuario de red", detalle: "Ingresa con su cuenta del dominio CDMB.", icono: Network },
-              { valor: "LOCAL", titulo: "Cuenta local", detalle: "Correo y contraseña de esta plataforma.", icono: KeyRound },
+              { valor: "LOCAL", titulo: "Administrador con correo", detalle: "Solo para administradores del sistema.", icono: KeyRound },
             ] as const
           ).map((o) => (
             <button
               key={o.valor}
               type="button"
-              onClick={() => setAcceso(o.valor)}
+              onClick={() => {
+                setAcceso(o.valor);
+                if (o.valor === "LOCAL") setRol("ADMIN");
+              }}
               aria-pressed={acceso === o.valor}
               className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-left transition ${
                 acceso === o.valor ? "border-cdmb-600 bg-cdmb-50" : "border-stone-200 bg-white hover:bg-stone-50"
@@ -303,7 +306,7 @@ export function NuevoUsuarioForm({
           <label className="block">
             <span className="mb-1 flex items-center gap-1.5 text-sm font-medium text-stone-700">
               <ShieldCheck className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />Rol</span>
-            <select value={rol} onChange={(e) => setRol(e.target.value as "FUNCIONARIO" | "ADMIN")} className={CLASE_CAMPO_PERSONA}>
+            <select value={rol} onChange={(e) => setRol(e.target.value as "FUNCIONARIO" | "ADMIN")} disabled={acceso === "LOCAL"} className={CLASE_CAMPO_PERSONA}>
               <option value="FUNCIONARIO">Funcionario</option>
               <option value="ADMIN">Administrador</option>
             </select>

@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
   const actoAdministrativoCargo = acto.valor;
   const persona = leerDatosPersona(body.persona, TIPOS_IDENTIFICACION_USUARIO);
 
+  if (!directorioActivo && rol !== "ADMIN") {
+    return NextResponse.json({ error: "El ingreso con correo y contraseña es solo para administradores. Cree el usuario con su usuario de red del directorio activo." }, { status: 400 });
+  }
   if (!email) {
     return NextResponse.json({ error: directorioActivo ? "Indique el usuario de red." : "Indique el correo con el que inicia sesión." }, { status: 400 });
   }

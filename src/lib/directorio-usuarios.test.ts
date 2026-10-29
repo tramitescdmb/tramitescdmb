@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cruzarUsuarioConDirectorio, indexarDirectorio } from "./directorio-usuarios";
 import { extraerPerfil } from "./directorio-activo";
-import { generarPasswordProvisional } from "./usuario-temporal";
 
 const respuestaEme = {
   samAccountName: "jperez01",
@@ -39,16 +38,5 @@ describe("cruce de usuarios con el directorio activo", () => {
   it("encuentra por correo institucional", () => {
     expect(cruzarUsuarioConDirectorio({ ...base, email: "otro@gmail.com", correoNotificacion: "Juan.Perez@cdmb.gov.co" }, indice)?.por).toBe("correo");
     expect(cruzarUsuarioConDirectorio({ ...base, email: "juan.perez@cdmb.gov.co" }, indice)?.por).toBe("correo");
-  });
-
-  it("la contraseña provisional trae mayúscula, minúscula, número y símbolo", () => {
-    for (let i = 0; i < 20; i++) {
-      const p = generarPasswordProvisional();
-      expect(p).toHaveLength(14);
-      expect(p).toMatch(/[A-Z]/);
-      expect(p).toMatch(/[a-z]/);
-      expect(p).toMatch(/[0-9]/);
-      expect(p).toMatch(/[^A-Za-z0-9]/);
-    }
   });
 });

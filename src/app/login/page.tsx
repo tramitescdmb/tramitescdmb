@@ -85,12 +85,8 @@ export default async function LoginPage({
               </label>
               <select name="modo" defaultValue={modo} className={inputCls}>
                 <option value="directorio-activo">Directorio activo CDMB</option>
-                <option value="institucional">Cuenta institucional</option>
+                <option value="institucional">Administrador (correo)</option>
               </select>
-              <p className="mt-1.5 text-xs leading-relaxed text-stone-400">
-                <strong>Directorio activo CDMB:</strong> usuario y contraseña de la red de la Corporación.{" "}
-                <strong>Cuenta institucional:</strong> contraseña administrada en esta aplicación.
-              </p>
             </div>
           )}
 

@@ -158,6 +158,20 @@ export async function POST(req: NextRequest) {
     return fail("Credenciales inválidas.");
   }
 
+  if (usuario.rol !== "ADMIN" || usuario.cuentaTemporal) {
+    await registrarAuditoria({
+      tipo: "LOGIN_FALLIDO",
+      descripcion: `"${identidad}" intentó el ingreso con correo y contraseña; ese ingreso es solo para el administrador.`,
+      usuarioId: usuario.id,
+      emailIntento: identidad,
+    });
+    return fail(
+      usuario.cuentaTemporal
+        ? "Su cuenta aún no tiene usuario en el dominio CDMB. Podrá ingresar por directorio activo cuando sistemas cree sus credenciales de red."
+        : 'El ingreso con correo y contraseña es solo para el administrador. Elija "Directorio activo CDMB" e ingrese con su usuario de red.'
+    );
+  }
+
   const valido = await verifyPassword(password, usuario.passwordHash);
   if (!valido) {
     await registrarAuditoria({
@@ -232,6 +246,23 @@ async function ingresarPorDirectorioActivo(
 
   const perfil = resultado.perfil;
   let usuario = existente;
+  const documento = perfil.documento?.replace(/\D/g, "");
+  if (!usuario && documento) {
+    const temporal = await db.usuario.findFirst({ where: { cuentaTemporal: true, cedulaONit: documento }, select: { id: true, email: true, activo: true } });
+    if (temporal?.activo) {
+      usuario = await db.usuario.update({
+        where: { id: temporal.id },
+        data: { email: usuarioRed, directorioActivo: true, cuentaTemporal: false, passwordHash: "directorio-activo:sin-contrasena-local", passwordCambiadaEn: null, sincronizadoDirectorioEn: new Date() },
+        include: { cargoAsignaciones: { include: { cargo: true } } },
+      });
+      await registrarAuditoria({
+        tipo: "USUARIO_ACTUALIZADO",
+        descripcion: `La cuenta temporal de ${usuario.nombre} (${temporal.email}) pasó al directorio activo al ingresar con el usuario de red ${usuarioRed}.`,
+        usuarioId: usuario.id,
+        emailIntento: usuarioRed,
+      });
+    }
+  }
   if (!usuario) {
     const nombreInicial =
       [perfil.nombres, perfil.apellidos].filter(Boolean).join(" ") || perfil.nombreCompleto || nombreInicialDesdeUsuarioRed(usuarioRed);

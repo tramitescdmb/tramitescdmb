@@ -23,6 +23,7 @@ import {
   IconLayoutGrid,
   IconNumbers,
   IconCalendarTime,
+  IconMail,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -51,6 +52,7 @@ export const ITEMS_ADMIN: Item[] = [
   { href: "/admin/modulos", label: "Módulos", icon: IconLayoutGrid },
   { href: "/admin/consecutivos", label: "Consecutivos", icon: IconNumbers },
   { href: "/admin/procesos", label: "Procesos programados", icon: IconCalendarTime },
+  { href: "/admin/correo", label: "Correo institucional", icon: IconMail },
 ];
 
 export function SidebarNav({

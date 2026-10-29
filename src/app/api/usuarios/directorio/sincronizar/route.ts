@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     else
       volver.searchParams.set(
         "ok",
-        `Directorio activo: ${r.enDirectorio} cuentas leídas; ${r.encontrados} de ${r.revisados} usuarios encontrados, ${r.actualizados} actualizados, ${r.convertidos} cuentas temporales pasadas al dominio y ${r.creados} usuarios de contratistas creados.`,
+        r.temporales === 0
+          ? "No hay cuentas temporales pendientes del dominio."
+          : `Cuentas temporales: ${r.temporales} revisadas, ${r.convertidos} pasadas al dominio y ${r.pendientes} todavía sin credenciales de red.`,
       );
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo ejecutar el proceso.");
