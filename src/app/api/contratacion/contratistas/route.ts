@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeRegistrarContratistaMinimo } from "@/lib/permisos";
 import { crearContratistaMinimo, ContratistaDuplicadoError } from "@/lib/contratacion";
+import { sincronizarContratistaConDominio } from "@/lib/directorio-usuarios";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const creado = await crearContratistaMinimo(body.persona, body.representanteLegal, body.usuarioRed);
-    return NextResponse.json({ id: creado.id, nombre: creado.nombre }, { status: 201 });
+    const dominio = await sincronizarContratistaConDominio(creado.id).catch(() => null);
+    return NextResponse.json({ id: creado.id, nombre: creado.nombre, dominio: dominio?.vinculado ? dominio.usuarioRed : null }, { status: 201 });
   } catch (err) {
     if (err instanceof ContratistaDuplicadoError) {
       return NextResponse.json({ error: err.message, contratistaId: err.contratistaId }, { status: 409 });

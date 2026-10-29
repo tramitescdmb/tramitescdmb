@@ -4,10 +4,11 @@ import {
   cerrarSesionDirectorioActivo,
   consultaDirectorioDisponible,
   consultarDirectorioPorDocumento,
+  consultarDirectorioPorUsuarioRed,
   listarDirectorioCompleto,
   type PerfilDirectorio,
 } from "@/lib/directorio-activo";
-import { autovincularPerfilesPorDocumento, sincronizarContratistaDeUsuario } from "@/lib/contratacion";
+import { sincronizarContratistaDeUsuario, vincularPerfilConUsuario } from "@/lib/contratacion";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
@@ -158,19 +159,77 @@ export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promis
   return { ok: true, mensaje: partes.join(" ") || "Los datos ya coinciden con el directorio activo." };
 }
 
+export type ResultadoContratistaDominio = { ok: boolean; mensaje: string; vinculado?: boolean; usuarioRed?: string };
+
+export async function sincronizarContratistaConDominio(contratistaId: string, tokenServicio?: string): Promise<ResultadoContratistaDominio> {
+  const c = await db.contratista.findUnique({ where: { id: contratistaId } });
+  if (!c) return { ok: false, mensaje: "El contratista no existe." };
+  if (c.tipoPersona !== "NATURAL") return { ok: false, mensaje: "Las personas jurídicas no tienen cuenta en el dominio." };
+  if (!consultaDirectorioDisponible()) return { ok: false, mensaje: "La conexión con el directorio activo no está configurada." };
+
+  let consulta = await consultarDirectorioPorDocumento(c.identificacion, tokenServicio);
+  if (!consulta.ok && c.usuarioRed) consulta = await consultarDirectorioPorUsuarioRed(c.usuarioRed, tokenServicio);
+  if (!consulta.ok || !consulta.perfil.usuarioRed) {
+    return { ok: false, mensaje: "Todavía no está en el dominio CDMB: se sincronizará cuando sistemas cree sus credenciales de red." };
+  }
+  const perfil = consulta.perfil;
+  const usuarioRed = perfil.usuarioRed!.trim().toLowerCase();
+
+  let usuarioId = c.usuarioId;
+  if (!usuarioId) {
+    const existente = await db.usuario.findFirst({ where: { OR: [{ email: usuarioRed }, { cedulaONit: c.identificacion }] }, select: { id: true } });
+    usuarioId = existente?.id ?? (await crearUsuarioDeDominio(perfil, c.identificacion, ["GECON"]))?.id ?? null;
+  }
+  if (!usuarioId) return { ok: false, mensaje: `No se pudo crear el usuario ${usuarioRed} en la plataforma.` };
+
+  const u = await db.usuario.findUniqueOrThrow({ where: { id: usuarioId }, select: SELECT_CRUCE });
+  await aplicarDirectorio(u, { perfil, por: "cedula" });
+  let vinculado = Boolean(c.usuarioId);
+  if (!c.usuarioId) vinculado = await vincularPerfilConUsuario(c, usuarioId);
+  if (vinculado) await sincronizarContratistaDeUsuario(usuarioId);
+  await db.contratista.update({ where: { id: c.id }, data: { usuarioRed } });
+  if (!c.usuarioId && vinculado) {
+    await registrarAuditoria({
+      tipo: "USUARIO_ACTUALIZADO",
+      descripcion: `El contratista ${c.nombreORazonSocial} (C.C. ${c.identificacion}) quedó vinculado a su cuenta del dominio ${usuarioRed} con los datos del directorio activo.`,
+      usuarioId,
+    });
+  }
+  return {
+    ok: true,
+    vinculado,
+    usuarioRed,
+    mensaje: vinculado
+      ? `Sincronizado con el dominio: usuario de red ${usuarioRed}, datos actualizados en el contratista y en Usuarios.`
+      : `Se encontró la cuenta ${usuarioRed}, pero no se pudo vincular: ese usuario tiene otro rol en GECON o un documento distinto.`,
+  };
+}
+
 type ResultadoSincronizacion = {
   ok: boolean;
   disponible: boolean;
   temporales: number;
   convertidos: number;
   pendientes: number;
+  contratistasPendientes: number;
+  contratistasVinculados: number;
   mensaje?: string;
 };
 
 export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincronizacion> {
-  const temporales = await db.usuario.findMany({ where: { activo: true, cuentaTemporal: true, cedulaONit: { not: null } }, select: SELECT_CRUCE });
-  const vacio = { disponible: consultaDirectorioDisponible(), temporales: temporales.length, convertidos: 0, pendientes: temporales.length };
-  if (temporales.length === 0 || !vacio.disponible) return { ok: true, ...vacio };
+  const [temporales, contratistas] = await Promise.all([
+    db.usuario.findMany({ where: { activo: true, cuentaTemporal: true, cedulaONit: { not: null } }, select: SELECT_CRUCE }),
+    db.contratista.findMany({ where: { usuarioId: null, tipoPersona: "NATURAL" }, select: { id: true } }),
+  ]);
+  const vacio = {
+    disponible: consultaDirectorioDisponible(),
+    temporales: temporales.length,
+    convertidos: 0,
+    pendientes: temporales.length,
+    contratistasPendientes: contratistas.length,
+    contratistasVinculados: 0,
+  };
+  if ((temporales.length === 0 && contratistas.length === 0) || !vacio.disponible) return { ok: true, ...vacio };
   const sesion = await abrirSesionServicioDirectorio();
   if (!sesion.ok) return { ok: false, ...vacio, mensaje: sesion.mensaje };
   const r = { ok: true, ...vacio };
@@ -182,12 +241,20 @@ export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincroni
       if (usuarioRed) {
         r.convertidos++;
         r.pendientes--;
+        const contratista = await db.contratista.findUnique({ where: { usuarioId: u.id }, select: { id: true } });
+        if (contratista) await sincronizarContratistaDeUsuario(u.id);
+      }
+    }
+    for (const c of contratistas) {
+      const resultado = await sincronizarContratistaConDominio(c.id, sesion.token);
+      if (resultado.vinculado) {
+        r.contratistasVinculados++;
+        r.contratistasPendientes--;
       }
     }
   } finally {
     await cerrarSesionDirectorioActivo(sesion.token).catch(() => {});
   }
-  if (r.convertidos > 0) await autovincularPerfilesPorDocumento();
   return r;
 }
 

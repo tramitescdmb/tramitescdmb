@@ -971,6 +971,7 @@ export const SELECT_USUARIO_CONTRATISTA = {
   rol: true,
   email: true,
   cuentaTemporal: true,
+  directorioActivo: true,
   rolesContratacion: true,
   ...SELECT_PERSONA_USUARIO,
 } as const;
@@ -1059,9 +1060,10 @@ export async function sincronizarContratistaDeUsuario(usuarioId: string): Promis
   const ocupada = identificacion
     ? await db.contratista.findFirst({ where: { identificacion, id: { not: contratista.id } }, select: { id: true } })
     : null;
+  const usuarioRed = u.directorioActivo && !u.cuentaTemporal ? u.email : undefined;
   await db.contratista.update({
     where: { id: contratista.id },
-    data: identificacion && !ocupada ? { ...resto, identificacion } : resto,
+    data: { ...(identificacion && !ocupada ? { ...resto, identificacion } : resto), ...(usuarioRed ? { usuarioRed } : {}) },
   });
 }
 

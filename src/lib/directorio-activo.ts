@@ -308,6 +308,34 @@ export async function listarDirectorioCompleto(tokenServicio?: string): Promise<
   }
 }
 
+export async function consultarDirectorioPorUsuarioRed(usuarioRed: string, tokenServicio?: string): Promise<ResultadoConsultaDirectorio> {
+  const red = usuarioRed.trim().toLowerCase();
+  const base = baseUrl();
+  if (!red) return { ok: false, mensaje: "Indique el usuario de red." };
+  if (!base || !credencialesServicio()) return { ok: false, noDisponible: true, mensaje: "La conexión con el directorio activo no está configurada." };
+  let token = tokenServicio;
+  if (!token) {
+    const sesion = await abrirSesionServicioDirectorio();
+    if (!sesion.ok) return { ok: false, mensaje: sesion.mensaje };
+    token = sesion.token;
+  }
+  try {
+    const respuesta = await fetch(`${base}/${RUTA_DIRECTORIO}?samAccountName=${encodeURIComponent(red)}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!respuesta.ok) return { ok: false, mensaje: `El directorio activo respondió con error (${respuesta.status}).` };
+    const cuerpo = (await respuesta.json().catch(() => null)) as { data?: unknown } | null;
+    const filas = Array.isArray(cuerpo?.data) ? cuerpo.data : [];
+    const perfil = filas.map((f) => extraerPerfil(f)).find((p) => p.usuarioRed?.toLowerCase() === red);
+    return perfil ? { ok: true, perfil } : { ok: false, mensaje: `No hay una cuenta ${red} en el directorio activo.` };
+  } catch {
+    return { ok: false, mensaje: "No fue posible consultar el directorio activo. Intente de nuevo." };
+  } finally {
+    if (!tokenServicio) await cerrarSesionDirectorioActivo(token).catch(() => {});
+  }
+}
+
 function normalizarBusqueda(t: string) {
   return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }

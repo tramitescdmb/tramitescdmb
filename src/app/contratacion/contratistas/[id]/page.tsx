@@ -12,6 +12,7 @@ import { formatearPesosCO } from "@/lib/moneda";
 import { personaVacia } from "@/lib/datos-persona";
 import { BandaTablero } from "@/components/tablero";
 import { CrearUsuarioContratistaBoton } from "@/components/CrearUsuarioContratistaBoton";
+import { SincronizarContratistaBoton } from "@/components/SincronizarContratistaBoton";
 
 function fechaCorta(d: Date): string {
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -112,9 +113,10 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </>
           )}
         </p>
-        {!usuario && (puedeGestionar || esPersonalContratacion(permisos)) && contratista.tipoPersona === "NATURAL" && (
-          <div className="mt-2">
-            <CrearUsuarioContratistaBoton contratistaId={contratista.id} />
+        {(puedeGestionar || esPersonalContratacion(permisos)) && contratista.tipoPersona === "NATURAL" && (
+          <div className="mt-2 flex flex-wrap items-start gap-2">
+            <SincronizarContratistaBoton contratistaId={contratista.id} />
+            {!usuario && <CrearUsuarioContratistaBoton contratistaId={contratista.id} />}
           </div>
         )}
       </BandaTablero>
