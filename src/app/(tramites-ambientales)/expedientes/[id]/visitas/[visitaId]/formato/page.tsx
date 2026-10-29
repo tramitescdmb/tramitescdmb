@@ -152,12 +152,18 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
               firmantes={lista.map((p) => ({ nombre: porId.get(p.usuarioId)?.nombre ?? "—", rol: ETIQUETA_ROL_PARTICIPANTE[p.rol] }))}
             />
           )}
-          {vt.documentoConceptoId && (
-            <a href={`/api/documentos/${vt.documentoConceptoId}/rotulado`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-              {faltan.length === 0 && rechazados.length === 0 ? "PDF firmado" : "PDF enviado a firma"}
+          {vt.documentoConceptoId ? (
+            <a
+              href={`/api/documentos/${vt.documentoConceptoId}/rotulado`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              Descargar / imprimir {faltan.length === 0 && rechazados.length === 0 ? "PDF firmado" : "PDF en firma"}
             </a>
+          ) : (
+            <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
           )}
-          <BotonImprimir variante="secundario">Descargar / imprimir</BotonImprimir>
         </span>
       </div>
       <LineaEstadoConcepto etapa={etapa} revisiones={vt.revisiones} />
@@ -192,7 +198,17 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
         </section>
       )}
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft print:border-0 print:p-0 print:shadow-none">
+      {vt.documentoConceptoId && (
+        <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft print:hidden">
+          <iframe src={`/api/documentos/${vt.documentoConceptoId}/rotulado`} title="Concepto técnico con sello de firma, franja lateral y hoja de diligencia" className="h-[85vh] w-full" />
+        </section>
+      )}
+
+      <details open={!vt.documentoConceptoId} className="group rounded-2xl border border-stone-200 bg-white shadow-soft print:border-0 print:shadow-none">
+        <summary className={`cursor-pointer px-4 py-2 text-sm font-medium text-cdmb-700 print:hidden ${vt.documentoConceptoId ? "" : "hidden"}`}>
+          Ver el formato en pantalla
+        </summary>
+      <div className="p-6 print:p-0">
         <DocumentoFormato
           encabezado={{ codigo: f.codigo, titulo: f.titulo, versionDocumento: f.versionDocumento, fechaDocumento: f.fechaDocumento, logoUrl: config.logoUrl }}
           estructura={estructura}
@@ -204,6 +220,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           verificacion={verificacion}
         />
       </div>
+      </details>
     </div>
   );
 }
