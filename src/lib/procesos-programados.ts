@@ -30,8 +30,10 @@ export const PROCESOS_PROGRAMADOS: ProcesoProgramado[] = [
   {
     clave: "directorio",
     nombre: "Sincronización con el directorio activo",
-    descripcion: "Refresca los datos de los usuarios por cédula cuando el directorio publica la consulta.",
+    descripcion:
+      "Lee el directorio completo y cruza a cada usuario por cédula, usuario de red o correo: actualiza sus datos, pasa al dominio las cuentas temporales cuya cédula ya existe y crea el usuario de los contratistas que ya están en la red.",
     horario: "Todos los días, 3:30 a. m.",
+    rutaManual: "/api/usuarios/directorio/sincronizar",
   },
   {
     clave: "flujos-vencimientos",

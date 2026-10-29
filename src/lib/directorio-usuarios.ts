@@ -3,10 +3,11 @@ import {
   abrirSesionServicioDirectorio,
   cerrarSesionDirectorioActivo,
   consultaDirectorioDisponible,
-  consultarDirectorioPorDocumento,
+  listarDirectorioCompleto,
   type PerfilDirectorio,
 } from "@/lib/directorio-activo";
 import { autovincularPerfilesPorDocumento, sincronizarContratistaDeUsuario } from "@/lib/contratacion";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -61,90 +62,164 @@ export async function actualizarUsuarioDesdeDirectorio(usuarioId: string, perfil
   return cambios;
 }
 
-export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promise<{ ok: boolean; mensaje: string }> {
-  const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: { cedulaONit: true, contratista: { select: { identificacion: true, tipoPersona: true } } } });
-  const documento = u?.cedulaONit ?? (u?.contratista?.tipoPersona === "NATURAL" ? u.contratista.identificacion : null);
-  if (!documento) return { ok: false, mensaje: "El usuario no tiene cédula registrada; regístrela para poder consultarlo en el directorio activo." };
-  const r = await consultarDirectorioPorDocumento(documento);
-  if (!r.ok) return { ok: false, mensaje: r.mensaje };
-  const cambios = await actualizarUsuarioDesdeDirectorio(usuarioId, r.perfil);
-  await db.usuario.update({ where: { id: usuarioId }, data: { sincronizadoDirectorioEn: new Date() } });
-  return { ok: true, mensaje: cambios.length ? `Actualizado desde el directorio activo: ${cambios.join(", ")}.` : "Los datos ya coinciden con el directorio activo." };
+export type IndiceDirectorio = { porDocumento: Map<string, PerfilDirectorio>; porUsuarioRed: Map<string, PerfilDirectorio>; porCorreo: Map<string, PerfilDirectorio> };
+
+export function indexarDirectorio(perfiles: PerfilDirectorio[]): IndiceDirectorio {
+  const indice: IndiceDirectorio = { porDocumento: new Map(), porUsuarioRed: new Map(), porCorreo: new Map() };
+  for (const p of perfiles) {
+    const doc = p.documento?.replace(/\D/g, "");
+    if (doc) indice.porDocumento.set(doc, p);
+    if (p.usuarioRed) indice.porUsuarioRed.set(p.usuarioRed.trim().toLowerCase(), p);
+    if (p.email) indice.porCorreo.set(p.email.trim().toLowerCase(), p);
+  }
+  return indice;
 }
 
-type ResultadoSincronizacion = { disponible: boolean; revisados: number; actualizados: number; creados: number; vinculados: number; incompleto?: boolean };
+type UsuarioParaCruce = {
+  email: string;
+  directorioActivo: boolean;
+  cedulaONit: string | null;
+  correoNotificacion: string | null;
+  contratista: { identificacion: string; tipoPersona: string } | null;
+};
+
+export function cruzarUsuarioConDirectorio(u: UsuarioParaCruce, indice: IndiceDirectorio): { perfil: PerfilDirectorio; por: "cedula" | "usuarioRed" | "correo" } | null {
+  const documento = (u.cedulaONit ?? (u.contratista?.tipoPersona === "NATURAL" ? u.contratista.identificacion : null))?.replace(/\D/g, "");
+  if (documento && indice.porDocumento.has(documento)) return { perfil: indice.porDocumento.get(documento)!, por: "cedula" };
+  const login = u.email.trim().toLowerCase();
+  if (u.directorioActivo && indice.porUsuarioRed.has(login)) return { perfil: indice.porUsuarioRed.get(login)!, por: "usuarioRed" };
+  for (const correo of [u.correoNotificacion, login.includes("@") ? login : null]) {
+    const c = correo?.trim().toLowerCase();
+    if (c && indice.porCorreo.has(c)) return { perfil: indice.porCorreo.get(c)!, por: "correo" };
+  }
+  return null;
+}
+
+async function convertirCuentaTemporal(usuarioId: string, perfil: PerfilDirectorio): Promise<string | null> {
+  const usuarioRed = perfil.usuarioRed?.trim().toLowerCase();
+  if (!usuarioRed) return null;
+  const ocupado = await db.usuario.findFirst({ where: { email: usuarioRed, NOT: { id: usuarioId } }, select: { id: true } });
+  if (ocupado) return null;
+  const antes = await db.usuario.findUnique({ where: { id: usuarioId }, select: { email: true, nombre: true } });
+  await db.usuario.update({
+    where: { id: usuarioId },
+    data: { email: usuarioRed, directorioActivo: true, cuentaTemporal: false, passwordHash: SIN_CONTRASENA_LOCAL, passwordCambiadaEn: null, sincronizadoDirectorioEn: new Date() },
+  });
+  await registrarAuditoria({
+    tipo: "USUARIO_ACTUALIZADO",
+    descripcion: `La cuenta temporal de ${antes?.nombre ?? "un usuario"} (${antes?.email ?? ""}) pasó al directorio activo con el usuario de red ${usuarioRed}: desde ahora ingresa con la contraseña del dominio.`,
+  });
+  return usuarioRed;
+}
+
+const SELECT_CRUCE = {
+  id: true,
+  email: true,
+  rol: true,
+  directorioActivo: true,
+  cuentaTemporal: true,
+  cedulaONit: true,
+  correoNotificacion: true,
+  contratista: { select: { identificacion: true, tipoPersona: true } },
+} as const;
+
+async function aplicarDirectorio(
+  u: UsuarioParaCruce & { id: string; rol: string; cuentaTemporal: boolean },
+  coincidencia: { perfil: PerfilDirectorio; por: "cedula" | "usuarioRed" | "correo" },
+): Promise<{ cambios: string[]; usuarioRed: string | null }> {
+  const cambios = await actualizarUsuarioDesdeDirectorio(u.id, coincidencia.perfil);
+  const usuarioRed = u.cuentaTemporal && coincidencia.por === "cedula" && u.rol !== "ADMIN" ? await convertirCuentaTemporal(u.id, coincidencia.perfil) : null;
+  if (!cambios.length && !usuarioRed) await db.usuario.update({ where: { id: u.id }, data: { sincronizadoDirectorioEn: new Date() } });
+  return { cambios, usuarioRed };
+}
+
+export async function sincronizarUsuarioConDirectorio(usuarioId: string): Promise<{ ok: boolean; mensaje: string }> {
+  const u = await db.usuario.findUnique({ where: { id: usuarioId }, select: SELECT_CRUCE });
+  if (!u) return { ok: false, mensaje: "El usuario no existe." };
+  const lista = await listarDirectorioCompleto();
+  if (!lista.ok) return { ok: false, mensaje: lista.mensaje };
+  const coincidencia = cruzarUsuarioConDirectorio(u, indexarDirectorio(lista.perfiles));
+  if (!coincidencia) {
+    return { ok: false, mensaje: "No se encontró en el directorio activo por cédula, usuario de red ni correo. Si es una cuenta temporal, se actualizará sola cuando exista en el dominio." };
+  }
+  const { cambios, usuarioRed } = await aplicarDirectorio(u, coincidencia);
+  const partes = [
+    usuarioRed ? `La cuenta temporal pasó al dominio con el usuario de red ${usuarioRed}.` : null,
+    cambios.length ? `Actualizado desde el directorio activo: ${cambios.join(", ")}.` : null,
+  ].filter(Boolean);
+  return { ok: true, mensaje: partes.join(" ") || "Los datos ya coinciden con el directorio activo." };
+}
+
+type ResultadoSincronizacion = {
+  ok: boolean;
+  disponible: boolean;
+  enDirectorio: number;
+  revisados: number;
+  encontrados: number;
+  actualizados: number;
+  convertidos: number;
+  creados: number;
+  vinculados: number;
+  mensaje?: string;
+};
 
 export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincronizacion> {
-  const vacio = { disponible: false, revisados: 0, actualizados: 0, creados: 0, vinculados: 0 };
-  if (!consultaDirectorioDisponible()) return vacio;
+  const vacio = { disponible: false, enDirectorio: 0, revisados: 0, encontrados: 0, actualizados: 0, convertidos: 0, creados: 0, vinculados: 0 };
+  if (!consultaDirectorioDisponible()) return { ok: true, ...vacio };
   const sesion = await abrirSesionServicioDirectorio();
-  if (!sesion.ok) return vacio;
-  const limite = Date.now() + 240_000;
-  const espera = () => new Promise((r) => setTimeout(r, 300));
-  const conteo = { revisados: 0, actualizados: 0, creados: 0, incompleto: false };
+  if (!sesion.ok) return { ok: false, ...vacio, mensaje: sesion.mensaje };
+  let lista: Awaited<ReturnType<typeof listarDirectorioCompleto>>;
   try {
-    await refrescarUsuarios(sesion.token, limite, espera, conteo);
-    if (!conteo.incompleto) await crearUsuariosDeContratistas(sesion.token, limite, espera, conteo);
+    lista = await listarDirectorioCompleto(sesion.token);
   } finally {
     await cerrarSesionDirectorioActivo(sesion.token).catch(() => {});
   }
-  const vinculados = await autovincularPerfilesPorDocumento();
-  return { disponible: true, ...conteo, vinculados };
-}
+  if (!lista.ok) return { ok: false, ...vacio, mensaje: lista.mensaje };
+  const indice = indexarDirectorio(lista.perfiles);
+  const r = { ok: true, disponible: true, enDirectorio: lista.perfiles.length, revisados: 0, encontrados: 0, actualizados: 0, convertidos: 0, creados: 0, vinculados: 0 };
 
-type Conteo = { revisados: number; actualizados: number; creados: number; incompleto: boolean };
-
-async function refrescarUsuarios(token: string, limite: number, espera: () => Promise<unknown>, conteo: Conteo) {
-  const usuarios = await db.usuario.findMany({
-    where: { activo: true, cedulaONit: { not: null }, OR: [{ directorioActivo: true }, { contratista: { isNot: null } }] },
-    select: { id: true, cedulaONit: true },
-    orderBy: { sincronizadoDirectorioEn: { sort: "asc", nulls: "first" } },
-  });
+  const usuarios = await db.usuario.findMany({ where: { activo: true }, select: SELECT_CRUCE });
   for (const u of usuarios) {
-    if (Date.now() > limite) {
-      conteo.incompleto = true;
-      return;
-    }
-    const r = await consultarDirectorioPorDocumento(u.cedulaONit!, token);
-    conteo.revisados++;
-    if (r.ok) {
-      if ((await actualizarUsuarioDesdeDirectorio(u.id, r.perfil)).length) conteo.actualizados++;
-      else await db.usuario.update({ where: { id: u.id }, data: { sincronizadoDirectorioEn: new Date() } });
-    }
-    await espera();
+    r.revisados++;
+    const coincidencia = cruzarUsuarioConDirectorio(u, indice);
+    if (!coincidencia) continue;
+    r.encontrados++;
+    const { cambios, usuarioRed } = await aplicarDirectorio(u, coincidencia);
+    if (cambios.length) r.actualizados++;
+    if (usuarioRed) r.convertidos++;
   }
-}
 
-async function crearUsuariosDeContratistas(token: string, limite: number, espera: () => Promise<unknown>, conteo: Conteo) {
   const pendientes = await db.contratista.findMany({ where: { usuarioId: null, tipoPersona: "NATURAL" }, select: { identificacion: true } });
   for (const c of pendientes) {
-    if (Date.now() > limite) {
-      conteo.incompleto = true;
-      return;
-    }
+    const perfil = indice.porDocumento.get(c.identificacion.replace(/\D/g, ""));
+    if (!perfil?.usuarioRed) continue;
     if (await db.usuario.findFirst({ where: { cedulaONit: c.identificacion }, select: { id: true } })) continue;
-    const r = await consultarDirectorioPorDocumento(c.identificacion, token);
-    conteo.revisados++;
-    await espera();
-    if (!r.ok || !r.perfil.usuarioRed) continue;
-    const email = r.perfil.usuarioRed.trim().toLowerCase();
-    if (await db.usuario.findUnique({ where: { email }, select: { id: true } })) continue;
-    const nombre = [r.perfil.nombres, r.perfil.apellidos].filter(Boolean).join(" ") || r.perfil.nombreCompleto || email;
-    await db.usuario.create({
-      data: {
-        email,
-        nombre,
-        nombres: r.perfil.nombres ?? null,
-        apellidos: r.perfil.apellidos ?? null,
-        cedulaONit: c.identificacion,
-        correoNotificacion: r.perfil.email?.toLowerCase() ?? null,
-        celular: r.perfil.celular ?? null,
-        directorioActivo: true,
-        passwordHash: SIN_CONTRASENA_LOCAL,
-        modulosAcceso: ["GECON"],
-        sincronizadoDirectorioEn: new Date(),
-      },
-    });
-    conteo.creados++;
+    if (await crearUsuarioDeDominio(perfil, c.identificacion, ["GECON"])) r.creados++;
   }
+  r.vinculados = await autovincularPerfilesPorDocumento();
+  return r;
+}
+
+export async function crearUsuarioDeDominio(perfil: PerfilDirectorio, documento: string, modulos: ("GECON" | "TRAMITES" | "SGDEA")[]): Promise<{ id: string; email: string } | null> {
+  const email = perfil.usuarioRed?.trim().toLowerCase();
+  if (!email || (await db.usuario.findUnique({ where: { email }, select: { id: true } }))) return null;
+  const nombre = [perfil.nombres, perfil.apellidos].filter(Boolean).join(" ") || perfil.nombreCompleto || email;
+  return db.usuario.create({
+    data: {
+      email,
+      nombre,
+      nombres: perfil.nombres ?? null,
+      apellidos: perfil.apellidos ?? null,
+      cedulaONit: documento,
+      correoNotificacion: perfil.email?.toLowerCase() ?? null,
+      celular: perfil.celular ?? null,
+      telefono: perfil.telefono ?? null,
+      direccion: perfil.direccion ?? null,
+      directorioActivo: true,
+      passwordHash: SIN_CONTRASENA_LOCAL,
+      modulosAcceso: modulos,
+      sincronizadoDirectorioEn: new Date(),
+    },
+    select: { id: true, email: true },
+  });
 }

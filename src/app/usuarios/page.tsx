@@ -268,6 +268,7 @@ export default async function UsuariosPage({
                             {u.email}
                             {u.cedulaONit ? ` · ${u.tipoIdentificacionFirma === "NIT" ? "NIT" : "C.C."} ${u.cedulaONit}` : ""}
                             {u.directorioActivo ? " · Directorio activo" : ""}
+                            {u.cuentaTemporal ? " · Cuenta temporal" : ""}
                           </span>
                         </span>
                       </Link>

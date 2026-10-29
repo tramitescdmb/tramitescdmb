@@ -11,6 +11,7 @@ import { EditarContratistaMinimoBoton } from "@/components/EditarContratistaMini
 import { formatearPesosCO } from "@/lib/moneda";
 import { personaVacia } from "@/lib/datos-persona";
 import { BandaTablero } from "@/components/tablero";
+import { CrearUsuarioContratistaBoton } from "@/components/CrearUsuarioContratistaBoton";
 
 function fechaCorta(d: Date): string {
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -97,6 +98,11 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
           {contratista.tipoPersona === "JURIDICA" ? "NIT" : "C.C."} {contratista.identificacion} ·{" "}
           {contratista.tipoPersona === "JURIDICA" ? "Persona jurídica" : "Persona natural"}
           {usuario ? ` · Usuario ${usuario.email}` : contratista.usuarioRed ? ` · Usuario de red ${contratista.usuarioRed} (se vincula cuando ingrese)` : ""}
+          {usuario?.cuentaTemporal && (
+            <span className="ml-1 rounded-sm bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700" title="Pasa al directorio activo cuando su cédula exista en el dominio.">
+              Cuenta temporal
+            </span>
+          )}
           {usuario && permisos.esAdmin && (
             <>
               {" · "}
@@ -106,6 +112,11 @@ export default async function ContratistaDetallePage({ params }: { params: Promi
             </>
           )}
         </p>
+        {!usuario && puedeGestionar && contratista.tipoPersona === "NATURAL" && (
+          <div className="mt-2">
+            <CrearUsuarioContratistaBoton contratistaId={contratista.id} />
+          </div>
+        )}
       </BandaTablero>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">

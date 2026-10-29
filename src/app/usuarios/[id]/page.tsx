@@ -121,6 +121,11 @@ export default async function EditarUsuarioPage({
               Directorio activo
             </span>
           )}
+          {usuario.cuentaTemporal && (
+            <span className="rounded-sm bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700" title="Pasa al directorio activo cuando su cédula exista en el dominio">
+              Cuenta temporal
+            </span>
+          )}
         </div>
       </header>
 

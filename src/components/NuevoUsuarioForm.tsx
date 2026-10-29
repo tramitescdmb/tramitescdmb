@@ -14,6 +14,19 @@ import { cargoParaSexo } from "@/lib/cargos";
 
 type Acceso = "DIRECTORIO_ACTIVO" | "LOCAL";
 
+type PerfilEncontrado = {
+  nombres?: string;
+  apellidos?: string;
+  nombreCompleto?: string;
+  email?: string;
+  celular?: string;
+  telefono?: string;
+  direccion?: string;
+  documento?: string;
+  usuarioRed?: string;
+  existente: { id: string; nombre: string; cuentaTemporal: boolean } | null;
+};
+
 export function NuevoUsuarioForm({
   cargos,
   longitudMinima,
@@ -43,32 +56,44 @@ export function NuevoUsuarioForm({
   const [cedulaConsulta, setCedulaConsulta] = useState("");
   const [consultando, setConsultando] = useState(false);
   const [resultadoConsulta, setResultadoConsulta] = useState<{ ok: boolean; texto: string; enlace?: string } | null>(null);
+  const [coincidencias, setCoincidencias] = useState<PerfilEncontrado[]>([]);
+
+  function usarPerfil(p: PerfilEncontrado) {
+    setCoincidencias([]);
+    if (p.existente) {
+      setResultadoConsulta({ ok: false, texto: `${p.existente.nombre} ya tiene cuenta en la plataforma${p.existente.cuentaTemporal ? " (temporal; pasará al dominio en la próxima sincronización)" : ""}.`, enlace: `/usuarios/${p.existente.id}` });
+      return;
+    }
+    if (p.usuarioRed) setEmail(p.usuarioRed.toLowerCase());
+    setPersona((prev) => ({
+      ...prev,
+      tipoPersona: "NATURAL",
+      tipoIdentificacion: "CC",
+      identificacion: p.documento ?? prev.identificacion,
+      nombres: p.nombres ?? prev.nombres,
+      apellidos: p.apellidos ?? prev.apellidos,
+      email: p.email ?? prev.email,
+      celular: p.celular ?? prev.celular,
+      telefono: p.telefono ?? prev.telefono,
+      direccion: p.direccion ?? prev.direccion,
+    }));
+    setResultadoConsulta({ ok: true, texto: "Datos traídos del directorio activo. Revíselos y complete el cargo y los roles." });
+  }
 
   async function consultarDirectorio() {
     setConsultando(true);
     setResultadoConsulta(null);
+    setCoincidencias([]);
     try {
-      const res = await fetch(`/api/usuarios/directorio?documento=${encodeURIComponent(cedulaConsulta)}`);
+      const res = await fetch(`/api/usuarios/directorio?q=${encodeURIComponent(cedulaConsulta.trim())}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setResultadoConsulta({ ok: false, texto: data.mensaje || data.error || "No fue posible consultar el directorio activo.", enlace: data.existente ? `/usuarios/${data.existente.id}` : undefined });
+        setResultadoConsulta({ ok: false, texto: data.mensaje || data.error || "No fue posible consultar el directorio activo." });
         return;
       }
-      const p = data.perfil as { nombres?: string; apellidos?: string; email?: string; celular?: string; telefono?: string; direccion?: string; documento?: string; usuarioRed?: string };
-      if (p.usuarioRed) setEmail(p.usuarioRed.toLowerCase());
-      setPersona((prev) => ({
-        ...prev,
-        tipoPersona: "NATURAL",
-        tipoIdentificacion: "CC",
-        identificacion: p.documento ?? cedulaConsulta.replace(/\D/g, ""),
-        nombres: p.nombres ?? prev.nombres,
-        apellidos: p.apellidos ?? prev.apellidos,
-        email: p.email ?? prev.email,
-        celular: p.celular ?? prev.celular,
-        telefono: p.telefono ?? prev.telefono,
-        direccion: p.direccion ?? prev.direccion,
-      }));
-      setResultadoConsulta({ ok: true, texto: "Datos traídos del directorio activo. Revíselos y complete el cargo y los roles." });
+      const perfiles = data.perfiles as PerfilEncontrado[];
+      if (perfiles.length === 1) usarPerfil(perfiles[0]!);
+      else setCoincidencias(perfiles);
     } catch {
       setResultadoConsulta({ ok: false, texto: "No fue posible consultar el directorio activo." });
     } finally {
@@ -174,32 +199,45 @@ export function NuevoUsuarioForm({
         {esRed && (
           <div className="max-w-xl rounded-lg border border-cdmb-100 bg-cdmb-50/50 p-3">
             <label className="block text-sm font-medium text-stone-700">
-              Cédula del funcionario (employeeID)
+              Buscar en el directorio activo
               <div className="mt-1 flex gap-2">
                 <input
                   value={cedulaConsulta}
-                  onChange={(e) => setCedulaConsulta(e.target.value.replace(/[^\d]/g, ""))}
+                  onChange={(e) => setCedulaConsulta(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      if (cedulaConsulta.length >= 5) void consultarDirectorio();
+                      if (cedulaConsulta.trim().length >= 3) void consultarDirectorio();
                     }
                   }}
-                  inputMode="numeric"
-                  placeholder="Cédula sin puntos"
+                  placeholder="Cédula, usuario de red, nombre o correo"
                   className={CLASE_CAMPO_PERSONA}
                 />
                 <button
                   type="button"
                   onClick={consultarDirectorio}
-                  disabled={consultando || cedulaConsulta.length < 5}
+                  disabled={consultando || cedulaConsulta.trim().length < 3}
                   className="flex-none rounded-md bg-cdmb-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-cdmb-700 disabled:opacity-50"
                 >
                   {consultando ? "Consultando…" : "Consultar en el directorio"}
                 </button>
               </div>
             </label>
-            <p className="mt-1 text-xs text-stone-500">Trae del directorio activo el usuario de red, los nombres, el correo y el celular. La contraseña es la del dominio CDMB.</p>
+            {coincidencias.length > 0 && (
+              <ul className="mt-2 max-h-56 divide-y divide-stone-100 overflow-y-auto rounded-md border border-stone-200 bg-white">
+                {coincidencias.map((p) => (
+                  <li key={`${p.usuarioRed}-${p.documento}`}>
+                    <button type="button" onClick={() => usarPerfil(p)} className="flex w-full items-center gap-3 px-3 py-1.5 text-left text-sm hover:bg-cdmb-50">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-stone-800">{[p.nombres, p.apellidos].filter(Boolean).join(" ") || p.nombreCompleto || p.usuarioRed}</span>
+                        <span className="block truncate text-xs text-stone-500">{[p.usuarioRed, p.documento ? `C.C. ${p.documento}` : null, p.email].filter(Boolean).join(" · ")}</span>
+                      </span>
+                      {p.existente && <span className="flex-none rounded-sm bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-500">Ya tiene cuenta</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             {resultadoConsulta && (
               <p className={`mt-2 rounded-md px-2.5 py-1.5 text-xs ${resultadoConsulta.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
                 {resultadoConsulta.texto}

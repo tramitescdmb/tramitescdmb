@@ -207,8 +207,15 @@ export type ResultadoConsultaDirectorio =
   | { ok: true; perfil: PerfilDirectorio }
   | { ok: false; mensaje: string; noDisponible?: boolean };
 
+const RUTA_DIRECTORIO = "admin/directorio-activo";
+
 function rutaConsulta() {
-  return process.env.DIRECTORIO_ACTIVO_CONSULTA_RUTA?.trim().replace(/^\/+/, "") || null;
+  return process.env.DIRECTORIO_ACTIVO_CONSULTA_RUTA?.trim().replace(/^\/+/, "") || `${RUTA_DIRECTORIO}/{documento}`;
+}
+
+function esSinResultados(cuerpo: unknown): boolean {
+  const texto = typeof cuerpo === "object" && cuerpo ? JSON.stringify(cuerpo) : String(cuerpo ?? "");
+  return /no ldap query results|no se encontr|sin resultados/i.test(texto);
 }
 
 function credencialesServicio() {
@@ -258,7 +265,11 @@ export async function consultarDirectorioPorDocumento(documento: string, tokenSe
         ? { ok: false, noDisponible: true, mensaje: "El API EME no tiene publicada la consulta configurada. Verifique la ruta con EME." }
         : { ok: false, mensaje: `No hay un funcionario con la cédula ${doc} en el directorio activo.` };
     }
-    if (!respuesta.ok) return { ok: false, mensaje: `El directorio activo respondió con error (${respuesta.status}).` };
+    if (!respuesta.ok) {
+      const cuerpo = await respuesta.json().catch(() => null);
+      if (esSinResultados(cuerpo)) return { ok: false, mensaje: `No hay un funcionario con la cédula ${doc} en el directorio activo.` };
+      return { ok: false, mensaje: `El directorio activo respondió con error (${respuesta.status}).` };
+    }
     const perfil = extraerPerfil(await respuesta.json().catch(() => null));
     if (!perfil.documento && !perfil.nombres && !perfil.usuarioRed) return { ok: false, mensaje: `No hay un funcionario con la cédula ${doc} en el directorio activo.` };
     return { ok: true, perfil: { ...perfil, documento: perfil.documento ?? doc } };
@@ -267,4 +278,49 @@ export async function consultarDirectorioPorDocumento(documento: string, tokenSe
   } finally {
     if (!tokenServicio) await cerrarSesionDirectorioActivo(token).catch(() => {});
   }
+}
+
+export async function listarDirectorioCompleto(tokenServicio?: string): Promise<{ ok: true; perfiles: PerfilDirectorio[] } | { ok: false; mensaje: string }> {
+  const base = baseUrl();
+  if (!base || !credencialesServicio()) return { ok: false, mensaje: "La conexión con el directorio activo no está configurada." };
+  let token = tokenServicio;
+  if (!token) {
+    const sesion = await abrirSesionServicioDirectorio();
+    if (!sesion.ok) return { ok: false, mensaje: sesion.mensaje };
+    token = sesion.token;
+  }
+  try {
+    const respuesta = await fetch(`${base}/${RUTA_DIRECTORIO}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!respuesta.ok) return { ok: false, mensaje: `El directorio activo respondió con error (${respuesta.status}).` };
+    const cuerpo = (await respuesta.json().catch(() => null)) as { data?: unknown } | null;
+    const filas = Array.isArray(cuerpo?.data) ? cuerpo.data : [];
+    const perfiles = filas
+      .map((fila) => extraerPerfil(fila))
+      .filter((p) => p.usuarioRed && (p.documento || p.nombres || p.apellidos || p.email));
+    return { ok: true, perfiles };
+  } catch {
+    return { ok: false, mensaje: "No fue posible consultar el directorio activo. Intente de nuevo." };
+  } finally {
+    if (!tokenServicio) await cerrarSesionDirectorioActivo(token).catch(() => {});
+  }
+}
+
+function normalizarBusqueda(t: string) {
+  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+export async function buscarEnDirectorio(texto: string, limite = 10): Promise<{ ok: true; perfiles: PerfilDirectorio[] } | { ok: false; mensaje: string }> {
+  const consulta = normalizarBusqueda(texto);
+  if (consulta.length < 3) return { ok: false, mensaje: "Escriba al menos 3 caracteres: cédula, usuario de red, nombre o correo." };
+  const r = await listarDirectorioCompleto();
+  if (!r.ok) return r;
+  const palabras = consulta.split(/\s+/);
+  const perfiles = r.perfiles.filter((p) => {
+    const base = normalizarBusqueda([p.documento, p.usuarioRed, p.nombres, p.apellidos, p.nombreCompleto, p.email, p.telefono, p.celular].filter(Boolean).join(" "));
+    return palabras.every((w) => base.includes(w));
+  });
+  return { ok: true, perfiles: perfiles.slice(0, limite) };
 }

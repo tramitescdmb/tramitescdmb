@@ -970,6 +970,7 @@ export const SELECT_USUARIO_CONTRATISTA = {
   activo: true,
   rol: true,
   email: true,
+  cuentaTemporal: true,
   rolesContratacion: true,
   ...SELECT_PERSONA_USUARIO,
 } as const;
