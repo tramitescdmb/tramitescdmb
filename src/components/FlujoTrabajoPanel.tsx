@@ -42,7 +42,9 @@ export async function FlujoTrabajoPanel({
   const habilitado = destino.habilitado;
   const [{ comunicacion, instancias }, aplicables, calendario] = await Promise.all([
     destino.ambito === "COMUNICACION" ? obtenerInstanciasDeComunicacion(destino.id) : obtenerInstanciasDeObjeto(destino.ambito, destino.id),
-    puedeOperar && habilitado ? flujosAplicables(destino.ambito === "COMUNICACION" ? destino.tipoComunicacion : destino.ambito) : Promise.resolve([]),
+    puedeOperar && habilitado
+      ? flujosAplicables(destino.ambito === "COMUNICACION" ? destino.tipoComunicacion : destino.ambito, { esAdministrador: usuario.esAdministrador, dependenciaId: usuario.dependenciaId })
+      : Promise.resolve([]),
     getCalendarioLaboral(),
   ]);
   const enCurso = instancias.find((i) => i.estado === "EN_CURSO");

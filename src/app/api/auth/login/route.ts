@@ -14,6 +14,7 @@ import {
 import { sincronizarContratistaDeUsuario, vincularContratistaPorUsuarioRed, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { destinoTrasIngreso } from "@/lib/destino-login";
+import { mismoDocumento } from "@/lib/datos-persona";
 
 type UsuarioConCargos = Prisma.UsuarioGetPayload<{ include: { cargoAsignaciones: { include: { cargo: true } } } }>;
 
@@ -248,7 +249,9 @@ async function ingresarPorDirectorioActivo(
   let usuario = existente;
   const documento = perfil.documento?.replace(/\D/g, "");
   if (!usuario && documento) {
-    const temporal = await db.usuario.findFirst({ where: { cuentaTemporal: true, cedulaONit: documento }, select: { id: true, email: true, activo: true } });
+    const temporal = (
+      await db.usuario.findMany({ where: { cuentaTemporal: true, cedulaONit: { not: null } }, select: { id: true, email: true, activo: true, cedulaONit: true } })
+    ).find((t) => mismoDocumento(t.cedulaONit, documento));
     if (temporal?.activo) {
       usuario = await db.usuario.update({
         where: { id: temporal.id },

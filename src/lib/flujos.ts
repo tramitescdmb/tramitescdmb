@@ -208,6 +208,7 @@ export async function duplicarFlujo(id: string, usuarioId: string, comoVersion =
       ambito: orig.ambito,
       familiaId: comoVersion ? familia : null,
       version: comoVersion ? ultimaVersion + 1 : 1,
+      inicioAutomatico: comoVersion ? orig.inicioAutomatico : false,
       activo: false,
       esPlantilla: false,
       dependenciasOperadoras: orig.dependenciasOperadoras,
@@ -370,6 +371,9 @@ export async function guardarLienzoFlujo(
   });
   if (!flujo) throw new Error("El flujo no existe.");
   if (datos.nodos.length === 0) throw new Error("El flujo debe tener al menos un paso.");
+  const pasosPropios = new Set(flujo.pasos.map((p) => p.id));
+  if (datos.nodos.some((n) => !n.id.startsWith("nuevo-") && !pasosPropios.has(n.id))) throw new Error("El diagrama incluye pasos que no pertenecen a este flujo.");
+  const transicionesPropias = new Set(flujo.transiciones.map((t) => t.id));
 
   const num = (v: number) => (Number.isFinite(v) ? Math.round(v) : 0);
   const idReal = new Map<string, string>();
@@ -413,7 +417,7 @@ export async function guardarLienzoFlujo(
   const restantes = await db.pasoFlujo.findMany({ where: { flujoId }, orderBy: { orden: "asc" }, select: { id: true } });
   await Promise.all(restantes.map((p, i) => db.pasoFlujo.update({ where: { id: p.id }, data: { orden: i + 1 } })));
 
-  const idsTransEntrantes = new Set(datos.transiciones.filter((t) => t.id && !t.id.startsWith("nueva-")).map((t) => t.id!));
+  const idsTransEntrantes = new Set(datos.transiciones.filter((t) => t.id && transicionesPropias.has(t.id)).map((t) => t.id!));
   for (const t of flujo.transiciones) {
     if (!idsTransEntrantes.has(t.id)) await db.transicionPaso.delete({ where: { id: t.id } }).catch(() => {});
   }

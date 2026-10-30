@@ -17,6 +17,7 @@ import {
   TIPOS_IDENTIFICACION_USUARIO,
   type DatosPersona,
   separarNombreCompleto,
+  mismoDocumento,
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
@@ -1601,7 +1602,7 @@ export async function vincularPerfilConUsuario(pendiente: Prisma.ContratistaGetP
   ]);
   if (!usuario || yaVinculado || motivoNoPuedeSerContratista(usuario)) return false;
   const actual = personaDesdeUsuario(usuario, false);
-  if (actual.identificacion.trim() && actual.identificacion.trim() !== pendiente.identificacion) return false;
+  if (actual.identificacion.trim() && !mismoDocumento(actual.identificacion, pendiente.identificacion)) return false;
 
   const deContratista: Partial<DatosPersona> = {
     tipoPersona: pendiente.tipoPersona,

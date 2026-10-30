@@ -141,6 +141,16 @@ export function leerDatosPersona(body: unknown, tiposValidos: readonly OpcionIde
   };
 }
 
+export function variantesDocumento(documento: string): string[] {
+  const escrito = documento.trim();
+  return [...new Set([escrito, escrito.replace(/\D/g, "")].filter(Boolean))];
+}
+
+export function mismoDocumento(a: string | null | undefined, b: string | null | undefined): boolean {
+  const da = (a ?? "").replace(/\D/g, "");
+  return da.length > 0 && da === (b ?? "").replace(/\D/g, "");
+}
+
 export function nulo(s: string): string | null {
   return s.trim() ? s.trim() : null;
 }

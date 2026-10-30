@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { camposFaltantes, leerDatosPersona, nombreCompletoPersona, personaVacia, REQUERIDOS_CONTRATISTA, separarNombreCompleto, TIPOS_IDENTIFICACION_USUARIO } from "./datos-persona";
+import { camposFaltantes, leerDatosPersona, mismoDocumento, variantesDocumento, nombreCompletoPersona, personaVacia, REQUERIDOS_CONTRATISTA, separarNombreCompleto, TIPOS_IDENTIFICACION_USUARIO } from "./datos-persona";
 
 describe("datos de persona", () => {
   it("separa el nombre completo en nombres y apellidos", () => {
@@ -44,5 +44,14 @@ describe("datos de persona", () => {
     expect(p.email).toBe("ti@eme.co");
     expect(p.regimenTributario).toBe("");
     expect(p.granContribuyente).toBe(false);
+  });
+
+  it("reconoce la misma cédula escrita con puntos o espacios", () => {
+    expect(variantesDocumento(" 1.098.765.432 ")).toEqual(["1.098.765.432", "1098765432"]);
+    expect(variantesDocumento("91234567")).toEqual(["91234567"]);
+    expect(mismoDocumento("1.098.765.432", "1098765432")).toBe(true);
+    expect(mismoDocumento("1098765432", "1098765433")).toBe(false);
+    expect(mismoDocumento("", "")).toBe(false);
+    expect(mismoDocumento(null, "123")).toBe(false);
   });
 });

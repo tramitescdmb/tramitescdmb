@@ -1169,7 +1169,7 @@ export default async function ExpedienteDetallePage({
             oculta: !usuarioFlujoActual,
             contenido: usuarioFlujoActual ? (
               <FlujoTrabajoPanel
-                destino={{ ambito: "TRAMITE", id: expediente.id, habilitado: enEjecucion }}
+                destino={{ ambito: "TRAMITE", id: expediente.id, habilitado: !expediente.archivado }}
                 accion={`/api/expedientes/${expediente.id}/flujo`}
                 puedeOperar={puedeEditarPorRol}
                 usuario={usuarioFlujoActual}

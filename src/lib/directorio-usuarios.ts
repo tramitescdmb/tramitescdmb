@@ -10,6 +10,7 @@ import {
 } from "@/lib/directorio-activo";
 import { sincronizarContratistaDeUsuario, vincularPerfilConUsuario } from "@/lib/contratacion";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { variantesDocumento } from "@/lib/datos-persona";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -204,7 +205,7 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
 
   let usuarioId = c.usuarioId;
   if (!usuarioId) {
-    const existente = await db.usuario.findFirst({ where: { OR: [{ email: usuarioRed }, { cedulaONit: c.identificacion }] }, select: { id: true } });
+    const existente = await db.usuario.findFirst({ where: { OR: [{ email: usuarioRed }, { cedulaONit: { in: variantesDocumento(c.identificacion) } }] }, select: { id: true } });
     usuarioId = existente?.id ?? (await crearUsuarioDeDominio(perfil, c.identificacion, ["GECON"]))?.id ?? null;
   }
   if (!usuarioId) return { ok: false, mensaje: `No se pudo crear el usuario ${usuarioRed} en la plataforma.` };

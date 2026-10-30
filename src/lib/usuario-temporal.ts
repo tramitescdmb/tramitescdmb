@@ -3,6 +3,7 @@ import { asignarRolBase } from "@/lib/perfiles";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { consultaDirectorioDisponible, consultarDirectorioPorDocumento } from "@/lib/directorio-activo";
 import { crearUsuarioDeDominio, sincronizarContratistaConDominio } from "@/lib/directorio-usuarios";
+import { variantesDocumento } from "@/lib/datos-persona";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -27,7 +28,7 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
   if (!c) return { ok: false, mensaje: "El contratista no existe." };
   if (c.usuarioId) return { ok: false, mensaje: "El contratista ya tiene usuario en la plataforma." };
   if (c.tipoPersona !== "NATURAL") return { ok: false, mensaje: "Solo se crea usuario para personas naturales; la persona jurídica firma por su representante legal." };
-  if (await db.usuario.findFirst({ where: { cedulaONit: c.identificacion }, select: { id: true } })) {
+  if (await db.usuario.findFirst({ where: { cedulaONit: { in: variantesDocumento(c.identificacion) } }, select: { id: true } })) {
     return { ok: false, mensaje: "Ya existe un usuario con ese número de documento; se vinculará solo al pasar el contrato a Contractual." };
   }
 

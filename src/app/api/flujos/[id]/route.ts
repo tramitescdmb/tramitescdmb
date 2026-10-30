@@ -61,6 +61,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const accion = String(form.get("accion") || "");
   const pestana = PESTANA_DE_ACCION[accion];
   if (pestana) detalle.searchParams.set("pestana", pestana);
+
+  const pasosIndicados = [...new Set(["pasoId", "desdePasoId", "haciaPasoId"].map((k) => String(form.get(k) || "")).filter(Boolean))];
+  const transicionIndicada = String(form.get("transicionId") || "");
+  const ajenos =
+    (pasosIndicados.length > 0 && (await db.pasoFlujo.count({ where: { id: { in: pasosIndicados }, flujoId: id } })) !== pasosIndicados.length) ||
+    (transicionIndicada !== "" && !(await db.transicionPaso.findFirst({ where: { id: transicionIndicada, flujoId: id }, select: { id: true } })));
+  if (ajenos) {
+    await registrarAccesoDenegadoAccion("Editar pasos de otro flujo", id, session, await headers());
+    detalle.searchParams.set("error", "El paso o la salida no pertenecen a este flujo.");
+    return NextResponse.redirect(detalle, { status: 303 });
+  }
   const num =(v: FormDataEntryValue | null) => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : null;
