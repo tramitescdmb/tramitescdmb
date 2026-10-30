@@ -7,7 +7,11 @@ import { solicitudesVigentes } from "@/lib/estado-firmas";
 import type { PermisosUsuario } from "@/lib/permisos";
 import {
   AMBITOS_DE_MODULO,
+  ASIGNACION_POR_DEFECTO,
+  ASIGNACIONES_DE_MODULO,
   etiquetaAsignacion,
+  moduloDeAmbito,
+  TIPOS_PASO_DE_MODULO,
   OPCIONES_APLICA_A,
   puedeAdministrarFlujosModulo,
   puedeOperarFlujosSgdea,
@@ -62,6 +66,13 @@ export async function obtenerFlujo(id: string) {
       cargoClave: p.cargoClave,
     })),
   );
+  const modulo = moduloDeAmbito(flujo.ambito);
+  for (const p of flujo.pasos) {
+    if (!TIPOS_PASO_DE_MODULO[modulo].includes(p.tipo)) problemas.push({ paso: p.nombre, mensaje: `El tipo «${ETIQUETA_TIPO_PASO[p.tipo]}» no aplica en este módulo.` });
+    if (p.tipo !== "FIN" && !ASIGNACIONES_DE_MODULO[modulo].includes(p.asignacion)) {
+      problemas.push({ paso: p.nombre, mensaje: "El responsable elegido no aplica en este módulo; elija otro." });
+    }
+  }
   return { ...flujo, problemas };
 }
 
@@ -71,6 +82,7 @@ export async function crearFlujo(
 ) {
   const nombre = datos.nombre.trim();
   if (!nombre) throw new Error("El nombre del flujo es obligatorio.");
+  const asignacion = ASIGNACION_POR_DEFECTO[moduloDeAmbito(datos.ambito ?? "COMUNICACION")];
   const flujo = await db.flujoTrabajo.create({
     data: {
       nombre,
@@ -81,8 +93,8 @@ export async function crearFlujo(
       creadoPorId: usuarioId,
       pasos: {
         create: [
-          { orden: 1, nombre: "Primer paso", tipo: "TAREA", asignacion: "DEPENDENCIA_COMUNICACION", posX: 160, posY: 40 },
-          { orden: 2, nombre: "Cierre", tipo: "FIN", asignacion: "DEPENDENCIA_COMUNICACION", posX: 200, posY: 200 },
+          { orden: 1, nombre: "Primer paso", tipo: "TAREA", asignacion, posX: 160, posY: 40 },
+          { orden: 2, nombre: "Cierre", tipo: "FIN", asignacion, posX: 200, posY: 200 },
         ],
       },
     },
@@ -252,12 +264,16 @@ export async function guardarDependenciasOperadoras(flujoId: string, dependencia
 
 export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo?: TipoPasoFlujo }) {
   const nombre = datos.nombre.trim() || "Paso sin nombre";
-  const ultimo = await db.pasoFlujo.findFirst({ where: { flujoId }, orderBy: { orden: "desc" } });
+  const [ultimo, flujo] = await Promise.all([
+    db.pasoFlujo.findFirst({ where: { flujoId }, orderBy: { orden: "desc" } }),
+    db.flujoTrabajo.findUnique({ where: { id: flujoId }, select: { ambito: true } }),
+  ]);
+  const asignacion = ASIGNACION_POR_DEFECTO[moduloDeAmbito(flujo?.ambito ?? "COMUNICACION")];
   const pos = { posX: (ultimo?.posX ?? 160) + 60, posY: (ultimo?.posY ?? 0) + 120 };
   if (ultimo?.tipo === "FIN") {
     await db.pasoFlujo.update({ where: { id: ultimo.id }, data: { orden: ultimo.orden + 1 } });
     return db.pasoFlujo.create({
-      data: { flujoId, orden: ultimo.orden, nombre, tipo: datos.tipo ?? "TAREA", asignacion: "DEPENDENCIA_COMUNICACION", ...pos },
+      data: { flujoId, orden: ultimo.orden, nombre, tipo: datos.tipo ?? "TAREA", asignacion, ...pos },
     });
   }
   return db.pasoFlujo.create({
@@ -266,7 +282,7 @@ export async function agregarPaso(flujoId: string, datos: { nombre: string; tipo
       orden: (ultimo?.orden ?? 0) + 1,
       nombre,
       tipo: datos.tipo ?? "TAREA",
-      asignacion: "DEPENDENCIA_COMUNICACION",
+      asignacion,
       ...pos,
     },
   });
@@ -387,7 +403,7 @@ export async function guardarLienzoFlujo(
           orden: ordenSiguiente++,
           nombre: (n.nombre || "").trim() || "Paso sin nombre",
           tipo: n.tipo ?? "TAREA",
-          asignacion: "DEPENDENCIA_COMUNICACION",
+          asignacion: ASIGNACION_POR_DEFECTO[moduloDeAmbito(flujo.ambito)],
           posX: num(n.x),
           posY: num(n.y),
         },
@@ -1095,19 +1111,23 @@ async function cancelarPorCierre(
 ): Promise<number> {
   let canceladas = 0;
   for (const i of instancias) {
-    const movido = await db.instanciaFlujo.updateMany({
-      where: { id: i.id, estado: "EN_CURSO" },
-      data: { estado: "CANCELADO", finalizadoEn: new Date(), pasoActualId: null, asignadoAId: null },
-    });
-    if (movido.count === 0) continue;
-    canceladas++;
-    await registrarAuditoriaDoc({
-      entidad: i.objetivo.entidad,
-      entidadId: i.objetivo.id,
-      accion: "FLUJO",
-      usuarioId,
-      detalle: `Flujo «${i.flujo.nombre}» en ${i.objetivo.etiqueta}: terminó sin completarse en el paso «${i.pasoActual?.nombre ?? "—"}» — ${motivo}`,
-    });
+    try {
+      const movido = await db.instanciaFlujo.updateMany({
+        where: { id: i.id, estado: "EN_CURSO" },
+        data: { estado: "CANCELADO", finalizadoEn: new Date(), pasoActualId: null, asignadoAId: null },
+      });
+      if (movido.count === 0) continue;
+      canceladas++;
+      await registrarAuditoriaDoc({
+        entidad: i.objetivo.entidad,
+        entidadId: i.objetivo.id,
+        accion: "FLUJO",
+        usuarioId,
+        detalle: `Flujo «${i.flujo.nombre}» en ${i.objetivo.etiqueta}: terminó sin completarse en el paso «${i.pasoActual?.nombre ?? "—"}» — ${motivo}`,
+      });
+    } catch (err) {
+      console.error(`No se pudo terminar el flujo ${i.id} por cierre:`, err);
+    }
   }
   return canceladas;
 }

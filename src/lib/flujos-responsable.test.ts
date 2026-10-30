@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ASIGNACIONES_DE_MODULO, TIPOS_PASO_DE_MODULO, etiquetaAsignacion, moduloDeAmbito } from "@/lib/flujos-modulos";
+import { ASIGNACION_POR_DEFECTO, ASIGNACIONES_DE_MODULO, TIPOS_PASO_DE_MODULO, etiquetaAsignacion, moduloDeAmbito } from "@/lib/flujos-modulos";
 import { aplicaAFormulario, objetivoDeInstancia, plantillasDeModulo, esDevolucion, esResponsablePaso, esSalidaRechazo, evaluarFirmasComunicacion, puedeCompletarPaso, type ContextoResponsable, type UsuarioFlujo } from "@/lib/flujos";
 import { validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 
@@ -141,6 +141,13 @@ describe("paso de firma del flujo", () => {
     expect(
       objetivoDeInstancia({ ...base, comunicacion: { id: "m", radicado: "R", asunto: "A", estado: "ANULADA", dependenciaDestinoId: null, dependenciaOrigenId: null, radicadoPorId: null } }).abierto,
     ).toBe(false);
+  });
+
+  it("el responsable por defecto de un paso nuevo existe en su módulo", () => {
+    for (const modulo of ["SGDEA", "GECON", "TRAMITES"] as const) {
+      expect(ASIGNACIONES_DE_MODULO[modulo]).toContain(ASIGNACION_POR_DEFECTO[modulo]);
+    }
+    expect(ASIGNACION_POR_DEFECTO.TRAMITES).not.toBe("DEPENDENCIA_COMUNICACION");
   });
 
   it("cada módulo guarda sus flujos en su propio ámbito", () => {

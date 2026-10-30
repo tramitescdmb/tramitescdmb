@@ -548,7 +548,7 @@ export async function anularComunicacion(comunicacionId: string, motivo: string,
   if (c.estado === "ANULADA") throw new Error("Esta comunicación ya está anulada.");
   if (!motivo.trim()) throw new Error("Debe indicar el motivo de la anulación.");
   const anulada = await db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
-  await cancelarFlujosDeObjeto("COMUNICACION", comunicacionId, usuarioId, `se anuló la comunicación (${motivo.trim()}).`);
+  await cancelarFlujosDeObjeto("COMUNICACION", comunicacionId, usuarioId, `se anuló la comunicación (${motivo.trim()}).`).catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
   return anulada;
 }
 

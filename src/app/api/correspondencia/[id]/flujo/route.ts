@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeAdministrarArchivo } from "@/lib/permisos";
 import {
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(volver, { status: 303 });
   }
 
+  const instanciaId = String(form.get("instanciaId") || "");
+  if (accion !== "iniciar" && !(await db.instanciaFlujo.findFirst({ where: { id: instanciaId, comunicacionId: id }, select: { id: true } }))) {
+    await registrarAccesoDenegadoAccion("Operar flujo de otra comunicación", id, session, await headers());
+    volver.searchParams.set("error", "El flujo no corresponde a esta comunicación.");
+    return NextResponse.redirect(volver, { status: 303 });
+  }
+
   const { ip } = datosPeticion(await headers());
   const usuario = await usuarioFlujo(session.userId, permisos);
   const ctx: ContextoOperador = { esAdministrador: usuario.esAdministrador, dependenciaId: usuario.dependenciaId };
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       volver.searchParams.set("ok", "Flujo iniciado.");
     } else if (accion === "avanzar") {
       await avanzarInstancia(
-        String(form.get("instanciaId") || ""),
+        instanciaId,
         String(form.get("transicionId") || ""),
         usuario,
         String(form.get("comentario") || "") || null,
@@ -49,10 +57,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
       volver.searchParams.set("ok", "Paso completado.");
     } else if (accion === "cancelar") {
-      await cancelarInstancia(String(form.get("instanciaId") || ""), session.userId, String(form.get("motivo") || ""), ip, ctx);
+      await cancelarInstancia(instanciaId, session.userId, String(form.get("motivo") || ""), ip, ctx);
       volver.searchParams.set("ok", "Flujo cancelado.");
     } else if (accion === "reasignar") {
-      await reasignarPasoManual(String(form.get("instanciaId") || ""), String(form.get("asignarAId") || ""), session.userId, ip);
+      await reasignarPasoManual(instanciaId, String(form.get("asignarAId") || ""), session.userId, ip);
       volver.searchParams.set("ok", "Paso reasignado.");
     } else {
       volver.searchParams.set("error", "Acción no reconocida.");

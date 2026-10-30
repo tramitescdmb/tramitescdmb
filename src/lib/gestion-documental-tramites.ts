@@ -107,7 +107,7 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
       usuarioId,
     },
   });
-  await cancelarFlujosDeObjeto("TRAMITE", expedienteId, usuarioId, "se cerró y archivó el expediente.");
+  await cancelarFlujosDeObjeto("TRAMITE", expedienteId, usuarioId, "se cerró y archivó el expediente.").catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
 }
 
 export async function reabrirExpedienteTramite(expedienteId: string, motivo: string, usuarioId: string) {

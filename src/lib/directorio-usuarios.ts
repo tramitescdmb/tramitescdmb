@@ -270,21 +270,29 @@ export async function sincronizarDirectorioNocturno(): Promise<ResultadoSincroni
   const r = { ok: true, ...vacio };
   try {
     for (const u of temporales) {
-      const consulta = await consultarDirectorioPorDocumento(u.cedulaONit!, sesion.token);
-      if (!consulta.ok || !consulta.perfil.usuarioRed) continue;
-      const { usuarioRed } = await aplicarDirectorio(u, { perfil: consulta.perfil, por: "cedula" });
-      if (usuarioRed) {
-        r.convertidos++;
-        r.pendientes--;
-        const contratista = await db.contratista.findUnique({ where: { usuarioId: u.id }, select: { id: true } });
-        if (contratista) await sincronizarContratistaDeUsuario(u.id);
+      try {
+        const consulta = await consultarDirectorioPorDocumento(u.cedulaONit!, sesion.token);
+        if (!consulta.ok || !consulta.perfil.usuarioRed) continue;
+        const { usuarioRed } = await aplicarDirectorio(u, { perfil: consulta.perfil, por: "cedula" });
+        if (usuarioRed) {
+          r.convertidos++;
+          r.pendientes--;
+          const contratista = await db.contratista.findUnique({ where: { usuarioId: u.id }, select: { id: true } });
+          if (contratista) await sincronizarContratistaDeUsuario(u.id);
+        }
+      } catch (err) {
+        console.error(`Sincronización del directorio: falló la cuenta temporal ${u.email}:`, err);
       }
     }
     for (const c of contratistas) {
-      const resultado = await sincronizarContratistaConDominio(c.id, sesion.token);
-      if (resultado.vinculado) {
-        r.contratistasVinculados++;
-        r.contratistasPendientes--;
+      try {
+        const resultado = await sincronizarContratistaConDominio(c.id, sesion.token);
+        if (resultado.vinculado) {
+          r.contratistasVinculados++;
+          r.contratistasPendientes--;
+        }
+      } catch (err) {
+        console.error(`Sincronización del directorio: falló el contratista ${c.id}:`, err);
       }
     }
   } finally {

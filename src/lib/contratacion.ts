@@ -869,7 +869,7 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
 
   if (idx === ETAPAS_ORDEN.length - 1) {
     await db.expedienteContractual.update({ where: { id: expedienteId }, data: { cerrado: true, fechaCierre: new Date() } });
-    await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, "se cerró el expediente contractual al terminar la etapa postcontractual.");
+    await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, "se cerró el expediente contractual al terminar la etapa postcontractual.").catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
     const evento = await db.eventoContratacion.create({
       data: {
         expedienteId,
@@ -966,7 +966,7 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
     data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
   });
   await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
-  await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, `se eliminó el expediente (${motivo}).`);
+  await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, `se eliminó el expediente (${motivo}).`).catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
   await sincronizarArchivoContrato(expedienteId);
 }
 

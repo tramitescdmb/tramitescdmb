@@ -224,7 +224,7 @@ export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId
     where: { id: expedienteId },
     data: { estado: "CERRADO", fechaCierre: new Date(), cerradoPorId: usuarioId, indiceHash },
   });
-  await cancelarFlujosDeObjeto("EXPEDIENTE", expedienteId, usuarioId, "se cerró el expediente.");
+  await cancelarFlujosDeObjeto("EXPEDIENTE", expedienteId, usuarioId, "se cerró el expediente.").catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
   return cerrado;
 }
 

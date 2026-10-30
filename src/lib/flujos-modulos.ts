@@ -46,6 +46,12 @@ export const ASIGNACIONES_DE_MODULO: Record<ModuloFlujo, AsignacionPaso[]> = {
   TRAMITES: ["PERSONAL_ASIGNADO", "DEPENDENCIA_FIJA", "CARGO", "RADICADOR", "RESPONSABLE_PASO_ANTERIOR", "MANUAL"],
 };
 
+export const ASIGNACION_POR_DEFECTO: Record<ModuloFlujo, AsignacionPaso> = {
+  SGDEA: "DEPENDENCIA_COMUNICACION",
+  GECON: "PERSONAL_ASIGNADO",
+  TRAMITES: "PERSONAL_ASIGNADO",
+};
+
 const ETIQUETA_ASIGNACION_BASE: Record<AsignacionPaso, string> = {
   DEPENDENCIA_COMUNICACION: "Dependencia de la comunicación o del expediente",
   DEPENDENCIA_FIJA: "Una dependencia fija",
