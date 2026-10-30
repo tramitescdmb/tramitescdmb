@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import {
   ReactFlow,
@@ -11,6 +11,7 @@ import {
   Position,
   MarkerType,
   addEdge,
+  useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
   type Node,
@@ -59,6 +60,23 @@ function NodoPaso({ data, selected }: NodeProps) {
 
 const nodeTypes = { paso: NodoPaso };
 
+function EncuadreAlMostrar({ contenedor }: { contenedor: RefObject<HTMLDivElement | null> }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!el) return;
+    let visible = el.offsetWidth > 0;
+    const observador = new ResizeObserver(() => {
+      const ahora = el.offsetWidth > 0;
+      if (ahora && !visible) requestAnimationFrame(() => fitView());
+      visible = ahora;
+    });
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [contenedor, fitView]);
+  return null;
+}
+
 function auto(i: number) {
   return { x: 40 + (i % 3) * 230, y: 30 + Math.floor(i / 3) * 130 };
 }
@@ -77,6 +95,7 @@ function Editor({
   tipos?: Tipo[];
 }) {
   const router = useRouter();
+  const lienzo = useRef<HTMLDivElement>(null);
   const ordenInicial = pasos.length ? Math.min(...pasos.map((p) => p.orden)) : 1;
 
   const [nodes, setNodes] = useState<Node[]>(() =>
@@ -206,7 +225,7 @@ function Editor({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_15rem]">
-        <div className="h-[440px] border-b border-stone-100 lg:border-b-0 lg:border-r">
+        <div ref={lienzo} className="h-[440px] border-b border-stone-100 lg:border-b-0 lg:border-r">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -223,6 +242,7 @@ function Editor({
           >
             <Background gap={16} color="#e7e5e4" />
             <Controls showInteractive={false} />
+            <EncuadreAlMostrar contenedor={lienzo} />
           </ReactFlow>
         </div>
 
