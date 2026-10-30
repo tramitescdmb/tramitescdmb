@@ -1,6 +1,7 @@
 import type { NivelAccesoInformacion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { cancelarFlujosDeObjeto } from "@/lib/flujos";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -106,6 +107,7 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
       usuarioId,
     },
   });
+  await cancelarFlujosDeObjeto("TRAMITE", expedienteId, usuarioId, "se cerró y archivó el expediente.");
 }
 
 export async function reabrirExpedienteTramite(expedienteId: string, motivo: string, usuarioId: string) {

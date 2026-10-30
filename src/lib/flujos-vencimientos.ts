@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
-import { estadoTerminoPaso, objetivoDeInstancia, sincronizarFlujoPorFirmas, SELECT_OBJETIVO_FLUJO } from "@/lib/flujos";
+import { cancelarFlujosDeObjetosCerrados, estadoTerminoPaso, objetivoDeInstancia, sincronizarFlujoPorFirmas, SELECT_OBJETIVO_FLUJO } from "@/lib/flujos";
 
-export type ResultadoVencimientos = { revisadas: number; vencidas: number; avisadas: number; avanzadas: number };
+export type ResultadoVencimientos = { revisadas: number; vencidas: number; avisadas: number; avanzadas: number; cerradas: number };
 
 export function salidaDeVencimiento<T extends { etiqueta: string }>(transiciones: T[], salida: string | null): T | null {
   if (!salida) return null;
@@ -12,6 +12,7 @@ export function salidaDeVencimiento<T extends { etiqueta: string }>(transiciones
 }
 
 export async function procesarVencimientosFlujos(actorId: string | null = null): Promise<ResultadoVencimientos> {
+  const cerradas = await cancelarFlujosDeObjetosCerrados(actorId);
   const calendario = await getCalendarioLaboral();
   const instancias = await db.instanciaFlujo.findMany({
     where: {
@@ -41,7 +42,7 @@ export async function procesarVencimientosFlujos(actorId: string | null = null):
     },
   });
 
-  const r: ResultadoVencimientos = { revisadas: instancias.length, vencidas: 0, avisadas: 0, avanzadas: 0 };
+  const r: ResultadoVencimientos = { revisadas: instancias.length, vencidas: 0, avisadas: 0, avanzadas: 0, cerradas };
   const ahora = new Date();
   for (const i of instancias) {
     const paso = i.pasoActual;

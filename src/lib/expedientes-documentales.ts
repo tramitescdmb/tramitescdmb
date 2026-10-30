@@ -6,6 +6,7 @@ import { puedeGestionarArchivo, type PermisosUsuario } from "@/lib/permisos";
 import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
+import { cancelarFlujosDeObjeto } from "@/lib/flujos";
 
 const SERIE_EXPEDIENTE = "X";
 
@@ -219,10 +220,12 @@ export async function cerrarExpedienteDocumental(expedienteId: string, usuarioId
   }
 
   const indiceHash = calcularHashIndice(expediente.documentos);
-  return db.expedienteDocumental.update({
+  const cerrado = await db.expedienteDocumental.update({
     where: { id: expedienteId },
     data: { estado: "CERRADO", fechaCierre: new Date(), cerradoPorId: usuarioId, indiceHash },
   });
+  await cancelarFlujosDeObjeto("EXPEDIENTE", expedienteId, usuarioId, "se cerró el expediente.");
+  return cerrado;
 }
 
 export async function reabrirExpedienteDocumental(expedienteId: string, motivo: string) {

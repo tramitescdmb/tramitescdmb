@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
   try {
     const r = await registrarEjecucion("flujos-vencimientos", "manual", session.userId, () => procesarVencimientosFlujos(session.userId));
-    volver.searchParams.set("ok", `Vencimientos revisados: ${r.revisadas} paso(s) con término, ${r.vencidas} vencido(s), ${r.avisadas} marcado(s) y ${r.avanzadas} avanzado(s).`);
+    volver.searchParams.set("ok", `Vencimientos revisados: ${r.revisadas} paso(s) con término, ${r.vencidas} vencido(s), ${r.avisadas} marcado(s), ${r.avanzadas} avanzado(s) y ${r.cerradas} flujo(s) terminado(s) por cierre del expediente.`);
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo ejecutar el proceso.");
   }

@@ -20,7 +20,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
+import { cancelarFlujosDeObjeto, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
@@ -868,6 +868,7 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
 
   if (idx === ETAPAS_ORDEN.length - 1) {
     await db.expedienteContractual.update({ where: { id: expedienteId }, data: { cerrado: true, fechaCierre: new Date() } });
+    await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, "se cerró el expediente contractual al terminar la etapa postcontractual.");
     const evento = await db.eventoContratacion.create({
       data: {
         expedienteId,
@@ -964,6 +965,7 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
     data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
   });
   await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
+  await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, `se eliminó el expediente (${motivo}).`);
   await sincronizarArchivoContrato(expedienteId);
 }
 

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const motivo = String(form.get("motivo") || "");
 
   try {
-    await anularComunicacion(id, motivo);
+    await anularComunicacion(id, motivo, session.userId);
   } catch (err) {
     await registrarErrorEjecucion("Comunicacion", id, "anulación de comunicación", session.userId, req.headers, err);
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo anular la comunicación.");

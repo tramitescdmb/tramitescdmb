@@ -1076,6 +1076,48 @@ export async function cancelarInstancia(instanciaId: string, usuarioId: string, 
   });
 }
 
+const CAMPO_OBJETO: Record<AmbitoFlujo, "comunicacionId" | (typeof CAMPO_INSTANCIA)[AmbitoExpedienteFlujo]> = {
+  COMUNICACION: "comunicacionId",
+  ...CAMPO_INSTANCIA,
+};
+
+async function cancelarPorCierre(
+  instancias: { id: string; flujo: { nombre: string }; pasoActual: { nombre: string } | null; objetivo: ObjetivoFlujo }[],
+  usuarioId: string | null,
+  motivo: string,
+): Promise<number> {
+  let canceladas = 0;
+  for (const i of instancias) {
+    const movido = await db.instanciaFlujo.updateMany({
+      where: { id: i.id, estado: "EN_CURSO" },
+      data: { estado: "CANCELADO", finalizadoEn: new Date(), pasoActualId: null, asignadoAId: null },
+    });
+    if (movido.count === 0) continue;
+    canceladas++;
+    await registrarAuditoriaDoc({
+      entidad: i.objetivo.entidad,
+      entidadId: i.objetivo.id,
+      accion: "FLUJO",
+      usuarioId,
+      detalle: `Flujo «${i.flujo.nombre}» en ${i.objetivo.etiqueta}: terminó sin completarse en el paso «${i.pasoActual?.nombre ?? "—"}» — ${motivo}`,
+    });
+  }
+  return canceladas;
+}
+
+const SELECT_CIERRE = { id: true, flujo: { select: { nombre: true } }, pasoActual: { select: { nombre: true } }, ...SELECT_OBJETIVO_FLUJO } as const;
+
+export async function cancelarFlujosDeObjeto(ambito: AmbitoFlujo, objetoId: string, usuarioId: string | null, motivo: string): Promise<number> {
+  const instancias = await db.instanciaFlujo.findMany({ where: { [CAMPO_OBJETO[ambito]]: objetoId, estado: "EN_CURSO" }, select: SELECT_CIERRE });
+  return cancelarPorCierre(instancias.map((i) => ({ ...i, objetivo: objetivoDeInstancia(i) })), usuarioId, motivo);
+}
+
+export async function cancelarFlujosDeObjetosCerrados(usuarioId: string | null = null): Promise<number> {
+  const instancias = await db.instanciaFlujo.findMany({ where: { estado: "EN_CURSO" }, take: 2000, select: SELECT_CIERRE });
+  const cerradas = instancias.map((i) => ({ ...i, objetivo: objetivoDeInstancia(i) })).filter((i) => !i.objetivo.abierto);
+  return cancelarPorCierre(cerradas, usuarioId, "el expediente o la comunicación ya estaba cerrado, finalizado o anulado.");
+}
+
 export function limitePaso(desde: Date | null, slaDiasHabiles: number | null, cal: CalendarioLaboral): Date | null {
   if (!desde || !slaDiasHabiles || slaDiasHabiles <= 0) return null;
   return sumarDiasHabiles(desde, slaDiasHabiles, cal);

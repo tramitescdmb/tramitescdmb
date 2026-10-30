@@ -16,7 +16,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
-import { iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
+import { cancelarFlujosDeObjeto, iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -542,12 +542,14 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   });
 }
 
-export async function anularComunicacion(comunicacionId: string, motivo: string) {
+export async function anularComunicacion(comunicacionId: string, motivo: string, usuarioId: string | null = null) {
   const c = await db.comunicacion.findUnique({ where: { id: comunicacionId }, select: { id: true, estado: true } });
   if (!c) throw new Error("La comunicación no existe.");
   if (c.estado === "ANULADA") throw new Error("Esta comunicación ya está anulada.");
   if (!motivo.trim()) throw new Error("Debe indicar el motivo de la anulación.");
-  return db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
+  const anulada = await db.comunicacion.update({ where: { id: comunicacionId }, data: { estado: "ANULADA", motivoAnulacion: motivo.trim() } });
+  await cancelarFlujosDeObjeto("COMUNICACION", comunicacionId, usuarioId, `se anuló la comunicación (${motivo.trim()}).`);
+  return anulada;
 }
 
 export async function etiquetarComunicacion(comunicacionId: string, propuestas: string[]) {
