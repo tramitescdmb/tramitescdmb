@@ -11,7 +11,7 @@ import { filtrarLoteFotosVisita, MAX_FOTOS_VISITA } from "@/lib/visita-tecnica-f
 import { ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
 import { FormularioFormato } from "@/components/formatos/FormularioFormato";
 import type { ResultadoZonificacion } from "@/lib/zonificacion";
-import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposObligatoriosFaltantes, camposPlanos, campoVacio, completarPrecarga, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
+import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposConErrorDigitacion, camposPlanos, campoVacio, completarPrecarga, corregirLatLon, errorRespuestas, precargaDeCampo, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas, type ValorCoordenadas } from "@/lib/formato-visita";
 
 type Punto = { lat: number; lon: number; precisionM: number | null; manual: boolean; capturadoEn: string };
 type Tema = { id: string; nombre: string };
@@ -156,6 +156,20 @@ export function RegistrarVisitaForm({
 
   const fijar = <K extends keyof Borrador>(k: K, v: Borrador[K]) => setB((prev) => ({ ...prev, [k]: v }));
 
+  function fijarPunto(p: Punto) {
+    setB((prev) => {
+      if (!formato || !prev.respuestas) return { ...prev, punto: p };
+      const respuestas = { ...prev.respuestas };
+      for (const c of camposPlanos(formato.estructura)) {
+        if (c.tipo !== "coordenadas" || precargaDeCampo(c) !== "coordenadas") continue;
+        const actual = respuestas[c.id] as ValorCoordenadas | undefined;
+        const delExpediente = precarga.coordenadas && actual?.lat != null && `${actual.lat},${actual.lon}` === precarga.coordenadas;
+        if (actual?.lat == null || delExpediente) respuestas[c.id] = { lat: Number(p.lat.toFixed(7)), lon: Number(p.lon.toFixed(7)), cota: actual?.cota ?? "", precisionM: p.precisionM };
+      }
+      return { ...prev, punto: p, respuestas };
+    });
+  }
+
   function capturar() {
     setError(null);
     if (!navigator.geolocation) {
@@ -165,7 +179,7 @@ export function RegistrarVisitaForm({
     setCapturando(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        fijar("punto", { lat: pos.coords.latitude, lon: pos.coords.longitude, precisionM: pos.coords.accuracy ?? null, manual: false, capturadoEn: new Date().toISOString() });
+        fijarPunto({ lat: pos.coords.latitude, lon: pos.coords.longitude, precisionM: pos.coords.accuracy ?? null, manual: false, capturadoEn: new Date().toISOString() });
         setCapturando(false);
       },
       (err) => {
@@ -181,14 +195,15 @@ export function RegistrarVisitaForm({
   }
 
   function usarManual() {
-    const lat = Number(latManual.replace(",", "."));
-    const lon = Number(lonManual.replace(",", "."));
-    if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lon) || lon < -180 || lon > 180) {
+    const latD = Number(latManual.replace(",", "."));
+    const lonD = Number(lonManual.replace(",", "."));
+    if (!latManual.trim() || !lonManual.trim() || !Number.isFinite(latD) || latD < -90 || latD > 90 || !Number.isFinite(lonD) || lonD < -180 || lonD > 180) {
       setError("Ingrese una latitud (-90 a 90) y una longitud (-180 a 180) válidas.");
       return;
     }
-    setError(null);
-    fijar("punto", { lat, lon, precisionM: null, manual: true, capturadoEn: new Date().toISOString() });
+    const { lat, lon, aviso } = corregirLatLon(latD, lonD);
+    setError(aviso);
+    fijarPunto({ lat, lon, precisionM: null, manual: true, capturadoEn: new Date().toISOString() });
     setModoManual(false);
   }
 
@@ -272,8 +287,9 @@ export function RegistrarVisitaForm({
     if (formato) {
       const respuestas = b.respuestas ?? {};
       const vacios = camposPlanos(formato.estructura).filter((c) => c.obligatorio && campoAplica(c, precarga) && campoVacio(c, respuestas[c.id]));
-      setFaltantes(new Set(vacios.map((c) => c.id)));
-      if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(formato.estructura, respuestas, precarga).join("; ")}.`);
+      setFaltantes(new Set([...vacios.map((c) => c.id), ...camposConErrorDigitacion(formato.estructura, respuestas, precarga).map((m) => m.id)]));
+      const e = errorRespuestas(formato.estructura, respuestas, precarga);
+      if (e) return setError(e);
     } else {
       if (b.temaIds.length + b.temasNuevos.length === 0) return setError("Seleccione al menos un tema de la visita.");
       if (!b.hallazgos.trim()) return setError("Describa lo observado en la visita.");

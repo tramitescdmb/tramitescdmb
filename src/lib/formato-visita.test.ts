@@ -3,7 +3,10 @@ import {
   actualizarTextosTipo,
   camposObligatoriosFaltantes,
   completarPrecarga,
+  corregirLatLon,
+  errorDigitacion,
   evaluarCumplimiento,
+  mismoMunicipio,
   evaluarFormula,
   numeroDesdeTexto,
   resolverPlantilla,
@@ -176,6 +179,22 @@ describe("estructura y respuestas", () => {
     expect(camposObligatoriosFaltantes(estructura, r, natural)).toEqual([]);
     expect(camposObligatoriosFaltantes(estructura, r, { tipo_solicitante: "Persona jurídica" })).toEqual(["NIT"]);
     expect(completarPrecarga(estructura, { email: "" }, { correo: "x@y.co" }).email).toBe("x@y.co");
+  });
+
+  it("detecta errores de digitación y corrige coordenadas invertidas o sin signo", () => {
+    const num = { id: "q", etiqueta: "Caudal", tipo: "numero" } as Campo;
+    const correo = { id: "correo", etiqueta: "Correo", tipo: "texto" } as Campo;
+    expect(errorDigitacion(num, "1.234,5")).toBeNull();
+    expect(errorDigitacion(num, "12 l/s")).not.toBeNull();
+    expect(errorDigitacion(correo, "a@b.co; c@d.gov.co")).toBeNull();
+    expect(errorDigitacion(correo, "a@b")).not.toBeNull();
+    expect(corregirLatLon(7.1, 73.1)).toMatchObject({ lat: 7.1, lon: -73.1 });
+    expect(corregirLatLon(-73.1, 7.1)).toMatchObject({ lat: 7.1, lon: -73.1 });
+    expect(corregirLatLon(7.1, -73.1).aviso).toBeNull();
+    expect(mismoMunicipio("Girón", "SAN JUAN DE GIRON")).toBe(true);
+    expect(mismoMunicipio("Bucaramanga", "Floridablanca")).toBe(false);
+    const area = { secciones: [{ id: "s", titulo: "S", campos: [{ id: "area_cultivos", etiqueta: "Área en cultivos", tipo: "parrafo" }] }] } as Parameters<typeof respuestasIniciales>[0];
+    expect(respuestasIniciales(area, { area_cultivos: "1,5" }).area_cultivos).toBe("1,5 ha");
   });
 });
 

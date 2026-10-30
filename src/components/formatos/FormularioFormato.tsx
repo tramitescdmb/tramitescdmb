@@ -7,7 +7,10 @@ import { Spinner } from "@/components/Spinner";
 import {
   aDms,
   campoAplica,
+  corregirLatLon,
   cumplimientoFila,
+  errorDigitacion,
+  mismoMunicipio,
   formatearNumero,
   OPCIONES_CUMPLIMIENTO,
   resolverPlantilla,
@@ -123,7 +126,9 @@ function CampoFormato({
 }) {
   const v = respuestas[campo.id];
   const str = typeof v === "string" ? v : "";
-  const borde = falta ? " border-red-300 ring-1 ring-red-200" : "";
+  const errorDig = soloLectura ? null : errorDigitacion(campo, v);
+  const borde = falta || errorDig ? " border-red-300 ring-1 ring-red-200" : "";
+  const avisoDig = errorDig && <span className="mt-0.5 block text-[11px] text-red-600">{errorDig}</span>;
 
   switch (campo.tipo) {
     case "texto":
@@ -132,6 +137,7 @@ function CampoFormato({
         <label className="block">
           <Etiqueta campo={campo} falta={falta} />
           <input aria-label={campo.etiqueta} value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} maxLength={1000} className={campoCls + borde} />
+          {avisoDig}
         </label>
       );
     case "fecha":
@@ -149,6 +155,7 @@ function CampoFormato({
             <input aria-label={campo.etiqueta} value={str} onChange={(e) => onCambio(campo.id, e.target.value)} disabled={soloLectura} inputMode="decimal" className={campoCls + borde} />
             {campo.unidad && <span className="flex-none text-xs text-stone-500">{campo.unidad}</span>}
           </span>
+          {avisoDig}
         </label>
       );
     case "seleccion":
@@ -226,6 +233,7 @@ function CampoFormato({
           onCambio={(x) => onCambio(campo.id, x)}
           soloLectura={soloLectura}
           falta={falta}
+          municipioExpediente={precarga.municipio}
           onZonificar={onZonificar ? (z) => onZonificar(campo.id, z) : undefined}
         />
       );
@@ -286,6 +294,7 @@ function CampoCoordenadas({
   onCambio,
   soloLectura,
   falta,
+  municipioExpediente,
   onZonificar,
 }: {
   campo: Campo;
@@ -293,6 +302,7 @@ function CampoCoordenadas({
   onCambio: (v: ValorCoordenadas) => void;
   soloLectura: boolean;
   falta: boolean;
+  municipioExpediente?: string;
   onZonificar?: (z: ResultadoZonificacion) => void;
 }) {
   const v = valor ?? { lat: null, lon: null, cota: "" };
@@ -324,6 +334,12 @@ function CampoCoordenadas({
   const [error, setError] = useState<string | null>(null);
   const [latTxt, setLatTxt] = useState(v.lat != null ? String(v.lat) : "");
   const [lonTxt, setLonTxt] = useState(v.lon != null ? String(v.lon) : "");
+  const [aviso, setAviso] = useState<string | null>(null);
+  useEffect(() => {
+    if (v.lat == null || v.lon == null) return;
+    setLatTxt((t) => (Number(t.replace(",", ".")) === v.lat ? t : String(v.lat)));
+    setLonTxt((t) => (Number(t.replace(",", ".")) === v.lon ? t : String(v.lon)));
+  }, [v.lat, v.lon]);
 
   function capturar() {
     setError(null);
@@ -350,11 +366,15 @@ function CampoCoordenadas({
   function manual(latS: string, lonS: string) {
     setLatTxt(latS);
     setLonTxt(lonS);
-    const lat = Number(latS.replace(",", "."));
-    const lon = Number(lonS.replace(",", "."));
-    const ok = latS.trim() && lonS.trim() && Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
-    onCambio({ ...v, lat: ok ? lat : null, lon: ok ? lon : null, precisionM: null });
+    const latD = Number(latS.replace(",", "."));
+    const lonD = Number(lonS.replace(",", "."));
+    const ok = latS.trim() && lonS.trim() && Number.isFinite(latD) && Number.isFinite(lonD) && Math.abs(latD) <= 90 && Math.abs(lonD) <= 180;
+    const c = ok ? corregirLatLon(latD, lonD) : null;
+    setAviso(c?.aviso ?? null);
+    onCambio({ ...v, lat: c ? c.lat : null, lon: c ? c.lon : null, precisionM: null });
   }
+
+  const otroMunicipio = zona?.municipio && municipioExpediente && !mismoMunicipio(zona.municipio, municipioExpediente) ? zona.municipio : null;
 
   const listo = v.lat != null && v.lon != null;
   const nacional = listo ? desdeLatLon(v.lat!, v.lon!) : null;
@@ -392,6 +412,12 @@ function CampoCoordenadas({
           )}
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
+        {aviso && <p className="text-xs text-amber-700">{aviso}</p>}
+        {listo && otroMunicipio && (
+          <p className="rounded bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-800">
+            El punto cae en {otroMunicipio} y el expediente indica {municipioExpediente}. Verifique las coordenadas o el municipio.
+          </p>
+        )}
         {listo && nacional && bogota && (
           <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-[11px] text-stone-600 sm:grid-cols-3">
             <div>

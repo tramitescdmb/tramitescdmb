@@ -39,6 +39,9 @@ export const PRECARGAS = {
   catastral: "Número catastral",
   direccion_predio: "Dirección del predio",
   area_predio: "Área del predio (ha)",
+  area_cultivos: "Área en cultivos (ha)",
+  area_bosque: "Área en bosque (ha)",
+  viviendas: "Número de viviendas",
   coordenadas: "Coordenadas del predio",
   funcionario: "Funcionario que realiza la visita",
   fecha_visita: "Fecha de la visita",
@@ -106,6 +109,7 @@ const PRECARGA_POR_ID: Record<string, ClavePrecarga> = {
   email: "correo",
   celular: "telefono",
   numero_catastral: "catastral",
+  numero_viviendas: "viviendas",
 };
 
 const SOLO_PERSONA_POR_ID: Record<string, TipoPersonaFormato> = { representante_legal: "JURIDICA", cedula_representante: "JURIDICA", nit: "JURIDICA" };
@@ -136,6 +140,50 @@ export function campoAplica(c: Campo, precarga: DatosPrecarga): boolean {
   return !solo || !tipo || solo === tipo;
 }
 
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function esCampoCorreo(c: Campo): boolean {
+  return precargaDeCampo(c) === "correo" || /^(correo|email|e_?mail)(_|$)/.test(c.id);
+}
+
+export function errorDigitacion(c: Campo, v: ValorCampo | undefined): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  if (c.tipo === "numero" && numeroDesdeTexto(v) == null) return "Debe ser un número (use coma para los decimales).";
+  if (c.tipo === "texto" && esCampoCorreo(c) && !v.split(/[\s;,/]+/).filter(Boolean).every((x) => CORREO_VALIDO.test(x))) return "Correo electrónico no válido.";
+  return null;
+}
+
+export function camposConErrorDigitacion(estructura: EstructuraFormato, respuestas: Respuestas, precarga: DatosPrecarga = {}): { id: string; etiqueta: string; error: string }[] {
+  return camposPlanos(estructura).flatMap((c) => {
+    const error = campoAplica(c, precarga) ? errorDigitacion(c, respuestas[c.id]) : null;
+    return error ? [{ id: c.id, etiqueta: c.etiqueta, error }] : [];
+  });
+}
+
+export function errorRespuestas(estructura: EstructuraFormato, respuestas: Respuestas, precarga: DatosPrecarga = {}): string | null {
+  const faltan = camposObligatoriosFaltantes(estructura, respuestas, precarga);
+  if (faltan.length) return `Complete los campos obligatorios del formato: ${faltan.join("; ")}.`;
+  const mal = camposConErrorDigitacion(estructura, respuestas, precarga);
+  if (mal.length) return `Revise los datos digitados: ${mal.map((m) => `${m.etiqueta} (${m.error.replace(/\.$/, "").toLowerCase()})`).join("; ")}.`;
+  return null;
+}
+
+export function corregirLatLon(lat: number, lon: number): { lat: number; lon: number; aviso: string | null } {
+  if (Math.abs(lat) > 60 && Math.abs(lon) <= 15) return { lat: Math.abs(lon), lon: -Math.abs(lat), aviso: "Se intercambiaron la latitud y la longitud." };
+  if (lon > 0 && lon >= 60) return { lat, lon: -lon, aviso: "La longitud en Colombia es negativa; se corrigió el signo." };
+  return { lat, lon, aviso: null };
+}
+
+function sinTildes(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+export function mismoMunicipio(a: string, b: string): boolean {
+  const x = sinTildes(a);
+  const y = sinTildes(b);
+  return !x || !y || x === y || x.includes(y) || y.includes(x);
+}
+
 function valorPrecargado(c: Campo, precarga: DatosPrecarga): ValorCampo | undefined {
   const clave = precargaDeCampo(c);
   const v = clave ? precarga[clave] : undefined;
@@ -145,6 +193,7 @@ function valorPrecargado(c: Campo, precarga: DatosPrecarga): ValorCampo | undefi
     return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon, cota: "" } : undefined;
   }
   if (c.tipo === "seleccion") return c.opciones?.find((o) => o.trim().toLowerCase() === v.trim().toLowerCase());
+  if (c.tipo !== "numero" && !c.unidad && (clave === "area_predio" || clave === "area_cultivos" || clave === "area_bosque")) return `${v} ha`;
   return v;
 }
 
