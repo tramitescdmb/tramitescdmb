@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSolicitantes } from "@/lib/permisos";
 import { correoValido, leerDatosPersona, TIPOS_IDENTIFICACION_USUARIO } from "@/lib/datos-persona";
 import { datosSolicitante, errorSolicitante } from "@/lib/solicitante";
+import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status: 400 });
   if (!correoValido(p.email)) return NextResponse.json({ error: "El correo electrónico no es válido." }, { status: 400 });
 
-  const existente = await db.solicitante.findUnique({ where: { identificacion: p.identificacion } });
+  const existente = await buscarSolicitantePorDocumento(p.identificacion);
   if (existente) {
     return NextResponse.json({ error: "Ya existe un solicitante con esta identificación.", id: existente.id }, { status: 409 });
   }

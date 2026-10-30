@@ -7,6 +7,7 @@ import { iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
+import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 
 type DocumentoInput = {
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
     ...calcularUbicacion("solicitanteUbicacion", solicitanteUbicacion),
   };
 
-  const identificacionSolicitante = solicitante.identificacion.trim();
+  const identificacionSolicitante = (await buscarSolicitantePorDocumento(solicitante.identificacion))?.identificacion ?? solicitante.identificacion.trim();
   const nombresTrim = solicitante.nombres?.trim() || null;
   const apellidosTrim = solicitante.apellidos?.trim() || null;
   const razonSocialTrim = solicitante.razonSocial?.trim() || null;

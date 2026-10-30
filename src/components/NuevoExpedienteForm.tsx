@@ -112,14 +112,16 @@ export function NuevoExpedienteForm({
     setMensajeBusqueda(null);
     try {
       const res = await fetch(`/api/solicitantes/buscar?identificacion=${encodeURIComponent(id)}`);
+      const sinca = "Se tomaron de SINCA 1.0 la razón social y el representante legal; verifíquelos.";
       if (res.ok) {
         const s = await res.json();
+        setSolicitanteIdentificacion(s.identificacion ?? id);
         setTipoSolicitante(s.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL");
         setSolicitanteNombres(s.nombres ?? "");
         setSolicitanteApellidos(s.apellidos ?? "");
         setSolicitanteRazonSocial(s.razonSocial ?? "");
-        setRepresentanteLegal(s.representanteLegal ?? "");
-        setRepresentanteIdentificacion(s.representanteIdentificacion ?? "");
+        setRepresentanteLegal(s.representanteLegal ?? s.sugerencia?.representanteLegal ?? "");
+        setRepresentanteIdentificacion(s.representanteIdentificacion ?? s.sugerencia?.representanteIdentificacion ?? "");
         setSolicitanteEmail(s.email ?? "");
         setSolicitanteTelefono(s.telefono ?? "");
         setSolicitanteDireccion(s.direccion ?? "");
@@ -129,10 +131,20 @@ export function NuevoExpedienteForm({
         const nombreEncontrado = s.tipo === "JURIDICA" ? s.razonSocial : [s.nombres, s.apellidos].filter(Boolean).join(" ");
         setMensajeBusqueda({
           tipo: "ok",
-          texto: `Registro existente: se completaron los datos de "${nombreEncontrado}". Verifique la información y actualice lo que corresponda.`,
+          texto: `Registro existente: se completaron los datos de "${nombreEncontrado}". Verifique la información y actualice lo que corresponda.${s.sugerencia ? ` El representante legal se tomó de SINCA 1.0; verifíquelo.` : ""}`,
         });
       } else if (res.status === 404) {
-        setMensajeBusqueda({ tipo: "info", texto: "No se encontró un solicitante registrado con este número. Se creará un nuevo registro al radicar el expediente." });
+        const { sugerencia } = await res.json().catch(() => ({ sugerencia: null }));
+        if (sugerencia) {
+          setTipoSolicitante("JURIDICA");
+          if (sugerencia.razonSocial) setSolicitanteRazonSocial((r) => r || sugerencia.razonSocial);
+          setRepresentanteLegal(sugerencia.representanteLegal ?? "");
+          setRepresentanteIdentificacion(sugerencia.representanteIdentificacion ?? "");
+        }
+        setMensajeBusqueda({
+          tipo: "info",
+          texto: `No se encontró un solicitante registrado con este número. Se creará un nuevo registro al radicar el expediente.${sugerencia ? ` ${sinca}` : ""}`,
+        });
       } else {
         setMensajeBusqueda({ tipo: "error", texto: "No fue posible completar la búsqueda. Intente nuevamente." });
       }
