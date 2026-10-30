@@ -11,8 +11,10 @@ import {
   aplicarZonificacion,
   idDesdeEtiqueta,
   idsReferenciables,
+  personaAutomatica,
   personaDeCampo,
   PRECARGAS,
+  precargaAutomatica,
   precargaDeCampo,
   respuestasIniciales,
   TEXTO_TIPO_PERSONA,
@@ -55,9 +57,18 @@ const PRECARGA_EJEMPLO: DatosPrecarga = {
   tramite: "Trámite de ejemplo",
   solicitante: "NOMBRE DEL SOLICITANTE",
   identificacion: "C.C. 00.000.000",
+  nit: "900.000.000-0",
+  representante_legal: "NOMBRE DEL REPRESENTANTE LEGAL",
+  cedula_representante: "00.000.000",
+  telefono: "3000000000",
+  correo: "solicitante@ejemplo.com",
+  direccion_solicitante: "Calle 0 # 0-00",
   municipio: "Bucaramanga",
   predio: "Predio de ejemplo",
   matricula: "300-000000",
+  catastral: "68001000000000000000",
+  direccion_predio: "Vereda de ejemplo, finca de ejemplo",
+  area_predio: "1,5",
   funcionario: "Profesional asignado",
   fecha_visita: new Date().toISOString().slice(0, 10),
 };
@@ -296,6 +307,9 @@ export function EditorFormato({
                               {c.obligatorio && <span className="text-xs text-red-600">*</span>}
                               <span className="flex-none rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">{TIPOS_CAMPO[c.tipo]}</span>
                               {precargaDeCampo(c) && <span className="hidden flex-none rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700 sm:inline">precargado</span>}
+                              {personaDeCampo(c) && (
+                                <span className="hidden flex-none rounded-sm bg-violet-50 px-1.5 py-0.5 text-[10px] text-violet-700 sm:inline">solo {TEXTO_TIPO_PERSONA[personaDeCampo(c)!].toLowerCase()}</span>
+                              )}
                               {c.zona && <span className="hidden flex-none rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700 sm:inline">desde el GPS</span>}
                             </button>
                             <button type="button" onClick={() => fijarSeccion(si, { ...s, campos: mover(s.campos, ci, -1) })} disabled={ci === 0} className={botonIcono} aria-label="Subir campo">
@@ -591,8 +605,15 @@ function EditorCampo({
         {(campo.tipo === "texto" || campo.tipo === "numero" || campo.tipo === "fecha" || campo.tipo === "parrafo" || campo.tipo === "seleccion" || campo.tipo === "coordenadas") && (
           <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
             Precargar con
-            <select value={precargaDeCampo(campo) ?? ""} onChange={(e) => fijar("precarga", (e.target.value || undefined) as Campo["precarga"])} className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs">
-              <option value="">— nada —</option>
+            <select value={campo.precarga ?? ""} onChange={(e) => fijar("precarga", (e.target.value || undefined) as Campo["precarga"])} className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs">
+              {precargaAutomatica(campo) ? (
+                <>
+                  <option value="">Automático: {PRECARGAS[precargaAutomatica(campo)!]}</option>
+                  <option value="ninguna">— nada —</option>
+                </>
+              ) : (
+                <option value="">— nada —</option>
+              )}
               {Object.entries(PRECARGAS)
                 .filter(([k]) => (k === "coordenadas") === (campo.tipo === "coordenadas"))
                 .map(([k, v]) => (
@@ -607,11 +628,18 @@ function EditorCampo({
           <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
             Aplica a
             <select
-              value={personaDeCampo(campo) ?? ""}
+              value={campo.soloPersona ?? ""}
               onChange={(e) => fijar("soloPersona", (e.target.value || undefined) as Campo["soloPersona"])}
               className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs"
             >
-              <option value="">Todo solicitante</option>
+              {personaAutomatica(campo) ? (
+                <>
+                  <option value="">Automático: solo {TEXTO_TIPO_PERSONA[personaAutomatica(campo)!].toLowerCase()}</option>
+                  <option value="TODOS">Todo solicitante</option>
+                </>
+              ) : (
+                <option value="">Todo solicitante</option>
+              )}
               {Object.entries(TEXTO_TIPO_PERSONA).map(([k, v]) => (
                 <option key={k} value={k}>
                   Solo {v.toLowerCase()}

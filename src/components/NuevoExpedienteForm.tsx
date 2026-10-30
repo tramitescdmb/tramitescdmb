@@ -9,6 +9,7 @@ import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
+import { avisoCedula, avisoTelefono } from "@/lib/formato-visita";
 import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
 import {
   IconLayers,
@@ -412,6 +413,7 @@ export function NuevoExpedienteForm({
                 className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
                 placeholder="Ej: 91234567"
               />
+              {avisoCedula(representanteIdentificacion) && <p className="mt-1 text-xs text-amber-700">{avisoCedula(representanteIdentificacion)}</p>}
             </Field>
           </div>
         ) : (
@@ -456,6 +458,7 @@ export function NuevoExpedienteForm({
               className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder="Ej: 3001234567"
             />
+            {avisoTelefono(solicitanteTelefono) && <p className="mt-1 text-xs text-amber-700">{avisoTelefono(solicitanteTelefono)}</p>}
           </Field>
         </div>
 

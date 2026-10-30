@@ -241,7 +241,8 @@ export default async function TramitesAyudaPage() {
         </p>
         <p>
           Para persona jurídica se precargan el NIT, el representante legal y su cédula registrados en el solicitante; para persona natural esos campos
-          no se muestran. El punto GPS de la hoja pasa a las coordenadas del sitio visitado. Antes de guardar se verifican los números y los correos;
+          no se muestran. El punto GPS de la hoja pasa a las coordenadas del sitio visitado. Antes de guardar se verifican los números y los correos, y se
+          señalan sin impedir el guardado los teléfonos y cédulas con una cantidad de dígitos improbable;
           una longitud sin signo negativo o invertida con la latitud se corrige, y se avisa si el punto cae en un municipio distinto al del expediente.
         </p>
         <p>

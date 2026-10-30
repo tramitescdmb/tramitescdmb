@@ -82,8 +82,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "El formato de visita ya no corresponde a este trámite. Recargue la página." }, { status: 409 });
     }
     const estructura = estructuraDesdeJson(v.estructura);
-    respuestas = sanearRespuestas(estructura, body.respuestas);
-    const error = errorRespuestas(estructura, respuestas, await precargaDeVisita(id));
+    const precarga = await precargaDeVisita(id);
+    respuestas = sanearRespuestas(estructura, body.respuestas, precarga);
+    const error = errorRespuestas(estructura, respuestas, precarga);
     if (error) return NextResponse.json({ error }, { status: 400 });
     formatoVersion = { id: v.id, numero: v.numero, codigo: v.formato.codigo };
   }
@@ -183,8 +184,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const version = await db.formatoVisitaVersion.findUnique({ where: { id: acceso.formatoVersionId }, select: { estructura: true } });
   const estructura = estructuraDesdeJson(version!.estructura);
-  const respuestas = sanearRespuestas(estructura, body?.respuestas);
-  const error = errorRespuestas(estructura, respuestas, await precargaDeVisita(id));
+  const precarga = await precargaDeVisita(id);
+  const respuestas = sanearRespuestas(estructura, body?.respuestas, precarga);
+  const error = errorRespuestas(estructura, respuestas, precarga);
   if (error) return NextResponse.json({ error }, { status: 400 });
   const resultado = RESULTADOS.find((r) => r === body?.resultado);
   const recibe = typeof respuestas.recibe_visita === "string" ? respuestas.recibe_visita : null;

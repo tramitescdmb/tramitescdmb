@@ -70,8 +70,8 @@ export type Campo = {
   tipo: TipoCampo;
   obligatorio?: boolean;
   ayuda?: string;
-  precarga?: ClavePrecarga;
-  soloPersona?: TipoPersonaFormato;
+  precarga?: ClavePrecarga | "ninguna";
+  soloPersona?: TipoPersonaFormato | "TODOS";
   plantilla?: string;
   opciones?: string[];
   unidad?: string;
@@ -118,16 +118,25 @@ const SOLO_PERSONA_POR_ID: Record<string, TipoPersonaFormato> = { representante_
 
 const TIPOS_CON_PRECARGA: TipoCampo[] = ["texto", "fecha", "numero", "parrafo", "seleccion", "coordenadas"];
 
-export function precargaDeCampo(c: Campo): ClavePrecarga | undefined {
+export function precargaAutomatica(c: Pick<Campo, "id" | "tipo">): ClavePrecarga | undefined {
   if (!TIPOS_CON_PRECARGA.includes(c.tipo)) return undefined;
-  if (c.precarga) return c.precarga;
   const porId = c.id in PRECARGAS ? (c.id as ClavePrecarga) : PRECARGA_POR_ID[c.id];
   if (!porId) return undefined;
   return (porId === "coordenadas") === (c.tipo === "coordenadas") ? porId : undefined;
 }
 
+export function precargaDeCampo(c: Campo): ClavePrecarga | undefined {
+  if (!TIPOS_CON_PRECARGA.includes(c.tipo) || c.precarga === "ninguna") return undefined;
+  return c.precarga ?? precargaAutomatica(c);
+}
+
+export function personaAutomatica(c: Pick<Campo, "id">): TipoPersonaFormato | undefined {
+  return SOLO_PERSONA_POR_ID[c.id];
+}
+
 export function personaDeCampo(c: Campo): TipoPersonaFormato | undefined {
-  return c.soloPersona ?? SOLO_PERSONA_POR_ID[c.id];
+  if (c.soloPersona === "TODOS") return undefined;
+  return c.soloPersona ?? personaAutomatica(c);
 }
 
 export function tipoPersonaDePrecarga(precarga: DatosPrecarga): TipoPersonaFormato | null {
@@ -152,6 +161,31 @@ export function errorDigitacion(c: Campo, v: ValorCampo | undefined): string | n
   if (typeof v !== "string" || !v.trim()) return null;
   if (c.tipo === "numero" && numeroDesdeTexto(v) == null) return "Debe ser un número (use coma para los decimales).";
   if (c.tipo === "texto" && esCampoCorreo(c) && !v.split(/[\s;,/]+/).filter(Boolean).every((x) => CORREO_VALIDO.test(x))) return "Correo electrónico no válido.";
+  return null;
+}
+
+export function avisoTelefono(v: string): string | null {
+  for (const parte of v.split(/[/;,]|\s+[yo]\s+/i)) {
+    let d = parte.split(/ext/i)[0]!.replace(/\D/g, "");
+    if (d.length === 12 && d.startsWith("57")) d = d.slice(2);
+    if (!d) continue;
+    if (d.startsWith("3") && d.length !== 10) return "Un celular tiene 10 dígitos; revise el número.";
+    if (!d.startsWith("3") && d.length !== 10 && d.length !== 7) return "Un fijo tiene 10 dígitos (con el indicativo 60X); revise el número.";
+  }
+  return null;
+}
+
+export function avisoCedula(v: string): string | null {
+  if (/[a-z]/i.test(v.replace(/^\s*(c\.?\s*c\.?|cc)\s*/i, ""))) return "La cédula solo lleva números.";
+  const d = v.replace(/\D/g, "");
+  return d && (d.length < 5 || d.length > 10) ? "Una cédula tiene entre 5 y 10 dígitos; revise el número." : null;
+}
+
+export function avisoDigitacion(c: Campo, v: ValorCampo | undefined): string | null {
+  if (typeof v !== "string" || !v.trim() || c.tipo !== "texto") return null;
+  const clave = precargaDeCampo(c);
+  if (clave === "telefono" || /^(telefono|celular)(_|$)/.test(c.id)) return avisoTelefono(v);
+  if (clave === "cedula_representante" || /^cedula(_|$)/.test(c.id)) return avisoCedula(v);
   return null;
 }
 
@@ -650,12 +684,13 @@ export function camposObligatoriosFaltantes(estructura: EstructuraFormato, respu
 
 const MAX_TEXTO = 20_000;
 
-export function sanearRespuestas(estructura: EstructuraFormato, entrada: unknown): Respuestas {
+export function sanearRespuestas(estructura: EstructuraFormato, entrada: unknown, precarga?: DatosPrecarga): Respuestas {
   const crudo = entrada && typeof entrada === "object" && !Array.isArray(entrada) ? (entrada as Record<string, unknown>) : {};
   const r: Respuestas = {};
   for (const c of camposPlanos(estructura)) {
     const v = crudo[c.id];
     if (c.tipo === "calculado" || c.tipo === "fotos" || v == null) continue;
+    if (precarga && !campoAplica(c, precarga)) continue;
     if (c.tipo === "tabla") {
       if (!Array.isArray(v)) continue;
       const cols = c.columnas ?? [];
@@ -782,8 +817,9 @@ function sanearCampo(c: Record<string, unknown>): { campo: Campo } | { error: st
   if (ayuda) campo.ayuda = ayuda;
   if (TIPOS_CON_PRECARGA.includes(tipo) && typeof c.precarga === "string" && c.precarga in PRECARGAS && (c.precarga === "coordenadas") === (tipo === "coordenadas")) {
     campo.precarga = c.precarga as ClavePrecarga;
-  }
+  } else if (c.precarga === "ninguna" && precargaAutomatica({ id, tipo })) campo.precarga = "ninguna";
   if (c.soloPersona === "NATURAL" || c.soloPersona === "JURIDICA") campo.soloPersona = c.soloPersona;
+  else if (c.soloPersona === "TODOS" && personaAutomatica({ id })) campo.soloPersona = "TODOS";
   if (tipo === "parrafo") {
     const p = texto(c.plantilla, 20_000);
     if (p) campo.plantilla = p;

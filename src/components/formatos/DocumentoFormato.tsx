@@ -1,5 +1,6 @@
 import {
   aDms,
+  campoAplica,
   cumplimientoFila,
   filasConDatos,
   formatearNumero,
@@ -73,7 +74,7 @@ export function DocumentoFormato({
               {estructura.secciones.map((s) => (
                 <section key={s.id} className="break-inside-avoid-page">
                   <h3 className="mb-1 border border-stone-400 bg-stone-100 px-2 py-1 text-center text-[12px] font-bold uppercase">{s.titulo}</h3>
-                  <BloquesSeccion campos={s.campos} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} fotos={fotos} />
+                  <BloquesSeccion campos={enBlanco ? s.campos : s.campos.filter((c) => campoAplica(c, precarga))} estructura={estructura} respuestas={respuestas} precarga={precarga} enBlanco={enBlanco} fotos={fotos} />
                 </section>
               ))}
 

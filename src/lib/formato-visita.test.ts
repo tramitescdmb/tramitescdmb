@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   actualizarTextosTipo,
   camposObligatoriosFaltantes,
+  avisoCedula,
+  avisoTelefono,
   completarPrecarga,
   corregirLatLon,
+  personaDeCampo,
+  precargaDeCampo,
   errorDigitacion,
   evaluarCumplimiento,
   mismoMunicipio,
@@ -195,6 +199,28 @@ describe("estructura y respuestas", () => {
     expect(mismoMunicipio("Bucaramanga", "Floridablanca")).toBe(false);
     const area = { secciones: [{ id: "s", titulo: "S", campos: [{ id: "area_cultivos", etiqueta: "Área en cultivos", tipo: "parrafo" }] }] } as Parameters<typeof respuestasIniciales>[0];
     expect(respuestasIniciales(area, { area_cultivos: "1,5" }).area_cultivos).toBe("1,5 ha");
+  });
+
+  it("permite desactivar la precarga y la restricción por tipo de solicitante deducidas del identificador", () => {
+    const nit = { id: "nit", etiqueta: "NIT", tipo: "texto" } as Campo;
+    expect(precargaDeCampo(nit)).toBe("nit");
+    expect(personaDeCampo(nit)).toBe("JURIDICA");
+    expect(precargaDeCampo({ ...nit, precarga: "ninguna" })).toBeUndefined();
+    expect(personaDeCampo({ ...nit, soloPersona: "TODOS" })).toBeUndefined();
+    const v = validarEstructura({ secciones: [{ id: "s", titulo: "S", campos: [{ ...nit, precarga: "ninguna", soloPersona: "TODOS" }, { id: "otro", etiqueta: "Otro", tipo: "texto", precarga: "ninguna" }] }] });
+    expect("estructura" in v && v.estructura.secciones[0]!.campos.map((c) => [c.precarga, c.soloPersona])).toEqual([["ninguna", "TODOS"], [undefined, undefined]]);
+    const est = { secciones: [{ id: "s", titulo: "S", campos: [nit] }] } as Parameters<typeof respuestasIniciales>[0];
+    expect(sanearRespuestas(est, { nit: "900" }, { tipo_solicitante: "Persona natural" })).toEqual({});
+  });
+
+  it("avisa teléfonos y cédulas con una cantidad de dígitos improbable", () => {
+    expect(avisoTelefono("3001234567")).toBeNull();
+    expect(avisoTelefono("+57 300 123 4567 / 607 6970000 ext 12")).toBeNull();
+    expect(avisoTelefono("300123456")).not.toBeNull();
+    expect(avisoTelefono("69700")).not.toBeNull();
+    expect(avisoCedula("C.C. 91.234.567")).toBeNull();
+    expect(avisoCedula("91A34")).not.toBeNull();
+    expect(avisoCedula("123")).not.toBeNull();
   });
 });
 

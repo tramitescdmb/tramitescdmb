@@ -6,6 +6,7 @@ import { Crosshair, Plus, Trash2, RotateCcw, Info } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import {
   aDms,
+  avisoDigitacion,
   campoAplica,
   corregirLatLon,
   cumplimientoFila,
@@ -128,7 +129,12 @@ function CampoFormato({
   const str = typeof v === "string" ? v : "";
   const errorDig = soloLectura ? null : errorDigitacion(campo, v);
   const borde = falta || errorDig ? " border-red-300 ring-1 ring-red-200" : "";
-  const avisoDig = errorDig && <span className="mt-0.5 block text-[11px] text-red-600">{errorDig}</span>;
+  const avisoSuave = soloLectura || errorDig ? null : avisoDigitacion(campo, v);
+  const avisoDig = errorDig ? (
+    <span className="mt-0.5 block text-[11px] text-red-600">{errorDig}</span>
+  ) : (
+    avisoSuave && <span className="mt-0.5 block text-[11px] text-amber-700">{avisoSuave}</span>
+  );
 
   switch (campo.tipo) {
     case "texto":
