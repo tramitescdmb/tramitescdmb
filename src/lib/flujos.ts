@@ -4,7 +4,6 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, posicionesPlantilla, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import { solicitudesVigentes } from "@/lib/estado-firmas";
-import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import type { PermisosUsuario } from "@/lib/permisos";
 import {
   AMBITOS_DE_MODULO,
@@ -535,7 +534,6 @@ export const SELECT_OBJETIVO_FLUJO = {
     select: {
       id: true,
       numero: true,
-      estado: true,
       archivado: true,
       createdById: true,
       tramiteTipo: { select: { nombre: true } },
@@ -570,7 +568,6 @@ type InstanciaConObjetivo = {
   expedienteTramite?: {
     id: string;
     numero: string;
-    estado?: string;
     archivado?: boolean;
     createdById: string;
     tramiteTipo: { nombre: string };
@@ -622,7 +619,7 @@ export function objetivoDeInstancia(i: InstanciaConObjetivo): ObjetivoFlujo {
       asunto: e.tramiteTipo.nombre,
       href: `/expedientes/${e.id}#flujo-trabajo`,
       esComunicacion: false,
-      abierto: !e.archivado && !(e.estado && (ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(e.estado)),
+      abierto: !e.archivado,
       modulo: "TRAMITES",
       ctx: { dependenciaDestinoId: null, dependenciaOrigenId: null, radicadoPorId: e.createdById, asignadosIds: e.usuariosAsignados.map((u) => u.id) },
     };
@@ -818,12 +815,12 @@ async function contextoObjeto(ambito: AmbitoExpedienteFlujo, id: string): Promis
   if (ambito === "TRAMITE") {
     const e = await db.expediente.findUnique({
       where: { id },
-      select: { numero: true, estado: true, archivado: true, createdById: true, creadoPor: { select: { nombre: true } }, usuariosAsignados: { select: { id: true, nombre: true } } },
+      select: { numero: true, archivado: true, createdById: true, creadoPor: { select: { nombre: true } }, usuariosAsignados: { select: { id: true, nombre: true } } },
     });
     if (!e) return null;
     return {
       numero: e.numero,
-      abierto: !e.archivado && !(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(e.estado),
+      abierto: !e.archivado,
       dependenciaDestinoId: null,
       dependenciaOrigenId: null,
       radicadoPorId: e.createdById,

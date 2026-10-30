@@ -215,7 +215,7 @@
       "El flujo se inicia desde la pestaña «Flujo de trabajo» del expediente y no altera los pasos del procedimiento.",
       "Los pasos a cargo aparecen en el inicio de Trámites ambientales 2.0 y en la campana, los vencidos primero.",
       "Un flujo marcado como automático se inicia al radicar cada expediente.",
-      "Al archivar el expediente, o cuando el trámite queda aprobado, negado, desistido o rechazado, el flujo en curso termina y queda en la bitácora."
+      "Al cerrar y archivar el expediente, el flujo en curso termina y queda en la bitácora. Una decisión de fondo (aprobado o negado) no lo termina: la notificación, los recursos y el seguimiento siguen después de ella."
     ],
     "ejemplo": "En un expediente de concesión de aguas se inicia «Notificación y ejecutoria del acto administrativo»: notificaciones envía la citación, el solicitante no comparece, se notifica por aviso y, vencidos los diez días sin recurso, gestión documental deja la constancia de ejecutoria.",
     "detalle": "Los términos sugeridos siguen el procedimiento y la ley: diez días hábiles para recursos, un mes para aportar información antes del desistimiento tácito y dos meses para resolver la reposición.",

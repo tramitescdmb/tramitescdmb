@@ -261,6 +261,7 @@ async function ingresarPorDirectorioActivo(
         usuarioId: usuario.id,
         emailIntento: usuarioRed,
       });
+      await sincronizarContratistaDeUsuario(usuario.id).catch(() => {});
     }
   }
   if (!usuario) {

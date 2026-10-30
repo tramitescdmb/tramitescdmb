@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { asignarRolBase } from "@/lib/perfiles";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { consultaDirectorioDisponible, consultarDirectorioPorDocumento } from "@/lib/directorio-activo";
-import { crearUsuarioDeDominio } from "@/lib/directorio-usuarios";
+import { crearUsuarioDeDominio, sincronizarContratistaConDominio } from "@/lib/directorio-usuarios";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -44,6 +44,12 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
         });
         return { ok: true, modo: "dominio", usuarioId: creado.id, usuarioRed: creado.email };
       }
+      const sincronizado = await sincronizarContratistaConDominio(c.id);
+      const vinculado = sincronizado.vinculado ? await db.contratista.findUnique({ where: { id: c.id }, select: { usuarioId: true } }) : null;
+      if (vinculado?.usuarioId && sincronizado.usuarioRed) {
+        return { ok: true, modo: "dominio", usuarioId: vinculado.usuarioId, usuarioRed: sincronizado.usuarioRed };
+      }
+      return { ok: false, mensaje: sincronizado.mensaje };
     }
   }
 

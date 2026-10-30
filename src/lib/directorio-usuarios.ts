@@ -193,6 +193,7 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
   if (!consultaDirectorioDisponible()) return { ok: false, mensaje: "La conexión con el directorio activo no está configurada." };
 
   let consulta = await consultarDirectorioPorDocumento(c.identificacion, tokenServicio);
+  const por: "cedula" | "usuarioRed" = consulta.ok ? "cedula" : "usuarioRed";
   if (!consulta.ok && c.usuarioRed) consulta = await consultarDirectorioPorUsuarioRed(c.usuarioRed, tokenServicio);
   if (!consulta.ok || !consulta.perfil.usuarioRed) {
     return { ok: false, mensaje: "Todavía no está en el dominio CDMB: se sincronizará cuando sistemas cree sus credenciales de red." };
@@ -209,7 +210,7 @@ export async function sincronizarContratistaConDominio(contratistaId: string, to
   if (!usuarioId) return { ok: false, mensaje: `No se pudo crear el usuario ${usuarioRed} en la plataforma.` };
 
   const u = await db.usuario.findUniqueOrThrow({ where: { id: usuarioId }, select: SELECT_CRUCE });
-  const { aviso: avisoUsuario } = await aplicarDirectorio(u, { perfil, por: "cedula" });
+  const { aviso: avisoUsuario } = await aplicarDirectorio(u, { perfil, por });
   const aviso = distinto ? avisoNombreDistinto(perfil, c.nombreORazonSocial) : avisoUsuario;
   let vinculado = Boolean(c.usuarioId);
   if (!c.usuarioId) vinculado = await vincularPerfilConUsuario(c, usuarioId);
