@@ -174,7 +174,7 @@ export async function FlujoTrabajoPanel({
             <p className="border-t border-stone-100 pt-3 text-xs text-stone-500">Este paso lo completa {responsable ?? "su responsable"}.</p>
           )}
 
-          {puedeCompletar && (!esPasoFirma || usuario.esAdministrador) && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
+          {puedeCompletar && (habilitado || usuario.esAdministrador) && (!esPasoFirma || usuario.esAdministrador) && enCurso.pasoActual && enCurso.pasoActual.transiciones.length > 0 && (
             <form action={accion} method="post" className="space-y-2 border-t border-stone-100 pt-3">
               <input type="hidden" name="accion" value="avanzar" />
               <input type="hidden" name="instanciaId" value={enCurso.id} />

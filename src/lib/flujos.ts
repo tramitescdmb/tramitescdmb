@@ -11,6 +11,7 @@ import {
   ASIGNACIONES_DE_MODULO,
   etiquetaAsignacion,
   moduloDeAmbito,
+  MODULO_APLICATIVO,
   TIPOS_PASO_DE_MODULO,
   OPCIONES_APLICA_A,
   puedeAdministrarFlujosModulo,
@@ -313,6 +314,7 @@ export async function actualizarPaso(
   }
   if (campos.nombre !== undefined) data.nombre = campos.nombre.trim() || "Paso sin nombre";
   if (campos.instrucciones !== undefined) data.instrucciones = campos.instrucciones?.trim() || null;
+  if (campos.tipo === "FIN") await verificarSinInstanciasEnFin([pasoId]);
   if (campos.tipo !== undefined) data.tipo = campos.tipo;
   if (campos.asignacion !== undefined) data.asignacion = campos.asignacion;
   if (campos.dependenciaId !== undefined) data.dependenciaId = campos.dependenciaId || null;
@@ -332,6 +334,17 @@ async function verificarPasosSinUso(pasoIds: string[]) {
     throw new Error(
       `${usados.map((p) => `«${p.nombre}»`).join(", ")} ya se usó en flujos iniciados y no se puede eliminar. Para cambiar la ruta, duplique el flujo y desactive el actual.`
     );
+  }
+}
+
+async function verificarSinInstanciasEnFin(pasoIds: string[]) {
+  if (pasoIds.length === 0) return;
+  const ocupados = await db.pasoFlujo.findMany({
+    where: { id: { in: pasoIds }, tipo: { not: "FIN" }, instanciasAqui: { some: { estado: "EN_CURSO" } } },
+    select: { nombre: true },
+  });
+  if (ocupados.length > 0) {
+    throw new Error(`${ocupados.map((p) => `«${p.nombre}»`).join(", ")} tiene flujos en curso detenidos en ese paso; no puede volverse un paso «Fin». Cree una nueva versión del flujo.`);
   }
 }
 
@@ -390,6 +403,11 @@ export async function guardarLienzoFlujo(
   const pasosPropios = new Set(flujo.pasos.map((p) => p.id));
   if (datos.nodos.some((n) => !n.id.startsWith("nuevo-") && !pasosPropios.has(n.id))) throw new Error("El diagrama incluye pasos que no pertenecen a este flujo.");
   const transicionesPropias = new Set(flujo.transiciones.map((t) => t.id));
+  const idsExistentesEnLienzo = new Set(datos.nodos.filter((n) => !n.id.startsWith("nuevo-")).map((n) => n.id));
+  const aBorrarPasos = flujo.pasos.filter((p) => !idsExistentesEnLienzo.has(p.id));
+  await verificarPasosSinUso(aBorrarPasos.map((p) => p.id));
+  const tiposNuevos = new Map(datos.nodos.filter((n) => n.tipo && !n.id.startsWith("nuevo-")).map((n) => [n.id, n.tipo!]));
+  await verificarSinInstanciasEnFin([...tiposNuevos].filter(([, tipo]) => tipo === "FIN").map(([id]) => id));
 
   const num = (v: number) => (Number.isFinite(v) ? Math.round(v) : 0);
   const idReal = new Map<string, string>();
@@ -414,12 +432,6 @@ export async function guardarLienzoFlujo(
     }
   }
 
-  const idsExistentesEnLienzo = new Set(datos.nodos.filter((n) => !n.id.startsWith("nuevo-")).map((n) => n.id));
-  const aBorrarPasos = flujo.pasos.filter((p) => !idsExistentesEnLienzo.has(p.id));
-  if (flujo.pasos.length - aBorrarPasos.length + idReal.size - idsExistentesEnLienzo.size < 1) {
-    throw new Error("El flujo debe quedar con al menos un paso.");
-  }
-  await verificarPasosSinUso(aBorrarPasos.map((p) => p.id));
   for (const p of aBorrarPasos) await db.pasoFlujo.delete({ where: { id: p.id } });
 
   for (const n of datos.nodos) {
@@ -882,6 +894,13 @@ export async function obtenerInstanciasDeObjeto(ambito: AmbitoExpedienteFlujo, i
   return { comunicacion, instancias };
 }
 
+async function verificarEstructuraParaIniciar(flujoId: string) {
+  const estructura = await obtenerFlujo(flujoId);
+  if (estructura && estructura.problemas.length > 0) {
+    throw new Error(`El flujo «${estructura.nombre}» tiene errores de estructura y no se puede iniciar: ${estructura.problemas[0]!.mensaje} El administrador del módulo debe corregirlo.`);
+  }
+}
+
 export async function iniciarInstanciaEnObjeto(
   ambito: AmbitoExpedienteFlujo,
   objetoId: string,
@@ -898,6 +917,7 @@ export async function iniciarInstanciaEnObjeto(
   if (!objeto.abierto) throw new Error("Solo se inician flujos en expedientes abiertos.");
   if (!flujo || !flujo.activo) throw new Error("El flujo no está activo.");
   if (flujo.ambito !== ambito) throw new Error("Ese flujo no corresponde a este tipo de expediente.");
+  await verificarEstructuraParaIniciar(flujoId);
   verificarAccesoFlujo(flujo.dependenciasOperadoras, flujo.nombre, ctx);
   const campo = CAMPO_INSTANCIA[ambito];
   if (await db.instanciaFlujo.findFirst({ where: { [campo]: objetoId, estado: "EN_CURSO" } })) throw new Error("Este expediente ya tiene un flujo en curso.");
@@ -944,6 +964,7 @@ export async function iniciarInstancia(
   if (!flujo || !flujo.activo) throw new Error("El flujo no está activo.");
   if (flujo.ambito !== "COMUNICACION") throw new Error("Ese flujo es para expedientes documentales, no para comunicaciones.");
   if (flujo.aplicaA && flujo.aplicaA !== comunicacion.tipo) throw new Error("El flujo no aplica a este tipo de comunicación.");
+  await verificarEstructuraParaIniciar(flujoId);
   verificarAccesoFlujo(flujo.dependenciasOperadoras, flujo.nombre, ctx);
   const yaEnCurso = await db.instanciaFlujo.findFirst({ where: { comunicacionId, estado: "EN_CURSO" } });
   if (yaEnCurso) throw new Error("Esta comunicación ya tiene un flujo en curso.");
@@ -1023,8 +1044,7 @@ export async function avanzarInstancia(
   let asignadoAId: string | null = null;
   if (destino.asignacion === "MANUAL" && destino.tipo !== "FIN") {
     if (!asignarAId) throw new Error(`Elija a quién se asigna el paso «${destino.nombre}».`);
-    const persona = await db.usuario.findUnique({ where: { id: asignarAId }, select: { activo: true } });
-    if (!persona?.activo) throw new Error("La persona elegida no existe o está inactiva.");
+    await verificarPersonaAsignable(asignarAId, objetivo.modulo);
     asignadoAId = asignarAId;
   }
 
@@ -1054,6 +1074,15 @@ export async function avanzarInstancia(
   if (!cierra && objetivo.esComunicacion) await sincronizarFlujoPorFirmas(objetivo.id, usuarioId);
 }
 
+async function verificarPersonaAsignable(usuarioId: string, modulo: ModuloFlujo) {
+  const persona = await db.usuario.findUnique({ where: { id: usuarioId }, select: { activo: true, nombre: true, rol: true, modulosAcceso: true } });
+  if (!persona?.activo) throw new Error("La persona elegida no existe o está inactiva.");
+  if (persona.rol !== "ADMIN" && !persona.modulosAcceso.includes(MODULO_APLICATIVO[modulo])) {
+    throw new Error(`${persona.nombre} no tiene acceso a este módulo; elija a otra persona.`);
+  }
+  return persona;
+}
+
 export async function reasignarPasoManual(instanciaId: string, asignarAId: string, usuarioId: string, ip?: string | null) {
   const instancia = await db.instanciaFlujo.findUnique({
     where: { id: instanciaId },
@@ -1061,10 +1090,9 @@ export async function reasignarPasoManual(instanciaId: string, asignarAId: strin
   });
   if (!instancia || instancia.estado !== "EN_CURSO" || !instancia.pasoActual) throw new Error("El flujo no está en curso.");
   if (instancia.pasoActual.asignacion !== "MANUAL") throw new Error("Este paso no se asigna a mano.");
-  const persona = await db.usuario.findUnique({ where: { id: asignarAId }, select: { activo: true, nombre: true } });
-  if (!persona?.activo) throw new Error("La persona elegida no existe o está inactiva.");
-  await db.instanciaFlujo.update({ where: { id: instanciaId }, data: { asignadoAId: asignarAId } });
   const objetivo = objetivoDeInstancia(instancia);
+  const persona = await verificarPersonaAsignable(asignarAId, objetivo.modulo);
+  await db.instanciaFlujo.update({ where: { id: instanciaId }, data: { asignadoAId: asignarAId } });
   await registrarAuditoriaDoc({
     entidad: objetivo.entidad,
     entidadId: objetivo.id,

@@ -4,6 +4,7 @@ import { registrarAuditoria } from "@/lib/auditoria";
 import { consultaDirectorioDisponible, consultarDirectorioPorDocumento } from "@/lib/directorio-activo";
 import { crearUsuarioDeDominio, sincronizarContratistaConDominio } from "@/lib/directorio-usuarios";
 import { variantesDocumento } from "@/lib/datos-persona";
+import { vincularPerfilConUsuario } from "@/lib/contratacion";
 
 const SIN_CONTRASENA_LOCAL = "directorio-activo:sin-contrasena-local";
 
@@ -28,8 +29,20 @@ export async function crearUsuarioParaContratista(contratistaId: string, actor: 
   if (!c) return { ok: false, mensaje: "El contratista no existe." };
   if (c.usuarioId) return { ok: false, mensaje: "El contratista ya tiene usuario en la plataforma." };
   if (c.tipoPersona !== "NATURAL") return { ok: false, mensaje: "Solo se crea usuario para personas naturales; la persona jurídica firma por su representante legal." };
-  if (await db.usuario.findFirst({ where: { cedulaONit: { in: variantesDocumento(c.identificacion) } }, select: { id: true } })) {
-    return { ok: false, mensaje: "Ya existe un usuario con ese número de documento; se vinculará solo al pasar el contrato a Contractual." };
+  const existente = await db.usuario.findFirst({ where: { cedulaONit: { in: variantesDocumento(c.identificacion) } }, select: { id: true, email: true, cuentaTemporal: true, directorioActivo: true } });
+  if (existente) {
+    const perfil = await db.contratista.findUniqueOrThrow({ where: { id: c.id } });
+    if (!(await vincularPerfilConUsuario(perfil, existente.id))) {
+      return { ok: false, mensaje: "Ya existe un usuario con ese número de documento, pero no puede vincularse como contratista: tiene otro rol en GECON, está inactivo o ya está vinculado a otro contratista." };
+    }
+    await registrarAuditoria({
+      tipo: "USUARIO_ACTUALIZADO",
+      descripcion: `${actor.nombre} vinculó desde GECON al contratista ${c.nombreORazonSocial} con el usuario existente ${existente.email}.`,
+      usuarioId: actor.id,
+    });
+    return existente.directorioActivo && !existente.cuentaTemporal
+      ? { ok: true, modo: "dominio", usuarioId: existente.id, usuarioRed: existente.email }
+      : { ok: true, modo: "temporal", usuarioId: existente.id };
   }
 
   if (consultaDirectorioDisponible()) {
