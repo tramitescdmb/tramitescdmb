@@ -33,6 +33,7 @@ export function CamposPersona({
   etiquetaCorreo = "Correo electrónico",
   onIdentificacionLista,
   claseCampo = CLASE_CAMPO_PERSONA,
+  conRepresentante = false,
 }: {
   valor: DatosPersona;
   onChange: (v: DatosPersona) => void;
@@ -44,6 +45,7 @@ export function CamposPersona({
   etiquetaCorreo?: string;
   onIdentificacionLista?: (identificacion: string) => void;
   claseCampo?: string;
+  conRepresentante?: boolean;
 }) {
   const id = useId();
   const esJuridica = valor.tipoPersona === "JURIDICA";
@@ -106,9 +108,21 @@ export function CamposPersona({
       </div>
 
       {esJuridica ? (
-        <Campo icono={Building2} etiqueta="Razón social" requerido={requeridos.nombre} id={`${id}-razon`}>
-          <input id={`${id}-razon`} value={valor.razonSocial} onChange={(e) => cambiar("razonSocial", e.target.value)} className={claseCampo} />
-        </Campo>
+        <>
+          <Campo icono={Building2} etiqueta="Razón social" requerido={requeridos.nombre} id={`${id}-razon`}>
+            <input id={`${id}-razon`} value={valor.razonSocial} onChange={(e) => cambiar("razonSocial", e.target.value)} className={claseCampo} />
+          </Campo>
+          {conRepresentante && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Campo icono={UserRound} etiqueta="Representante legal" id={`${id}-rep`}>
+                <input id={`${id}-rep`} value={valor.representanteLegal ?? ""} onChange={(e) => cambiar("representanteLegal", e.target.value)} className={claseCampo} />
+              </Campo>
+              <Campo icono={IdCard} etiqueta="Cédula del representante legal" id={`${id}-repid`}>
+                <input id={`${id}-repid`} value={valor.representanteIdentificacion ?? ""} onChange={(e) => cambiar("representanteIdentificacion", e.target.value)} placeholder="Ej. 91234567" className={claseCampo} />
+              </Campo>
+            </div>
+          )}
+        </>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo icono={UserRound} etiqueta="Nombres" requerido={requeridos.nombre} id={`${id}-nombres`}>

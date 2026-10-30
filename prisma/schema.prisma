@@ -653,6 +653,8 @@ model Solicitante {
   direccion         String?
   municipio         String
   departamento      String?
+  representanteLegal          String?
+  representanteIdentificacion String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 

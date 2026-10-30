@@ -240,6 +240,11 @@ export default async function TramitesAyudaPage() {
           formulario.
         </p>
         <p>
+          Para persona jurídica se precargan el NIT, el representante legal y su cédula registrados en el solicitante; para persona natural esos campos
+          no se muestran. El punto GPS de la hoja pasa a las coordenadas del sitio visitado. Antes de guardar se verifican los números y los correos;
+          una longitud sin signo negativo o invertida con la latitud se corrige, y se avisa si el punto cae en un municipio distinto al del expediente.
+        </p>
+        <p>
           Los campos marcados con «Agregar» admiten varios valores (por ejemplo, varias matrículas inmobiliarias). El registro fotográfico admite hasta{" "}
           {MAX_FOTOS_VISITA} fotos de máximo {TAMANO_MAXIMO_FOTO_VISITA_MB} MB cada una, con su pie de foto; se comprimen automáticamente.
         </p>

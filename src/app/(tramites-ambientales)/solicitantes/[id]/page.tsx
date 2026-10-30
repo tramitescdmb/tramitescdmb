@@ -59,10 +59,19 @@ export default async function SolicitanteDetallePage({
         <h2 className="mb-2 text-sm font-semibold text-stone-900">Datos de contacto</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
           {solicitante.tipo === "JURIDICA" ? (
-            <div className="min-w-0">
-              <dt className="text-xs text-stone-400">Razón social</dt>
-              <dd className="break-words text-stone-800">{solicitante.razonSocial ?? "—"}</dd>
-            </div>
+            <>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Razón social</dt>
+                <dd className="break-words text-stone-800">{solicitante.razonSocial ?? "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-stone-400">Representante legal</dt>
+                <dd className="break-words text-stone-800">
+                  {solicitante.representanteLegal ?? "—"}
+                  {solicitante.representanteIdentificacion && <span className="block text-xs text-stone-500">C.C. {solicitante.representanteIdentificacion}</span>}
+                </dd>
+              </div>
+            </>
           ) : (
             <>
               <div className="min-w-0">
@@ -115,6 +124,8 @@ export default async function SolicitanteDetallePage({
               ciudad: solicitante.municipio,
               regimenTributario: solicitante.regimenTributario ?? "",
               granContribuyente: solicitante.granContribuyente,
+              representanteLegal: solicitante.representanteLegal ?? "",
+              representanteIdentificacion: solicitante.representanteIdentificacion ?? "",
             })}
           />
         )}

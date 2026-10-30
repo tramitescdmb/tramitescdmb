@@ -30,6 +30,8 @@ export const PRECARGAS = {
   solicitante: "Nombre del solicitante",
   identificacion: "Identificación del solicitante",
   nit: "NIT (solo persona jurídica)",
+  representante_legal: "Representante legal (solo persona jurídica)",
+  cedula_representante: "Cédula del representante legal",
   direccion_solicitante: "Dirección del solicitante",
   telefono: "Teléfono del solicitante",
   correo: "Correo del solicitante",

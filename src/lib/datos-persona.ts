@@ -19,6 +19,8 @@ export type DatosPersona = {
   ciudad: string;
   regimenTributario: string;
   granContribuyente: boolean;
+  representanteLegal?: string;
+  representanteIdentificacion?: string;
 };
 
 export type OpcionIdentificacion = { valor: string; etiqueta: string };
@@ -138,6 +140,8 @@ export function leerDatosPersona(body: unknown, tiposValidos: readonly OpcionIde
     ciudad: texto(b.ciudad, 80),
     regimenTributario: esRegimenTributario(regimen) ? regimen : "",
     granContribuyente: b.granContribuyente === true,
+    representanteLegal: tipoPersona === "JURIDICA" ? texto(b.representanteLegal, 200) : "",
+    representanteIdentificacion: tipoPersona === "JURIDICA" ? texto(b.representanteIdentificacion, 30) : "",
   };
 }
 

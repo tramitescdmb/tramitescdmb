@@ -43,6 +43,7 @@ export function NuevoSolicitanteForm() {
         onChange={setPersona}
         tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
         tributaria
+        conRepresentante
         requeridos={{ identificacion: true, nombre: true, ubicacion: true }}
       />
 

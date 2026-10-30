@@ -42,6 +42,7 @@ export function EditarSolicitanteForm({ solicitanteId, persona: inicial }: { sol
           onChange={setPersona}
           tiposIdentificacion={TIPOS_IDENTIFICACION_USUARIO}
           tributaria
+          conRepresentante
           identificacionBloqueada
           requeridos={{ nombre: true, ubicacion: true }}
         />

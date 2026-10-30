@@ -22,6 +22,8 @@ export function datosSolicitante(p: DatosPersona) {
     direccion: nulo(p.direccion),
     municipio: p.ciudad,
     departamento: nulo(p.departamento),
+    representanteLegal: juridica ? nulo(p.representanteLegal ?? "") : null,
+    representanteIdentificacion: juridica ? nulo(p.representanteIdentificacion ?? "") : null,
   };
 }
 

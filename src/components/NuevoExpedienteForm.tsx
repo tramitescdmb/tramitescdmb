@@ -83,6 +83,8 @@ export function NuevoExpedienteForm({
   const [solicitanteNombres, setSolicitanteNombres] = useState("");
   const [solicitanteApellidos, setSolicitanteApellidos] = useState("");
   const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState("");
+  const [representanteLegal, setRepresentanteLegal] = useState("");
+  const [representanteIdentificacion, setRepresentanteIdentificacion] = useState("");
   const [solicitanteEmail, setSolicitanteEmail] = useState("");
   const [solicitanteTelefono, setSolicitanteTelefono] = useState("");
   const [regimenTributario, setRegimenTributario] = useState("");
@@ -115,6 +117,8 @@ export function NuevoExpedienteForm({
         setSolicitanteNombres(s.nombres ?? "");
         setSolicitanteApellidos(s.apellidos ?? "");
         setSolicitanteRazonSocial(s.razonSocial ?? "");
+        setRepresentanteLegal(s.representanteLegal ?? "");
+        setRepresentanteIdentificacion(s.representanteIdentificacion ?? "");
         setSolicitanteEmail(s.email ?? "");
         setSolicitanteTelefono(s.telefono ?? "");
         setSolicitanteDireccion(s.direccion ?? "");
@@ -244,6 +248,8 @@ export function NuevoExpedienteForm({
             nombres: nombresTrim,
             apellidos: apellidosTrim,
             razonSocial: razonSocialTrim,
+            representanteLegal: esJuridica ? representanteLegal.trim() : "",
+            representanteIdentificacion: esJuridica ? representanteIdentificacion.trim() : "",
             identificacion: identificacionTrim,
             email: solicitanteEmail,
             telefono: solicitanteTelefono,
@@ -389,6 +395,25 @@ export function NuevoExpedienteForm({
               placeholder="Ej: Industrias ABC S.A.S."
             />
           </Field>
+        ) : null}
+        {esJuridica ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Representante legal" icon={<IconUser className={iconSm} />} help="Nombre completo del representante legal; se precarga en los formatos de visita.">
+              <input
+                value={representanteLegal}
+                onChange={(e) => setRepresentanteLegal(e.target.value)}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+              />
+            </Field>
+            <Field label="Cédula del representante legal" icon={<IconIdCard className={iconSm} />} help="">
+              <input
+                value={representanteIdentificacion}
+                onChange={(e) => setRepresentanteIdentificacion(e.target.value)}
+                className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
+                placeholder="Ej: 91234567"
+              />
+            </Field>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nombres" required icon={<IconUser className={iconSm} />} help="">

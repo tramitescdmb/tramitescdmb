@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
       nombres?: string;
       apellidos?: string;
       razonSocial?: string;
+      representanteLegal?: string;
+      representanteIdentificacion?: string;
       identificacion: string;
       email?: string;
       telefono?: string;
@@ -161,6 +163,8 @@ export async function POST(req: NextRequest) {
   const nombresTrim = solicitante.nombres?.trim() || null;
   const apellidosTrim = solicitante.apellidos?.trim() || null;
   const razonSocialTrim = solicitante.razonSocial?.trim() || null;
+  const representanteLegal = esJuridica ? String(solicitante.representanteLegal ?? "").trim().slice(0, 200) || null : null;
+  const representanteIdentificacion = esJuridica ? String(solicitante.representanteIdentificacion ?? "").trim().slice(0, 30) || null : null;
   const solicitanteRecord = await db.solicitante.upsert({
     where: { identificacion: identificacionSolicitante },
     create: {
@@ -175,6 +179,8 @@ export async function POST(req: NextRequest) {
       telefono: solicitante.telefono?.trim() || null,
       direccion: solicitante.direccion?.trim() || null,
       municipio: solicitante.municipio.trim(),
+      representanteLegal,
+      representanteIdentificacion,
     },
     update: {
       nombres: nombresTrim ?? undefined,
@@ -184,6 +190,8 @@ export async function POST(req: NextRequest) {
       telefono: solicitante.telefono?.trim() || undefined,
       direccion: solicitante.direccion?.trim() || undefined,
       municipio: solicitante.municipio.trim() || undefined,
+      representanteLegal: representanteLegal ?? undefined,
+      representanteIdentificacion: representanteIdentificacion ?? undefined,
       ...(solicitante.regimenTributario ? { regimenTributario: solicitante.regimenTributario } : {}),
       ...(solicitante.granContribuyente != null ? { granContribuyente: solicitante.granContribuyente } : {}),
     },
