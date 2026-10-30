@@ -10,7 +10,7 @@ import { MAX_FOTOS_VISITA, filtrarLoteFotosVisita } from "@/lib/visita-tecnica-f
 import { comprimirFotoVisitaTecnica } from "@/lib/compresion-cliente";
 import { leerExifFoto } from "@/lib/exif-foto";
 import { subirArchivoDirecto } from "@/lib/uploads-client";
-import { actualizarTextosTipo, aplicarZonificacion, camposObligatoriosFaltantes, camposPlanos, campoVacio, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
+import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposObligatoriosFaltantes, camposPlanos, campoVacio, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
 
 const RESULTADOS = ["VIABLE", "REQUIERE_INFORMACION", "NO_VIABLE", "EN_ANALISIS"] as const;
 type Foto = { id: string; url: string; pie: string };
@@ -97,9 +97,9 @@ export function EditarConcepto({
 
   async function guardar() {
     setError(null);
-    const vacios = camposPlanos(estructura).filter((c) => c.obligatorio && campoVacio(c, respuestas[c.id]));
+    const vacios = camposPlanos(estructura).filter((c) => c.obligatorio && campoAplica(c, precarga) && campoVacio(c, respuestas[c.id]));
     setFaltantes(new Set(vacios.map((c) => c.id)));
-    if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(estructura, respuestas).join("; ")}.`);
+    if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(estructura, respuestas, precarga).join("; ")}.`);
     setOcupado("Guardando…");
     try {
       await Promise.all(fotos.map((f) => llamar(`/api/visitas-fotos/${f.id}`, "PATCH", { pie: f.pie })));

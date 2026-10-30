@@ -9,7 +9,7 @@ import { codigoProcedimiento, normalizarNombreTema } from "@/lib/temas-visita";
 import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
 import type { Prisma } from "@prisma/client";
 import { camposObligatoriosFaltantes, sanearRespuestas, type Respuestas } from "@/lib/formato-visita";
-import { estructuraDesdeJson } from "@/lib/formatos-visita-db";
+import { estructuraDesdeJson, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
 
 const RESULTADOS = ["VIABLE", "REQUIERE_INFORMACION", "NO_VIABLE", "EN_ANALISIS"] as const;
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     const estructura = estructuraDesdeJson(v.estructura);
     respuestas = sanearRespuestas(estructura, body.respuestas);
-    const faltan = camposObligatoriosFaltantes(estructura, respuestas);
+    const faltan = camposObligatoriosFaltantes(estructura, respuestas, await precargaDeVisita(id));
     if (faltan.length) return NextResponse.json({ error: `Complete los campos obligatorios del formato: ${faltan.join("; ")}.` }, { status: 400 });
     formatoVersion = { id: v.id, numero: v.numero, codigo: v.formato.codigo };
   }
@@ -184,7 +184,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const version = await db.formatoVisitaVersion.findUnique({ where: { id: acceso.formatoVersionId }, select: { estructura: true } });
   const estructura = estructuraDesdeJson(version!.estructura);
   const respuestas = sanearRespuestas(estructura, body?.respuestas);
-  const faltan = camposObligatoriosFaltantes(estructura, respuestas);
+  const faltan = camposObligatoriosFaltantes(estructura, respuestas, await precargaDeVisita(id));
   if (faltan.length) return NextResponse.json({ error: `Complete los campos obligatorios del formato: ${faltan.join("; ")}.` }, { status: 400 });
   const resultado = RESULTADOS.find((r) => r === body?.resultado);
   const recibe = typeof respuestas.recibe_visita === "string" ? respuestas.recibe_visita : null;

@@ -26,8 +26,11 @@ export type TipoColumna = keyof typeof TIPOS_COLUMNA;
 export const PRECARGAS = {
   expediente: "Número de expediente",
   tramite: "Tipo de trámite",
+  tipo_solicitante: "Tipo de solicitante (persona natural o jurídica)",
   solicitante: "Nombre del solicitante",
   identificacion: "Identificación del solicitante",
+  nit: "NIT (solo persona jurídica)",
+  direccion_solicitante: "Dirección del solicitante",
   telefono: "Teléfono del solicitante",
   correo: "Correo del solicitante",
   municipio: "Municipio",
@@ -36,6 +39,7 @@ export const PRECARGAS = {
   catastral: "Número catastral",
   direccion_predio: "Dirección del predio",
   area_predio: "Área del predio (ha)",
+  coordenadas: "Coordenadas del predio",
   funcionario: "Funcionario que realiza la visita",
   fecha_visita: "Fecha de la visita",
 } as const;
@@ -62,6 +66,7 @@ export type Campo = {
   obligatorio?: boolean;
   ayuda?: string;
   precarga?: ClavePrecarga;
+  soloPersona?: TipoPersonaFormato;
   plantilla?: string;
   opciones?: string[];
   unidad?: string;
@@ -88,6 +93,60 @@ export type ValorCampo = string | FilaTabla[] | ValorCoordenadas | ValorChequeo;
 export type Respuestas = Record<string, ValorCampo>;
 
 export type DatosPrecarga = Partial<Record<ClavePrecarga, string>>;
+
+export type TipoPersonaFormato = "NATURAL" | "JURIDICA";
+
+export const TEXTO_TIPO_PERSONA: Record<TipoPersonaFormato, string> = { NATURAL: "Persona natural", JURIDICA: "Persona jurídica" };
+
+const PRECARGA_POR_ID: Record<string, ClavePrecarga> = {
+  coord_predio: "coordenadas",
+  direccion: "direccion_predio",
+  matriculas: "matricula",
+  tipo_persona: "tipo_solicitante",
+  email: "correo",
+  celular: "telefono",
+  numero_catastral: "catastral",
+};
+
+const SOLO_PERSONA_POR_ID: Record<string, TipoPersonaFormato> = { representante_legal: "JURIDICA", cedula_representante: "JURIDICA", nit: "JURIDICA" };
+
+const TIPOS_CON_PRECARGA: TipoCampo[] = ["texto", "fecha", "numero", "parrafo", "seleccion", "coordenadas"];
+
+export function precargaDeCampo(c: Campo): ClavePrecarga | undefined {
+  if (!TIPOS_CON_PRECARGA.includes(c.tipo)) return undefined;
+  if (c.precarga) return c.precarga;
+  const porId = c.id in PRECARGAS ? (c.id as ClavePrecarga) : PRECARGA_POR_ID[c.id];
+  if (!porId) return undefined;
+  return (porId === "coordenadas") === (c.tipo === "coordenadas") ? porId : undefined;
+}
+
+export function personaDeCampo(c: Campo): TipoPersonaFormato | undefined {
+  return c.soloPersona ?? SOLO_PERSONA_POR_ID[c.id];
+}
+
+export function tipoPersonaDePrecarga(precarga: DatosPrecarga): TipoPersonaFormato | null {
+  if (precarga.tipo_solicitante === TEXTO_TIPO_PERSONA.JURIDICA) return "JURIDICA";
+  if (precarga.tipo_solicitante === TEXTO_TIPO_PERSONA.NATURAL) return "NATURAL";
+  return null;
+}
+
+export function campoAplica(c: Campo, precarga: DatosPrecarga): boolean {
+  const solo = personaDeCampo(c);
+  const tipo = tipoPersonaDePrecarga(precarga);
+  return !solo || !tipo || solo === tipo;
+}
+
+function valorPrecargado(c: Campo, precarga: DatosPrecarga): ValorCampo | undefined {
+  const clave = precargaDeCampo(c);
+  const v = clave ? precarga[clave] : undefined;
+  if (!v) return undefined;
+  if (c.tipo === "coordenadas") {
+    const [lat, lon] = v.split(",").map(Number);
+    return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon, cota: "" } : undefined;
+  }
+  if (c.tipo === "seleccion") return c.opciones?.find((o) => o.trim().toLowerCase() === v.trim().toLowerCase());
+  return v;
+}
 
 export function numeroDesdeTexto(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
@@ -467,13 +526,24 @@ export function resolverPlantilla(texto: string, estructura: EstructuraFormato, 
 export function respuestasIniciales(estructura: EstructuraFormato, precarga: DatosPrecarga): Respuestas {
   const r: Respuestas = {};
   for (const c of camposPlanos(estructura)) {
-    if (c.precarga && precarga[c.precarga]) r[c.id] = precarga[c.precarga]!;
+    const precargado = valorPrecargado(c, precarga);
+    if (precargado !== undefined) r[c.id] = precargado;
     if (c.tipo === "tabla") r[c.id] = (c.filasIniciales ?? []).map((f) => ({ ...f }));
     if (c.tipo === "lista_chequeo") r[c.id] = { marcados: (c.items ?? []).flatMap((it, i) => (it.marcado ? [i] : [])) };
-    if (c.tipo === "coordenadas") r[c.id] = { lat: null, lon: null, cota: "" };
+    if (c.tipo === "coordenadas" && precargado === undefined) r[c.id] = { lat: null, lon: null, cota: "" };
   }
   for (const c of camposPlanos(estructura)) {
     if (c.tipo === "parrafo" && c.plantilla && !r[c.id]) r[c.id] = resolverPlantilla(c.plantilla, estructura, r, precarga);
+  }
+  return r;
+}
+
+export function completarPrecarga(estructura: EstructuraFormato, respuestas: Respuestas, precarga: DatosPrecarga): Respuestas {
+  const r = { ...respuestas };
+  for (const c of camposPlanos(estructura)) {
+    if (!campoVacio(c, r[c.id])) continue;
+    const precargado = valorPrecargado(c, precarga);
+    if (precargado !== undefined) r[c.id] = precargado;
   }
   return r;
 }
@@ -521,9 +591,9 @@ export function campoVacio(campo: Campo, v: ValorCampo | undefined): boolean {
   return typeof v !== "string" || !v.trim();
 }
 
-export function camposObligatoriosFaltantes(estructura: EstructuraFormato, respuestas: Respuestas): string[] {
+export function camposObligatoriosFaltantes(estructura: EstructuraFormato, respuestas: Respuestas, precarga: DatosPrecarga = {}): string[] {
   return camposPlanos(estructura)
-    .filter((c) => c.obligatorio && campoVacio(c, respuestas[c.id]))
+    .filter((c) => c.obligatorio && campoAplica(c, precarga) && campoVacio(c, respuestas[c.id]))
     .map((c) => c.etiqueta);
 }
 
@@ -659,9 +729,10 @@ function sanearCampo(c: Record<string, unknown>): { campo: Campo } | { error: st
   if (tipo === "texto" && c.multiple === true) campo.multiple = true;
   const ayuda = texto(c.ayuda, 500);
   if (ayuda) campo.ayuda = ayuda;
-  if ((tipo === "texto" || tipo === "fecha" || tipo === "numero" || tipo === "parrafo") && typeof c.precarga === "string" && c.precarga in PRECARGAS) {
+  if (TIPOS_CON_PRECARGA.includes(tipo) && typeof c.precarga === "string" && c.precarga in PRECARGAS && (c.precarga === "coordenadas") === (tipo === "coordenadas")) {
     campo.precarga = c.precarga as ClavePrecarga;
   }
+  if (c.soloPersona === "NATURAL" || c.soloPersona === "JURIDICA") campo.soloPersona = c.soloPersona;
   if (tipo === "parrafo") {
     const p = texto(c.plantilla, 20_000);
     if (p) campo.plantilla = p;

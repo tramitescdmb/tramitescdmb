@@ -11,7 +11,7 @@ import { filtrarLoteFotosVisita, MAX_FOTOS_VISITA } from "@/lib/visita-tecnica-f
 import { ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
 import { FormularioFormato } from "@/components/formatos/FormularioFormato";
 import type { ResultadoZonificacion } from "@/lib/zonificacion";
-import { actualizarTextosTipo, aplicarZonificacion, camposObligatoriosFaltantes, camposPlanos, campoVacio, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
+import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposObligatoriosFaltantes, camposPlanos, campoVacio, completarPrecarga, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas } from "@/lib/formato-visita";
 
 type Punto = { lat: number; lon: number; precisionM: number | null; manual: boolean; capturadoEn: string };
 type Tema = { id: string; nombre: string };
@@ -114,7 +114,7 @@ export function RegistrarVisitaForm({
     cargado.current = true;
     const previo = leer(clave);
     if (previo && (previo.formatoVersionId ?? null) === (formato?.versionId ?? null)) {
-      setB(previo);
+      setB(formato && previo.respuestas ? { ...previo, respuestas: completarPrecarga(formato.estructura, previo.respuestas, precarga) } : previo);
       setRestaurado(true);
     }
     leerFotosBorrador(visitaId).then((guardadas) => {
@@ -125,7 +125,7 @@ export function RegistrarVisitaForm({
         setRestaurado(true);
       }
     });
-  }, [clave, formato?.versionId, visitaId]);
+  }, [clave, formato, precarga, visitaId]);
 
   useEffect(() => {
     const revisarCola = () => listarPendientes().then((l) => setEnCola(l.find((x) => x.visitaId === visitaId) ?? null));
@@ -271,9 +271,9 @@ export function RegistrarVisitaForm({
     if (!b.punto) return setError("Capture el punto de la visita.");
     if (formato) {
       const respuestas = b.respuestas ?? {};
-      const vacios = camposPlanos(formato.estructura).filter((c) => c.obligatorio && campoVacio(c, respuestas[c.id]));
+      const vacios = camposPlanos(formato.estructura).filter((c) => c.obligatorio && campoAplica(c, precarga) && campoVacio(c, respuestas[c.id]));
       setFaltantes(new Set(vacios.map((c) => c.id)));
-      if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(formato.estructura, respuestas).join("; ")}.`);
+      if (vacios.length) return setError(`Complete los campos obligatorios del formato: ${camposObligatoriosFaltantes(formato.estructura, respuestas, precarga).join("; ")}.`);
     } else {
       if (b.temaIds.length + b.temasNuevos.length === 0) return setError("Seleccione al menos un tema de la visita.");
       if (!b.hallazgos.trim()) return setError("Describa lo observado en la visita.");

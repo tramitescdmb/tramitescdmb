@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { partesColombia } from "@/lib/planeador";
 import { codigoProcedimiento, pasoPermiteVisita } from "@/lib/temas-visita";
-import { validarEstructura, type DatosPrecarga, type EstructuraFormato } from "@/lib/formato-visita";
+import { TEXTO_TIPO_PERSONA, validarEstructura, type DatosPrecarga, type EstructuraFormato } from "@/lib/formato-visita";
 import { FORMATOS_BASE } from "@/lib/formatos-visita-base";
 
 export type FormatoVigente = {
@@ -60,10 +60,15 @@ export async function precargaDeVisita(visitaId: string, fechaVisita?: Date): Pr
         select: {
           numero: true,
           municipio: true,
+          solicitanteTipo: true,
           solicitanteNombre: true,
           solicitanteIdentificacion: true,
           solicitanteTelefono: true,
           solicitanteEmail: true,
+          solicitanteDireccion: true,
+          ubicacionLat: true,
+          ubicacionLon: true,
+          solicitante: { select: { email: true, celular: true, telefono: true, direccion: true } },
           predioNombre: true,
           predioMatricula: true,
           predioCatastral: true,
@@ -79,16 +84,20 @@ export async function precargaDeVisita(visitaId: string, fechaVisita?: Date): Pr
   const datos: DatosPrecarga = {
     expediente: e.numero,
     tramite: e.tramiteTipo.nombre,
+    tipo_solicitante: TEXTO_TIPO_PERSONA[e.solicitanteTipo],
     solicitante: e.solicitanteNombre,
     identificacion: e.solicitanteIdentificacion,
-    telefono: e.solicitanteTelefono ?? undefined,
-    correo: e.solicitanteEmail ?? undefined,
+    nit: e.solicitanteTipo === "JURIDICA" ? e.solicitanteIdentificacion : undefined,
+    telefono: e.solicitanteTelefono || e.solicitante?.celular || e.solicitante?.telefono || undefined,
+    correo: e.solicitanteEmail || e.solicitante?.email || undefined,
+    direccion_solicitante: e.solicitanteDireccion || e.solicitante?.direccion || undefined,
     municipio: e.municipio,
     predio: e.predioNombre ?? undefined,
     matricula: e.predioMatricula ?? undefined,
     catastral: e.predioCatastral ?? undefined,
     direccion_predio: e.predioDireccion ?? undefined,
     area_predio: areaHa(e.predioAreaM2),
+    coordenadas: e.ubicacionLat != null && e.ubicacionLon != null ? `${e.ubicacionLat},${e.ubicacionLon}` : undefined,
     funcionario: v.profesional.nombre,
     fecha_visita: partesColombia(fechaVisita ?? v.fechaHora).fecha,
   };

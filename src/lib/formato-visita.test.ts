@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   actualizarTextosTipo,
   camposObligatoriosFaltantes,
+  completarPrecarga,
   evaluarCumplimiento,
   evaluarFormula,
   numeroDesdeTexto,
@@ -150,6 +151,31 @@ describe("estructura y respuestas", () => {
     expect(faltantes).toContain("Fuente hídrica");
     const limpio = sanearRespuestas(FORMATO_AGUAS.estructura, { fuente_hidrica: "Innominada", intruso: "x", tipo_fuente: "Mar", caudal_autorizar: "9" });
     expect(limpio).toEqual({ fuente_hidrica: "Innominada" });
+  });
+
+  it("precarga por identificador, selecciones y coordenadas, y omite campos de persona jurídica para persona natural", () => {
+    const estructura = {
+      secciones: [
+        {
+          id: "s",
+          titulo: "S",
+          campos: [
+            { id: "tipo_persona", etiqueta: "Tipo", tipo: "seleccion", opciones: ["Persona natural", "Persona jurídica"] },
+            { id: "coord_predio", etiqueta: "Coordenadas", tipo: "coordenadas" },
+            { id: "email", etiqueta: "Correo", tipo: "texto" },
+            { id: "nit", etiqueta: "NIT", tipo: "texto", obligatorio: true },
+          ],
+        },
+      ],
+    } as Parameters<typeof respuestasIniciales>[0];
+    const natural = { tipo_solicitante: "Persona natural", correo: "a@b.co", coordenadas: "7.1,-73.1" };
+    const r = respuestasIniciales(estructura, natural);
+    expect(r.tipo_persona).toBe("Persona natural");
+    expect(r.coord_predio).toEqual({ lat: 7.1, lon: -73.1, cota: "" });
+    expect(r.email).toBe("a@b.co");
+    expect(camposObligatoriosFaltantes(estructura, r, natural)).toEqual([]);
+    expect(camposObligatoriosFaltantes(estructura, r, { tipo_solicitante: "Persona jurídica" })).toEqual(["NIT"]);
+    expect(completarPrecarga(estructura, { email: "" }, { correo: "x@y.co" }).email).toBe("x@y.co");
   });
 });
 

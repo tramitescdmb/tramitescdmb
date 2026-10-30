@@ -6,6 +6,7 @@ import { Crosshair, Plus, Trash2, RotateCcw, Info } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import {
   aDms,
+  campoAplica,
   cumplimientoFila,
   formatearNumero,
   OPCIONES_CUMPLIMIENTO,
@@ -56,7 +57,7 @@ export function FormularioFormato({
             <p className="text-xs text-stone-400">Sección sin campos.</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {s.campos.map((c) => (
+              {s.campos.filter((c) => campoAplica(c, precarga)).map((c) => (
                 <div key={c.id} className={anchoCompleto(c) ? "sm:col-span-2" : ""}>
                   <CampoFormato
                     campo={c}

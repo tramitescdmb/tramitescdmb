@@ -11,8 +11,11 @@ import {
   aplicarZonificacion,
   idDesdeEtiqueta,
   idsReferenciables,
+  personaDeCampo,
   PRECARGAS,
+  precargaDeCampo,
   respuestasIniciales,
+  TEXTO_TIPO_PERSONA,
   TIPOS_CAMPO,
   TIPOS_COLUMNA,
   validarEstructura,
@@ -292,7 +295,7 @@ export function EditorFormato({
                               <span className="truncate text-sm text-stone-800">{c.etiqueta}</span>
                               {c.obligatorio && <span className="text-xs text-red-600">*</span>}
                               <span className="flex-none rounded-sm bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">{TIPOS_CAMPO[c.tipo]}</span>
-                              {c.precarga && <span className="hidden flex-none rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700 sm:inline">precargado</span>}
+                              {precargaDeCampo(c) && <span className="hidden flex-none rounded-sm bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700 sm:inline">precargado</span>}
                               {c.zona && <span className="hidden flex-none rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700 sm:inline">desde el GPS</span>}
                             </button>
                             <button type="button" onClick={() => fijarSeccion(si, { ...s, campos: mover(s.campos, ci, -1) })} disabled={ci === 0} className={botonIcono} aria-label="Subir campo">
@@ -585,14 +588,33 @@ function EditorCampo({
             Obligatorio
           </label>
         )}
-        {(campo.tipo === "texto" || campo.tipo === "numero" || campo.tipo === "fecha" || campo.tipo === "parrafo") && (
+        {(campo.tipo === "texto" || campo.tipo === "numero" || campo.tipo === "fecha" || campo.tipo === "parrafo" || campo.tipo === "seleccion" || campo.tipo === "coordenadas") && (
           <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
             Precargar con
-            <select value={campo.precarga ?? ""} onChange={(e) => fijar("precarga", (e.target.value || undefined) as Campo["precarga"])} className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs">
+            <select value={precargaDeCampo(campo) ?? ""} onChange={(e) => fijar("precarga", (e.target.value || undefined) as Campo["precarga"])} className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs">
               <option value="">— nada —</option>
-              {Object.entries(PRECARGAS).map(([k, v]) => (
+              {Object.entries(PRECARGAS)
+                .filter(([k]) => (k === "coordenadas") === (campo.tipo === "coordenadas"))
+                .map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
+        {campo.tipo !== "calculado" && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-stone-700">
+            Aplica a
+            <select
+              value={personaDeCampo(campo) ?? ""}
+              onChange={(e) => fijar("soloPersona", (e.target.value || undefined) as Campo["soloPersona"])}
+              className="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-xs"
+            >
+              <option value="">Todo solicitante</option>
+              {Object.entries(TEXTO_TIPO_PERSONA).map(([k, v]) => (
                 <option key={k} value={k}>
-                  {v}
+                  Solo {v.toLowerCase()}
                 </option>
               ))}
             </select>
