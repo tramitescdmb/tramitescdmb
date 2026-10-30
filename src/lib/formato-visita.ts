@@ -200,7 +200,7 @@ function valorPrecargado(c: Campo, precarga: DatosPrecarga): ValorCampo | undefi
 export function numeroDesdeTexto(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v !== "string") return null;
-  let s = v.trim().replace(/\s/g, "").replace(/^[<>≤≥]=?/, "");
+  let s = v.trim().replace(/\s/g, "").replace(/^[<>≤≥]=?/, "").replace(/^\$/, "");
   if (!s) return null;
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
   else s = s.replace(",", ".");

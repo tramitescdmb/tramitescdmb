@@ -11,7 +11,7 @@ import { filtrarLoteFotosVisita, MAX_FOTOS_VISITA } from "@/lib/visita-tecnica-f
 import { ETIQUETA_RESULTADO_VISITA } from "@/lib/temas-visita";
 import { FormularioFormato } from "@/components/formatos/FormularioFormato";
 import type { ResultadoZonificacion } from "@/lib/zonificacion";
-import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposConErrorDigitacion, camposPlanos, campoVacio, completarPrecarga, corregirLatLon, errorRespuestas, precargaDeCampo, respuestasIniciales, type DatosPrecarga, type EstructuraFormato, type Respuestas, type ValorCoordenadas } from "@/lib/formato-visita";
+import { actualizarTextosTipo, aplicarZonificacion, campoAplica, camposConErrorDigitacion, camposPlanos, campoVacio, completarPrecarga, corregirLatLon, errorRespuestas, precargaDeCampo, respuestasIniciales, sanearRespuestas, type DatosPrecarga, type EstructuraFormato, type Respuestas, type ValorCoordenadas } from "@/lib/formato-visita";
 
 type Punto = { lat: number; lon: number; precisionM: number | null; manual: boolean; capturadoEn: string };
 type Tema = { id: string; nombre: string };
@@ -115,6 +115,14 @@ export function RegistrarVisitaForm({
     const previo = leer(clave);
     if (previo && (previo.formatoVersionId ?? null) === (formato?.versionId ?? null)) {
       setB(formato && previo.respuestas ? { ...previo, respuestas: completarPrecarga(formato.estructura, previo.respuestas, precarga) } : previo);
+      setRestaurado(true);
+    } else if (previo && formato && previo.formatoVersionId && previo.respuestas) {
+      const conservadas = sanearRespuestas(formato.estructura, previo.respuestas);
+      setB((actual) => ({
+        ...previo,
+        formatoVersionId: formato.versionId,
+        respuestas: completarPrecarga(formato.estructura, { ...actual.respuestas, ...conservadas }, precarga),
+      }));
       setRestaurado(true);
     }
     leerFotosBorrador(visitaId).then((guardadas) => {
