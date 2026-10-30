@@ -10,7 +10,7 @@ export default async function FlujoEditorPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; pestana?: string }>;
 }) {
   const { id } = await params;
   const session = await getSession();
@@ -21,5 +21,5 @@ export default async function FlujoEditorPage({
     redirect("/correspondencia");
   }
   const sp = await searchParams;
-  return <EditorFlujo id={id} modulo="SGDEA" ok={sp.ok} error={sp.error} />;
+  return <EditorFlujo id={id} modulo="SGDEA" ok={sp.ok} error={sp.error} pestana={sp.pestana} />;
 }

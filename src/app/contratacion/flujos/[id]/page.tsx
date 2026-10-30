@@ -9,7 +9,7 @@ export default async function FlujoGeconPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; pestana?: string }>;
 }) {
   const { id } = await params;
   const session = await getSession();
@@ -19,5 +19,5 @@ export default async function FlujoGeconPage({
     return <AccesoRestringido titulo="Flujos de trabajo" quien="administrador o jefe de contratación" volverHref="/contratacion/panel" volverLabel="Volver a GECON" />;
   }
   const sp = await searchParams;
-  return <EditorFlujo id={id} modulo="GECON" ok={sp.ok} error={sp.error} />;
+  return <EditorFlujo id={id} modulo="GECON" ok={sp.ok} error={sp.error} pestana={sp.pestana} />;
 }

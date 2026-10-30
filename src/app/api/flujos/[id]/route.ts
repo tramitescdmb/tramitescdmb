@@ -3,6 +3,16 @@ import { headers } from "next/headers";
 import type { AccionVencimientoPaso, AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
 
 const ACCIONES_VENCIMIENTO: AccionVencimientoPaso[] = ["NINGUNA", "AVISAR", "AVANZAR"];
+const PESTANA_DE_ACCION: Record<string, string> = {
+  editar: "datos",
+  accesos: "datos",
+  "agregar-paso": "pasos",
+  "editar-paso": "pasos",
+  "eliminar-paso": "pasos",
+  "mover-paso": "pasos",
+  "agregar-transicion": "pasos",
+  "eliminar-transicion": "pasos",
+};
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario } from "@/lib/permisos";
@@ -49,7 +59,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const form = await req.formData();
   const accion = String(form.get("accion") || "");
-  const num = (v: FormDataEntryValue | null) => {
+  const pestana = PESTANA_DE_ACCION[accion];
+  if (pestana) detalle.searchParams.set("pestana", pestana);
+  const num =(v: FormDataEntryValue | null) => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : null;
   };

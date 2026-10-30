@@ -9,7 +9,7 @@ export default async function FlujoTramitesPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; pestana?: string }>;
 }) {
   const { id } = await params;
   const session = await getSession();
@@ -19,5 +19,5 @@ export default async function FlujoTramitesPage({
     return <AccesoRestringido titulo="Flujos de trabajo" quien="Subdirector(a) SEYCA o administrador" volverHref="/tramites-ambientales" volverLabel="Volver a Trámites" />;
   }
   const sp = await searchParams;
-  return <EditorFlujo id={id} modulo="TRAMITES" ok={sp.ok} error={sp.error} />;
+  return <EditorFlujo id={id} modulo="TRAMITES" ok={sp.ok} error={sp.error} pestana={sp.pestana} />;
 }
