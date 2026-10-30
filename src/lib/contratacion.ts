@@ -20,6 +20,7 @@ import {
 } from "@/lib/datos-persona";
 import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } from "@/lib/usuarios-persona";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
@@ -456,6 +457,7 @@ export async function crearExpedienteContractual(datos: {
     `Expediente contractual creado: ${expediente.numero}${subserie ? ` · TRD ${subserie.etiqueta}${automatica ? ` (${automatica.motivo})` : ""}` : " · sin clasificación TRD"}`,
     datos.creadoPorId
   );
+  await iniciarFlujoAutomaticoEnObjeto("CONTRATO", expediente.id, datos.creadoPorId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
   return expediente;
 }
 

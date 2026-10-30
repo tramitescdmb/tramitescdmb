@@ -3,6 +3,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeGestionarExpedienteDeDependencia } from "@/lib/permisos";
 import { crearExpedienteDocumental } from "@/lib/expedientes-documentales";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
     userAgent,
     detalle: `Abrió el expediente ${expediente.numero}: "${expediente.asunto.slice(0, 200)}"`,
   });
+  await iniciarFlujoAutomaticoEnObjeto("EXPEDIENTE", expediente.id, session.userId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
 
   if (esJson) return NextResponse.json({ id: expediente.id, numero: expediente.numero });
 

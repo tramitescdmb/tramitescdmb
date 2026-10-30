@@ -130,6 +130,20 @@ describe("paso de firma del flujo", () => {
     expect(esResponsablePaso(paso("SUPERVISOR"), c, usuario({ usuarioId: "u-tecnico" }))).toBe(false);
   });
 
+  it("un expediente cerrado, archivado o anulado deja su flujo fuera de los pendientes", () => {
+    const base = { comunicacion: null, expedienteDocumental: null };
+    const tramite = { id: "t1", numero: "T-1", createdById: "u", tramiteTipo: { nombre: "X" }, usuariosAsignados: [] };
+    expect(objetivoDeInstancia({ ...base, expedienteTramite: { ...tramite, estado: "EN_EVALUACION", archivado: false } }).abierto).toBe(true);
+    expect(objetivoDeInstancia({ ...base, expedienteTramite: { ...tramite, estado: "APROBADO", archivado: false } }).abierto).toBe(false);
+    expect(objetivoDeInstancia({ ...base, expedienteTramite: { ...tramite, estado: "EN_EVALUACION", archivado: true } }).abierto).toBe(false);
+    const contrato = { id: "c1", numero: "C-1", numeroContrato: null, objeto: "O", dependenciaSolicitanteId: "d", creadoPorId: "u", asignados: [], supervisores: [] };
+    expect(objetivoDeInstancia({ ...base, expedienteContractual: { ...contrato, cerrado: true, eliminado: false } }).abierto).toBe(false);
+    expect(objetivoDeInstancia({ ...base, expedienteDocumental: { id: "e", numero: "X", asunto: "A", estado: "CERRADO", dependenciaId: "d", creadoPorId: "u" } }).abierto).toBe(false);
+    expect(
+      objetivoDeInstancia({ ...base, comunicacion: { id: "m", radicado: "R", asunto: "A", estado: "ANULADA", dependenciaDestinoId: null, dependenciaOrigenId: null, radicadoPorId: null } }).abierto,
+    ).toBe(false);
+  });
+
   it("cada módulo guarda sus flujos en su propio ámbito", () => {
     expect(aplicaAFormulario("EXPEDIENTE", "GECON")).toEqual({ aplicaA: null, ambito: "CONTRATO" });
     expect(aplicaAFormulario("RECIBIDA", "TRAMITES")).toEqual({ aplicaA: null, ambito: "TRAMITE" });

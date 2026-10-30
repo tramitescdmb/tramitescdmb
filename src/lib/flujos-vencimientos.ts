@@ -48,8 +48,9 @@ export async function procesarVencimientosFlujos(actorId: string | null = null):
     if (!paso) continue;
     const termino = estadoTerminoPaso(i.pasoActualDesde, paso.slaDiasHabiles, calendario, ahora);
     if (!termino?.vencido) continue;
-    r.vencidas++;
     const objetivo = objetivoDeInstancia(i);
+    if (!objetivo.abierto) continue;
+    r.vencidas++;
     const firmaEnCurso = paso.tipo === "FIRMA" && objetivo.esComunicacion;
     const salida = paso.alVencer === "AVANZAR" && !firmaEnCurso ? salidaDeVencimiento(paso.transiciones, paso.salidaVencimiento) : null;
 

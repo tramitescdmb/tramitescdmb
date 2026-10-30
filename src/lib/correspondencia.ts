@@ -16,7 +16,7 @@ import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
-import { iniciarFlujoAutomatico } from "@/lib/flujos";
+import { iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -861,6 +861,7 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
 
   let expedienteId: string | null = null;
   let expedienteNumero: string | null = null;
+  let expedienteNuevo = false;
 
   await db.$transaction(async (tx) => {
     await tx.comunicacion.update({
@@ -908,8 +909,13 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
       });
       expedienteId = nuevo.id;
       expedienteNumero = nuevo.numero;
+      expedienteNuevo = true;
     }
   });
+
+  if (expedienteNuevo && expedienteId) {
+    await iniciarFlujoAutomaticoEnObjeto("EXPEDIENTE", expedienteId, entrada.usuarioId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
+  }
 
   return { radicado: c.radicado, expedienteId, expedienteNumero, avisoExpediente };
 }

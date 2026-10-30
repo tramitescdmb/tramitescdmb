@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { AmbitoFlujo } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, AlertTriangle, ArrowRight } from "lucide-react";
@@ -27,6 +28,13 @@ const OPERADORES_POR_DEFECTO: Record<ModuloFlujo, string> = {
   SGDEA: "Sin nada marcado: cualquier funcionario con permiso de distribución o que gestione el expediente.",
   GECON: "Sin nada marcado: el administrador o jefe de contratación y el personal asignado al expediente.",
   TRAMITES: "Sin nada marcado: quien tenga permiso de edición sobre el trámite.",
+};
+
+const INICIO_AUTOMATICO: Record<AmbitoFlujo, string> = {
+  COMUNICACION: "Iniciar automáticamente al radicar",
+  EXPEDIENTE: "Iniciar automáticamente al abrir un expediente documental",
+  CONTRATO: "Iniciar automáticamente al crear un expediente contractual",
+  TRAMITE: "Iniciar automáticamente al radicar un expediente de trámite",
 };
 
 export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modulo: ModuloFlujo; ok?: string; error?: string }) {
@@ -135,17 +143,17 @@ export async function EditorFlujo({ id, modulo, ok, error }: { id: string; modul
               <input name="descripcion" defaultValue={flujo.descripcion ?? ""} className={inputCls} />
             </Field>
           </div>
-          {flujo.ambito === "COMUNICACION" && (
-            <label className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-3">
-              <input type="checkbox" name="inicioAutomatico" defaultChecked={flujo.inicioAutomatico} className="mt-0.5 rounded border-stone-300" />
-              <span>
-                Iniciar automáticamente al radicar
-                <span className="block text-xs text-stone-500">
-                  Mientras esté activo, se aplica solo a cada comunicación nueva del tipo indicado en «Aplica a». Solo puede haber un flujo automático activo por tipo.
-                </span>
-              </span>
-            </label>
-          )}
+          <label
+            className="flex items-start gap-2 text-sm text-stone-700 sm:col-span-3"
+            title={
+              flujo.ambito === "COMUNICACION"
+                ? "Mientras esté activo, se aplica a cada comunicación nueva del tipo indicado en «Aplica a». Solo un flujo automático activo por tipo."
+                : "Mientras esté activo, se aplica a cada expediente nuevo del módulo. Solo un flujo automático activo por módulo."
+            }
+          >
+            <input type="checkbox" name="inicioAutomatico" defaultChecked={flujo.inicioAutomatico} className="mt-0.5 rounded border-stone-300" />
+            <span>{INICIO_AUTOMATICO[flujo.ambito]}</span>
+          </label>
           <div className="sm:col-span-3">
             <button className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Guardar datos</button>
           </div>
