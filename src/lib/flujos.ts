@@ -1,7 +1,7 @@
 import type { AccionVencimientoPaso, AmbitoFlujo, AsignacionPaso, Prisma, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { PLANTILLAS_FLUJO, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
+import { PLANTILLAS_FLUJO, posicionesPlantilla, validarEstructuraFlujo } from "@/lib/flujos-plantillas";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import { solicitudesVigentes } from "@/lib/estado-firmas";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
@@ -441,9 +441,14 @@ export async function cargarPlantillasFlujo(usuarioId: string, modulo: ModuloFlu
   const existentes = new Set(
     (await db.flujoTrabajo.findMany({ where: { ambito: { in: AMBITOS_DE_MODULO[modulo] } }, select: { nombre: true } })).map((f) => f.nombre),
   );
+  const nombresDependencia = [...new Set(plantillasDeModulo(modulo).flatMap((p) => p.pasos.map((x) => x.dependencia).filter((d): d is string => Boolean(d))))];
+  const dependenciaPorNombre = new Map(
+    (await db.dependencia.findMany({ where: { nombre: { in: nombresDependencia } }, select: { id: true, nombre: true } })).map((d) => [d.nombre, d.id]),
+  );
   let creados = 0;
   for (const plantilla of plantillasDeModulo(modulo)) {
     if (existentes.has(plantilla.nombre)) continue;
+    const posiciones = posicionesPlantilla(plantilla.pasos);
     const flujo = await db.flujoTrabajo.create({
       data: {
         nombre: plantilla.nombre,
@@ -460,10 +465,11 @@ export async function cargarPlantillasFlujo(usuarioId: string, modulo: ModuloFlu
             tipo: p.tipo,
             asignacion: p.asignacion,
             cargoClave: p.cargoClave ?? null,
+            dependenciaId: p.dependencia ? (dependenciaPorNombre.get(p.dependencia) ?? null) : null,
             slaDiasHabiles: p.slaDiasHabiles ?? null,
             instrucciones: p.instrucciones ?? null,
-            posX: 140 + (i % 2) * 40,
-            posY: 40 + i * 120,
+            posX: Math.round(posiciones.get(p.clave)?.x ?? 160),
+            posY: posiciones.get(p.clave)?.y ?? 40 + i * 120,
           })),
         },
       },
