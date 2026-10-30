@@ -1365,7 +1365,7 @@
     "orden": 1,
     "titulo": "Crear, administrar y ejecutar flujos de trabajo electrónicos",
     "estado": "COMPLETO",
-    "nota": "Motor de flujos configurable: el administrador de archivo crea un flujo (pasos + transiciones + responsable por paso) desde Configuración → Flujos de trabajo, lo activa y lo aplica a una comunicación desde su detalle; desde ahí se avanza paso a paso eligiendo la transición, con constancia de cada movimiento en la bitácora inalterable (acción FLUJO)"
+    "nota": "Motor de flujos configurable: el administrador crea un flujo (pasos + transiciones + responsable por paso) desde Configuración → Flujos de trabajo, lo activa y lo aplica a una comunicación o a un expediente desde su detalle, o lo deja con inicio automático; desde ahí se avanza paso a paso eligiendo la transición, con constancia de cada movimiento en la bitácora inalterable (acción FLUJO). El mismo motor atiende GECON y Trámites ambientales 2.0 con flujos propios de cada módulo."
   },
   {
     "numero": "7.2",
@@ -1429,7 +1429,7 @@
     "orden": 9,
     "titulo": "Ver actividades pendientes, priorizar y ver desempeño en tiempo real",
     "estado": "COMPLETO",
-    "nota": "El panel muestra expedientes/pasos pendientes; el detalle de cada comunicación calcula el paso siguiente del ciclo (repartir / redactar / radicar salida / despachar) con el rol responsable; y Reportes suma el tiempo promedio de respuesta (días entre radicación y respuesta formal), general y por dependencia — identifica dónde hay cuellos de botella"
+    "nota": "El panel muestra expedientes/pasos pendientes; el detalle de cada comunicación calcula el paso siguiente del ciclo (repartir / redactar / radicar salida / despachar) con el rol responsable; y Reportes suma el tiempo promedio de respuesta (días entre radicación y respuesta formal), general y por dependencia — identifica dónde hay cuellos de botella. «Pasos de flujo a mi cargo» ordena por urgencia (vencidos primero) y la pestaña «Uso e indicadores» de cada flujo mide en días hábiles el tiempo promedio y máximo por paso, las veces que superó el término y las aplicaciones en curso con su vencimiento."
   },
   {
     "numero": "7.10",
@@ -1437,7 +1437,7 @@
     "orden": 10,
     "titulo": "Visualizar gráficamente el estado de cada flujo",
     "estado": "COMPLETO",
-    "nota": "Barra de progreso por etapas en trámites y correspondencia"
+    "nota": "Barra de progreso por etapas en trámites y correspondencia; el flujograma de cada flujo en curso marca los pasos hechos y el paso actual, y la lista de flujos muestra por flujo cuántos están en curso, vencidos y completados."
   },
   {
     "numero": "7.11",
@@ -1493,7 +1493,7 @@
     "orden": 17,
     "titulo": "Definir flujos de trabajo basados en plantillas",
     "estado": "COMPLETO",
-    "nota": "4 flujos precargados (PQRSD con visto bueno, oficio de salida con revisión, memorando interno, ruta básica genérica) que se cargan con un botón y quedan como flujos normales, editables y activables"
+    "nota": "Plantillas precargadas por módulo que se cargan con un botón y quedan como flujos normales, editables y activables: 12 del SGDEA (PQRSD, derecho de petición, acceso a información, traslado por competencia, ente de control, oficios, notificación, memorandos, transferencia documental), 8 de GECON (contratación directa, mínima cuantía, estudios previos, informe y pago, modificación, suspensión, incumplimiento, liquidación) y 8 de Trámites ambientales 2.0 (auto de inicio, información adicional, concepto técnico, resolución, notificación, reposición, cobro, seguimiento)."
   },
   {
     "numero": "7.18",
@@ -1501,7 +1501,7 @@
     "orden": 18,
     "titulo": "Detener un flujo de trabajo en curso",
     "estado": "COMPLETO",
-    "nota": "Cualquier comunicación recibida en trámite se puede DETENER con un motivo obligatorio, y reanudar después. Si es una PQRSD, además suspende/reanuda el término de ley por los días hábiles que faltaban (Art. 17 CPACA); si no, es una pausa administrativa. Enviada/memorando quedan definitivos al radicarse (no hay flujo posterior que detener)"
+    "nota": "Cualquier comunicación recibida en trámite se puede DETENER con un motivo obligatorio, y reanudar después. Si es una PQRSD, además suspende/reanuda el término de ley por los días hábiles que faltaban (Art. 17 CPACA); si no, es una pausa administrativa. Enviada/memorando quedan definitivos al radicarse. Un flujo de trabajo en curso se cancela con motivo obligatorio y termina solo al cerrar el expediente o anular la comunicación, con el paso en que estaba en la bitácora."
   },
   {
     "numero": "7.19",

@@ -275,5 +275,24 @@
     "ejemplo": "Con una menor cuantía de $500.000.000 para 2026, la mínima cuantía es $50.000.000: un contrato de $40.000.000 por concurso de méritos debe tramitarse por mínima cuantía.",
     "detalle": "Sin tope registrado para un año, el valor no se valida. La validación aplica al valor escrito en GECON antes del enlace con SECOP II; una vez enlazado, rige el de SECOP II.",
     "fundamento": "Ley 1150 de 2007, art. 2, num. 2, lit. b · Ley 2069 de 2020, art. 30 · Manual A-BS-MA01, num. 6.2.2.2 y 6.2.5."
+  },
+  {
+    "orden": 17,
+    "etiqueta": "Flujos",
+    "titulo": "Flujos de trabajo del expediente contractual",
+    "tituloIndice": "Flujos de trabajo",
+    "ubicacion": "[Flujos de trabajo](/contratacion/flujos) (Administrador o Jefe de Contratación) y pestaña «Flujo de trabajo» del expediente.",
+    "resumen": "Tareas internas sobre un expediente contractual —revisiones, aprobaciones, pagos y modificaciones— con responsable y término por paso, sin cambiar las etapas del contrato.",
+    "pasos": [
+      "«Cargar plantillas» crea ocho flujos de ejemplo: contratación directa de prestación de servicios, mínima cuantía, revisión de estudios previos, informe de supervisión y pago, modificación contractual, suspensión y reinicio, presunto incumplimiento y liquidación.",
+      "Cada paso define su responsable: personal de contratación asignado, supervisor, dependencia solicitante, una dependencia fija (Gestión Presupuestal para el CDP y el RP, Tesorería y Cartera para el pago), un cargo o una persona elegida al avanzar.",
+      "Desde la pestaña «Flujo de trabajo» del expediente se inicia el flujo; cada responsable completa su paso eligiendo la salida, y devolver a un paso anterior exige el motivo.",
+      "Los pasos a cargo aparecen en el [panel de GECON](/contratacion/panel) y en la campana, los vencidos primero.",
+      "Un flujo marcado como automático se inicia al crear cada expediente contractual.",
+      "Al cerrar o eliminar el expediente, el flujo en curso termina y queda en la bitácora con el paso en que estaba."
+    ],
+    "ejemplo": "En `CDMB-CTO-2026-000006` se inicia «Informe de supervisión y trámite de pago»: el supervisor aprueba el informe del periodo, el personal de contratación verifica el acta de recibo y la planilla PILA, y el Grupo Tesorería y Cartera registra el pago.",
+    "detalle": "Los flujos no reemplazan el checklist de documentos ni el paso entre etapas: ordenan quién hace qué y en qué plazo. Las instrucciones de cada paso citan los formatos A-BS del catálogo y la pestaña «Uso e indicadores» de cada flujo mide el tiempo real por paso.",
+    "fundamento": "Decreto 1082 de 2015 · Ley 1150 de 2007, art. 11 · Ley 1474 de 2011, art. 86 · MoReq capítulo 7."
   }
 ]

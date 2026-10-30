@@ -469,14 +469,21 @@ export default async function CorrespondenciaAyudaPage() {
         <p>
           Un flujo define los <strong>pasos</strong> por los que pasa una comunicación, quién responde por
           cada uno y a dónde va después. No está fijo en el código: lo arma el administrador de archivo en{" "}
-          <span className="font-mono text-xs">Configuración → Flujos de trabajo</span> (MoReq cap. 7). Hay
-          cuatro plantillas precargables (PQRSD con visto bueno, oficio con revisión y firma, memorando
-          interno, ruta genérica) que se editan y activan.
+          <span className="font-mono text-xs">Configuración → Flujos de trabajo</span> (MoReq cap. 7). «Cargar
+          plantillas» crea los flujos precargados del módulo (PQRSD, derecho de petición, acceso a información, traslado por
+          competencia, ente de control, oficios, notificación, memorandos y transferencia documental), que se editan y activan.
         </p>
         <p>
           Con «Aplica a: Expedientes documentales» el flujo se usa sobre un expediente (revisión, préstamo, transferencia u otra tarea
           interna) desde su pestaña «Flujo de trabajo». Ahí la dependencia responsable es la del expediente y «quien radicó» es quien lo
           abrió; los pasos de firma se completan a mano. Sus pasos pendientes aparecen en «Pasos de flujo a mi cargo».
+        </p>
+        <p>
+          <strong>Inicio automático.</strong> Un flujo activo marcado así se aplica solo a cada comunicación nueva del tipo indicado o a cada
+          expediente documental que se abre; hay uno automático por tipo de comunicación y uno para expedientes. <strong>Cierre.</strong> Al
+          cerrar el expediente o anular la comunicación, el flujo en curso termina y queda en la bitácora con el paso en que estaba.{" "}
+          <strong>Indicadores.</strong> La pestaña «Uso e indicadores» de cada flujo mide en días hábiles el tiempo promedio y máximo por paso,
+          las veces que superó el término y las aplicaciones en curso.
         </p>
         <p>
           <strong>Versiones.</strong> «Nueva versión» copia el flujo como versión siguiente; al activarla queda vigente y las anteriores se

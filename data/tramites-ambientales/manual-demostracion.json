@@ -201,5 +201,24 @@
     "ejemplo": "",
     "detalle": "",
     "fundamento": "Ley 594 de 2000."
+  },
+  {
+    "orden": 13,
+    "etiqueta": "Flujos",
+    "titulo": "Flujos de trabajo del expediente",
+    "tituloIndice": "Flujos de trabajo",
+    "ubicacion": "[Flujos de trabajo](/tramites-ambientales/flujos) y pestaña «Flujo de trabajo» del expediente.",
+    "resumen": "Tareas internas sobre un expediente de trámite —proyección y revisión de actos, notificación, recursos, cobro y seguimiento— asignadas por cargo o al personal del trámite.",
+    "pasos": [
+      "«Cargar plantillas» crea ocho flujos de ejemplo: auto de inicio y publicación, requerimiento de información adicional, visita y concepto técnico, revisión y firma de la resolución, notificación y ejecutoria, recurso de reposición, cobro del servicio de evaluación y seguimiento y control.",
+      "La revisión de la resolución recorre los cargos del procedimiento: profesional en derecho, coordinación de evaluación, Subdirección de Evaluación y Control Ambiental, asesoría y Dirección General; cada uno puede devolverla con observaciones.",
+      "El flujo se inicia desde la pestaña «Flujo de trabajo» del expediente y no altera los pasos del procedimiento.",
+      "Los pasos a cargo aparecen en el inicio de Trámites ambientales 2.0 y en la campana, los vencidos primero.",
+      "Un flujo marcado como automático se inicia al radicar cada expediente.",
+      "Al archivar el expediente, o cuando el trámite queda aprobado, negado, desistido o rechazado, el flujo en curso termina y queda en la bitácora."
+    ],
+    "ejemplo": "En un expediente de concesión de aguas se inicia «Notificación y ejecutoria del acto administrativo»: notificaciones envía la citación, el solicitante no comparece, se notifica por aviso y, vencidos los diez días sin recurso, gestión documental deja la constancia de ejecutoria.",
+    "detalle": "Los términos sugeridos siguen el procedimiento y la ley: diez días hábiles para recursos, un mes para aportar información antes del desistimiento tácito y dos meses para resolver la reposición.",
+    "fundamento": "Decreto 1076 de 2015 · Ley 99 de 1993, arts. 70 y 71 · Ley 1437 de 2011, arts. 17, 67 a 69 y 74 a 87."
   }
 ]

@@ -143,17 +143,20 @@
     "etiqueta": "Flujos",
     "titulo": "Flujos de trabajo configurables",
     "tituloIndice": "Flujos de trabajo configurables",
-    "ubicacion": "`Configuración → Flujos de trabajo`.",
-    "resumen": "Un motor de procesos que se configura desde la interfaz, con diagrama arrastrable, sin intervención de desarrollo.",
+    "ubicacion": "[Configuración → Flujos de trabajo](/correspondencia/admin/flujos).",
+    "resumen": "Motor de procesos configurable desde la interfaz: pasos, responsables, términos y versiones, con indicadores de uso por flujo.",
     "pasos": [
-      "Al abrir un flujo, el **lienzo** permite arrastrar los pasos, trazar transiciones de uno a otro y, en el panel lateral, renombrar un paso, cambiar su tipo o editar su etiqueta.",
-      "El **simulador** recorre el flujo eligiendo la salida en cada bifurcación, sin afectar ninguna comunicación real.",
-      "El botón de exportación genera el **BPMN 2.0** del flujo, que abre en cualquier herramienta de modelado estándar.",
-      "Un flujo se aplica a un trámite desde su detalle: aparece el flujograma con el paso actual, el responsable resuelto y el término del paso, con indicador de color (verde, ámbar, rojo)."
+      "La lista muestra los flujos vigentes, los que están en curso, los pasos vencidos y los completados; cada fila suma todas las versiones del flujo.",
+      "Al abrir un flujo, las pestañas **Diagrama**, **Pasos**, **Datos y acceso**, **Uso e indicadores** y **Versiones** organizan su configuración. En el lienzo se arrastran los pasos y se trazan las transiciones.",
+      "El **simulador** recorre el flujo con una fecha de inicio y calcula el vencimiento de cada paso en días hábiles; **Descargar BPMN** genera el BPMN 2.0 del flujo.",
+      "Con **Iniciar automáticamente**, el flujo se aplica solo a cada comunicación nueva del tipo indicado o a cada expediente documental que se abre.",
+      "Desde el detalle de la comunicación o del expediente se inicia, avanza o cancela el flujo; el flujograma marca el paso actual, el responsable y el término con semáforo.",
+      "Al cerrar el expediente o anular la comunicación, el flujo en curso termina y queda en la bitácora con el paso en que estaba.",
+      "**Uso e indicadores** muestra, por paso, las veces que se ejecutó, el tiempo promedio y máximo en días hábiles y cuántas veces superó el término, además de las aplicaciones en curso."
     ],
-    "ejemplo": "El flujo «PQRSD — petición general» tiene los pasos Radicación → Reparto → Proyección → Revisión jefe → Firma → Despacho. Aplicado a `CDMB-R-2026-000002`, el flujograma marca «Proyección» como paso actual, con la funcionaria asignada como responsable y el término del paso en verde.",
-    "detalle": "El comité de archivo puede modelar sus procedimientos —pasos, responsables, términos y reglas de asignación— sin solicitudes a sistemas. El término de ley de una PQRSD, en cambio, permanece fijo en código de forma deliberada, para que no pueda editarse y derivar en un incumplimiento normativo.",
-    "fundamento": "MoReq capítulo 7 (flujos de trabajo electrónicos) · 7.2, 7.4 y 7.13 (diagramación, parametrización de tiempos, exportación en formato estándar)."
+    "ejemplo": "El flujo «Gestión de PQRSD con visto bueno» tiene los pasos Proyección de la respuesta → Visto bueno → Radicación de la respuesta → Cierre del trámite. Aplicado a `CDMB-R-2026-000002`, el flujograma marca «Proyección de la respuesta» como paso actual, con la dependencia destinataria como responsable y el término de ocho días hábiles en verde.",
+    "detalle": "El comité de archivo puede modelar sus procedimientos —pasos, responsables, términos y reglas de asignación— sin solicitudes a sistemas. El término de ley de una PQRSD permanece fijo en código de forma deliberada, para que no pueda editarse y derivar en un incumplimiento normativo. GECON y Trámites ambientales 2.0 usan el mismo motor con flujos propios, administrados por separado.",
+    "fundamento": "MoReq capítulo 7 (flujos de trabajo electrónicos) · 7.2, 7.4, 7.5, 7.9, 7.12, 7.13 y 7.17."
   },
   {
     "orden": 10,

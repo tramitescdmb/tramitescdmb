@@ -1483,7 +1483,7 @@ export function posicionesPlantilla(pasos: PasoPlantilla[]): Map<string, { x: nu
   for (const p of pasos) filas.set(nivel.get(p.clave)!, [...(filas.get(nivel.get(p.clave)!) ?? []), p.clave]);
   const posiciones = new Map<string, { x: number; y: number }>();
   for (const [n, claves] of filas) {
-    claves.forEach((clave, i) => posiciones.set(clave, { x: 160 + (i - (claves.length - 1) / 2) * 240, y: 40 + n * 120 }));
+    claves.forEach((clave, i) => posiciones.set(clave, { x: 160 + (i - (claves.length - 1) / 2) * 300, y: 40 + n * 120 }));
   }
   return posiciones;
 }
