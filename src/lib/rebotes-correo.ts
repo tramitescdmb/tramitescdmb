@@ -40,7 +40,7 @@ type MensajeGraph = {
   id: string;
   subject?: string | null;
   receivedDateTime: string;
-  body?: { content?: string | null } | null;
+  body?: { content?: string | null; contentType?: string | null } | null;
   singleValueExtendedProperties?: { id: string; value: string }[];
 };
 
@@ -63,12 +63,12 @@ function textoPlano(html: string): string {
     .replace(/[ \t]+/g, " ");
 }
 
-async function filasDelRebote(analisis: AnalisisRebote, asunto: string) {
+async function filasDelRebote(analisis: AnalisisRebote, asunto: string): Promise<{ filas: { id: string; destinatario: string; estado: string }[]; exacta: boolean }> {
   if (analisis.envio) {
     const filas = await db.correoEnviado.findMany({ where: { envio: analisis.envio }, select: { id: true, destinatario: true, estado: true } });
-    if (filas.length) return filas;
+    if (filas.length) return { filas, exacta: true };
   }
-  if (analisis.destinatarios.length === 0) return [];
+  if (analisis.destinatarios.length === 0) return { filas: [], exacta: false };
   const recientes = await db.correoEnviado.findMany({
     where: { destinatario: { in: analisis.destinatarios }, estado: { in: ["ENVIADO", "REBOTADO"] }, createdAt: { gte: new Date(Date.now() - VENTANA_COINCIDENCIA_MS) } },
     orderBy: { createdAt: "desc" },
@@ -78,9 +78,11 @@ async function filasDelRebote(analisis: AnalisisRebote, asunto: string) {
   const porAsunto = recientes.filter((f) => f.asunto && asunto.includes(f.asunto.slice(0, 120)));
   if (porAsunto.length) {
     const envio = porAsunto[0]!.envio;
-    return envio ? porAsunto.filter((f) => f.envio === envio) : porAsunto.slice(0, 1);
+    return { filas: envio ? porAsunto.filter((f) => f.envio === envio) : porAsunto.slice(0, 1), exacta: true };
   }
-  return [...new Map(recientes.map((f) => [f.destinatario, f])).values()];
+  const masReciente = new Map<string, (typeof recientes)[number]>();
+  for (const f of recientes) if (!masReciente.has(f.destinatario)) masReciente.set(f.destinatario, f);
+  return { filas: [...masReciente.values()], exacta: false };
 }
 
 export async function procesarRebotesCuenta(cuenta: { id: string; nombre: string; rebotesHasta: Date | null; createdAt: Date }): Promise<ResultadoRebotes> {
@@ -97,14 +99,22 @@ export async function procesarRebotesCuenta(cuenta: { id: string; nombre: string
     `$select=${encodeURIComponent("id,subject,receivedDateTime,body")}`,
     `$expand=${encodeURIComponent(`singleValueExtendedProperties($filter=id eq '${CLASE_MENSAJE}')`)}`,
   ].join("&");
+  const guardarAvance = async () => {
+    if (hasta > desde) await db.cuentaCorreo.update({ where: { id: cuenta.id }, data: { rebotesHasta: hasta } });
+  };
   let ruta: string | null = `${buzon}/mailFolders/inbox/messages?${consulta}`;
   for (let pagina = 0; ruta && pagina < MAX_PAGINAS; pagina++) {
     const respuesta = await cliente.graph(ruta, { headers: { Prefer: 'outlook.body-content-type="text"' } });
-    if (!(respuesta instanceof Response)) return { ...r, ok: false, mensaje: respuesta.error };
-    if (respuesta.status === 403) return { ...r, ok: false, mensaje: "La aplicación no tiene permiso de lectura del buzón (Mail.ReadWrite)." };
-    if (!respuesta.ok) {
+    let falla: string | null = null;
+    if (!(respuesta instanceof Response)) falla = respuesta.error;
+    else if (respuesta.status === 403) falla = "La aplicación no tiene permiso de lectura del buzón (Mail.ReadWrite).";
+    else if (!respuesta.ok) {
       const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
-      return { ...r, ok: false, mensaje: `Microsoft 365 respondió ${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}: ${cuerpo.error?.message ?? "sin detalle"}` };
+      falla = `Microsoft 365 respondió ${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}: ${cuerpo.error?.message ?? "sin detalle"}`;
+    }
+    if (falla || !(respuesta instanceof Response)) {
+      await guardarAvance();
+      return { ...r, ok: false, mensaje: falla ?? "Sin respuesta de Microsoft 365." };
     }
     const datos = (await respuesta.json()) as { value?: MensajeGraph[]; "@odata.nextLink"?: string };
     for (const m of datos.value ?? []) {
@@ -116,8 +126,9 @@ export async function procesarRebotesCuenta(cuenta: { id: string; nombre: string
       r.rebotes++;
       try {
         const contenido = m.body?.content ?? "";
-        const analisis = analizarRebote(/<[a-z][\s\S]*>/i.test(contenido) ? textoPlano(contenido) : contenido, [cliente.remitente]);
-        const filas = (await filasDelRebote(analisis, asunto)).filter((f) => !analisis.destinatarios.length || analisis.destinatarios.includes(f.destinatario) || analisis.envio);
+        const analisis = analizarRebote(m.body?.contentType?.toLowerCase() === "html" ? textoPlano(contenido) : contenido, [cliente.remitente]);
+        const coincidencia = await filasDelRebote(analisis, asunto);
+        const filas = coincidencia.filas.filter((f) => coincidencia.exacta || analisis.destinatarios.includes(f.destinatario));
         if (filas.length === 0) continue;
         const detalle = [analisis.codigo, analisis.diagnostico].filter(Boolean).join(" · ").slice(0, 500) || "Informe de no entrega sin diagnóstico.";
         const nuevos = filas.filter((f) => f.estado !== "REBOTADO");
@@ -135,6 +146,7 @@ export async function procesarRebotesCuenta(cuenta: { id: string; nombre: string
             r.suprimidas++;
           }
         }
+        if (!coincidencia.exacta) continue;
         const movido = await cliente.graph(`${buzon}/messages/${encodeURIComponent(m.id)}/move`, { method: "POST", body: JSON.stringify({ destinationId: "deleteditems" }) });
         if (movido instanceof Response && movido.ok) r.movidos++;
       } catch (err) {
@@ -143,7 +155,7 @@ export async function procesarRebotesCuenta(cuenta: { id: string; nombre: string
     }
     ruta = datos["@odata.nextLink"]?.replace("https://graph.microsoft.com/v1.0", "") ?? null;
   }
-  if (hasta > desde) await db.cuentaCorreo.update({ where: { id: cuenta.id }, data: { rebotesHasta: hasta } });
+  await guardarAvance();
   return r;
 }
 

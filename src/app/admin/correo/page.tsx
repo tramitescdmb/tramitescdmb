@@ -684,7 +684,7 @@ async function PestanaMantenimiento({ cuentas }: { cuentas: CuentaConClaves[] })
                 </tr>
               )}
               {lista.map((s) => {
-                const quien = usuarios.find((u) => (u.correoNotificacion ?? u.email).toLowerCase() === s.correo);
+                const quien = usuarios.find((u) => correoDeUsuario(u) === s.correo);
                 return (
                   <tr key={s.correo} className="border-b border-stone-100 align-top last:border-0">
                     <td className="px-4 py-1.5 text-xs font-medium">{s.correo}</td>

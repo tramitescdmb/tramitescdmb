@@ -396,15 +396,19 @@ export async function enviarAvisos(avisos: Aviso[]): Promise<number> {
   for (const { aviso, destinatarios } of lista) {
     const html = renderizarMensaje(aviso, base);
     for (const destinatario of destinatarios) {
-      const fila = await reservarEnvio(aviso, destinatario, html);
-      if (!fila) continue;
-      if (suprimidas.has(destinatario)) {
-        await db.correoEnviado.update({ where: { id: fila.id }, data: { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA, html: null } });
-        continue;
+      try {
+        const fila = await reservarEnvio(aviso, destinatario, html);
+        if (!fila) continue;
+        if (suprimidas.has(destinatario)) {
+          await db.correoEnviado.update({ where: { id: fila.id }, data: { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA, html: null } });
+          continue;
+        }
+        const r = envio ? await envio.enviar({ para: [destinatario], asunto: aviso.asunto, html, encabezados: { [ENCABEZADO_ENVIO]: fila.envio } }) : SIN_CONFIGURAR;
+        await db.correoEnviado.update({ where: { id: fila.id }, data: estadoTrasEnvio(r, 1) });
+        if (r.ok) enviados++;
+      } catch (err) {
+        console.error(`Aviso ${aviso.evento} a ${destinatario} no procesado:`, err);
       }
-      const r = envio ? await envio.enviar({ para: [destinatario], asunto: aviso.asunto, html, encabezados: { [ENCABEZADO_ENVIO]: fila.envio } }) : SIN_CONFIGURAR;
-      await db.correoEnviado.update({ where: { id: fila.id }, data: estadoTrasEnvio(r, 1) });
-      if (r.ok) enviados++;
     }
   }
   if (envio) {
@@ -468,19 +472,23 @@ export async function procesarColaCorreo(opciones: { limite?: number; presupuest
       data: { estado: "EN_CURSO", intentadoEn: new Date(), intentos: { increment: 1 } },
     });
     if (tomado.count === 0) continue;
-    if (suprimidas.has(p.destinatario)) {
-      await db.correoEnviado.update({ where: { id: p.id }, data: { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA, html: null, proximoIntento: null } });
-      r.omitidos++;
-      continue;
+    try {
+      if (suprimidas.has(p.destinatario)) {
+        await db.correoEnviado.update({ where: { id: p.id }, data: { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA, html: null, proximoIntento: null } });
+        r.omitidos++;
+        continue;
+      }
+      if (r.procesados > 0) await pausa();
+      r.procesados++;
+      const resultado = await envio.enviar({ para: [p.destinatario], asunto: p.asunto, html: p.html!, encabezados: { [ENCABEZADO_ENVIO]: p.envio ?? p.id } });
+      const estado = estadoTrasEnvio(resultado, p.intentos + 1);
+      await db.correoEnviado.update({ where: { id: p.id }, data: estado });
+      if (estado.estado === "ENVIADO") r.enviados++;
+      else if (estado.estado === "REINTENTO") r.reprogramados++;
+      else r.fallidos++;
+    } catch (err) {
+      console.error(`Reintento del correo ${p.id} no procesado:`, err);
     }
-    if (r.procesados > 0) await pausa();
-    r.procesados++;
-    const resultado = await envio.enviar({ para: [p.destinatario], asunto: p.asunto, html: p.html!, encabezados: { [ENCABEZADO_ENVIO]: p.envio ?? p.id } });
-    const estado = estadoTrasEnvio(resultado, p.intentos + 1);
-    await db.correoEnviado.update({ where: { id: p.id }, data: estado });
-    if (estado.estado === "ENVIADO") r.enviados++;
-    else if (estado.estado === "REINTENTO") r.reprogramados++;
-    else r.fallidos++;
   }
   return r;
 }

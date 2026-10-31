@@ -393,21 +393,26 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
       r.pendientes = lotes.length - i;
       break;
     }
-    const mensaje = mensajeAlertas(nuevas, base);
-    if (suprimidas.has(correo)) {
-      await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
-      r.omitidos!++;
-      continue;
+    try {
+      const mensaje = mensajeAlertas(nuevas, base);
+      if (suprimidas.has(correo)) {
+        await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
+        r.omitidos!++;
+        continue;
+      }
+      if (enviadosEnLote > 0) await pausa();
+      enviadosEnLote++;
+      const lote = randomUUID();
+      const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
+      r.usuarios++;
+      r.alertas += nuevas.length;
+      if (resultado.ok) r.correos++;
+      else r.fallidos++;
+      await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
+    } catch (err) {
+      r.fallidos++;
+      console.error(`Alertas para ${correo} no procesadas:`, err);
     }
-    if (enviadosEnLote > 0) await pausa();
-    enviadosEnLote++;
-    const lote = randomUUID();
-    const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
-    r.usuarios++;
-    r.alertas += nuevas.length;
-    if (resultado.ok) r.correos++;
-    else r.fallidos++;
-    await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
   }
   r.ok = r.fallidos === 0;
   return r;

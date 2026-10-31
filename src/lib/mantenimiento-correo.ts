@@ -93,7 +93,7 @@ export async function alertasAdministrador(): Promise<Alerta[]> {
     }
   }
   for (const s of suprimidas) {
-    const quien = usuarios.find((u) => (u.correoNotificacion ?? u.email).toLowerCase() === s.correo);
+    const quien = usuarios.find((u) => correoDeUsuario(u) === s.correo);
     alertas.push({
       ...base,
       clave: `admin-suprimida:${s.correo}:${s.rebotes}`,
@@ -146,17 +146,22 @@ async function avisarAdministradores(): Promise<ResultadoAdministrador> {
   for (const correo of correos) {
     const nuevas = alertas.filter((a) => !ya.has(`${a.clave}|${correo}`));
     if (nuevas.length === 0) continue;
-    const mensaje = mensajeAdministrador(nuevas, base);
-    if (suprimidas.has(correo)) {
-      await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
-      continue;
+    try {
+      const mensaje = mensajeAdministrador(nuevas, base);
+      if (suprimidas.has(correo)) {
+        await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
+        continue;
+      }
+      if (r.correos + r.fallidos > 0) await pausa();
+      const lote = randomUUID();
+      const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
+      await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
+      if (resultado.ok) r.correos++;
+      else r.fallidos++;
+    } catch (err) {
+      r.fallidos++;
+      console.error(`Aviso al administrador ${correo} no procesado:`, err);
     }
-    if (r.correos + r.fallidos > 0) await pausa();
-    const lote = randomUUID();
-    const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
-    await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
-    if (resultado.ok) r.correos++;
-    else r.fallidos++;
   }
   return r;
 }
