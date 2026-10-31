@@ -13,7 +13,7 @@ import { plantillaCorreo, prepararEnvio } from "@/lib/correo-microsoft";
 
 type Alerta = { evento: EventoAviso; clave: string; grupo: string; texto: string; ruta: string; urgente: boolean };
 
-export type ResultadoAlertas = { ok: boolean; alertas: number; usuarios: number; correos: number; fallidos: number; pendientes?: number; motivo?: string; simulacion?: { correo: string; alertas: string[] }[] };
+export type ResultadoAlertas = { ok: boolean; alertas: number; usuarios: number; correos: number; fallidos: number; pendientes?: number; motivo?: string; simulacion?: { correo: string; alertas: string[]; rutas: string[] }[] };
 
 const DIA = 86_400_000;
 const PQRSD_DIAS_AVISO = 3;
@@ -310,7 +310,7 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
   if (opciones.simular) {
     r.usuarios = lotes.length;
     r.alertas = lotes.reduce((n, l) => n + l.nuevas.length, 0);
-    r.simulacion = lotes.map((l) => ({ correo: l.correo, alertas: l.nuevas.map((a) => `[${a.evento}] ${a.texto}`) }));
+    r.simulacion = lotes.map((l) => ({ correo: l.correo, alertas: l.nuevas.map((a) => `[${a.evento}] ${a.texto}`), rutas: l.nuevas.map((a) => a.ruta) }));
     return r;
   }
   if (lotes.length === 0) return r;
