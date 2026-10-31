@@ -639,24 +639,24 @@ enum ClaseSolicitud {
  * tercero cambie de nombre o dirección después.
  */
 model Solicitante {
-  id                String             @id @default(cuid())
-  tipo              TipoSolicitante
-  identificacion    String             @unique
-  nombres           String?
-  apellidos         String?
-  razonSocial       String?
-  regimenTributario RegimenTributario?
-  granContribuyente Boolean            @default(false)
-  email             String?
-  celular           String?
-  telefono          String?
-  direccion         String?
-  municipio         String
-  departamento      String?
+  id                          String             @id @default(cuid())
+  tipo                        TipoSolicitante
+  identificacion              String             @unique
+  nombres                     String?
+  apellidos                   String?
+  razonSocial                 String?
+  regimenTributario           RegimenTributario?
+  granContribuyente           Boolean            @default(false)
+  email                       String?
+  celular                     String?
+  telefono                    String?
+  direccion                   String?
+  municipio                   String
+  departamento                String?
   representanteLegal          String?
   representanteIdentificacion String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
 
   expedientes Expediente[]
 }
@@ -2602,4 +2602,35 @@ model ExcepcionPermisoUsuario {
   usuario Usuario @relation("ExcepcionPermisoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@id([usuarioId, funcionalidad, tipo])
+}
+
+model CuentaCorreo {
+  id                  String        @id @default(cuid())
+  nombre              String
+  tenantId            String
+  clientId            String
+  remitente           String
+  activa              Boolean       @default(true)
+  predeterminada      Boolean       @default(false)
+  ultimaPruebaAt      DateTime?
+  ultimaPruebaOk      Boolean?
+  ultimaPruebaMensaje String?
+  creadoPorId         String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  claves              ClaveCorreo[]
+}
+
+model ClaveCorreo {
+  id          String       @id @default(cuid())
+  cuentaId    String
+  cuenta      CuentaCorreo @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  descripcion String?
+  cifrado     String
+  final       String
+  vence       DateTime?
+  activa      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+
+  @@index([cuentaId])
 }
