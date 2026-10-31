@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status: 400 });
   if (!correoValido(p.email)) return NextResponse.json({ error: "El correo electrónico no es válido." }, { status: 400 });
 
-  const existente = await buscarSolicitantePorDocumento(p.identificacion);
+  const existente = await buscarSolicitantePorDocumento(p.identificacion, p.tipoPersona);
   if (existente) {
     return NextResponse.json({ error: "Ya existe un solicitante con esta identificación.", id: existente.id }, { status: 409 });
   }

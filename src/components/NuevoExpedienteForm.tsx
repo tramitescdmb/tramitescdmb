@@ -9,7 +9,7 @@ import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
-import { avisoCedula, avisoTelefono } from "@/lib/formato-visita";
+import { avisoCedula, avisoNit, avisoTelefono } from "@/lib/formato-visita";
 import { MapaUbicacion, type MapaUbicacionHandle } from "@/components/MapaUbicacion";
 import {
   IconLayers,
@@ -383,6 +383,7 @@ export function NuevoExpedienteForm({
               {buscandoSolicitante ? "Buscando…" : "Buscar"}
             </button>
           </div>
+          {esJuridica && avisoNit(solicitanteIdentificacion) && <p className="mt-1 text-xs text-amber-700">{avisoNit(solicitanteIdentificacion)}</p>}
           {mensajeBusqueda && (
             <p
               className={`mt-1.5 rounded-md px-2.5 py-1.5 text-xs ${

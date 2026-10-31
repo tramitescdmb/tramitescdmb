@@ -4,6 +4,7 @@ import { useId, type ReactNode } from "react";
 import { Building2, IdCard, Landmark, Mail, MapPin, Phone, Smartphone, UserRound, Users, type LucideIcon } from "lucide-react";
 import { SelectorDepartamentoCiudad } from "@/components/SelectorDepartamentoCiudad";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
+import { avisoCedula, avisoNit } from "@/lib/formato-visita";
 import { TIPOS_IDENTIFICACION_PERSONA, type DatosPersona, type OpcionIdentificacion, type TipoPersonaValor } from "@/lib/datos-persona";
 
 export const CLASE_CAMPO_PERSONA =
@@ -102,6 +103,9 @@ export function CamposPersona({
                 placeholder={esJuridica ? "Ej. 900123456-1" : "Ej. 91234567"}
                 className={claseCampo}
               />
+              {valor.tipoIdentificacion === "NIT" && !identificacionBloqueada && avisoNit(valor.identificacion) && (
+                <p className="mt-1 text-xs text-amber-700">{avisoNit(valor.identificacion)}</p>
+              )}
             </Campo>
           </>
         )}
@@ -119,6 +123,7 @@ export function CamposPersona({
               </Campo>
               <Campo icono={IdCard} etiqueta="Cédula del representante legal" id={`${id}-repid`}>
                 <input id={`${id}-repid`} value={valor.representanteIdentificacion ?? ""} onChange={(e) => cambiar("representanteIdentificacion", e.target.value)} placeholder="Ej. 91234567" className={claseCampo} />
+                {avisoCedula(valor.representanteIdentificacion ?? "") && <p className="mt-1 text-xs text-amber-700">{avisoCedula(valor.representanteIdentificacion ?? "")}</p>}
               </Campo>
             </div>
           )}

@@ -3,7 +3,9 @@ import {
   actualizarTextosTipo,
   camposObligatoriosFaltantes,
   avisoCedula,
+  avisoNit,
   avisoTelefono,
+  digitoVerificacionNit,
   completarPrecarga,
   corregirLatLon,
   personaDeCampo,
@@ -221,6 +223,15 @@ describe("estructura y respuestas", () => {
     expect(avisoCedula("C.C. 91.234.567")).toBeNull();
     expect(avisoCedula("91A34")).not.toBeNull();
     expect(avisoCedula("123")).not.toBeNull();
+  });
+
+  it("verifica el dígito de verificación del NIT", () => {
+    expect(digitoVerificacionNit("899999068")).toBe(1);
+    expect(avisoNit("899.999.068-1")).toBeNull();
+    expect(avisoNit("8999990681")).toBeNull();
+    expect(avisoNit("899999068-4")).toContain("debería ser 1");
+    expect(avisoNit("899999068")).toBeNull();
+    expect(avisoNit(`91343927-${digitoVerificacionNit("91343927")}`)).toBeNull();
   });
 });
 

@@ -164,7 +164,8 @@ export default async function TramitesAyudaPage() {
         </p>
         <p>
           Al radicar se diligencian el solicitante (persona natural o jurídica), el predio y su ubicación, y se cargan los documentos que exige el
-          procedimiento. «Buscar» reconoce al solicitante registrado aunque el documento se escriba con puntos o guiones; si es persona jurídica sin
+          procedimiento. «Buscar» reconoce al solicitante registrado aunque el documento se escriba con puntos o guiones, y un NIT con o sin dígito de
+          verificación; si el dígito de verificación no corresponde al NIT, se avisa; si es persona jurídica sin
           representante legal registrado, se sugieren la razón social y el representante que figuran en SINCA 1.0. El expediente recibe un número con la forma <Chip tono="cdmb">M-DA-PR39-2026-0001</Chip>: código del procedimiento, vigencia y
           consecutivo propio de ese trámite.
         </p>

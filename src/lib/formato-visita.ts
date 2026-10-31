@@ -175,6 +175,26 @@ export function avisoTelefono(v: string): string | null {
   return null;
 }
 
+const PESOS_NIT = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+
+export function digitoVerificacionNit(base: string): number {
+  const d = base.replace(/\D/g, "");
+  let suma = 0;
+  for (let i = 0; i < d.length && i < PESOS_NIT.length; i++) suma += Number(d[d.length - 1 - i]) * PESOS_NIT[i]!;
+  const r = suma % 11;
+  return r > 1 ? 11 - r : r;
+}
+
+export function avisoNit(v: string): string | null {
+  const limpio = v.trim();
+  const conGuion = limpio.match(/^([\d.\s]+)-\s*(\d)$/);
+  const digitos = limpio.replace(/\D/g, "");
+  const [base, dv] = conGuion ? [conGuion[1]!.replace(/\D/g, ""), conGuion[2]!] : digitos.length === 10 ? [digitos.slice(0, 9), digitos[9]!] : [null, null];
+  if (!base || base.length < 6) return null;
+  const correcto = digitoVerificacionNit(base);
+  return Number(dv) === correcto ? null : `El dígito de verificación no corresponde al NIT (debería ser ${correcto}); revise el número.`;
+}
+
 export function avisoCedula(v: string): string | null {
   if (/[a-z]/i.test(v.replace(/^\s*(c\.?\s*c\.?|cc)\s*/i, ""))) return "La cédula solo lleva números.";
   const d = v.replace(/\D/g, "");
@@ -186,6 +206,7 @@ export function avisoDigitacion(c: Campo, v: ValorCampo | undefined): string | n
   const clave = precargaDeCampo(c);
   if (clave === "telefono" || /^(telefono|celular)(_|$)/.test(c.id)) return avisoTelefono(v);
   if (clave === "cedula_representante" || /^cedula(_|$)/.test(c.id)) return avisoCedula(v);
+  if (clave === "nit" || /^nit(_|$)/.test(c.id)) return avisoNit(v);
   return null;
 }
 

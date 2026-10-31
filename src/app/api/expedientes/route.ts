@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     ...calcularUbicacion("solicitanteUbicacion", solicitanteUbicacion),
   };
 
-  const identificacionSolicitante = (await buscarSolicitantePorDocumento(solicitante.identificacion))?.identificacion ?? solicitante.identificacion.trim();
+  const identificacionSolicitante = (await buscarSolicitantePorDocumento(solicitante.identificacion, esJuridica ? "JURIDICA" : "NATURAL"))?.identificacion ?? solicitante.identificacion.trim();
   const nombresTrim = solicitante.nombres?.trim() || null;
   const apellidosTrim = solicitante.apellidos?.trim() || null;
   const razonSocialTrim = solicitante.razonSocial?.trim() || null;
