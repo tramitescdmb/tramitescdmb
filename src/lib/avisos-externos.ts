@@ -24,10 +24,11 @@ export function avisarRadicadoPqrsd(c: {
     clave: `pqrsd-radicado:${c.id}`,
     correos: [c.terceroEmail],
     asunto: `Radicado ${c.radicado} · CDMB`,
-    titulo: `Su ${ETIQUETA_TIPO_PQRSD[c.tipoPqrsd].toLowerCase()} quedó radicada`,
+    titulo: "Su solicitud quedó radicada",
     cuerpoHtml: parrafos(
       c.terceroNombre ? `Señor(a) ${negrita(c.terceroNombre)}:` : null,
       `La Corporación recibió su solicitud el ${fechaColombia(c.fechaRadicacion)} con el radicado ${negrita(c.radicado)}.`,
+      `Tipo de solicitud: ${escaparHtml(ETIQUETA_TIPO_PQRSD[c.tipoPqrsd])}`,
       `Asunto: ${escaparHtml(c.asunto.slice(0, 300))}`,
       c.fechaVencimiento ? `El término legal de respuesta vence el ${fechaColombia(c.fechaVencimiento)}.` : null,
       "Conserve el número de radicado para consultar el estado de su solicitud.",

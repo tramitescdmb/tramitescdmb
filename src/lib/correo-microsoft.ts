@@ -14,20 +14,23 @@ function configuracionEntorno(): Configuracion | null {
 
 async function configuracion(cuentaId?: string): Promise<Configuracion | null> {
   const ahora = new Date();
-  const cuenta = await db.cuentaCorreo.findFirst({
+  const cuentas = await db.cuentaCorreo.findMany({
     where: cuentaId ? { id: cuentaId } : { activa: true },
     orderBy: [{ predeterminada: "desc" }, { createdAt: "asc" }],
     include: { claves: { where: { activa: true, OR: [{ vence: null }, { vence: { gt: ahora } }] }, orderBy: { createdAt: "desc" } } },
   });
-  if (!cuenta) return cuentaId ? null : configuracionEntorno();
-  const credenciales = cuenta.claves.flatMap((k) => {
-    try {
-      return [{ clave: k.id, tenantId: cuenta.tenantId, clientId: cuenta.clientId, clientSecret: descifrarSecreto(k.cifrado) }];
-    } catch {
-      return [];
-    }
-  });
-  return credenciales.length ? { cuentaId: cuenta.id, remitente: cuenta.remitente, credenciales } : null;
+  if (cuentas.length === 0) return cuentaId ? null : configuracionEntorno();
+  for (const cuenta of cuentas) {
+    const credenciales = cuenta.claves.flatMap((k) => {
+      try {
+        return [{ clave: k.id, tenantId: cuenta.tenantId, clientId: cuenta.clientId, clientSecret: descifrarSecreto(k.cifrado) }];
+      } catch {
+        return [];
+      }
+    });
+    if (credenciales.length) return { cuentaId: cuenta.id, remitente: cuenta.remitente, credenciales };
+  }
+  return null;
 }
 
 export async function correoConfigurado(): Promise<boolean> {

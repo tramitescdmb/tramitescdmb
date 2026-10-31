@@ -4,13 +4,21 @@ import { CARGOS_PLANEADOR } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { pasoPermiteVisita, tipoActividadEfectivo } from "@/lib/temas-visita";
 import { rangoTexto } from "@/lib/planeador-db";
-import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, huella, parrafos } from "@/lib/avisos-correo";
+import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, parrafos } from "@/lib/avisos-correo";
 
 type DatosNotificacion = { tipo: TipoNotificacion; clave: string; titulo: string; mensaje: string; enlace: string; expedienteId?: string };
 
 export async function notificar(usuarioIds: string[], datos: DatosNotificacion) {
   const destinatarios = [...new Set(usuarioIds)];
   if (destinatarios.length === 0) return;
+  const previas = await db.notificacion.findMany({
+    where: { clave: datos.clave, usuarioId: { in: destinatarios } },
+    select: { usuarioId: true, resueltaEn: true, tipo: true, titulo: true, mensaje: true },
+  });
+  const porCorreo = destinatarios.filter((usuarioId) => {
+    const p = previas.find((x) => x.usuarioId === usuarioId);
+    return !p || p.resueltaEn !== null || p.tipo !== datos.tipo || p.titulo !== datos.titulo || p.mensaje !== datos.mensaje;
+  });
   await db.$transaction(
     destinatarios.map((usuarioId) =>
       db.notificacion.upsert({
@@ -21,11 +29,11 @@ export async function notificar(usuarioIds: string[], datos: DatosNotificacion) 
     )
   );
   const evento = datos.tipo === "EQUIPO_VISITA" ? "VISITA_PROGRAMADA" : datos.tipo;
-  if (!esEventoAviso(evento)) return;
+  if (!esEventoAviso(evento) || porCorreo.length === 0) return;
   avisarEnSegundoPlano({
     evento,
-    clave: `notificacion:${datos.clave}:${datos.tipo}:${huella(`${datos.titulo}|${datos.mensaje}`)}`,
-    usuarioIds: destinatarios,
+    clave: `notificacion:${datos.clave}:${Date.now()}`,
+    usuarioIds: porCorreo,
     asunto: datos.titulo,
     titulo: datos.titulo,
     cuerpoHtml: parrafos(escaparHtml(datos.mensaje)),

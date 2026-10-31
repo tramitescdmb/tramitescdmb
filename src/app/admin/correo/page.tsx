@@ -244,9 +244,17 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
             <BellRing className="h-4 w-4" aria-hidden /> Matriz de notificaciones
           </p>
           <span className="text-xs text-stone-500">
-            {eventos.filter(([k]) => !ajustes.desactivados.has(k)).length} de {eventos.length} eventos con correo
+            {eventos.filter(([k]) => !ajustes.desactivados.has(k)).length} de {eventos.length} eventos se envían por correo
           </span>
-          <button type="submit" className={`${BOTON_PRINCIPAL} ml-auto`}>Guardar matriz</button>
+          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <button type="submit" className={`${BOTON_PRINCIPAL} order-last`}>Guardar matriz</button>
+            <BotonConfirmar name="accion" value="todos" mensaje="¿Activar el envío por correo de los 21 eventos?" className={BOTON}>
+              Enviar todos
+            </BotonConfirmar>
+            <BotonConfirmar name="accion" value="ninguno" mensaje="¿Desactivar el envío por correo de todos los eventos?" className={BOTON}>
+              No enviar ninguno
+            </BotonConfirmar>
+          </div>
         </div>
         <div className="overflow-x-auto border-t border-stone-100">
           <table className="w-full text-sm">
@@ -255,8 +263,8 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
                 <th className="px-4 py-2 font-medium">Evento</th>
                 <th className="hidden px-2 py-2 font-medium md:table-cell">Módulo</th>
                 <th className="hidden px-2 py-2 font-medium sm:table-cell">Destinatarios</th>
-                <th className="hidden px-2 py-2 font-medium md:table-cell">Plataforma</th>
-                <th className="px-4 py-2 text-center font-medium">Correo</th>
+                <th className="hidden px-2 py-2 font-medium md:table-cell">Siempre visible en</th>
+                <th className="px-4 py-2 text-center font-medium">Enviar por correo</th>
               </tr>
             </thead>
             {(Object.keys(GRUPOS_AVISO) as GrupoAviso[]).map((g) => (
@@ -278,15 +286,20 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
                       <td className="hidden px-2 py-1.5 text-xs text-stone-600 md:table-cell">{e.modulo}</td>
                       <td className="hidden px-2 py-1.5 text-xs text-stone-600 sm:table-cell">{e.destinatarios}</td>
                       <td className="hidden px-2 py-1.5 text-xs text-stone-500 md:table-cell">{e.plataforma}</td>
-                      <td className="px-4 py-1.5 text-center">
-                        <input
-                          id={`evento-${clave}`}
-                          type="checkbox"
-                          name="evento"
-                          value={clave}
-                          defaultChecked={!ajustes.desactivados.has(clave)}
-                          className="h-4 w-4 accent-cdmb-600"
-                        />
+                      <td className="px-4 py-1.5">
+                        <label className="flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap">
+                          <input
+                            id={`evento-${clave}`}
+                            type="checkbox"
+                            name="evento"
+                            value={clave}
+                            defaultChecked={!ajustes.desactivados.has(clave)}
+                            className="peer sr-only"
+                          />
+                          <span className="relative h-5 w-9 shrink-0 rounded-full bg-stone-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-cdmb-600 peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-cdmb-300" />
+                          <span className="w-20 text-xs text-stone-500 peer-checked:hidden">No se envía</span>
+                          <span className="hidden w-20 text-xs font-medium text-cdmb-700 peer-checked:inline">Se envía</span>
+                        </label>
                       </td>
                     </tr>
                   ))}

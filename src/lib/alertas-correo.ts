@@ -63,7 +63,12 @@ async function repartidores(): Promise<string[]> {
 async function alertasPqrsd(bandeja: Bandeja, ahora: Date) {
   const cal = await getCalendarioLaboral();
   const filas = await db.comunicacion.findMany({
-    where: { tipo: "RECIBIDA", tipoPqrsd: { not: null }, estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { not: null, lte: new Date(ahora.getTime() + 10 * DIA) } },
+    where: {
+      tipo: "RECIBIDA",
+      tipoPqrsd: { not: null },
+      estado: { in: ESTADOS_ACTIVOS.filter((e) => e !== "INFORMACION_ADICIONAL_REQUERIDA") },
+      fechaVencimiento: { not: null, lte: new Date(ahora.getTime() + 10 * DIA) },
+    },
     take: 1000,
     select: { id: true, radicado: true, asunto: true, fechaVencimiento: true, distribuciones: { where: { activa: true, usuarioId: { not: null } }, select: { usuarioId: true } } },
   });
@@ -194,7 +199,16 @@ function claveObjetivoFirma(s: { comunicacionId: string | null; documentoContrat
 
 async function alertasFirmas(bandeja: Bandeja, ahora: Date) {
   const pendientes = await db.solicitudFirma.findMany({
-    where: { estado: "PENDIENTE", rol: { not: "LECTURA" } },
+    where: {
+      estado: "PENDIENTE",
+      rol: { not: "LECTURA" },
+      AND: [
+        { OR: [{ comunicacionId: null }, { comunicacion: { estado: { not: "ANULADA" } } }] },
+        { OR: [{ documentoContratoId: null }, { documentoContrato: { expediente: { cerrado: false, eliminado: false } } }] },
+        { OR: [{ documentoExpedienteId: null }, { documentoExpediente: { expediente: { archivado: false } } }] },
+        { OR: [{ documentoArchivoId: null }, { documentoArchivo: { retiradoEn: null, expediente: { estado: "ABIERTO" } } }] },
+      ],
+    },
     take: 3000,
     select: {
       id: true,

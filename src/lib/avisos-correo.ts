@@ -1,5 +1,4 @@
 import { after } from "next/server";
-import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { correoConfigurado, enviarCorreo, plantillaCorreo } from "@/lib/correo-microsoft";
 
@@ -138,7 +137,7 @@ export const EVENTOS_AVISO = {
   FIRMA_SIN_ATENDER: {
     grupo: "VENCIMIENTOS",
     modulo: "Trámites · GECON · SGDEA",
-    evento: "Firma que ya es su turno sin atender (a los 3 y a los 10 días)",
+    evento: "Firma o visto bueno sin atender a los 3 y a los 10 días, cuando ya es su turno",
     destinatarios: "Persona asignada",
     plataforma: "Buzón de firmas",
   },
@@ -175,10 +174,6 @@ const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function escaparHtml(texto: string): string {
   return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-export function huella(texto: string): string {
-  return createHash("sha256").update(texto).digest("hex").slice(0, 12);
 }
 
 export async function parametros() {
@@ -224,8 +219,8 @@ async function reservarEnvio(aviso: Aviso, destinatario: string): Promise<{ id: 
   const datos = { clave: aviso.clave, destinatario, categoria: aviso.evento, asunto: aviso.asunto.slice(0, 300) };
   const nuevo = await db.correoEnviado.create({ data: datos, select: { id: true } }).catch(() => null);
   if (nuevo) return nuevo;
-  const previo = await db.correoEnviado.findUnique({ where: { clave_destinatario: { clave: aviso.clave, destinatario } }, select: { id: true, ok: true } });
-  return previo && !previo.ok ? { id: previo.id } : null;
+  const previo = await db.correoEnviado.findUnique({ where: { clave_destinatario: { clave: aviso.clave, destinatario } }, select: { id: true, ok: true, error: true } });
+  return previo && !previo.ok && previo.error ? { id: previo.id } : null;
 }
 
 export async function yaEnviado(clave: string, destinatario: string): Promise<boolean> {

@@ -229,15 +229,15 @@ export async function asignarFirmantes(
   if (porAvisar.length > 0) {
     const objetivoAviso = await describirObjetivo(objetivo);
     for (const f of porAvisar) {
-      const accion = f.rol === "FIRMA" ? "firmar" : "dar visto bueno a";
+      const firma = f.rol === "FIRMA";
       avisarEnSegundoPlano({
         evento: "FIRMA_SOLICITADA",
         clave: `firma-solicitada:${objetivo.id}:${f.usuarioId}:${f.rol}:${Date.now()}`,
         usuarioIds: [f.usuarioId],
-        asunto: `Solicitud para ${accion} · ${objetivoAviso.referencia}`,
-        titulo: `Tiene un documento para ${accion}`,
+        asunto: `${firma ? "Firma solicitada" : "Visto bueno solicitado"} · ${objetivoAviso.referencia}`,
+        titulo: firma ? "Tiene un documento por firmar" : "Tiene un documento para visto bueno",
         cuerpoHtml: parrafos(
-          `${negrita(asignador.nombre)} le solicitó ${accion} ${negrita(objetivoAviso.nombre)} (${escaparHtml(objetivoAviso.referencia)}).`,
+          `${negrita(asignador.nombre)} le solicitó ${firma ? "firmar" : "dar visto bueno a"} ${negrita(objetivoAviso.nombre)} (${escaparHtml(objetivoAviso.referencia)}).`,
           "El documento queda en su buzón de firmas de la plataforma."
         ),
         enlace: { texto: "Ir al buzón de firmas", ruta: BUZON_POR_MODULO[modulo] },
@@ -721,7 +721,7 @@ export async function rechazarSolicitudFirma(
       evento: "FIRMA_RECHAZADA",
       clave: `firma-rechazada:${solicitudId}`,
       usuarioIds: [avisar],
-      asunto: `${solicitud.rol === "VISTO_BUENO" ? "Visto bueno" : "Firma"} rechazado · ${doc.referencia}`,
+      asunto: `${solicitud.rol === "VISTO_BUENO" ? "Visto bueno rechazado" : "Firma rechazada"} · ${doc.referencia}`,
       titulo: `Se rechazó ${solicitud.rol === "VISTO_BUENO" ? "el visto bueno" : "la firma"} de un documento`,
       cuerpoHtml: parrafos(
         `${negrita(quien?.nombre ?? "El firmante")} rechazó ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}).`,
