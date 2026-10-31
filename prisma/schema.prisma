@@ -33,7 +33,8 @@ model ConfiguracionSitio {
 
   selloTiempoTsaUrl String?
 
-  avisosCorreoDesactivados String[] @default([])
+  avisosCorreoActivos      String[] @default([])
+  correoPruebaAvisos       String?
   urlPlataforma            String?
 
   passwordLongitudMinima     Int     @default(8)
@@ -2618,6 +2619,10 @@ model CuentaCorreo {
   ultimaPruebaAt      DateTime?
   ultimaPruebaOk      Boolean?
   ultimaPruebaMensaje String?
+  rebotesHasta        DateTime?
+  rebotesRevisionAt   DateTime?
+  rebotesRevisionOk   Boolean?
+  rebotesMensaje      String?
   creadoPorId         String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -2639,15 +2644,44 @@ model ClaveCorreo {
 }
 
 model CorreoEnviado {
-  id           String   @id @default(cuid())
-  clave        String
-  destinatario String
-  categoria    String
-  asunto       String
-  ok           Boolean  @default(false)
-  error        String?
-  createdAt    DateTime @default(now())
+  id             String       @id @default(cuid())
+  clave          String
+  destinatario   String
+  categoria      String
+  modulo         String?
+  asunto         String
+  estado         EstadoCorreo @default(EN_CURSO)
+  error          String?
+  html           String?      @db.Text
+  envio          String?
+  intentos       Int          @default(0)
+  intentadoEn    DateTime?
+  proximoIntento DateTime?
+  enviadoEn      DateTime?
+  rebote         String?
+  createdAt      DateTime     @default(now())
 
   @@unique([clave, destinatario])
   @@index([createdAt])
+  @@index([estado, proximoIntento])
+  @@index([envio])
+  @@index([destinatario])
+}
+
+enum EstadoCorreo {
+  EN_CURSO
+  REINTENTO
+  ENVIADO
+  FALLIDO
+  REBOTADO
+  OMITIDO
+}
+
+model CorreoSuprimido {
+  correo    String   @id
+  motivo    String
+  codigo    String?
+  rebotes   Int      @default(1)
+  createdAt DateTime @default(now())
+  ultimoEn  DateTime @default(now())
 }

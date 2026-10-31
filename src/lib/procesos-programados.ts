@@ -44,6 +44,14 @@ export const PROCESOS_PROGRAMADOS: ProcesoProgramado[] = [
     rutaManual: "/api/flujos/vencimientos",
   },
   {
+    clave: "mantenimiento-correo",
+    nombre: "Mantenimiento del correo",
+    descripcion:
+      "Lee los informes de no entrega del buzón remitente y suprime las direcciones inexistentes, reintenta los correos que no salieron (hasta 4 intentos en 3 días), depura el registro y avisa al administrador de rebotes, descartes y claves por vencer.",
+    horario: "Todos los días, 7:00 a. m.",
+    rutaManual: "/api/correo/mantenimiento",
+  },
+  {
     clave: "alertas-correo",
     nombre: "Alertas de vencimiento por correo",
     descripcion:

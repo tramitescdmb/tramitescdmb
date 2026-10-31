@@ -41,7 +41,7 @@ function datosClave(form: FormData): { error: string } | { cifrado: string; fina
 }
 
 export async function POST(req: NextRequest) {
-  const volver = new URL("/admin/correo", req.url);
+  const volver = new URL("/admin/correo?tab=cuentas", req.url);
   const salir = (tipo: "ok" | "error", mensaje: string) => {
     olvidarConfiguracionCorreo();
     volver.searchParams.set(tipo, mensaje);

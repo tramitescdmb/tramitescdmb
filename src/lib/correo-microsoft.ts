@@ -81,14 +81,20 @@ async function obtenerToken(c: Credencial): Promise<string> {
   return cuerpo.access_token;
 }
 
-export type CorreoSaliente = { para: string[]; asunto: string; html: string; cc?: string[] };
+export type CorreoSaliente = { para: string[]; asunto: string; html: string; cc?: string[]; encabezados?: Record<string, string> };
 
 function destinatarios(correos: string[] | undefined) {
   return [...new Set((correos ?? []).map((c) => c.trim().toLowerCase()).filter((c) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)))].map((address) => ({ emailAddress: { address } }));
 }
 
-export type ResultadoEnvio = { ok: true } | { ok: false; mensaje: string };
-export type EnvioPreparado = { remitente: string; enviar: (correo: CorreoSaliente) => Promise<ResultadoEnvio> };
+export type ResultadoEnvio = { ok: true } | { ok: false; mensaje: string; permanente?: boolean };
+export type SolicitudGraph = { method?: string; body?: string; headers?: Record<string, string> };
+export type EnvioPreparado = {
+  cuentaId: string | null;
+  remitente: string;
+  enviar: (correo: CorreoSaliente) => Promise<ResultadoEnvio>;
+  graph: (ruta: string, solicitud?: SolicitudGraph) => Promise<Response | { error: string }>;
+};
 
 const REINTENTOS_LIMITE = 2;
 const ESPERA_MAXIMA_MS = 20_000;
@@ -120,22 +126,16 @@ export async function prepararEnvio(cuentaId?: string): Promise<EnvioPreparado |
     return { error: ultimo };
   }
 
-  async function enviar(correo: CorreoSaliente): Promise<ResultadoEnvio> {
-    const para = destinatarios(correo.para);
-    if (para.length === 0) return { ok: false, mensaje: "No hay destinatarios válidos." };
-    const cuerpoMensaje = JSON.stringify({
-      message: { subject: correo.asunto, body: { contentType: "HTML", content: correo.html }, toRecipients: para, ccRecipients: destinatarios(correo.cc) },
-      saveToSentItems: true,
-    });
+  async function graph(ruta: string, solicitud: SolicitudGraph = {}): Promise<Response | { error: string }> {
     for (let intento = 0; ; intento++) {
       const t = await token();
-      if (typeof t !== "string") return { ok: false, mensaje: t.error };
+      if (typeof t !== "string") return { error: t.error };
       let respuesta: Response;
       try {
-        respuesta = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(remitente)}/sendMail`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
-          body: cuerpoMensaje,
+        respuesta = await fetch(`https://graph.microsoft.com/v1.0${ruta}`, {
+          method: solicitud.method ?? "GET",
+          headers: { Authorization: `Bearer ${t}`, ...(solicitud.body ? { "Content-Type": "application/json" } : {}), ...solicitud.headers },
+          body: solicitud.body,
           signal: AbortSignal.timeout(20000),
         });
       } catch (err) {
@@ -143,9 +143,8 @@ export async function prepararEnvio(cuentaId?: string): Promise<EnvioPreparado |
           await esperar(2000 * (intento + 1));
           continue;
         }
-        return { ok: false, mensaje: err instanceof Error ? err.message : "No se pudo enviar el correo." };
+        return { error: err instanceof Error ? err.message : "No se pudo conectar con Microsoft 365." };
       }
-      if (respuesta.status === 202) return { ok: true };
       if (intento < REINTENTOS_LIMITE) {
         if (respuesta.status === 401) {
           tokens.delete(llaveToken(c!.credenciales[indice]!));
@@ -157,12 +156,38 @@ export async function prepararEnvio(cuentaId?: string): Promise<EnvioPreparado |
           continue;
         }
       }
-      const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
-      return { ok: false, mensaje: `Microsoft 365 rechazó el envío (${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}): ${cuerpo.error?.message ?? "sin detalle"}` };
+      return respuesta;
     }
   }
 
-  return { remitente, enviar };
+  async function enviar(correo: CorreoSaliente): Promise<ResultadoEnvio> {
+    const para = destinatarios(correo.para);
+    if (para.length === 0) return { ok: false, mensaje: "No hay destinatarios válidos.", permanente: true };
+    const encabezados = Object.entries(correo.encabezados ?? {}).map(([name, value]) => ({ name, value }));
+    const respuesta = await graph(`/users/${encodeURIComponent(remitente)}/sendMail`, {
+      method: "POST",
+      body: JSON.stringify({
+        message: {
+          subject: correo.asunto,
+          body: { contentType: "HTML", content: correo.html },
+          toRecipients: para,
+          ccRecipients: destinatarios(correo.cc),
+          ...(encabezados.length ? { internetMessageHeaders: encabezados } : {}),
+        },
+        saveToSentItems: true,
+      }),
+    });
+    if (!(respuesta instanceof Response)) return { ok: false, mensaje: respuesta.error };
+    if (respuesta.status === 202) return { ok: true };
+    const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
+    return {
+      ok: false,
+      permanente: respuesta.status === 400,
+      mensaje: `Microsoft 365 rechazó el envío (${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}): ${cuerpo.error?.message ?? "sin detalle"}`,
+    };
+  }
+
+  return { cuentaId: c.cuentaId, remitente, enviar, graph };
 }
 
 export async function enviarCorreo(correo: CorreoSaliente, cuentaId?: string): Promise<ResultadoEnvio> {

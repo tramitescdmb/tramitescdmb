@@ -2,11 +2,12 @@
 
 import type { ReactNode } from "react";
 
-export function BotonConfirmar({ mensaje, className, children }: { mensaje: string; className?: string; children: ReactNode }) {
+export function BotonConfirmar({ mensaje, className, disabled, children }: { mensaje: string; className?: string; disabled?: boolean; children: ReactNode }) {
   return (
     <button
       type="submit"
-      className={className}
+      disabled={disabled}
+      className={`${className ?? ""} disabled:opacity-50`}
       onClick={(e) => {
         if (!window.confirm(mensaje)) e.preventDefault();
       }}

@@ -8,12 +8,41 @@ import { CODIGOS_FORMATO_POR_PERIODOS, calcularPeriodosInforme, etiquetaRangoPer
 import { hoyColombia } from "@/lib/contratacion-panel";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { BUZON_POR_MODULO, moduloDeObjetivo, rutaDeFirma } from "@/lib/solicitudes-firma";
-import { eventosActivos, correosPorUsuario, type EventoAviso, escaparHtml, parametros, urlBasePlataforma } from "@/lib/avisos-correo";
-import { plantillaCorreo, prepararEnvio } from "@/lib/correo-microsoft";
+import { randomUUID } from "crypto";
+import {
+  claveMatriz,
+  clavesDeEvento,
+  correosPorUsuario,
+  direccionesSuprimidas,
+  ENCABEZADO_ENVIO,
+  escaparHtml,
+  eventosActivos,
+  MENSAJE_SIN_CONFIGURAR,
+  MOTIVO_SUPRIMIDA,
+  parametros,
+  pausa,
+  renderizarMensaje,
+  urlBasePlataforma,
+  type ClaveMatriz,
+  type EventoAviso,
+  type Mensaje,
+  type ModuloAviso,
+} from "@/lib/avisos-correo";
+import { prepararEnvio } from "@/lib/correo-microsoft";
 
-type Alerta = { evento: EventoAviso; clave: string; grupo: string; texto: string; ruta: string; urgente: boolean };
+export type Alerta = { evento: EventoAviso; modulo: ModuloAviso; clave: string; grupo: string; texto: string; ruta: string; urgente: boolean };
 
-export type ResultadoAlertas = { ok: boolean; alertas: number; usuarios: number; correos: number; fallidos: number; pendientes?: number; motivo?: string; simulacion?: { correo: string; alertas: string[]; rutas: string[] }[] };
+export type ResultadoAlertas = {
+  ok: boolean;
+  alertas: number;
+  usuarios: number;
+  correos: number;
+  fallidos: number;
+  omitidos?: number;
+  pendientes?: number;
+  motivo?: string;
+  simulacion?: { correo: string; alertas: string[]; rutas: string[] }[];
+};
 
 const DIA = 86_400_000;
 const PQRSD_DIAS_AVISO = 3;
@@ -34,9 +63,11 @@ function escalon(dias: number, escalones: number[]): number | null {
   return [...escalones].reverse().find((e) => dias >= e) ?? null;
 }
 
-class Bandeja {
+export class Bandeja {
   porUsuario = new Map<string, Alerta[]>();
+  constructor(private aplica: (alerta: Alerta) => boolean = () => true) {}
   agregar(usuarioIds: (string | null | undefined)[], alerta: Alerta) {
+    if (!this.aplica(alerta)) return;
     for (const id of new Set(usuarioIds.filter((u): u is string => Boolean(u)))) {
       const lista = this.porUsuario.get(id) ?? [];
       if (!lista.some((a) => a.clave === alerta.clave)) lista.push(alerta);
@@ -45,7 +76,11 @@ class Bandeja {
   }
 }
 
-type Contexto = { ahora: Date; cal: CalendarioLaboral; repartidores: () => Promise<string[]> };
+export type Contexto = { ahora: Date; cal: CalendarioLaboral; repartidores: () => Promise<string[]> };
+
+export async function contextoAlertas(): Promise<Contexto> {
+  return { ahora: new Date(), cal: await getCalendarioLaboral(), repartidores: repartidoresPerezosos() };
+}
 
 function repartidoresPerezosos(): () => Promise<string[]> {
   let lista: Promise<string[]> | null = null;
@@ -76,6 +111,7 @@ async function alertasPqrsd(bandeja: Bandeja, { ahora, cal, repartidores }: Cont
     const responsables = c.distribuciones.map((d) => d.usuarioId);
     bandeja.agregar(responsables.length ? responsables : await repartidores(), {
       evento: "PQRSD_POR_VENCER",
+      modulo: "SGDEA",
       clave: `pqrsd-${vencida ? "vencida" : "por-vencer"}:${c.id}:${iso(vence)}`,
       grupo: "PQRSD",
       texto: `${c.radicado} — ${vencida ? "venció" : "vence"} el ${fecha(vence)}${responsables.length ? "" : " (sin funcionario asignado)"} · ${c.asunto.slice(0, 90)}`,
@@ -99,6 +135,7 @@ async function alertasMemorandos(bandeja: Bandeja, { ahora, cal }: Contexto) {
       c.distribuciones.map((d) => d.usuarioId),
       {
         evento: "MEMORANDO_POR_VENCER",
+        modulo: "SGDEA",
         clave: `memorando-${vencido ? "vencido" : "por-vencer"}:${c.id}:${iso(vence)}`,
         grupo: "Memorandos por responder",
         texto: `${c.radicado} — plazo ${vencido ? "vencido" : "hasta"} el ${fecha(vence)} · ${c.asunto.slice(0, 90)}`,
@@ -146,6 +183,7 @@ async function alertasFlujos(bandeja: Bandeja, { ahora, cal }: Contexto) {
                 : [];
     bandeja.agregar(responsables, {
       evento: "FLUJO_POR_VENCER",
+      modulo: objetivo.modulo,
       clave: `flujo-${termino.vencido ? "vencido" : "por-vencer"}:${i.id}:${i.pasoActualId}:${iso(i.pasoActualDesde!)}`,
       grupo: "Pasos de flujo",
       texto: `${objetivo.etiqueta} — «${paso.nombre}» (${i.flujo.nombre}) ${termino.vencido ? "venció" : "vence"} el ${fecha(termino.limite)}`,
@@ -178,6 +216,7 @@ async function alertasInformes(bandeja: Bandeja) {
       if (nivel === null) continue;
       bandeja.agregar([e.contratista?.usuarioId, ...e.supervisores.map((s) => s.usuarioId)], {
         evento: "INFORME_ATRASADO",
+        modulo: "GECON",
         clave: `informe-atrasado:${e.id}:${p.periodo.clave}:${nivel}`,
         grupo: "Informes de contratos sin radicar",
         texto: `${e.numeroContrato ? `Contrato ${e.numeroContrato}` : e.numero} — informe ${p.numero} (${etiquetaRangoPeriodo(p.periodo)}) con ${p.diasDeRetraso} día(s) de retraso${e.contratista ? ` · ${e.contratista.nombreORazonSocial}` : ""}`,
@@ -235,14 +274,16 @@ async function alertasFirmas(bandeja: Bandeja, { ahora }: Contexto) {
     const tipo = s.comunicacionId ? "comunicacion" : s.documentoContratoId ? "documentoContrato" : s.documentoArchivoId ? "documentoArchivo" : "documentoExpediente";
     const doc = s.documentoContrato ?? s.documentoExpediente ?? s.documentoArchivo;
     const nombre = s.comunicacion ? s.comunicacion.radicado : doc ? `${doc.nombre} (${doc.expediente.numero})` : "Documento";
+    const modulo = moduloDeObjetivo(tipo);
     bandeja.agregar([s.usuarioAsignadoId], {
       evento: "FIRMA_SIN_ATENDER",
+      modulo,
       clave: `firma-sin-atender:${s.id}:${nivel}`,
       grupo: "Firmas sin atender",
       texto: `${s.rol === "FIRMA" ? "Firmar" : "Visto bueno"}: ${nombre} — asignada hace ${dias} día(s)`,
       ruta: rutaDeFirma(
         s.id,
-        moduloDeObjetivo(tipo),
+        modulo,
         s.comunicacionId ? `/correspondencia/${s.comunicacionId}` : s.documentoArchivo ? `/correspondencia/expedientes/${s.documentoArchivo.expedienteDocumentalId}` : BUZON_POR_MODULO.SGDEA
       ),
       urgente: nivel >= 10,
@@ -250,7 +291,7 @@ async function alertasFirmas(bandeja: Bandeja, { ahora }: Contexto) {
   }
 }
 
-function cuerpoAlertas(alertas: Alerta[], base: string | null): string {
+export function cuerpoAlertas(alertas: Alerta[], base: string | null): string {
   const grupos = new Map<string, Alerta[]>();
   for (const a of alertas) grupos.set(a.grupo, [...(grupos.get(a.grupo) ?? []), a]);
   return [...grupos.entries()]
@@ -267,35 +308,63 @@ function cuerpoAlertas(alertas: Alerta[], base: string | null): string {
     .join("");
 }
 
-const RETENCION_REGISTRO_DIAS = 365;
-const PAUSA_ENTRE_CORREOS_MS = 2_100;
+export function mensajeAlertas(alertas: Alerta[], base: string | null): Mensaje {
+  const urgentes = alertas.filter((a) => a.urgente).length;
+  return {
+    asunto: `${alertas.length} alerta(s) de vencimiento${urgentes ? ` — ${urgentes} vencida(s)` : ""} · Plataforma CDMB`,
+    titulo: "Alertas de vencimiento",
+    cuerpoHtml: cuerpoAlertas(alertas, base),
+    enlace: { texto: "Ir a la plataforma", ruta: "/" },
+  };
+}
+
 const PRESUPUESTO_MS = 240_000;
+
+export const FUENTES_ALERTAS: Partial<Record<EventoAviso, (b: Bandeja, ctx: Contexto) => Promise<void>>> = {
+  PQRSD_POR_VENCER: alertasPqrsd,
+  MEMORANDO_POR_VENCER: alertasMemorandos,
+  FLUJO_POR_VENCER: alertasFlujos,
+  INFORME_ATRASADO: alertasInformes,
+  FIRMA_SIN_ATENDER: alertasFirmas,
+};
 
 async function clavesYaEnviadas(claves: string[]): Promise<Set<string>> {
   const enviadas = new Set<string>();
   for (let i = 0; i < claves.length; i += 1000) {
-    const filas = await db.correoEnviado.findMany({ where: { ok: true, clave: { in: claves.slice(i, i + 1000) } }, select: { clave: true, destinatario: true } });
+    const filas = await db.correoEnviado.findMany({ where: { estado: "ENVIADO", clave: { in: claves.slice(i, i + 1000) } }, select: { clave: true, destinatario: true } });
     for (const f of filas) enviadas.add(`${f.clave}|${f.destinatario}`);
   }
   return enviadas;
 }
 
+export async function registrarLote(correo: string, alertas: Alerta[], asunto: string, datos: { estado: "ENVIADO" | "FALLIDO" | "OMITIDO"; error?: string | null; envio?: string }) {
+  const estado = {
+    estado: datos.estado,
+    error: datos.error?.slice(0, 1000) ?? null,
+    envio: datos.envio ?? null,
+    asunto: asunto.slice(0, 300),
+    intentadoEn: new Date(),
+    enviadoEn: datos.estado === "ENVIADO" ? new Date() : null,
+  };
+  await db.correoEnviado.createMany({
+    data: alertas.map((a) => ({ clave: a.clave, destinatario: correo, categoria: a.evento, modulo: a.modulo, intentos: 1, ...estado })),
+    skipDuplicates: true,
+  });
+  await db.correoEnviado.updateMany({ where: { destinatario: correo, clave: { in: alertas.map((a) => a.clave) } }, data: estado });
+}
+
 export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}): Promise<ResultadoAlertas> {
   const inicio = Date.now();
-  const activos = opciones.simular ? new Set<EventoAviso>(["PQRSD_POR_VENCER", "MEMORANDO_POR_VENCER", "FLUJO_POR_VENCER", "INFORME_ATRASADO", "FIRMA_SIN_ATENDER"]) : await eventosActivos();
-  const fuentes: [EventoAviso, (b: Bandeja, ctx: Contexto) => Promise<void>][] = [
-    ["PQRSD_POR_VENCER", alertasPqrsd],
-    ["MEMORANDO_POR_VENCER", alertasMemorandos],
-    ["FLUJO_POR_VENCER", alertasFlujos],
-    ["INFORME_ATRASADO", alertasInformes],
-    ["FIRMA_SIN_ATENDER", alertasFirmas],
-  ];
-  const aplican = fuentes.filter(([evento]) => activos.has(evento));
+  const activos: Set<ClaveMatriz> = opciones.simular
+    ? new Set(Object.keys(FUENTES_ALERTAS).flatMap((e) => clavesDeEvento(e as EventoAviso)))
+    : await eventosActivos();
+  const aplican = (Object.entries(FUENTES_ALERTAS) as [EventoAviso, (b: Bandeja, ctx: Contexto) => Promise<void>][]).filter(([evento]) =>
+    clavesDeEvento(evento).some((c) => activos.has(c))
+  );
   if (aplican.length === 0) return { ok: true, alertas: 0, usuarios: 0, correos: 0, fallidos: 0, motivo: "Correo sin configurar o alertas desactivadas." };
-  if (!opciones.simular) await db.correoEnviado.deleteMany({ where: { createdAt: { lt: new Date(inicio - RETENCION_REGISTRO_DIAS * DIA) } } });
 
-  const ctx: Contexto = { ahora: new Date(), cal: await getCalendarioLaboral(), repartidores: repartidoresPerezosos() };
-  const bandeja = new Bandeja();
+  const ctx = await contextoAlertas();
+  const bandeja = new Bandeja((a) => activos.has(claveMatriz(a.modulo, a.evento)));
   for (const [, fuente] of aplican) await fuente(bandeja, ctx);
 
   const correos = await correosPorUsuario([...bandeja.porUsuario.keys()]);
@@ -306,41 +375,39 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
     return correo && nuevas.length ? [{ correo, nuevas: nuevas.sort((a, b) => Number(b.urgente) - Number(a.urgente)) }] : [];
   });
 
-  const r: ResultadoAlertas = { ok: true, alertas: 0, usuarios: 0, correos: 0, fallidos: 0 };
+  const r: ResultadoAlertas = { ok: true, alertas: 0, usuarios: 0, correos: 0, fallidos: 0, omitidos: 0 };
   if (opciones.simular) {
     r.usuarios = lotes.length;
     r.alertas = lotes.reduce((n, l) => n + l.nuevas.length, 0);
-    r.simulacion = lotes.map((l) => ({ correo: l.correo, alertas: l.nuevas.map((a) => `[${a.evento}] ${a.texto}`), rutas: l.nuevas.map((a) => a.ruta) }));
+    r.simulacion = lotes.map((l) => ({ correo: l.correo, alertas: l.nuevas.map((a) => `[${a.modulo}.${a.evento}] ${a.texto}`), rutas: l.nuevas.map((a) => a.ruta) }));
     return r;
   }
   if (lotes.length === 0) return r;
-  const envio = await prepararEnvio();
-  if (!envio) return { ...r, ok: false, motivo: "El correo institucional no está configurado o no tiene claves vigentes." };
+  const [envio, suprimidas] = await Promise.all([prepararEnvio(), direccionesSuprimidas(lotes.map((l) => l.correo))]);
+  if (!envio) return { ...r, ok: false, motivo: MENSAJE_SIN_CONFIGURAR };
   const base = urlBasePlataforma((await parametros()).urlPlataforma);
 
+  let enviadosEnLote = 0;
   for (const [i, { correo, nuevas }] of lotes.entries()) {
     if (Date.now() - inicio > PRESUPUESTO_MS) {
       r.pendientes = lotes.length - i;
       break;
     }
-    if (i > 0) await new Promise((listo) => setTimeout(listo, PAUSA_ENTRE_CORREOS_MS));
-    const urgentes = nuevas.filter((a) => a.urgente).length;
-    const asunto = `${nuevas.length} alerta(s) de vencimiento${urgentes ? ` — ${urgentes} vencida(s)` : ""} · Plataforma CDMB`;
-    const resultado = await envio.enviar({
-      para: [correo],
-      asunto,
-      html: plantillaCorreo("Alertas de vencimiento", cuerpoAlertas(nuevas, base), base ? { texto: "Ir a la plataforma", url: base } : undefined),
-    });
+    const mensaje = mensajeAlertas(nuevas, base);
+    if (suprimidas.has(correo)) {
+      await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
+      r.omitidos!++;
+      continue;
+    }
+    if (enviadosEnLote > 0) await pausa();
+    enviadosEnLote++;
+    const lote = randomUUID();
+    const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
     r.usuarios++;
     r.alertas += nuevas.length;
     if (resultado.ok) r.correos++;
     else r.fallidos++;
-    const estado = { ok: resultado.ok, error: resultado.ok ? null : resultado.mensaje.slice(0, 1000) };
-    await db.correoEnviado.createMany({
-      data: nuevas.map((a) => ({ clave: a.clave, destinatario: correo, categoria: a.evento, asunto: asunto.slice(0, 300), ...estado })),
-      skipDuplicates: true,
-    });
-    await db.correoEnviado.updateMany({ where: { destinatario: correo, clave: { in: nuevas.map((a) => a.clave) } }, data: estado });
+    await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
   }
   r.ok = r.fallidos === 0;
   return r;

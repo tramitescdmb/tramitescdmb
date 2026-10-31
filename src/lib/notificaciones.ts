@@ -4,7 +4,7 @@ import { CARGOS_PLANEADOR } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { pasoPermiteVisita, tipoActividadEfectivo } from "@/lib/temas-visita";
 import { rangoTexto } from "@/lib/planeador-db";
-import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, parrafos } from "@/lib/avisos-correo";
+import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, parrafos, type Mensaje } from "@/lib/avisos-correo";
 
 type DatosNotificacion = { tipo: TipoNotificacion; clave: string; titulo: string; mensaje: string; enlace: string; expedienteId?: string };
 
@@ -30,17 +30,29 @@ export async function notificar(usuarioIds: string[], datos: DatosNotificacion, 
       })
     )
   );
-  const evento = datos.tipo === "EQUIPO_VISITA" ? "VISITA_PROGRAMADA" : datos.tipo;
-  if (!esEventoAviso(evento) || porCorreo.length === 0) return;
+  const evento = eventoDeNotificacion(datos.tipo);
+  if (!evento || porCorreo.length === 0) return;
   avisarEnSegundoPlano({
     evento,
+    modulo: "TRAMITES",
     clave: `notificacion:${datos.clave}:${Date.now()}`,
     usuarioIds: porCorreo,
+    ...mensajeDeNotificacion(datos),
+  });
+}
+
+export function eventoDeNotificacion(tipo: TipoNotificacion) {
+  const evento = tipo === "EQUIPO_VISITA" ? "VISITA_PROGRAMADA" : tipo;
+  return esEventoAviso(evento) ? evento : null;
+}
+
+export function mensajeDeNotificacion(datos: { titulo: string; mensaje: string; enlace: string }): Mensaje {
+  return {
     asunto: datos.titulo,
     titulo: datos.titulo,
     cuerpoHtml: parrafos(escaparHtml(datos.mensaje)),
     enlace: { texto: "Abrir en la plataforma", ruta: datos.enlace },
-  });
+  };
 }
 
 export async function resolverNotificaciones(where: { clave?: string; claveEmpiezaPor?: string; expedienteId?: string; tipo?: TipoNotificacion; excepto?: string }) {

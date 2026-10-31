@@ -8,7 +8,7 @@ import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitar
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
-import { escaparHtml, negrita, parrafos, programarAvisos } from "@/lib/avisos-correo";
+import { claveMatriz, escaparHtml, negrita, parrafos, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
 
 const SELECT_FIRMANTE_CARGO = {
   denominacionEmpleo: true,
@@ -89,6 +89,38 @@ export async function describirObjetivo(objetivo: ObjetivoSolicitud): Promise<{ 
   return { nombre: d?.nombre ?? "Documento", referencia: d?.expediente.numero ?? "Trámite", ruta: d ? `/expedientes/${d.expedienteId}` : BUZON_POR_MODULO.TRAMITES };
 }
 
+type DocumentoAviso = { nombre: string; referencia: string; ruta: string };
+
+export function mensajeFirmaSolicitada(d: { firma: boolean; asignador: string; doc: DocumentoAviso; ruta: string }): Mensaje {
+  return {
+    asunto: `${d.firma ? "Firma solicitada" : "Visto bueno solicitado"} · ${d.doc.referencia}`,
+    titulo: d.firma ? "Tiene un documento por firmar" : "Tiene un documento para visto bueno",
+    cuerpoHtml: parrafos(
+      `${negrita(d.asignador)} le solicitó ${d.firma ? "firmar" : "dar visto bueno a"} ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}).`,
+      "El documento queda en su buzón de firmas de la plataforma."
+    ),
+    enlace: { texto: d.firma ? "Abrir para firmar" : "Abrir para dar visto bueno", ruta: d.ruta },
+  };
+}
+
+export function mensajeFirmaRecordada(d: { quien: string; doc: DocumentoAviso; ruta: string }): Mensaje {
+  return {
+    asunto: `Recordatorio de firma · ${d.doc.referencia}`,
+    titulo: "Hay una firma esperando su turno",
+    cuerpoHtml: parrafos(`${negrita(d.quien)} espera su firma de ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}) para poder firmar a continuación.`),
+    enlace: { texto: "Abrir para firmar", ruta: d.ruta },
+  };
+}
+
+export function mensajeFirmaRechazada(d: { visto: boolean; quien: string; doc: DocumentoAviso; motivo: string }): Mensaje {
+  return {
+    asunto: `${d.visto ? "Visto bueno rechazado" : "Firma rechazada"} · ${d.doc.referencia}`,
+    titulo: `Se rechazó ${d.visto ? "el visto bueno" : "la firma"} de un documento`,
+    cuerpoHtml: parrafos(`${negrita(d.quien)} rechazó ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}).`, `Motivo: ${escaparHtml(d.motivo.trim())}`),
+    enlace: { texto: "Abrir el documento", ruta: d.doc.ruta },
+  };
+}
+
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
 const MENSAJE_FIRMA_EXPEDIENTE_CERRADO = "El expediente está cerrado: sus documentos ya no se pueden firmar.";
 
@@ -105,7 +137,7 @@ async function validarObjetivoAbierto(objetivo: ObjetivoSolicitud) {
   }
 }
 
-function objetivoDeSolicitud(s: {
+export function objetivoDeSolicitud(s: {
   comunicacionId: string | null;
   documentoContratoId: string | null;
   documentoExpedienteId: string | null;
@@ -234,7 +266,7 @@ export async function asignarFirmantes(
   const porAvisar = firmantes.filter((f) => f.rol !== "LECTURA" && f.usuarioId !== asignadoPorId);
   if (porAvisar.length > 0) {
     const marca = Date.now();
-    programarAvisos(["FIRMA_SOLICITADA"], async () => {
+    programarAvisos([claveMatriz(modulo, "FIRMA_SOLICITADA")], async () => {
       const [doc, creadas] = await Promise.all([
         describirObjetivo(objetivo),
         db.solicitudFirma.findMany({
@@ -243,19 +275,13 @@ export async function asignarFirmantes(
         }),
       ]);
       return porAvisar.map((f) => {
-        const firma = f.rol === "FIRMA";
         const solicitud = creadas.find((s) => s.usuarioAsignadoId === f.usuarioId);
         return {
           evento: "FIRMA_SOLICITADA" as const,
+          modulo,
           clave: `firma-solicitada:${objetivo.id}:${f.usuarioId}:${f.rol}:${marca}`,
           usuarioIds: [f.usuarioId],
-          asunto: `${firma ? "Firma solicitada" : "Visto bueno solicitado"} · ${doc.referencia}`,
-          titulo: firma ? "Tiene un documento por firmar" : "Tiene un documento para visto bueno",
-          cuerpoHtml: parrafos(
-            `${negrita(asignador.nombre)} le solicitó ${firma ? "firmar" : "dar visto bueno a"} ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}).`,
-            "El documento queda en su buzón de firmas de la plataforma."
-          ),
-          enlace: { texto: firma ? "Abrir para firmar" : "Abrir para dar visto bueno", ruta: solicitud ? rutaDeFirma(solicitud.id, modulo, doc.ruta) : BUZON_POR_MODULO[modulo] },
+          ...mensajeFirmaSolicitada({ firma: f.rol === "FIRMA", asignador: asignador.nombre, doc, ruta: solicitud ? rutaDeFirma(solicitud.id, modulo, doc.ruta) : BUZON_POR_MODULO[modulo] }),
         };
       });
     });
@@ -733,19 +759,15 @@ export async function rechazarSolicitudFirma(
   if (avisar && avisar !== usuarioId) {
     const objetivo = objetivoDeSolicitud(solicitud);
     const visto = solicitud.rol === "VISTO_BUENO";
-    programarAvisos(["FIRMA_RECHAZADA"], async () => {
+    const modulo = moduloDeObjetivo(objetivo.tipo);
+    programarAvisos([claveMatriz(modulo, "FIRMA_RECHAZADA")], async () => {
       const [doc, quien] = await Promise.all([describirObjetivo(objetivo), db.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true } })]);
       return {
         evento: "FIRMA_RECHAZADA",
+        modulo,
         clave: `firma-rechazada:${solicitudId}`,
         usuarioIds: [avisar],
-        asunto: `${visto ? "Visto bueno rechazado" : "Firma rechazada"} · ${doc.referencia}`,
-        titulo: `Se rechazó ${visto ? "el visto bueno" : "la firma"} de un documento`,
-        cuerpoHtml: parrafos(
-          `${negrita(quien?.nombre ?? "El firmante")} rechazó ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}).`,
-          `Motivo: ${escaparHtml(comentario.trim())}`
-        ),
-        enlace: { texto: "Abrir el documento", ruta: doc.ruta },
+        ...mensajeFirmaRechazada({ visto, quien: quien?.nombre ?? "El firmante", doc, motivo: comentario }),
       };
     });
   }
@@ -971,18 +993,15 @@ export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId
     await db.solicitudFirma.updateMany({ where: { id: { in: porAvisar.map((a) => a.id) } }, data: { recordadoEn: new Date(), recordadoPorId: usuarioId } });
     const objetivo = objetivoDeSolicitud(solicitud);
     const marca = Date.now();
-    programarAvisos(["FIRMA_RECORDADA"], async () => {
+    const modulo = moduloDeObjetivo(objetivo.tipo);
+    programarAvisos([claveMatriz(modulo, "FIRMA_RECORDADA")], async () => {
       const [doc, quien] = await Promise.all([describirObjetivo(objetivo), db.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true } })]);
       return porAvisar.map((a) => ({
         evento: "FIRMA_RECORDADA" as const,
+        modulo,
         clave: `firma-recordada:${a.id}:${marca}`,
         usuarioIds: [a.usuarioAsignadoId],
-        asunto: `Recordatorio de firma · ${doc.referencia}`,
-        titulo: "Hay una firma esperando su turno",
-        cuerpoHtml: parrafos(
-          `${negrita(quien?.nombre ?? "Un firmante")} espera su firma de ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}) para poder firmar a continuación.`
-        ),
-        enlace: { texto: "Abrir para firmar", ruta: rutaDeFirma(a.id, moduloDeObjetivo(objetivo.tipo), doc.ruta) },
+        ...mensajeFirmaRecordada({ quien: quien?.nombre ?? "Un firmante", doc, ruta: rutaDeFirma(a.id, modulo, doc.ruta) }),
       }));
     });
   }
