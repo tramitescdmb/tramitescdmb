@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/api/usuarios/directorio/sincronizar",
   "/api/flujos/vencimientos",
   "/api/correo/alertas",
+  "/api/correo/mantenimiento",
 ];
 const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico"];
 
