@@ -33,6 +33,9 @@ model ConfiguracionSitio {
 
   selloTiempoTsaUrl String?
 
+  avisosCorreoDesactivados String[] @default([])
+  urlPlataforma            String?
+
   passwordLongitudMinima     Int     @default(8)
   passwordLongitudMaxima     Int     @default(72)
   passwordRequiereMayuscula  Boolean @default(false)
@@ -2633,4 +2636,18 @@ model ClaveCorreo {
   createdAt   DateTime     @default(now())
 
   @@index([cuentaId])
+}
+
+model CorreoEnviado {
+  id           String   @id @default(cuid())
+  clave        String
+  destinatario String
+  categoria    String
+  asunto       String
+  ok           Boolean  @default(false)
+  error        String?
+  createdAt    DateTime @default(now())
+
+  @@unique([clave, destinatario])
+  @@index([createdAt])
 }

@@ -8,6 +8,7 @@ import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitar
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
+import { avisarEnSegundoPlano, escaparHtml, negrita, parrafos } from "@/lib/avisos-correo";
 
 const SELECT_FIRMANTE_CARGO = {
   denominacionEmpleo: true,
@@ -57,6 +58,29 @@ export function moduloDeObjetivo(tipo: TipoObjetivo): ModuloFirma {
   if (tipo === "documentoContrato") return "GECON";
   if (tipo === "documentoExpediente") return "TRAMITES";
   return "SGDEA";
+}
+
+export const BUZON_POR_MODULO: Record<ModuloFirma, string> = {
+  TRAMITES: "/firmas/buzon",
+  GECON: "/contratacion/buzon",
+  SGDEA: "/correspondencia/buzon",
+};
+
+export async function describirObjetivo(objetivo: ObjetivoSolicitud): Promise<{ nombre: string; referencia: string }> {
+  if (objetivo.tipo === "comunicacion") {
+    const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: { radicado: true, asunto: true } });
+    return { nombre: c?.asunto.slice(0, 120) ?? "Comunicación", referencia: c?.radicado ?? "SGDEA" };
+  }
+  if (objetivo.tipo === "documentoContrato") {
+    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { nombre: true, expediente: { select: { numero: true } } } });
+    return { nombre: d?.nombre ?? "Documento", referencia: d?.expediente.numero ?? "GECON" };
+  }
+  if (objetivo.tipo === "documentoArchivo") {
+    const d = await db.documentoArchivo.findUnique({ where: { id: objetivo.id }, select: { nombre: true, expediente: { select: { numero: true } } } });
+    return { nombre: d?.nombre ?? "Documento", referencia: d?.expediente.numero ?? "SGDEA" };
+  }
+  const d = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { nombre: true, expediente: { select: { numero: true } } } });
+  return { nombre: d?.nombre ?? "Documento", referencia: d?.expediente.numero ?? "Trámite" };
 }
 
 const MAX_FIRMANTES_POR_OBJETIVO = 4;
@@ -199,6 +223,26 @@ export async function asignarFirmantes(
       await reevaluarEstadoDocumentoContrato(objetivo.id, asignadoPorId);
     }
     else if (objetivo.tipo === "documentoExpediente") await reevaluarEstadoDocumentoExpediente(objetivo.id, asignadoPorId);
+  }
+
+  const porAvisar = firmantes.filter((f) => f.rol !== "LECTURA" && f.usuarioId !== asignadoPorId);
+  if (porAvisar.length > 0) {
+    const objetivoAviso = await describirObjetivo(objetivo);
+    for (const f of porAvisar) {
+      const accion = f.rol === "FIRMA" ? "firmar" : "dar visto bueno a";
+      avisarEnSegundoPlano({
+        evento: "FIRMA_SOLICITADA",
+        clave: `firma-solicitada:${objetivo.id}:${f.usuarioId}:${f.rol}:${Date.now()}`,
+        usuarioIds: [f.usuarioId],
+        asunto: `Solicitud para ${accion} · ${objetivoAviso.referencia}`,
+        titulo: `Tiene un documento para ${accion}`,
+        cuerpoHtml: parrafos(
+          `${negrita(asignador.nombre)} le solicitó ${accion} ${negrita(objetivoAviso.nombre)} (${escaparHtml(objetivoAviso.referencia)}).`,
+          "El documento queda en su buzón de firmas de la plataforma."
+        ),
+        enlace: { texto: "Ir al buzón de firmas", ruta: BUZON_POR_MODULO[modulo] },
+      });
+    }
   }
 
   const nombres = firmantes.map((f) => personas.get(f.usuarioId)!.nombre);
@@ -663,6 +707,29 @@ export async function rechazarSolicitudFirma(
       detalle: `Rechazó ${solicitud.rol === "VISTO_BUENO" ? "el visto bueno" : "la firma"} de "${doc.nombre}": ${comentario.trim()}`,
     }).catch((e) => console.error("registrarAuditoriaDoc (rechazarSolicitudFirma documentoArchivo) falló:", e));
   }
+
+  const c = solicitud.comunicacion;
+  const avisar =
+    solicitud.documentoContrato?.subidoPorId ??
+    solicitud.documentoExpediente?.subidoPorId ??
+    solicitud.documentoArchivo?.subidoPorId ??
+    (c ? ((c.tipo === "RECIBIDA" ? c.respuestaPorId : null) ?? solicitud.asignadoPorId ?? c.radicadoPorId) : null);
+  if (avisar && avisar !== usuarioId) {
+    const objetivo = objetivoDeSolicitud(solicitud);
+    const [doc, quien] = await Promise.all([describirObjetivo(objetivo), db.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true } })]);
+    avisarEnSegundoPlano({
+      evento: "FIRMA_RECHAZADA",
+      clave: `firma-rechazada:${solicitudId}`,
+      usuarioIds: [avisar],
+      asunto: `${solicitud.rol === "VISTO_BUENO" ? "Visto bueno" : "Firma"} rechazado · ${doc.referencia}`,
+      titulo: `Se rechazó ${solicitud.rol === "VISTO_BUENO" ? "el visto bueno" : "la firma"} de un documento`,
+      cuerpoHtml: parrafos(
+        `${negrita(quien?.nombre ?? "El firmante")} rechazó ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}).`,
+        `Motivo: ${escaparHtml(comentario.trim())}`
+      ),
+      enlace: { texto: "Abrir en la plataforma", ruta: BUZON_POR_MODULO[moduloDeObjetivo(objetivo.tipo)] },
+    });
+  }
 }
 
 export async function contarRechazosPorAtender(
@@ -876,13 +943,28 @@ export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   const anteriores = await db.solicitudFirma.findMany({
     where: { ...whereObjetivo(objetivoDeSolicitud(solicitud)), rol: "FIRMA", estado: "PENDIENTE", orden: { lt: solicitud.orden } },
-    select: { id: true, recordadoEn: true, usuarioAsignado: { select: { nombre: true } } },
+    select: { id: true, recordadoEn: true, usuarioAsignadoId: true, usuarioAsignado: { select: { nombre: true } } },
   });
   if (anteriores.length === 0) throw new Error("Ya es su turno: no hay firmas anteriores pendientes.");
   const limite = Date.now() - ESPERA_ENTRE_RECORDATORIOS_MS;
   const porAvisar = anteriores.filter((a) => !a.recordadoEn || a.recordadoEn.getTime() < limite);
   if (porAvisar.length > 0) {
     await db.solicitudFirma.updateMany({ where: { id: { in: porAvisar.map((a) => a.id) } }, data: { recordadoEn: new Date(), recordadoPorId: usuarioId } });
+    const objetivo = objetivoDeSolicitud(solicitud);
+    const [doc, quien] = await Promise.all([describirObjetivo(objetivo), db.usuario.findUnique({ where: { id: usuarioId }, select: { nombre: true } })]);
+    for (const a of porAvisar) {
+      avisarEnSegundoPlano({
+        evento: "FIRMA_RECORDADA",
+        clave: `firma-recordada:${a.id}:${Date.now()}`,
+        usuarioIds: [a.usuarioAsignadoId],
+        asunto: `Recordatorio de firma · ${doc.referencia}`,
+        titulo: "Hay una firma esperando su turno",
+        cuerpoHtml: parrafos(
+          `${negrita(quien?.nombre ?? "Un firmante")} espera su firma de ${negrita(doc.nombre)} (${escaparHtml(doc.referencia)}) para poder firmar a continuación.`
+        ),
+        enlace: { texto: "Ir al buzón de firmas", ruta: BUZON_POR_MODULO[moduloDeObjetivo(objetivo.tipo)] },
+      });
+    }
   }
   return {
     avisados: porAvisar.map((a) => a.usuarioAsignado.nombre),

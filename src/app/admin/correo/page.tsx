@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
-import { Mail, KeyRound, Plus, Send } from "lucide-react";
+import { Mail, KeyRound, Plus, Send, BellRing, History } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { CabeceraTablero } from "@/components/tablero";
 import { BotonConfirmar } from "@/components/admin/BotonConfirmar";
 import { correoConfigurado, variablesEntornoCorreo } from "@/lib/correo-microsoft";
+import { EVENTOS_AVISO, GRUPOS_AVISO, parametros, urlBasePlataforma, esEventoAviso, type EventoAviso, type GrupoAviso } from "@/lib/avisos-correo";
 
 const CAMPO = "w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm";
 const BOTON = "rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50";
@@ -65,11 +66,15 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
   if (!session) redirect("/login");
   if (session.rol !== "ADMIN") return <AccesoRestringido titulo="Correo institucional" quien="administrador del sistema" volverHref="/" volverLabel="Ir al inicio" />;
   const sp = await searchParams;
-  const [cuentas, usuario, listo] = await Promise.all([
+  const [cuentas, usuario, listo, ajustes, envios] = await Promise.all([
     db.cuentaCorreo.findMany({ orderBy: [{ predeterminada: "desc" }, { createdAt: "asc" }], include: { claves: { orderBy: { createdAt: "desc" } } } }),
     db.usuario.findUnique({ where: { id: session.userId }, select: { correoNotificacion: true } }),
     correoConfigurado(),
+    parametros(),
+    db.correoEnviado.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
+  const eventos = Object.entries(EVENTOS_AVISO) as [EventoAviso, (typeof EVENTOS_AVISO)[EventoAviso]][];
+  const urlEfectiva = urlBasePlataforma(ajustes.urlPlataforma);
   const entorno = cuentas.length === 0 ? variablesEntornoCorreo() : null;
   const ahora = Date.now();
 
@@ -120,6 +125,7 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
                 <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">
                   <KeyRound className="h-3.5 w-3.5" aria-hidden /> Claves
                 </p>
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-500">
@@ -163,6 +169,7 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
                     })}
                   </tbody>
                 </table>
+                </div>
                 <form action="/api/admin/correo/cuentas" method="post" className="mt-2 space-y-2 rounded-md bg-stone-50 p-3">
                   <input type="hidden" name="accion" value="agregar_clave" />
                   <input type="hidden" name="cuentaId" value={c.id} />
@@ -230,6 +237,111 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
           <Send className="h-4 w-4" aria-hidden /> Enviar prueba
         </button>
       </form>
+
+      <form id="matriz" action="/api/admin/correo/avisos" method="post" className="rounded-md border border-stone-200 bg-white">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+            <BellRing className="h-4 w-4" aria-hidden /> Matriz de notificaciones
+          </p>
+          <span className="text-xs text-stone-500">
+            {eventos.filter(([k]) => !ajustes.desactivados.has(k)).length} de {eventos.length} eventos con correo
+          </span>
+          <button type="submit" className={`${BOTON_PRINCIPAL} ml-auto`}>Guardar matriz</button>
+        </div>
+        <div className="overflow-x-auto border-t border-stone-100">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-500">
+                <th className="px-4 py-2 font-medium">Evento</th>
+                <th className="hidden px-2 py-2 font-medium md:table-cell">Módulo</th>
+                <th className="hidden px-2 py-2 font-medium sm:table-cell">Destinatarios</th>
+                <th className="hidden px-2 py-2 font-medium md:table-cell">Plataforma</th>
+                <th className="px-4 py-2 text-center font-medium">Correo</th>
+              </tr>
+            </thead>
+            {(Object.keys(GRUPOS_AVISO) as GrupoAviso[]).map((g) => (
+              <tbody key={g}>
+                <tr className="bg-stone-50">
+                  <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-stone-700">
+                    {GRUPOS_AVISO[g]}
+                    {g === "VENCIMIENTOS" && <span className="ml-1.5 font-normal text-stone-500">· proceso diario, 6:30 a. m.</span>}
+                  </td>
+                </tr>
+                {eventos
+                  .filter(([, e]) => e.grupo === g)
+                  .map(([clave, e]) => (
+                    <tr key={clave} className="border-b border-stone-100 last:border-0">
+                      <td className="px-4 py-1.5">
+                        <label htmlFor={`evento-${clave}`} className="cursor-pointer">{e.evento}</label>
+                        <span className="block text-[11px] text-stone-500 sm:hidden">{e.destinatarios}</span>
+                      </td>
+                      <td className="hidden px-2 py-1.5 text-xs text-stone-600 md:table-cell">{e.modulo}</td>
+                      <td className="hidden px-2 py-1.5 text-xs text-stone-600 sm:table-cell">{e.destinatarios}</td>
+                      <td className="hidden px-2 py-1.5 text-xs text-stone-500 md:table-cell">{e.plataforma}</td>
+                      <td className="px-4 py-1.5 text-center">
+                        <input
+                          id={`evento-${clave}`}
+                          type="checkbox"
+                          name="evento"
+                          value={clave}
+                          defaultChecked={!ajustes.desactivados.has(clave)}
+                          className="h-4 w-4 accent-cdmb-600"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+        <div className="flex flex-wrap items-end gap-2 border-t border-stone-100 px-4 py-3">
+          <label className="min-w-72 flex-1 text-sm">
+            <span className="mb-1 block text-xs text-stone-500">Dirección de la plataforma para los enlaces de los correos</span>
+            <input name="urlPlataforma" defaultValue={ajustes.urlPlataforma ?? ""} placeholder={urlEfectiva ?? "https://tramites.cdmb.gov.co"} className={CAMPO} />
+          </label>
+          <span className="pb-2 text-xs text-stone-500">{urlEfectiva ? `En uso: ${urlEfectiva}` : "Sin dirección: los correos salen sin enlace."}</span>
+        </div>
+      </form>
+
+      <details className="rounded-md border border-stone-200 bg-white">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 px-4 py-3 text-sm font-semibold text-stone-900">
+          <History className="h-4 w-4" aria-hidden /> Últimos envíos
+          <span className="text-xs font-normal text-stone-500">· {envios.filter((x) => !x.ok).length} fallido(s) de {envios.length}</span>
+        </summary>
+        <div className="overflow-x-auto border-t border-stone-100">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-200 text-left text-[11px] uppercase tracking-wide text-stone-500">
+                <th className="px-4 py-2 font-medium">Fecha</th>
+                <th className="px-2 py-2 font-medium">Destinatario</th>
+                <th className="px-2 py-2 font-medium">Evento</th>
+                <th className="px-2 py-2 font-medium">Asunto</th>
+                <th className="px-4 py-2 font-medium">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {envios.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-3 text-xs text-stone-500">Sin envíos registrados.</td>
+                </tr>
+              )}
+              {envios.map((x) => (
+                <tr key={x.id} className="border-b border-stone-100 last:border-0">
+                  <td className="whitespace-nowrap px-4 py-1.5 text-xs text-stone-600">
+                    {x.createdAt.toLocaleString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </td>
+                  <td className="px-2 py-1.5 text-xs">{x.destinatario}</td>
+                  <td className="px-2 py-1.5 text-xs text-stone-600">{esEventoAviso(x.categoria) ? EVENTOS_AVISO[x.categoria].evento : x.categoria}</td>
+                  <td className="px-2 py-1.5 text-xs text-stone-600">{x.asunto}</td>
+                  <td className={`px-4 py-1.5 text-xs ${x.ok ? "text-emerald-700" : "text-red-700"}`} title={x.error ?? undefined}>
+                    {x.ok ? "Enviado" : "Fallido"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }

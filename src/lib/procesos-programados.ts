@@ -43,6 +43,14 @@ export const PROCESOS_PROGRAMADOS: ProcesoProgramado[] = [
     horario: "Todos los días, 6:00 a. m.",
     rutaManual: "/api/flujos/vencimientos",
   },
+  {
+    clave: "alertas-correo",
+    nombre: "Alertas de vencimiento por correo",
+    descripcion:
+      "Envía a cada persona un solo correo con sus alertas nuevas (PQRSD, memorandos, pasos de flujo, informes de contratos y firmas sin atender), según la matriz de notificaciones. Cada alerta se envía una vez por umbral.",
+    horario: "Todos los días, 6:30 a. m.",
+    rutaManual: "/api/correo/alertas",
+  },
 ];
 
 function resumirResultado(resultado: unknown): { ok: boolean; resumen: string } {

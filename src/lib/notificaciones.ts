@@ -4,6 +4,7 @@ import { CARGOS_PLANEADOR } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { pasoPermiteVisita, tipoActividadEfectivo } from "@/lib/temas-visita";
 import { rangoTexto } from "@/lib/planeador-db";
+import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, huella, parrafos } from "@/lib/avisos-correo";
 
 type DatosNotificacion = { tipo: TipoNotificacion; clave: string; titulo: string; mensaje: string; enlace: string; expedienteId?: string };
 
@@ -19,6 +20,17 @@ export async function notificar(usuarioIds: string[], datos: DatosNotificacion) 
       })
     )
   );
+  const evento = datos.tipo === "EQUIPO_VISITA" ? "VISITA_PROGRAMADA" : datos.tipo;
+  if (!esEventoAviso(evento)) return;
+  avisarEnSegundoPlano({
+    evento,
+    clave: `notificacion:${datos.clave}:${datos.tipo}:${huella(`${datos.titulo}|${datos.mensaje}`)}`,
+    usuarioIds: destinatarios,
+    asunto: datos.titulo,
+    titulo: datos.titulo,
+    cuerpoHtml: parrafos(escaparHtml(datos.mensaje)),
+    enlace: { texto: "Abrir en la plataforma", ruta: datos.enlace },
+  });
 }
 
 export async function resolverNotificaciones(where: { clave?: string; claveEmpiezaPor?: string; expedienteId?: string; tipo?: TipoNotificacion; excepto?: string }) {

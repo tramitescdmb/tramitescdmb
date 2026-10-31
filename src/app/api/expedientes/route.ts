@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { generarNumeroExpediente } from "@/lib/expedientes";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 import { iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
+import { avisarRadicadoTramite } from "@/lib/avisos-externos";
 import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
@@ -269,6 +270,14 @@ export async function POST(req: NextRequest) {
   }
   await sincronizarAvisoVisita(expediente.id);
   await iniciarFlujoAutomaticoEnObjeto("TRAMITE", expediente.id, session.userId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
+  avisarRadicadoTramite({
+    id: expediente.id,
+    numero: expediente.numero,
+    tramite: tramite.nombre,
+    solicitante: nombreCompleto,
+    correo: expediente.solicitanteEmail,
+    fecha: expediente.createdAt,
+  });
 
   return NextResponse.json({ id: expediente.id, numero: expediente.numero });
 }

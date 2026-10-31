@@ -17,6 +17,7 @@ import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
 import { cancelarFlujosDeObjeto, iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
+import { avisarRadicadoPqrsd, avisarRespuestaPqrsd } from "@/lib/avisos-externos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -166,6 +167,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   }).then(async (comunicacion) => {
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
+    avisarRadicadoPqrsd(comunicacion);
     return comunicacion;
   });
 }
@@ -834,7 +836,9 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
       id: true, tipo: true, estado: true, radicado: true, despachadaEn: true, asunto: true,
       serieId: true, subserieId: true, dependenciaOrigenId: true, expedienteDocumentalId: true,
       respondeAId: true,
-      respondeA: { select: { id: true, asunto: true, dependenciaDestinoId: true, expedienteDocumentalId: true } },
+      terceroNombre: true,
+      terceroEmail: true,
+      respondeA: { select: { id: true, asunto: true, dependenciaDestinoId: true, expedienteDocumentalId: true, radicado: true, tipoPqrsd: true, terceroNombre: true, terceroEmail: true } },
       firmas: { select: { calidad: true } },
       solicitudesFirma: { where: { estado: "PENDIENTE", rol: { not: "LECTURA" } }, select: { usuarioAsignado: { select: { nombre: true } } } },
     },
@@ -917,6 +921,19 @@ export async function despacharComunicacion(entrada: EntradaDespacho): Promise<R
 
   if (expedienteNuevo && expedienteId) {
     await iniciarFlujoAutomaticoEnObjeto("EXPEDIENTE", expedienteId, entrada.usuarioId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
+  }
+
+  if (c.respondeA?.tipoPqrsd) {
+    const destino = entrada.destino?.trim() ?? "";
+    avisarRespuestaPqrsd({
+      oficioId: c.id,
+      oficioRadicado: c.radicado,
+      solicitudRadicado: c.respondeA.radicado,
+      asunto: c.respondeA.asunto,
+      nombre: c.terceroNombre ?? c.respondeA.terceroNombre,
+      correos: [entrada.medio === "CORREO_ELECTRONICO" && destino.includes("@") ? destino : null, c.terceroEmail ?? c.respondeA.terceroEmail],
+      medio: ETIQUETA_MEDIO_DESPACHO[entrada.medio as MedioDespacho],
+    });
   }
 
   return { radicado: c.radicado, expedienteId, expedienteNumero, avisoExpediente };
