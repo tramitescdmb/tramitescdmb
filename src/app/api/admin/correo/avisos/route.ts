@@ -14,9 +14,8 @@ export async function POST(req: NextRequest) {
   if (!session || session.rol !== "ADMIN") return salir("error", "Solo el administrador del sistema configura las notificaciones.");
 
   const form = await req.formData();
-  const accion = String(form.get("accion") ?? "");
   const todos = Object.keys(EVENTOS_AVISO) as EventoAviso[];
-  const activos = new Set(accion === "todos" ? todos : accion === "ninguno" ? [] : form.getAll("evento").map(String).filter(esEventoAviso));
+  const activos = new Set(form.getAll("evento").map(String).filter(esEventoAviso));
   const desactivados = todos.filter((e) => !activos.has(e));
   const url = String(form.get("urlPlataforma") ?? "").trim().replace(/\/+$/, "");
   if (url && !/^https:\/\/[^\s/]+\.[^\s]+$/i.test(url)) return salir("error", "La dirección de la plataforma debe empezar por https:// y ser un dominio válido.");
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
   });
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
-    descripcion: `${session.nombre} actualizó la matriz de notificaciones por correo: ${activos.size} de ${Object.keys(EVENTOS_AVISO).length} eventos activos${
+    descripcion: `${session.nombre} actualizó la matriz de notificaciones por correo: ${activos.size} de ${todos.length} eventos activos${
       desactivados.length ? ` (desactivados: ${desactivados.join(", ")})` : ""
     }.`,
     usuarioId: session.userId,

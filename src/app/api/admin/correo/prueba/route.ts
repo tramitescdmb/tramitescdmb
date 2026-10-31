@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { enviarCorreo, plantillaCorreo } from "@/lib/correo-microsoft";
+import { enviarCorreo, olvidarConfiguracionCorreo, plantillaCorreo } from "@/lib/correo-microsoft";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { escaparHtml } from "@/lib/avisos-correo";
 
 export async function POST(req: NextRequest) {
   const volver = new URL("/admin/correo", req.url);
@@ -11,6 +12,7 @@ export async function POST(req: NextRequest) {
     volver.searchParams.set("error", "Solo el administrador del sistema prueba el correo.");
     return NextResponse.redirect(volver, { status: 303 });
   }
+  olvidarConfiguracionCorreo();
   const form = await req.formData();
   const destino = String(form.get("destino") || "").trim().toLowerCase();
   const cuentaId = String(form.get("cuentaId") || "").trim() || undefined;
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
     {
       para: [para],
       asunto: "Prueba de correo de la plataforma CDMB",
-      html: plantillaCorreo("Correo de prueba", `<p>La plataforma envió este mensaje desde el correo institucional por solicitud de ${session.nombre}.</p>`),
+      html: plantillaCorreo("Correo de prueba", `<p>La plataforma envió este mensaje desde el correo institucional por solicitud de ${escaparHtml(session.nombre)}.</p>`),
     },
     cuenta?.id
   );

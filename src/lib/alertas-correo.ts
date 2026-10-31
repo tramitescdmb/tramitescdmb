@@ -1,19 +1,19 @@
 import type { RolFirmante } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
-import { diasHabilesEntre } from "@/lib/dias-habiles";
+import { diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import { ESTADOS_ACTIVOS } from "@/lib/correspondencia-panel";
 import { estadoTerminoPaso, objetivoDeInstancia, SELECT_OBJETIVO_FLUJO } from "@/lib/flujos";
 import { CODIGOS_FORMATO_POR_PERIODOS, calcularPeriodosInforme, etiquetaRangoPeriodo, periodosPorRadicar } from "@/lib/periodos-informe";
 import { hoyColombia } from "@/lib/contratacion-panel";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
-import { BUZON_POR_MODULO, moduloDeObjetivo } from "@/lib/solicitudes-firma";
-import { eventosActivos, correosDeUsuarios, type EventoAviso, escaparHtml, parametros, urlBasePlataforma, yaEnviado } from "@/lib/avisos-correo";
-import { enviarCorreo, plantillaCorreo } from "@/lib/correo-microsoft";
+import { BUZON_POR_MODULO, moduloDeObjetivo, rutaDeFirma } from "@/lib/solicitudes-firma";
+import { eventosActivos, correosPorUsuario, type EventoAviso, escaparHtml, parametros, urlBasePlataforma } from "@/lib/avisos-correo";
+import { plantillaCorreo, prepararEnvio } from "@/lib/correo-microsoft";
 
 type Alerta = { evento: EventoAviso; clave: string; grupo: string; texto: string; ruta: string; urgente: boolean };
 
-export type ResultadoAlertas = { ok: boolean; alertas: number; usuarios: number; correos: number; fallidos: number; motivo?: string; simulacion?: { correo: string; alertas: string[] }[] };
+export type ResultadoAlertas = { ok: boolean; alertas: number; usuarios: number; correos: number; fallidos: number; pendientes?: number; motivo?: string; simulacion?: { correo: string; alertas: string[] }[] };
 
 const DIA = 86_400_000;
 const PQRSD_DIAS_AVISO = 3;
@@ -45,23 +45,20 @@ class Bandeja {
   }
 }
 
-let repartidoresEnCache: string[] | null = null;
+type Contexto = { ahora: Date; cal: CalendarioLaboral; repartidores: () => Promise<string[]> };
 
-async function repartidores(): Promise<string[]> {
-  if (repartidoresEnCache) return repartidoresEnCache;
-  const usuarios = await db.usuario.findMany({ where: { activo: true }, select: { id: true, rol: true } });
-  const conReparto: { id: string; admin: boolean }[] = [];
-  for (const u of usuarios) {
-    const permisos = await obtenerPermisosUsuario(u.id).catch(() => null);
-    if (permisos && puedeDistribuir(permisos)) conReparto.push({ id: u.id, admin: u.rol === "ADMIN" });
-  }
-  const sinAdmin = conReparto.filter((u) => !u.admin);
-  repartidoresEnCache = (sinAdmin.length ? sinAdmin : conReparto).map((u) => u.id);
-  return repartidoresEnCache;
+function repartidoresPerezosos(): () => Promise<string[]> {
+  let lista: Promise<string[]> | null = null;
+  return () =>
+    (lista ??= (async () => {
+      const usuarios = await db.usuario.findMany({ where: { activo: true }, select: { id: true, rol: true } });
+      const permisos = await Promise.all(usuarios.map((u) => obtenerPermisosUsuario(u.id).catch(() => null)));
+      const conReparto = usuarios.filter((_, i) => permisos[i] && puedeDistribuir(permisos[i]!));
+      const sinAdmin = conReparto.filter((u) => u.rol !== "ADMIN");
+      return (sinAdmin.length ? sinAdmin : conReparto).map((u) => u.id);
+    })());
 }
-
-async function alertasPqrsd(bandeja: Bandeja, ahora: Date) {
-  const cal = await getCalendarioLaboral();
+async function alertasPqrsd(bandeja: Bandeja, { ahora, cal, repartidores }: Contexto) {
   const filas = await db.comunicacion.findMany({
     where: {
       tipo: "RECIBIDA",
@@ -88,8 +85,7 @@ async function alertasPqrsd(bandeja: Bandeja, ahora: Date) {
   }
 }
 
-async function alertasMemorandos(bandeja: Bandeja, ahora: Date) {
-  const cal = await getCalendarioLaboral();
+async function alertasMemorandos(bandeja: Bandeja, { ahora, cal }: Contexto) {
   const filas = await db.comunicacion.findMany({
     where: { tipo: "INTERNA", respuestaTexto: null, estado: { in: ESTADOS_ACTIVOS }, fechaVencimiento: { not: null, lte: new Date(ahora.getTime() + 5 * DIA) } },
     take: 1000,
@@ -113,8 +109,7 @@ async function alertasMemorandos(bandeja: Bandeja, ahora: Date) {
   }
 }
 
-async function alertasFlujos(bandeja: Bandeja, ahora: Date) {
-  const cal = await getCalendarioLaboral();
+async function alertasFlujos(bandeja: Bandeja, { ahora, cal }: Contexto) {
   const instancias = await db.instanciaFlujo.findMany({
     where: { estado: "EN_CURSO", pasoActualDesde: { not: null }, pasoActual: { slaDiasHabiles: { not: null }, tipo: { not: "FIN" } } },
     take: 2000,
@@ -197,7 +192,7 @@ function claveObjetivoFirma(s: { comunicacionId: string | null; documentoContrat
   return s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId ?? s.documentoArchivoId ?? "";
 }
 
-async function alertasFirmas(bandeja: Bandeja, ahora: Date) {
+async function alertasFirmas(bandeja: Bandeja, { ahora }: Contexto) {
   const pendientes = await db.solicitudFirma.findMany({
     where: {
       estado: "PENDIENTE",
@@ -221,9 +216,9 @@ async function alertasFirmas(bandeja: Bandeja, ahora: Date) {
       documentoExpedienteId: true,
       documentoArchivoId: true,
       comunicacion: { select: { radicado: true } },
-      documentoContrato: { select: { nombre: true, expediente: { select: { numero: true } } } },
-      documentoExpediente: { select: { nombre: true, expediente: { select: { numero: true } } } },
-      documentoArchivo: { select: { nombre: true, expediente: { select: { numero: true } } } },
+      documentoContrato: { select: { nombre: true, expedienteId: true, expediente: { select: { numero: true } } } },
+      documentoExpediente: { select: { nombre: true, expedienteId: true, expediente: { select: { numero: true } } } },
+      documentoArchivo: { select: { nombre: true, expedienteDocumentalId: true, expediente: { select: { numero: true } } } },
     },
   });
   const bloqueantes = new Map<string, number[]>();
@@ -245,7 +240,11 @@ async function alertasFirmas(bandeja: Bandeja, ahora: Date) {
       clave: `firma-sin-atender:${s.id}:${nivel}`,
       grupo: "Firmas sin atender",
       texto: `${s.rol === "FIRMA" ? "Firmar" : "Visto bueno"}: ${nombre} — asignada hace ${dias} día(s)`,
-      ruta: BUZON_POR_MODULO[moduloDeObjetivo(tipo)],
+      ruta: rutaDeFirma(
+        s.id,
+        moduloDeObjetivo(tipo),
+        s.comunicacionId ? `/correspondencia/${s.comunicacionId}` : s.documentoArchivo ? `/correspondencia/expedientes/${s.documentoArchivo.expedienteDocumentalId}` : BUZON_POR_MODULO.SGDEA
+      ),
       urgente: nivel >= 10,
     });
   }
@@ -268,10 +267,23 @@ function cuerpoAlertas(alertas: Alerta[], base: string | null): string {
     .join("");
 }
 
+const RETENCION_REGISTRO_DIAS = 365;
+const PAUSA_ENTRE_CORREOS_MS = 2_100;
+const PRESUPUESTO_MS = 240_000;
+
+async function clavesYaEnviadas(claves: string[]): Promise<Set<string>> {
+  const enviadas = new Set<string>();
+  for (let i = 0; i < claves.length; i += 1000) {
+    const filas = await db.correoEnviado.findMany({ where: { ok: true, clave: { in: claves.slice(i, i + 1000) } }, select: { clave: true, destinatario: true } });
+    for (const f of filas) enviadas.add(`${f.clave}|${f.destinatario}`);
+  }
+  return enviadas;
+}
+
 export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}): Promise<ResultadoAlertas> {
-  repartidoresEnCache = null;
+  const inicio = Date.now();
   const activos = opciones.simular ? new Set<EventoAviso>(["PQRSD_POR_VENCER", "MEMORANDO_POR_VENCER", "FLUJO_POR_VENCER", "INFORME_ATRASADO", "FIRMA_SIN_ATENDER"]) : await eventosActivos();
-  const fuentes: [EventoAviso, (b: Bandeja, ahora: Date) => Promise<void>][] = [
+  const fuentes: [EventoAviso, (b: Bandeja, ctx: Contexto) => Promise<void>][] = [
     ["PQRSD_POR_VENCER", alertasPqrsd],
     ["MEMORANDO_POR_VENCER", alertasMemorandos],
     ["FLUJO_POR_VENCER", alertasFlujos],
@@ -280,41 +292,55 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
   ];
   const aplican = fuentes.filter(([evento]) => activos.has(evento));
   if (aplican.length === 0) return { ok: true, alertas: 0, usuarios: 0, correos: 0, fallidos: 0, motivo: "Correo sin configurar o alertas desactivadas." };
-  const ahora = new Date();
-  const bandeja = new Bandeja();
-  for (const [, fuente] of aplican) await fuente(bandeja, ahora);
+  if (!opciones.simular) await db.correoEnviado.deleteMany({ where: { createdAt: { lt: new Date(inicio - RETENCION_REGISTRO_DIAS * DIA) } } });
 
-  const base = urlBasePlataforma((await parametros()).urlPlataforma);
+  const ctx: Contexto = { ahora: new Date(), cal: await getCalendarioLaboral(), repartidores: repartidoresPerezosos() };
+  const bandeja = new Bandeja();
+  for (const [, fuente] of aplican) await fuente(bandeja, ctx);
+
+  const correos = await correosPorUsuario([...bandeja.porUsuario.keys()]);
+  const enviadas = await clavesYaEnviadas([...new Set([...bandeja.porUsuario.values()].flat().map((a) => a.clave))]);
+  const lotes = [...bandeja.porUsuario].flatMap(([usuarioId, alertas]) => {
+    const correo = correos.get(usuarioId);
+    const nuevas = correo ? alertas.filter((a) => !enviadas.has(`${a.clave}|${correo}`)) : [];
+    return correo && nuevas.length ? [{ correo, nuevas: nuevas.sort((a, b) => Number(b.urgente) - Number(a.urgente)) }] : [];
+  });
+
   const r: ResultadoAlertas = { ok: true, alertas: 0, usuarios: 0, correos: 0, fallidos: 0 };
-  for (const [usuarioId, alertas] of bandeja.porUsuario) {
-    const [correo] = await correosDeUsuarios([usuarioId]);
-    if (!correo) continue;
-    const nuevas: Alerta[] = [];
-    for (const a of alertas) if (!(await yaEnviado(a.clave, correo))) nuevas.push(a);
-    if (nuevas.length === 0) continue;
-    nuevas.sort((a, b) => Number(b.urgente) - Number(a.urgente));
-    r.usuarios++;
-    r.alertas += nuevas.length;
-    if (opciones.simular) {
-      (r.simulacion ??= []).push({ correo, alertas: nuevas.map((a) => `[${a.evento}] ${a.texto}`) });
-      continue;
+  if (opciones.simular) {
+    r.usuarios = lotes.length;
+    r.alertas = lotes.reduce((n, l) => n + l.nuevas.length, 0);
+    r.simulacion = lotes.map((l) => ({ correo: l.correo, alertas: l.nuevas.map((a) => `[${a.evento}] ${a.texto}`) }));
+    return r;
+  }
+  if (lotes.length === 0) return r;
+  const envio = await prepararEnvio();
+  if (!envio) return { ...r, ok: false, motivo: "El correo institucional no está configurado o no tiene claves vigentes." };
+  const base = urlBasePlataforma((await parametros()).urlPlataforma);
+
+  for (const [i, { correo, nuevas }] of lotes.entries()) {
+    if (Date.now() - inicio > PRESUPUESTO_MS) {
+      r.pendientes = lotes.length - i;
+      break;
     }
+    if (i > 0) await new Promise((listo) => setTimeout(listo, PAUSA_ENTRE_CORREOS_MS));
     const urgentes = nuevas.filter((a) => a.urgente).length;
     const asunto = `${nuevas.length} alerta(s) de vencimiento${urgentes ? ` — ${urgentes} vencida(s)` : ""} · Plataforma CDMB`;
-    const envio = await enviarCorreo({
+    const resultado = await envio.enviar({
       para: [correo],
       asunto,
       html: plantillaCorreo("Alertas de vencimiento", cuerpoAlertas(nuevas, base), base ? { texto: "Ir a la plataforma", url: base } : undefined),
     });
-    if (envio.ok) r.correos++;
+    r.usuarios++;
+    r.alertas += nuevas.length;
+    if (resultado.ok) r.correos++;
     else r.fallidos++;
-    for (const a of nuevas) {
-      await db.correoEnviado.upsert({
-        where: { clave_destinatario: { clave: a.clave, destinatario: correo } },
-        create: { clave: a.clave, destinatario: correo, categoria: a.evento, asunto: asunto.slice(0, 300), ok: envio.ok, error: envio.ok ? null : envio.mensaje.slice(0, 1000) },
-        update: { ok: envio.ok, error: envio.ok ? null : envio.mensaje.slice(0, 1000) },
-      });
-    }
+    const estado = { ok: resultado.ok, error: resultado.ok ? null : resultado.mensaje.slice(0, 1000) };
+    await db.correoEnviado.createMany({
+      data: nuevas.map((a) => ({ clave: a.clave, destinatario: correo, categoria: a.evento, asunto: asunto.slice(0, 300), ...estado })),
+      skipDuplicates: true,
+    });
+    await db.correoEnviado.updateMany({ where: { destinatario: correo, clave: { in: nuevas.map((a) => a.clave) } }, data: estado });
   }
   r.ok = r.fallidos === 0;
   return r;

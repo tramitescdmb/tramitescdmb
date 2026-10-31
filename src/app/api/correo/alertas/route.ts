@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
     const r = await registrarEjecucion("alertas-correo", "manual", session.userId, () => procesarAlertasCorreo());
     volver.searchParams.set(
       r.ok ? "ok" : "error",
-      r.motivo ?? `Alertas por correo: ${r.alertas} alerta(s) nuevas para ${r.usuarios} persona(s); ${r.correos} correo(s) enviados${r.fallidos ? `, ${r.fallidos} fallido(s)` : ""}.`
+      r.motivo ??
+        `Alertas por correo: ${r.alertas} alerta(s) nuevas para ${r.usuarios} persona(s); ${r.correos} correo(s) enviados${r.fallidos ? `, ${r.fallidos} fallido(s)` : ""}${
+          r.pendientes ? `; ${r.pendientes} persona(s) quedan para la siguiente ejecución` : ""
+        }.`
     );
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo ejecutar el proceso.");

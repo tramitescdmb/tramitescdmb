@@ -5,6 +5,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { CabeceraTablero } from "@/components/tablero";
 import { BotonConfirmar } from "@/components/admin/BotonConfirmar";
+import { MarcarCasillas } from "@/components/admin/MarcarCasillas";
 import { correoConfigurado, variablesEntornoCorreo } from "@/lib/correo-microsoft";
 import { EVENTOS_AVISO, GRUPOS_AVISO, parametros, urlBasePlataforma, esEventoAviso, type EventoAviso, type GrupoAviso } from "@/lib/avisos-correo";
 
@@ -246,14 +247,9 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
           <span className="text-xs text-stone-500">
             {eventos.filter(([k]) => !ajustes.desactivados.has(k)).length} de {eventos.length} eventos se envían por correo
           </span>
-          <div className="ml-auto flex flex-wrap items-center gap-1.5">
-            <button type="submit" className={`${BOTON_PRINCIPAL} order-last`}>Guardar matriz</button>
-            <BotonConfirmar name="accion" value="todos" mensaje="¿Activar el envío por correo de los 21 eventos?" className={BOTON}>
-              Enviar todos
-            </BotonConfirmar>
-            <BotonConfirmar name="accion" value="ninguno" mensaje="¿Desactivar el envío por correo de todos los eventos?" className={BOTON}>
-              No enviar ninguno
-            </BotonConfirmar>
+          <div className="ml-auto flex flex-wrap items-center gap-3">
+            <MarcarCasillas formulario="matriz" etiqueta="Seleccionar:" />
+            <button type="submit" className={BOTON_PRINCIPAL}>Guardar matriz</button>
           </div>
         </div>
         <div className="overflow-x-auto border-t border-stone-100">
@@ -271,8 +267,15 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
               <tbody key={g}>
                 <tr className="bg-stone-50">
                   <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-stone-700">
-                    {GRUPOS_AVISO[g]}
-                    {g === "VENCIMIENTOS" && <span className="ml-1.5 font-normal text-stone-500">· proceso diario, 6:30 a. m.</span>}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>
+                        {GRUPOS_AVISO[g]}
+                        {g === "VENCIMIENTOS" && <span className="ml-1.5 font-normal text-stone-500">· proceso diario, 7:30 a. m.</span>}
+                      </span>
+                      <span className="ml-auto">
+                        <MarcarCasillas formulario="matriz" grupo={g} />
+                      </span>
+                    </div>
                   </td>
                 </tr>
                 {eventos
@@ -293,6 +296,7 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
                             type="checkbox"
                             name="evento"
                             value={clave}
+                            data-grupo={e.grupo}
                             defaultChecked={!ajustes.desactivados.has(clave)}
                             className="peer sr-only"
                           />

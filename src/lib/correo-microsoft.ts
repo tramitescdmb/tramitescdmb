@@ -12,7 +12,25 @@ function configuracionEntorno(): Configuracion | null {
   return tenantId && clientId && clientSecret && remitente ? { cuentaId: null, remitente, credenciales: [{ clave: "entorno", tenantId, clientId, clientSecret }] } : null;
 }
 
+const VIGENCIA_CONFIGURACION_MS = 60_000;
+const tokens = new Map<string, { valor: string; vence: number }>();
+const configuraciones = new Map<string, { valor: Configuracion | null; vence: number }>();
+
+export function olvidarConfiguracionCorreo() {
+  configuraciones.clear();
+  tokens.clear();
+}
+
 async function configuracion(cuentaId?: string): Promise<Configuracion | null> {
+  const llave = cuentaId ?? "";
+  const enCache = configuraciones.get(llave);
+  if (enCache && enCache.vence > Date.now()) return enCache.valor;
+  const valor = await leerConfiguracion(cuentaId);
+  configuraciones.set(llave, { valor, vence: Date.now() + VIGENCIA_CONFIGURACION_MS });
+  return valor;
+}
+
+async function leerConfiguracion(cuentaId?: string): Promise<Configuracion | null> {
   const ahora = new Date();
   const cuentas = await db.cuentaCorreo.findMany({
     where: cuentaId ? { id: cuentaId } : { activa: true },
@@ -34,17 +52,19 @@ async function configuracion(cuentaId?: string): Promise<Configuracion | null> {
 }
 
 export async function correoConfigurado(): Promise<boolean> {
-  return (await configuracion()) !== null;
+  return (await configuracion().catch(() => null)) !== null;
 }
 
 export function variablesEntornoCorreo(): string | null {
   return configuracionEntorno()?.remitente ?? null;
 }
 
-const tokens = new Map<string, { valor: string; vence: number }>();
+function llaveToken(c: Credencial) {
+  return `${c.tenantId}|${c.clientId}|${c.clave}`;
+}
 
 async function obtenerToken(c: Credencial): Promise<string> {
-  const llave = `${c.tenantId}|${c.clientId}|${c.clave}`;
+  const llave = llaveToken(c);
   const enCache = tokens.get(llave);
   if (enCache && enCache.vence > Date.now() + 60_000) return enCache.valor;
   const respuesta = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(c.tenantId)}/oauth2/v2.0/token`, {
@@ -67,38 +87,88 @@ function destinatarios(correos: string[] | undefined) {
   return [...new Set((correos ?? []).map((c) => c.trim().toLowerCase()).filter((c) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)))].map((address) => ({ emailAddress: { address } }));
 }
 
-export async function enviarCorreo(correo: CorreoSaliente, cuentaId?: string): Promise<{ ok: true } | { ok: false; mensaje: string }> {
+export type ResultadoEnvio = { ok: true } | { ok: false; mensaje: string };
+export type EnvioPreparado = { remitente: string; enviar: (correo: CorreoSaliente) => Promise<ResultadoEnvio> };
+
+const REINTENTOS_LIMITE = 2;
+const ESPERA_MAXIMA_MS = 20_000;
+
+function esperar(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function esperaSolicitada(respuesta: Response, intento: number): number {
+  const segundos = Number(respuesta.headers.get("retry-after"));
+  return Math.min(Number.isFinite(segundos) && segundos > 0 ? segundos * 1000 : 2000 * (intento + 1), ESPERA_MAXIMA_MS);
+}
+
+export async function prepararEnvio(cuentaId?: string): Promise<EnvioPreparado | null> {
   const c = await configuracion(cuentaId).catch(() => null);
-  if (!c) return { ok: false, mensaje: "El correo institucional no está configurado o no tiene claves vigentes." };
-  const para = destinatarios(correo.para);
-  if (para.length === 0) return { ok: false, mensaje: "No hay destinatarios válidos." };
-  let token: string | null = null;
-  let errorToken = "";
-  for (const credencial of c.credenciales) {
-    try {
-      token = await obtenerToken(credencial);
-      break;
-    } catch (err) {
-      errorToken = err instanceof Error ? err.message : "No se obtuvo autorización de Microsoft 365.";
+  if (!c) return null;
+  const remitente = c.remitente;
+  let indice = 0;
+
+  async function token(): Promise<string | { error: string }> {
+    let ultimo = "No se obtuvo autorización de Microsoft 365.";
+    for (; indice < c!.credenciales.length; indice++) {
+      try {
+        return await obtenerToken(c!.credenciales[indice]!);
+      } catch (err) {
+        ultimo = err instanceof Error ? err.message : ultimo;
+      }
+    }
+    return { error: ultimo };
+  }
+
+  async function enviar(correo: CorreoSaliente): Promise<ResultadoEnvio> {
+    const para = destinatarios(correo.para);
+    if (para.length === 0) return { ok: false, mensaje: "No hay destinatarios válidos." };
+    const cuerpoMensaje = JSON.stringify({
+      message: { subject: correo.asunto, body: { contentType: "HTML", content: correo.html }, toRecipients: para, ccRecipients: destinatarios(correo.cc) },
+      saveToSentItems: true,
+    });
+    for (let intento = 0; ; intento++) {
+      const t = await token();
+      if (typeof t !== "string") return { ok: false, mensaje: t.error };
+      let respuesta: Response;
+      try {
+        respuesta = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(remitente)}/sendMail`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: cuerpoMensaje,
+          signal: AbortSignal.timeout(20000),
+        });
+      } catch (err) {
+        if (intento < REINTENTOS_LIMITE) {
+          await esperar(2000 * (intento + 1));
+          continue;
+        }
+        return { ok: false, mensaje: err instanceof Error ? err.message : "No se pudo enviar el correo." };
+      }
+      if (respuesta.status === 202) return { ok: true };
+      if (intento < REINTENTOS_LIMITE) {
+        if (respuesta.status === 401) {
+          tokens.delete(llaveToken(c!.credenciales[indice]!));
+          indice++;
+          continue;
+        }
+        if (respuesta.status === 429 || respuesta.status === 503 || respuesta.status === 504) {
+          await esperar(esperaSolicitada(respuesta, intento));
+          continue;
+        }
+      }
+      const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
+      return { ok: false, mensaje: `Microsoft 365 rechazó el envío (${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}): ${cuerpo.error?.message ?? "sin detalle"}` };
     }
   }
-  if (!token) return { ok: false, mensaje: errorToken };
-  try {
-    const respuesta = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(c.remitente)}/sendMail`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: { subject: correo.asunto, body: { contentType: "HTML", content: correo.html }, toRecipients: para, ccRecipients: destinatarios(correo.cc) },
-        saveToSentItems: true,
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (respuesta.status === 202) return { ok: true };
-    const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
-    return { ok: false, mensaje: `Microsoft 365 rechazó el envío (${respuesta.status}${cuerpo.error?.code ? ` · ${cuerpo.error.code}` : ""}): ${cuerpo.error?.message ?? "sin detalle"}` };
-  } catch (err) {
-    return { ok: false, mensaje: err instanceof Error ? err.message : "No se pudo enviar el correo." };
-  }
+
+  return { remitente, enviar };
+}
+
+export async function enviarCorreo(correo: CorreoSaliente, cuentaId?: string): Promise<ResultadoEnvio> {
+  const envio = await prepararEnvio(cuentaId);
+  if (!envio) return { ok: false, mensaje: "El correo institucional no está configurado o no tiene claves vigentes." };
+  return envio.enviar(correo);
 }
 
 export function plantillaCorreo(titulo: string, cuerpoHtml: string, enlace?: { texto: string; url: string }): string {

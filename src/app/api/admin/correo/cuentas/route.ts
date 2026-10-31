@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { cifrarSecreto } from "@/lib/cifrado-config";
+import { olvidarConfiguracionCorreo } from "@/lib/correo-microsoft";
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOMINIO = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
@@ -42,6 +43,7 @@ function datosClave(form: FormData): { error: string } | { cifrado: string; fina
 export async function POST(req: NextRequest) {
   const volver = new URL("/admin/correo", req.url);
   const salir = (tipo: "ok" | "error", mensaje: string) => {
+    olvidarConfiguracionCorreo();
     volver.searchParams.set(tipo, mensaje);
     return NextResponse.redirect(volver, { status: 303 });
   };

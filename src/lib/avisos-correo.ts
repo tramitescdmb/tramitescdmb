@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { db } from "@/lib/db";
-import { correoConfigurado, enviarCorreo, plantillaCorreo } from "@/lib/correo-microsoft";
+import { correoConfigurado, plantillaCorreo, prepararEnvio } from "@/lib/correo-microsoft";
 
 export type GrupoAviso = "FIRMAS" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS";
 
@@ -198,10 +198,19 @@ export function enSegundoPlano(tarea: () => Promise<unknown>) {
   }
 }
 
-export async function correosDeUsuarios(usuarioIds: string[]): Promise<string[]> {
-  if (usuarioIds.length === 0) return [];
-  const usuarios = await db.usuario.findMany({ where: { id: { in: [...new Set(usuarioIds)] }, activo: true }, select: { email: true, correoNotificacion: true } });
-  return usuarios.map((u) => (u.correoNotificacion?.trim() || u.email).toLowerCase()).filter((c) => CORREO.test(c));
+export function correoDeUsuario(u: { email: string; correoNotificacion: string | null }): string | null {
+  const c = (u.correoNotificacion?.trim() || u.email).toLowerCase();
+  return CORREO.test(c) ? c : null;
+}
+
+export async function correosPorUsuario(usuarioIds: string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(usuarioIds)];
+  if (ids.length === 0) return new Map();
+  const usuarios = await db.usuario.findMany({ where: { id: { in: ids }, activo: true }, select: { id: true, email: true, correoNotificacion: true } });
+  return new Map(usuarios.flatMap((u) => {
+    const c = correoDeUsuario(u);
+    return c ? [[u.id, c] as const] : [];
+  }));
 }
 
 export type Aviso = {
@@ -223,46 +232,60 @@ async function reservarEnvio(aviso: Aviso, destinatario: string): Promise<{ id: 
   return previo && !previo.ok && previo.error ? { id: previo.id } : null;
 }
 
-export async function yaEnviado(clave: string, destinatario: string): Promise<boolean> {
-  const fila = await db.correoEnviado.findUnique({ where: { clave_destinatario: { clave, destinatario } }, select: { ok: true } });
-  return Boolean(fila?.ok);
-}
-
 export async function eventosActivos(): Promise<Set<EventoAviso>> {
-  if (!(await correoConfigurado())) return new Set();
   const { desactivados } = await parametros();
-  return new Set((Object.keys(EVENTOS_AVISO) as EventoAviso[]).filter((e) => !desactivados.has(e)));
+  const activos = (Object.keys(EVENTOS_AVISO) as EventoAviso[]).filter((e) => !desactivados.has(e));
+  if (activos.length === 0 || !(await correoConfigurado())) return new Set();
+  return new Set(activos);
 }
 
-export async function enviarAviso(aviso: Aviso): Promise<number> {
-  if (!(await correoConfigurado())) return 0;
+export async function enviarAvisos(avisos: Aviso[]): Promise<number> {
+  if (avisos.length === 0) return 0;
   const { desactivados, urlPlataforma } = await parametros();
-  if (desactivados.has(aviso.evento)) return 0;
-  const destinatarios = [
-    ...new Set([
-      ...(await correosDeUsuarios(aviso.usuarioIds ?? [])),
-      ...(aviso.correos ?? []).map((c) => c?.trim().toLowerCase() ?? "").filter((c) => CORREO.test(c)),
-    ]),
-  ];
-  if (destinatarios.length === 0) return 0;
+  const aplican = avisos.filter((a) => !desactivados.has(a.evento));
+  if (aplican.length === 0) return 0;
+  const envio = await prepararEnvio();
+  if (!envio) return 0;
+  const correos = await correosPorUsuario(aplican.flatMap((a) => a.usuarioIds ?? []));
   const base = urlBasePlataforma(urlPlataforma);
-  const enlace = aviso.enlace && base ? { texto: aviso.enlace.texto, url: `${base}${aviso.enlace.ruta}` } : undefined;
-  const html = plantillaCorreo(escaparHtml(aviso.titulo), aviso.cuerpoHtml, enlace);
   let enviados = 0;
-  for (const destinatario of destinatarios) {
-    const reservado = await reservarEnvio(aviso, destinatario);
-    if (!reservado) continue;
-    const r = await enviarCorreo({ para: [destinatario], asunto: aviso.asunto, html });
-    await db.correoEnviado.update({ where: { id: reservado.id }, data: { ok: r.ok, error: r.ok ? null : r.mensaje.slice(0, 1000) } });
-    if (r.ok) enviados++;
+  for (const aviso of aplican) {
+    const destinatarios = [
+      ...new Set([
+        ...(aviso.usuarioIds ?? []).flatMap((id) => correos.get(id) ?? []),
+        ...(aviso.correos ?? []).map((c) => c?.trim().toLowerCase() ?? "").filter((c) => CORREO.test(c)),
+      ]),
+    ];
+    if (destinatarios.length === 0) continue;
+    const enlace = aviso.enlace && base ? { texto: aviso.enlace.texto, url: `${base}${aviso.enlace.ruta}` } : undefined;
+    const html = plantillaCorreo(escaparHtml(aviso.titulo), aviso.cuerpoHtml, enlace);
+    for (const destinatario of destinatarios) {
+      const reservado = await reservarEnvio(aviso, destinatario);
+      if (!reservado) continue;
+      const r = await envio.enviar({ para: [destinatario], asunto: aviso.asunto, html });
+      await db.correoEnviado.update({ where: { id: reservado.id }, data: { ok: r.ok, error: r.ok ? null : r.mensaje.slice(0, 1000) } });
+      if (r.ok) enviados++;
+    }
   }
   return enviados;
 }
 
-export function avisarEnSegundoPlano(aviso: Aviso) {
-  enSegundoPlano(() => enviarAviso(aviso));
+export function enviarAviso(aviso: Aviso): Promise<number> {
+  return enviarAvisos([aviso]);
 }
 
+export function programarAvisos(eventos: EventoAviso[], construir: () => Promise<Aviso | Aviso[] | null>) {
+  enSegundoPlano(async () => {
+    const { desactivados } = await parametros();
+    if (eventos.every((e) => desactivados.has(e))) return;
+    const avisos = await construir();
+    if (avisos) await enviarAvisos(Array.isArray(avisos) ? avisos : [avisos]);
+  });
+}
+
+export function avisarEnSegundoPlano(aviso: Aviso) {
+  programarAvisos([aviso.evento], async () => aviso);
+}
 export function parrafos(...lineas: (string | null | undefined | false)[]): string {
   return lineas
     .filter((l): l is string => Boolean(l))

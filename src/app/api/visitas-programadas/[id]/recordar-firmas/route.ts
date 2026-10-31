@@ -55,14 +55,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (porAvisar.length > 0) {
     await db.solicitudFirma.updateMany({ where: { id: { in: porAvisar.map((s) => s.id) } }, data: { recordadoEn: new Date(), recordadoPorId: session.userId } });
     for (const s of porAvisar) {
-      await notificar([s.usuarioAsignadoId], {
-        tipo: "FIRMA_RECORDADA",
-        clave: `firma-recordada:${s.id}`,
-        titulo: `Se espera su ${s.rol === "VISTO_BUENO" ? "visto bueno" : "firma"} · concepto ${vt.conceptoNumero}`,
-        mensaje: `${session.nombre} le recuerda que el concepto técnico del expediente ${visita.expediente.numero} espera su ${s.rol === "VISTO_BUENO" ? "visto bueno" : "firma"}.`,
-        enlace: `/firmas/firmar/${s.id}`,
-        expedienteId: visita.expedienteId,
-      });
+      await notificar(
+        [s.usuarioAsignadoId],
+        {
+          tipo: "FIRMA_RECORDADA",
+          clave: `firma-recordada:${s.id}`,
+          titulo: `Se espera su ${s.rol === "VISTO_BUENO" ? "visto bueno" : "firma"} · concepto ${vt.conceptoNumero}`,
+          mensaje: `${session.nombre} le recuerda que el concepto técnico del expediente ${visita.expediente.numero} espera su ${s.rol === "VISTO_BUENO" ? "visto bueno" : "firma"}.`,
+          enlace: `/firmas/firmar/${s.id}`,
+          expedienteId: visita.expedienteId,
+        },
+        { reenviarCorreo: true }
+      );
     }
   }
   return NextResponse.json({

@@ -48,7 +48,7 @@ export const PROCESOS_PROGRAMADOS: ProcesoProgramado[] = [
     nombre: "Alertas de vencimiento por correo",
     descripcion:
       "Envía a cada persona un solo correo con sus alertas nuevas (PQRSD, memorandos, pasos de flujo, informes de contratos y firmas sin atender), según la matriz de notificaciones. Cada alerta se envía una vez por umbral.",
-    horario: "Todos los días, 6:30 a. m.",
+    horario: "Todos los días, 7:30 a. m.",
     rutaManual: "/api/correo/alertas",
   },
 ];

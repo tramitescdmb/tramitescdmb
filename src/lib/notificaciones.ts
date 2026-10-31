@@ -8,13 +8,15 @@ import { avisarEnSegundoPlano, esEventoAviso, escaparHtml, parrafos } from "@/li
 
 type DatosNotificacion = { tipo: TipoNotificacion; clave: string; titulo: string; mensaje: string; enlace: string; expedienteId?: string };
 
-export async function notificar(usuarioIds: string[], datos: DatosNotificacion) {
+export async function notificar(usuarioIds: string[], datos: DatosNotificacion, opciones: { reenviarCorreo?: boolean } = {}) {
   const destinatarios = [...new Set(usuarioIds)];
   if (destinatarios.length === 0) return;
-  const previas = await db.notificacion.findMany({
-    where: { clave: datos.clave, usuarioId: { in: destinatarios } },
-    select: { usuarioId: true, resueltaEn: true, tipo: true, titulo: true, mensaje: true },
-  });
+  const previas = opciones.reenviarCorreo
+    ? []
+    : await db.notificacion.findMany({
+        where: { clave: datos.clave, usuarioId: { in: destinatarios } },
+        select: { usuarioId: true, resueltaEn: true, tipo: true, titulo: true, mensaje: true },
+      });
   const porCorreo = destinatarios.filter((usuarioId) => {
     const p = previas.find((x) => x.usuarioId === usuarioId);
     return !p || p.resueltaEn !== null || p.tipo !== datos.tipo || p.titulo !== datos.titulo || p.mensaje !== datos.mensaje;
