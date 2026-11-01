@@ -5,7 +5,7 @@ import { RegistrarReciente } from "@/components/RegistrarReciente";
 import type { EtapaContratacion } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine, Workflow } from "lucide-react";
+import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, IdCard, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine, Workflow } from "lucide-react";
 import { PanelGestionDocumental } from "@/components/gestion-documental/PanelGestionDocumental";
 import { fichaArchivoDe, firmasPendientesContrato, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -204,7 +204,7 @@ export default async function DetalleExpedienteContractualPage({
           serie: { select: { nombre: true, dependencia: { select: { nombre: true } } } },
         },
       },
-      contratista: { select: { id: true, nombreORazonSocial: true, identificacion: true } },
+      contratista: { select: { id: true, nombreORazonSocial: true, identificacion: true, tipoPersona: true } },
       expedienteRelacionado: { select: { numero: true } },
       expedientesQueLoReferencian: { select: { id: true, numero: true } },
       supervisores: { include: { usuario: { select: { nombre: true, cedulaONit: true } } } },
@@ -602,6 +602,8 @@ export default async function DetalleExpedienteContractualPage({
           <div className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Valor:</dt><dd className="font-medium text-stone-800">{formatearPesosCO(expediente.valor?.toString())}</dd></div>
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º proceso SECOP:</dt><dd className="font-medium text-stone-800">{expediente.numeroProcesoSecop ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">N.º contrato:</dt><dd className="font-medium text-stone-800">{expediente.numeroContrato ?? "Por definir"}</dd></div>
+          <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? <Link href={`/contratacion/contratistas/${expediente.contratista.id}`} className="text-cdmb-700 hover:underline">{expediente.contratista.nombreORazonSocial}</Link> : "Por definir"}</dd></div>
+          <div className="flex items-center gap-1.5"><IdCard className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">{expediente.contratista?.tipoPersona === "JURIDICA" ? "NIT:" : "Cédula:"}</dt><dd className="font-medium tabular-nums text-stone-800">{expediente.contratista?.identificacion ?? "Por definir"}</dd></div>
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Suscripción:</dt>
@@ -623,7 +625,6 @@ export default async function DetalleExpedienteContractualPage({
               )}
             </dd>
           </div>
-          <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-stone-400" aria-hidden /><dt className="text-stone-500">Contratista:</dt><dd className="font-medium text-stone-800">{expediente.contratista ? <Link href={`/contratacion/contratistas/${expediente.contratista.id}`} className="text-cdmb-700 hover:underline">{expediente.contratista.nombreORazonSocial} ({expediente.contratista.identificacion})</Link> : "Por definir"}</dd></div>
           <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 lg:col-span-1">
             <UserCog className="h-3.5 w-3.5 text-stone-400" aria-hidden />
             <dt className="text-stone-500">Supervisor(es):</dt>
