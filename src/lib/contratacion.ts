@@ -1602,6 +1602,14 @@ export async function vincularContratistaPorUsuarioRed(usuarioId: string, valor:
   await vincularPerfilConUsuario(pendiente, usuarioId);
 }
 
+export async function vincularContratistaPorDocumento(usuarioId: string, documento: string | null | undefined): Promise<{ nombre: string; identificacion: string } | null> {
+  if (!documento || documento.replace(/\D/g, "").length < 5) return null;
+  const pendientes = await db.contratista.findMany({ where: { usuarioId: null, tipoPersona: "NATURAL" } });
+  const pendiente = pendientes.find((p) => mismoDocumento(p.identificacion, documento));
+  if (!pendiente || !(await vincularPerfilConUsuario(pendiente, usuarioId))) return null;
+  return { nombre: pendiente.nombreORazonSocial, identificacion: pendiente.identificacion };
+}
+
 export async function vincularPerfilConUsuario(pendiente: Prisma.ContratistaGetPayload<object>, usuarioId: string): Promise<boolean> {
   const [usuario, yaVinculado] = await Promise.all([
     db.usuario.findUnique({ where: { id: usuarioId }, select: { ...SELECT_USUARIO_CONTRATISTA, modulosAcceso: true } }),

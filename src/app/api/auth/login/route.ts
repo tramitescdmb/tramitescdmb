@@ -11,7 +11,7 @@ import {
   guardarTokenDirectorioActivo,
   type PerfilDirectorio,
 } from "@/lib/directorio-activo";
-import { sincronizarContratistaDeUsuario, vincularContratistaPorUsuarioRed, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
+import { sincronizarContratistaDeUsuario, vincularContratistaPorDocumento, vincularContratistaPorUsuarioRed, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { nombreInicialDesdeUsuarioRed } from "@/lib/nombre-usuario-red";
 import { destinoTrasIngreso } from "@/lib/destino-login";
 import { mismoDocumento } from "@/lib/datos-persona";
@@ -292,6 +292,16 @@ async function ingresarPorDirectorioActivo(
 
   usuario = await completarDesdeDirectorio(usuario, perfil);
   await vincularContratistaPorUsuarioRed(usuario.id, usuarioRed).catch(() => {});
+  const vinculadoPorDocumento = await vincularContratistaPorDocumento(usuario.id, perfil.documento).catch(() => null);
+  if (vinculadoPorDocumento) {
+    await sincronizarContratistaDeUsuario(usuario.id).catch(() => {});
+    await registrarAuditoria({
+      tipo: "USUARIO_ACTUALIZADO",
+      descripcion: `El contratista ${vinculadoPorDocumento.nombre} (C.C. ${vinculadoPorDocumento.identificacion}) quedó vinculado a su cuenta del dominio ${usuarioRed} al ingresar por directorio activo.`,
+      usuarioId: usuario.id,
+      emailIntento: usuarioRed,
+    });
+  }
   await vincularSupervisionesDeUsuario(usuario.id).catch(() => {});
   usuario = (await db.usuario.findUnique({ where: { id: usuario.id }, include: { cargoAsignaciones: { include: { cargo: true } } } })) ?? usuario;
 

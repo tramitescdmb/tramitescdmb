@@ -334,11 +334,14 @@ export default async function ContratacionAyudaPage() {
           SECOP II: así el expediente tiene contratista desde Precontractual.
         </p>
         <p>
-          <strong>Vinculación sin usuario de red.</strong> Si el perfil se registró sin usuario de red, la persona ingresa con su cuenta
-          de dominio y el inicio le pide su documento («¿Es contratista de la CDMB?»). La solicitud aparece en Contratistas, en
-          «Vinculaciones por confirmar», y el personal de contratación la confirma con un clic. Cada día el sistema vincula además, sin
-          intervención, los perfiles cuyo documento ya tenga un usuario creado por el administrador. Si SECOP II reporta un contratista
-          que no está registrado, GECON crea su perfil con el documento y el nombre de SECOP II.
+          <strong>Vinculación con el directorio activo.</strong> Al registrar el perfil, GECON consulta la cédula en el directorio activo:
+          si la persona ya tiene cuenta de dominio, crea o encuentra su usuario con los datos del directorio y lo vincula de inmediato. Si
+          aún no la tiene, el perfil queda pendiente (o con cuenta temporal, desde «Crear usuario» en su ficha) y se vincula solo cuando
+          sistemas cree sus credenciales: cada noche se consultan por cédula los contratistas sin usuario y las cuentas temporales, y al
+          primer ingreso por directorio activo el perfil se vincula con la cédula que reporta el dominio. Si el dominio no reporta la
+          cédula, el inicio le pide su documento («¿Es contratista de la CDMB?») y el personal de contratación confirma la solicitud en
+          Contratistas, «Vinculaciones por confirmar». Si SECOP II reporta un contratista que no está registrado, GECON crea su perfil con
+          el documento y el nombre de SECOP II.
         </p>
         <p>
           <strong>Carga masiva.</strong> Administrador y Jefe de Contratación pueden importar perfiles mínimos desde un archivo CSV
