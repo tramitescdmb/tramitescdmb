@@ -111,7 +111,7 @@ export function SidebarNav({
   ];
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
+    <nav className="scroll-menu flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
       <Grupo items={principal} activo={activo} colapsado={colapsado} pendientes={pendientes} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>

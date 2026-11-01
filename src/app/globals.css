@@ -79,6 +79,16 @@ body {
   display: none;
 }
 
+.scroll-menu {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scroll-menu:hover,
+.scroll-menu:focus-within {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
 main:fullscreen {
   overflow-y: auto;
   background-color: #f5f7f6;
