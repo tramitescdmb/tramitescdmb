@@ -1,5 +1,6 @@
 import { ExternalLink, Landmark } from "lucide-react";
 import { BotonSincronizarSecop } from "@/components/BotonSincronizarSecop";
+import { EnlaceSecopExpediente } from "@/components/EnlaceSecopExpediente";
 import { consolidarModificaciones } from "@/lib/secop-datos";
 
 type Fila = Record<string, unknown>;
@@ -186,10 +187,14 @@ export function SecopPanel({
   expedienteId,
   espejo,
   puedeSincronizar,
+  puedeCambiarEnlace,
+  documentoContratista,
 }: {
   expedienteId: string;
   espejo: { idContrato: string; datos: Fila; facturas: Fila[]; garantias: Fila[]; modificaciones: Fila[]; adiciones: Fila[]; suspensiones: Fila[]; sincronizadoEn: Date } | null;
   puedeSincronizar: boolean;
+  puedeCambiarEnlace: boolean;
+  documentoContratista: string | null;
 }) {
   const d = espejo?.datos ?? {};
   const url = d.urlproceso && typeof d.urlproceso === "object" ? String((d.urlproceso as { url?: unknown }).url ?? "") : "";
@@ -215,7 +220,14 @@ export function SecopPanel({
               Ver en SECOP II <ExternalLink className="h-3 w-3" aria-hidden />
             </a>
           )}
-          {puedeSincronizar && <BotonSincronizarSecop expedienteId={expedienteId} enlazado={Boolean(espejo)} />}
+          {puedeSincronizar && (espejo || !puedeCambiarEnlace) && <BotonSincronizarSecop expedienteId={expedienteId} enlazado={Boolean(espejo)} />}
+          {puedeCambiarEnlace && (
+            <EnlaceSecopExpediente
+              expedienteId={expedienteId}
+              enlazado={espejo ? { idContrato: espejo.idContrato, numeroContrato: d.referencia_del_contrato ? String(d.referencia_del_contrato) : null } : null}
+              documentoContratista={documentoContratista}
+            />
+          )}
         </span>
       </summary>
 

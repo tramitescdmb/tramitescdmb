@@ -24,6 +24,7 @@ import {
   ArrowRight,
   UserCog,
   X,
+  Landmark,
 } from "lucide-react";
 import { Field } from "@/components/Field";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
@@ -132,7 +133,14 @@ export function NuevoExpedienteContractualForm({
   const [causal, setCausal] = useState("");
   const [codigoProceso, setCodigoProceso] = useState("");
   const [idContratoSecop, setIdContratoSecop] = useState<string | null>(null);
+  const [consultaSecop, setConsultaSecop] = useState<{ texto: string; n: number } | null>(null);
+  const secopRef = useRef<HTMLDivElement>(null);
   const permitidos: string[] = tiposPermitidos(modalidadSeleccion, causal);
+
+  function buscarContratosDelContratista(identificacion: string) {
+    setConsultaSecop((prev) => ({ texto: identificacion, n: (prev?.n ?? 0) + 1 }));
+    secopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function ajustarTipo(lista: string[]) {
     if (lista.length === 1) setTipoContrato(lista[0]!);
@@ -266,6 +274,7 @@ export function NuevoExpedienteContractualForm({
     setSupervisorUsuarioIds(new Set());
     setPersonalIds(new Set());
     setContratista(null);
+    setIdContratoSecop(null);
     setBorradorRecuperado(false);
     escribirBorrador(null);
   }
@@ -334,7 +343,9 @@ export function NuevoExpedienteContractualForm({
             </button>
           </div>
         )}
-        <TraerDeSecop onAplicar={aplicarSecop} />
+        <div ref={secopRef} className="scroll-mt-4">
+          <TraerDeSecop onAplicar={aplicarSecop} consulta={consultaSecop} />
+        </div>
         <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
             <Field label="Objeto del contrato" icon={<FileText className="h-4 w-4" />} help="Opcional: si se deja vacío, se toma de SECOP II al enlazar el contrato.">
               <textarea
@@ -471,14 +482,26 @@ export function NuevoExpedienteContractualForm({
                     <span className="block text-xs text-emerald-700">Seleccionado como contratista del expediente</span>
                   </span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setContratista(null)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden />
-                  Cambiar
-                </button>
+                <span className="flex flex-wrap items-center gap-2">
+                  {!idContratoSecop && contratista.identificacion && (
+                    <button
+                      type="button"
+                      onClick={() => buscarContratosDelContratista(contratista.identificacion)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-cdmb-200 bg-cdmb-50 px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-100"
+                    >
+                      <Landmark className="h-3.5 w-3.5" aria-hidden />
+                      Ver sus contratos en SECOP II
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setContratista(null)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                    Cambiar
+                  </button>
+                </span>
               </div>
             ) : (
               <BuscadorContratistaUsuario onElegir={setContratista} claseCampo={campoCls} />

@@ -808,6 +808,8 @@ export default async function DetalleExpedienteContractualPage({
             : null
         }
         puedeSincronizar={puedeRegistrarModificacionContrato(permisos, expediente)}
+        puedeCambiarEnlace={puedeEditarDatosGenerales}
+        documentoContratista={expediente.contratista?.identificacion ?? null}
       />
 
       <PestanasDetalle

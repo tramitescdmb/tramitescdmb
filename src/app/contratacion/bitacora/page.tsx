@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, LockOpen, FolderTree, ShieldCheck, UserSquare2, Users, CalendarClock, Link2, Circle, Send, ThumbsUp, ClipboardCheck, UploadCloud, type LucideIcon } from "lucide-react";
+import { ScrollText, FilePlus2, FileUp, FileSignature, FileX2, FilePen, CheckCircle2, Trash2, ArrowRightCircle, Undo2, Lock, LockOpen, FolderTree, ShieldCheck, UserSquare2, Users, CalendarClock, Link2, Circle, Send, ThumbsUp, ClipboardCheck, UploadCloud, Unlink, type LucideIcon } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarGecon } from "@/lib/permisos";
 import { TituloSeccion, EstadoVacio } from "@/components/sgdea/ui";
@@ -28,6 +28,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; clase: string; texto: string 
   EXPEDIENTE_REABIERTO: { icono: LockOpen, clase: "text-amber-600", texto: "Expediente reabierto" },
   MODIFICACION_CONTRATO: { icono: CalendarClock, clase: "text-acento-600", texto: "Modificación del contrato" },
   SECOP_SINCRONIZADO: { icono: UploadCloud, clase: "text-cdmb-700", texto: "Sincronizado con SECOP II" },
+  SECOP_DESVINCULADO: { icono: Unlink, clase: "text-amber-600", texto: "Desvinculado de SECOP II" },
   RECLASIFICACION_TRD: { icono: FolderTree, clase: "text-cdmb-600", texto: "Clasificación TRD" },
   NIVEL_ACCESO_CAMBIADO: { icono: ShieldCheck, clase: "text-amber-600", texto: "Nivel de acceso" },
   EXPEDIENTE_ELIMINADO: { icono: Trash2, clase: "text-red-600", texto: "Expediente eliminado" },

@@ -26,7 +26,14 @@ import type { PermisosUsuario } from "@/lib/permisos";
 import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 import { errorCuantia, type TopeCuantia } from "@/lib/cuantias";
-import { buscarContratosSecop, buscarContratosSecopPorContratista, consultarExpedienteSecop, contratoDesdeFila } from "@/lib/secop-datos";
+import {
+  buscarContratosSecopPorReferencia,
+  consultarExpedienteSecop,
+  contratoDesdeFila,
+  firmadoDesdeLaApertura,
+  listarContratosSecopDeContratista,
+  type ContratoSecop,
+} from "@/lib/secop-datos";
 import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion";
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
@@ -1673,7 +1680,7 @@ function jsonEstable(v: unknown): string {
   return JSON.stringify(v ?? null);
 }
 
-export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId: string | null) {
+export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId: string | null, idElegido?: string) {
   const expediente = await db.expedienteContractual.findUniqueOrThrow({
     where: { id: expedienteId },
     select: {
@@ -1698,25 +1705,39 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     },
   });
   let idContrato = expediente.idContratoSecop;
+  if (idElegido) {
+    if (idContrato && idContrato !== idElegido) throw new Error("El expediente ya está enlazado con otro contrato de SECOP II: desvincúlelo primero.");
+    const otro = await db.expedienteContractual.findFirst({
+      where: { idContratoSecop: idElegido, eliminado: false, id: { not: expedienteId } },
+      select: { numero: true, codigoProceso: true },
+    });
+    if (otro) throw new Error(`Ese contrato ya está enlazado al expediente ${otro.codigoProceso ?? otro.numero}.`);
+    idContrato = idElegido;
+  }
   if (!idContrato) {
     const ref = expediente.numeroContrato ?? expediente.numeroProcesoSecop;
-    let candidatos = ref ? await buscarContratosSecop(ref) : [];
+    let candidatos = ref ? await buscarContratosSecopPorReferencia(ref) : [];
     let criterio = ref ? `la referencia ${ref}` : "";
     if (candidatos.length === 0 && expediente.contratista?.identificacion) {
-      const desde = new Date(expediente.createdAt.getTime() - 60 * 24 * 60 * 60 * 1000);
-      const enlazados = new Set(
-        (await db.expedienteContractual.findMany({ where: { idContratoSecop: { not: null }, id: { not: expedienteId } }, select: { idContratoSecop: true } })).map(
-          (e) => e.idContratoSecop
-        )
-      );
-      candidatos = (await buscarContratosSecopPorContratista(expediente.contratista.identificacion, desde, expediente.createdAt)).filter((c) => !enlazados.has(c.idContrato));
-      criterio = `el documento del contratista ${expediente.contratista.identificacion}`;
+      const documento = expediente.contratista.identificacion;
+      const [enlazados, desvinculado, todos] = await Promise.all([
+        db.expedienteContractual.findMany({ where: { idContratoSecop: { not: null }, eliminado: false, id: { not: expedienteId } }, select: { idContratoSecop: true } }),
+        db.eventoContratacion.count({ where: { expedienteId, tipo: "SECOP_DESVINCULADO" } }),
+        listarContratosSecopDeContratista(documento, new Date(expediente.createdAt.getTime() - 24 * 60 * 60 * 1000)),
+      ]);
+      if (desvinculado > 0) throw new Error("Se desvinculó de SECOP II: el contrato se elige en el expediente con «Enlazar con SECOP II».");
+      const ocupados = new Set(enlazados.map((e) => e.idContratoSecop));
+      candidatos = todos.filter((c) => !ocupados.has(c.idContrato) && firmadoDesdeLaApertura(c, expediente.createdAt));
+      criterio = `el documento del contratista ${documento} firmado después de abrir el expediente`;
+      if (candidatos.length === 0 && todos.some((c) => !ocupados.has(c.idContrato))) {
+        throw new Error(`El contratista ${documento} tiene contratos en SECOP II anteriores a la apertura del expediente: elija cuál con «Enlazar con SECOP II».`);
+      }
     }
     if (!criterio) throw new Error("Aún no hay con qué buscarlo en SECOP II: vincule el contratista o escriba el número de contrato o de proceso.");
     if (candidatos.length === 0) throw new Error(`Aún no aparece en SECOP II un contrato de la CDMB con ${criterio}.`);
     if (candidatos.length > 1) {
       throw new Error(
-        `Hay ${candidatos.length} contratos en SECOP II con ${criterio} (${candidatos.map((c) => c.numeroContrato).join(", ")}): escriba el número de contrato en los datos generales.`
+        `Hay ${candidatos.length} contratos en SECOP II con ${criterio} (${candidatos.map((c) => c.numeroContrato).join(", ")}): elija cuál con «Enlazar con SECOP II».`
       );
     }
     idContrato = candidatos[0]!.idContrato;
@@ -1725,6 +1746,16 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
   const secop = await consultarExpedienteSecop(idContrato);
   if (!secop) throw new Error(`El contrato ${idContrato} no aparece en SECOP II para la CDMB.`);
   const c = contratoDesdeFila(secop.datos);
+  if (idElegido && !expediente.idContratoSecop) {
+    const mismoNumero = [
+      ...(c.numeroContrato ? [{ numeroContrato: c.numeroContrato }] : []),
+      ...(c.numeroProcesoSecop ? [{ numeroProcesoSecop: c.numeroProcesoSecop }] : []),
+    ];
+    const otro = mismoNumero.length
+      ? await db.expedienteContractual.findFirst({ where: { eliminado: false, id: { not: expedienteId }, OR: mismoNumero }, select: { numero: true, codigoProceso: true } })
+      : null;
+    if (otro) throw new Error(`Ese contrato ya está registrado en el expediente ${otro.codigoProceso ?? otro.numero}.`);
+  }
   const fechaDb = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00Z`) : null);
 
 
@@ -1810,6 +1841,79 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     await registrarEventoContratacion(expedienteId, "SECOP_SINCRONIZADO", `${resumen.join(" · ")}${cambio || Object.keys(completar).length > 0 ? "" : " · sin cambios"}`, usuarioId);
   }
   return { idContrato, completados: Object.keys(completar).length, cambio: cambio || Object.keys(completar).length > 0 };
+}
+
+export async function desvincularExpedienteSecop(expedienteId: string, usuarioId: string) {
+  const expediente = await db.expedienteContractual.findUniqueOrThrow({
+    where: { id: expedienteId },
+    select: { idContratoSecop: true, numeroContrato: true },
+  });
+  if (!expediente.idContratoSecop) throw new Error("El expediente no está enlazado con SECOP II.");
+  await db.$transaction([
+    db.secopContratoEspejo.deleteMany({ where: { expedienteId } }),
+    db.expedienteContractual.update({
+      where: { id: expedienteId },
+      data: {
+        idContratoSecop: null,
+        numeroContrato: null,
+        numeroProcesoSecop: null,
+        valor: null,
+        fechaSuscripcion: null,
+        fechaInicio: null,
+        fechaFinEstimada: null,
+        supervisorSecopNombre: null,
+        supervisorSecopDocumento: null,
+      },
+    }),
+  ]);
+  await registrarEventoContratacion(
+    expedienteId,
+    "SECOP_DESVINCULADO",
+    `Desvinculado del contrato ${expediente.numeroContrato ?? expediente.idContratoSecop} de SECOP II (${expediente.idContratoSecop}).`,
+    usuarioId
+  );
+}
+
+export type ContratoSecopAnotado = ContratoSecop & {
+  usuario: { id: string; nombre: string; email: string; cedulaONit: string | null } | null;
+  expedienteExistente: { id: string; numero: string; codigoProceso: string | null } | null;
+};
+
+export async function anotarContratosSecop(contratos: ContratoSecop[], excluirExpedienteId?: string): Promise<ContratoSecopAnotado[]> {
+  const valores = (clave: "idContrato" | "numeroContrato" | "numeroProcesoSecop") => contratos.map((c) => c[clave]).filter((v): v is string => Boolean(v));
+  const documentos = [...new Set(contratos.map((c) => c.contratista.documento).filter((d): d is string => Boolean(d)))];
+  const [usuarios, existentes] = await Promise.all([
+    documentos.length
+      ? db.usuario.findMany({ where: { cedulaONit: { in: documentos }, activo: true }, select: { id: true, nombre: true, email: true, cedulaONit: true } })
+      : Promise.resolve([]),
+    contratos.length
+      ? db.expedienteContractual.findMany({
+          where: {
+            eliminado: false,
+            ...(excluirExpedienteId ? { id: { not: excluirExpedienteId } } : {}),
+            OR: [
+              { idContratoSecop: { in: valores("idContrato") } },
+              { numeroContrato: { in: valores("numeroContrato") } },
+              { numeroProcesoSecop: { in: valores("numeroProcesoSecop") } },
+            ],
+          },
+          select: { id: true, numero: true, codigoProceso: true, idContratoSecop: true, numeroContrato: true, numeroProcesoSecop: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  return contratos.map((c) => {
+    const e = existentes.find(
+      (x) =>
+        (c.idContrato && x.idContratoSecop === c.idContrato) ||
+        (c.numeroContrato && x.numeroContrato === c.numeroContrato) ||
+        (c.numeroProcesoSecop && x.numeroProcesoSecop === c.numeroProcesoSecop)
+    );
+    return {
+      ...c,
+      usuario: usuarios.find((u) => u.cedulaONit === c.contratista.documento) ?? null,
+      expedienteExistente: e ? { id: e.id, numero: e.numero, codigoProceso: e.codigoProceso } : null,
+    };
+  });
 }
 
 export async function sincronizarSecopTodos(): Promise<{ total: number; ok: number; cambios: number; vinculados: number; errores: string[] }> {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { causalDesdeSecop, contratoDesdeFila, modalidadDesdeSecop, tipoDesdeSecop } from "@/lib/secop-datos";
+import { causalDesdeSecop, contratoDesdeFila, documentoDeBusqueda, firmadoDesdeLaApertura, inicioBusquedaPorDocumento, modalidadDesdeSecop, tipoDesdeSecop } from "@/lib/secop-datos";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 
 describe("mapeo de SECOP II a GECON", () => {
@@ -53,5 +53,29 @@ describe("mapeo de SECOP II a GECON", () => {
   it("toma el nombre y el documento del supervisor cuando SECOP II los reporta", () => {
     const c = contratoDesdeFila({ nombre_supervisor: "NELSON ANDRES CHANG PEREZ", n_mero_de_documento_supervisor: "91.511.619" });
     expect(c).toMatchObject({ supervisor: "NELSON ANDRES CHANG PEREZ", supervisorDocumento: "91511619" });
+  });
+});
+
+describe("búsqueda y enlace por documento del contratista", () => {
+  it("distingue un documento de un número de contrato o de proceso", () => {
+    expect(documentoDeBusqueda("1100504091")).toBe("1100504091");
+    expect(documentoDeBusqueda("1.100.504.091")).toBe("1100504091");
+    expect(documentoDeBusqueda("890201573-1")).toBe("890201573");
+    expect(documentoDeBusqueda("210-17508-8")).toBeNull();
+    expect(documentoDeBusqueda("CO1.BDOS.10761250")).toBeNull();
+    expect(documentoDeBusqueda("1234")).toBeNull();
+  });
+
+  it("busca desde el 1 de enero del año anterior", () => {
+    expect(inicioBusquedaPorDocumento(new Date("2026-11-01T15:00:00Z")).toISOString().slice(0, 10)).toBe("2025-01-01");
+  });
+
+  it("solo toma como firmado después de la apertura lo firmado desde el día de creación en Colombia", () => {
+    const apertura = new Date("2026-10-29T15:06:11Z");
+    expect(firmadoDesdeLaApertura({ fechaSuscripcion: "2026-08-31" }, apertura)).toBe(false);
+    expect(firmadoDesdeLaApertura({ fechaSuscripcion: "2026-01-29" }, apertura)).toBe(false);
+    expect(firmadoDesdeLaApertura({ fechaSuscripcion: "2026-10-29" }, apertura)).toBe(true);
+    expect(firmadoDesdeLaApertura({ fechaSuscripcion: null }, apertura)).toBe(false);
+    expect(firmadoDesdeLaApertura({ fechaSuscripcion: "2026-10-29" }, new Date("2026-10-30T02:00:00Z"))).toBe(true);
   });
 });

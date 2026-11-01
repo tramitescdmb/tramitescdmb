@@ -238,8 +238,11 @@ export default async function ContratacionAyudaPage() {
         <p>
           <strong>SECOP II.</strong> SECOP II es la fuente oficial de los datos del contrato. El expediente se crea en GECON desde la etapa
           precontractual; cada día GECON consulta los datos abiertos de SECOP II (datos.gov.co, NIT de la CDMB) y enlaza el expediente con su
-          contrato: por el número de contrato o de proceso o, si faltan, por el documento del contratista entre los contratos firmados o
-          vigentes desde la creación del expediente. Si encuentra varios, pide escribir el número de contrato. Una vez enlazado, el número
+          contrato por el número de contrato o de proceso. Por el documento del contratista solo enlaza sin preguntar cuando hay un único
+          contrato firmado después de abrir el expediente; si hay varios, o son anteriores a la apertura, el expediente queda «Sin enlazar» y
+          «Enlazar con SECOP II» lista los contratos del contratista con la CDMB (desde el año anterior) para elegir el que corresponde.
+          «Desvincular» retira un enlace equivocado (número, valor, fechas y panel; los documentos, el contratista y los supervisores se
+          conservan) y abre de nuevo la búsqueda; tras desvincular, la sincronización diaria ya no enlaza por documento. Una vez enlazado, el número
           de contrato y de proceso, el objeto, la modalidad, la causal, el tipo, el valor, las fechas de firma, inicio y terminación y el
           contratista se toman de SECOP II, se sobrescriben en cada sincronización y no se editan en GECON. Cuando SECOP II reporta el
           contrato firmado, el expediente pasa solo de Precontractual a Contractual y queda anotado en la bitácora. El panel «SECOP II» muestra

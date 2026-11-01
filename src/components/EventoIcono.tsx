@@ -1,4 +1,4 @@
-import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, CalendarClock, type LucideIcon } from "lucide-react";
+import { FilePlus, RefreshCw, ArrowRight, Paperclip, Trash2, MessageSquare, Users, MapPin, Circle, FilePen, FileSignature, CheckCircle2, FileX2, Send, ThumbsUp, FolderTree, ShieldCheck, Archive, LockOpen, CalendarClock, Unlink, type LucideIcon } from "lucide-react";
 
 const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: string }> = {
   CREACION: { icono: FilePlus, etiqueta: "Creación del expediente", clase: "bg-cdmb-100 text-cdmb-700" },
@@ -21,6 +21,7 @@ const EVENTOS: Record<string, { icono: LucideIcon; etiqueta: string; clase: stri
   EXPEDIENTE_REABIERTO: { icono: LockOpen, etiqueta: "Expediente reabierto", clase: "bg-amber-100 text-amber-700" },
   MODIFICACION_CONTRATO: { icono: CalendarClock, etiqueta: "Modificación del contrato", clase: "bg-orange-100 text-orange-700" },
   SECOP_SINCRONIZADO: { icono: RefreshCw, etiqueta: "Sincronizado con SECOP II", clase: "bg-cdmb-100 text-cdmb-700" },
+  SECOP_DESVINCULADO: { icono: Unlink, etiqueta: "Desvinculado de SECOP II", clase: "bg-amber-100 text-amber-700" },
   VISITA_PROGRAMADA: { icono: CalendarClock, etiqueta: "Visita técnica programada", clase: "bg-sky-100 text-sky-700" },
 };
 const EVENTO_DEFECTO = { icono: Circle, clase: "bg-stone-200 text-stone-600" };
