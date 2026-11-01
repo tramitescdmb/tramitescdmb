@@ -45,7 +45,7 @@
     "resumen": "Cada contrato tiene un único expediente, que se abre en la etapa Precontractual.",
     "pasos": [
       "Administrador, Jefe o Personal de Contratación abre «Nuevo expediente» (si lo crea el Personal, queda asignado a él).",
-      "Opcional: en «Traer datos de SECOP II» se escribe el número del contrato, el ID del proceso o el documento del contratista y se pulsa «Consultar» para llenar el formulario; si el contratista tiene varios contratos, se elige el que corresponde. Con el contratista ya elegido, «Ver sus contratos en SECOP II» hace la misma búsqueda.",
+      "Opcional: en «Traer datos de SECOP II» se escribe el número del contrato, el ID del proceso o el documento del contratista y se pulsa «Consultar» para llenar el formulario; si el contratista tiene varios contratos, se elige el que corresponde. Con el contratista ya elegido, «Ver sus contratos en SECOP II» hace la misma búsqueda. «Limpiar» borra la búsqueda y los datos traídos de SECOP II, incluido el contratista, para intentar con otro.",
       "Elige la modalidad de selección; en contratación directa, también la causal.",
       "Elige el tipo de contrato entre los que admite esa modalidad o causal.",
       "Diligencia objeto, valor, dependencia solicitante, fechas y número de proceso en SECOP II.",

@@ -168,6 +168,22 @@ export function NuevoExpedienteContractualForm({
     if (c.usuario) setContratista({ tipo: "usuario", usuarioId: c.usuario.id, nombre: c.usuario.nombre, identificacion: c.usuario.cedulaONit ?? "" });
   }
 
+  function limpiarSecop() {
+    if (!idContratoSecop) return;
+    setIdContratoSecop(null);
+    setObjeto("");
+    setModalidadSeleccion(modalidades[0]?.valor ?? "");
+    setCausal("");
+    setTipoContrato("");
+    setValor("");
+    setNumeroContrato("");
+    setNumeroProcesoSecop("");
+    setFechaSuscripcion("");
+    setFechaInicio("");
+    setFechaFinEstimada("");
+    setContratista(null);
+  }
+
   function elegirCausal(valor: string) {
     setCausal(valor);
     ajustarTipo(tiposPermitidos(modalidadSeleccion, valor));
@@ -344,7 +360,7 @@ export function NuevoExpedienteContractualForm({
           </div>
         )}
         <div ref={secopRef} className="scroll-mt-4">
-          <TraerDeSecop onAplicar={aplicarSecop} consulta={consultaSecop} />
+          <TraerDeSecop onAplicar={aplicarSecop} onLimpiar={limpiarSecop} conDatos={Boolean(idContratoSecop)} consulta={consultaSecop} />
         </div>
         <SeccionFormulario n={1} icon={ClipboardList} titulo="Información del contrato">
             <Field label="Objeto del contrato" icon={<FileText className="h-4 w-4" />} help="Opcional: si se deja vacío, se toma de SECOP II al enlazar el contrato.">

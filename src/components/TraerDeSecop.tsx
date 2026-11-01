@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { DownloadCloud, ExternalLink } from "lucide-react";
+import { DownloadCloud, Eraser, ExternalLink } from "lucide-react";
 import type { ContratoSecop } from "@/lib/secop-datos";
 import { formatearFechaCalendario } from "@/lib/fecha";
 
@@ -48,7 +48,17 @@ export function TarjetaContratoSecop({ contrato: c, accion, aviso }: { contrato:
   );
 }
 
-export function TraerDeSecop({ onAplicar, consulta }: { onAplicar: (c: ContratoSecopRespuesta) => void; consulta?: { texto: string; n: number } | null }) {
+export function TraerDeSecop({
+  onAplicar,
+  onLimpiar,
+  conDatos = false,
+  consulta,
+}: {
+  onAplicar: (c: ContratoSecopRespuesta) => void;
+  onLimpiar?: () => void;
+  conDatos?: boolean;
+  consulta?: { texto: string; n: number } | null;
+}) {
   const [ref, setRef] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +97,16 @@ export function TraerDeSecop({ onAplicar, consulta }: { onAplicar: (c: ContratoS
     setResultados(null);
   }
 
+  function limpiar() {
+    setRef("");
+    setResultados(null);
+    setError(null);
+    setAplicado(null);
+    onLimpiar?.();
+  }
+
+  const hayAlgo = Boolean(ref.trim() || resultados || error || aplicado || conDatos);
+
   return (
     <div className="space-y-2 rounded-xl border border-cdmb-100 bg-cdmb-50/40 px-4 py-3">
       <div className="flex flex-wrap items-end gap-2">
@@ -94,7 +114,13 @@ export function TraerDeSecop({ onAplicar, consulta }: { onAplicar: (c: ContratoS
           Traer datos de SECOP II
           <input
             value={ref}
-            onChange={(e) => setRef(e.target.value)}
+            onChange={(e) => {
+              setRef(e.target.value);
+              if (resultados || error) {
+                setResultados(null);
+                setError(null);
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -114,6 +140,18 @@ export function TraerDeSecop({ onAplicar, consulta }: { onAplicar: (c: ContratoS
           <DownloadCloud className="h-3.5 w-3.5" aria-hidden />
           {cargando ? "Consultando…" : "Consultar"}
         </button>
+        {hayAlgo && (
+          <button
+            type="button"
+            onClick={limpiar}
+            disabled={cargando}
+            title="Borra la búsqueda y los datos traídos de SECOP II, incluido el contratista"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+          >
+            <Eraser className="h-3.5 w-3.5" aria-hidden />
+            Limpiar
+          </button>
+        )}
       </div>
       <p className="text-[11px] text-stone-500">Datos abiertos de SECOP II en datos.gov.co. Revise y complete lo que traiga antes de crear el expediente.</p>
       {error && <p className="text-xs text-amber-800">{error}</p>}
