@@ -76,8 +76,8 @@
     "categoria": 1,
     "orden": 10,
     "titulo": "Integración con servidores de correo electrónico",
-    "estado": "PENDIENTE",
-    "nota": "No hay proveedor de correo configurado en el proyecto"
+    "estado": "COMPLETO",
+    "nota": "Integración con Microsoft 365 por Microsoft Graph: el sistema envía desde el buzón institucional sistemas@cdmb.gov.co; cuentas y claves se administran en Administración → Correo institucional, con «Probar conexión» y aviso de claves por vencer. Registro de envíos con estados (en curso, en cola, enviado, fallido, rebotado, omitido), cola de reintentos y lista de supresión. La lectura de rebotes del buzón remitente está lista y requiere el permiso Mail.ReadWrite. En producción ya se enviaron correos de SGDEA, GECON y Trámites ambientales."
   },
   {
     "numero": "1.11",
@@ -676,8 +676,8 @@
     "categoria": 3,
     "orden": 8,
     "titulo": "Notificaciones y avisos por correo electrónico",
-    "estado": "PENDIENTE",
-    "nota": "Sin proveedor de correo"
+    "estado": "COMPLETO",
+    "nota": "Matriz de notificaciones por módulo (SGDEA, GECON, Trámites ambientales y Administración) en Administración → Correo institucional: cada notificación se enciende o apaga y se prueba con su plantilla real. Avisos inmediatos (firmas, flujos, asignaciones) con hasta 4 intentos en 3 días y resumen diario de alertas (vencimientos, firmas sin atender, memorandos por vencer). Enviados en producción desde sistemas@cdmb.gov.co."
   },
   {
     "numero": "3.9",
