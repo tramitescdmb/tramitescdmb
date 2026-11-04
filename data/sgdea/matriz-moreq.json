@@ -677,7 +677,7 @@
     "orden": 8,
     "titulo": "Notificaciones y avisos por correo electrónico",
     "estado": "COMPLETO",
-    "nota": "Matriz de notificaciones por módulo (SGDEA, GECON, Trámites ambientales y Administración) en Administración → Correo institucional: cada notificación se enciende o apaga y se prueba con su plantilla real. Avisos inmediatos (firmas, flujos, asignaciones) con hasta 4 intentos en 3 días y resumen diario de alertas (vencimientos, firmas sin atender, memorandos por vencer). Enviados en producción desde sistemas@cdmb.gov.co."
+    "nota": "Matriz de notificaciones por módulo (SGDEA, GECON, Trámites ambientales y Administración) en Administración → Correo institucional: cada notificación se enciende o apaga y se prueba con su plantilla real. Avisos inmediatos (firmas, flujos, asignaciones) con hasta 4 intentos en 3 días y resumen diario de alertas (vencimientos, firmas sin atender, memorandos por vencer). Enviados en producción desde sistemas@cdmb.gov.co. Cada notificación tiene plantilla editable en Correo institucional → Plantillas (asunto, título, cuerpo y botón, con editor visual o HTML, imágenes, enlaces y recuadros), con palabras reservadas como [RADICADO], [NOMBRE] o [LISTA_ALERTAS] que se reemplazan por los datos reales al enviar, diseño general con encabezado y pie comunes, vista previa, envío de prueba y restauración de la predeterminada."
   },
   {
     "numero": "3.9",
