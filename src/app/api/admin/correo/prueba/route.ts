@@ -5,13 +5,36 @@ import { enviarCorreo, olvidarConfiguracionCorreo, plantillaCorreo } from "@/lib
 import { registrarAuditoria } from "@/lib/auditoria";
 import { correoValido, escaparHtml, esClaveMatriz } from "@/lib/avisos-correo";
 import { enviarPruebaAviso } from "@/lib/pruebas-avisos";
+import { esClavePlantilla, limpiarHtml, plantillaDeEvento } from "@/lib/plantillas-correo-base";
+import type { Borrador } from "@/lib/plantillas-correo";
+import { partirClave, type ClaveMatriz } from "@/lib/avisos-correo";
+
+const texto = (v: unknown) => (typeof v === "string" ? v : "");
+
+/** Versión sin guardar que el editor de plantillas quiere probar. */
+function leerBorrador(clave: ClaveMatriz, valor: unknown): Borrador | undefined {
+  if (!valor || typeof valor !== "object") return undefined;
+  const b = valor as Record<string, unknown>;
+  const borrador: Borrador = {};
+  if (b.diseno && typeof b.diseno === "object") {
+    const d = b.diseno as Record<string, unknown>;
+    borrador.diseno = { antetitulo: texto(d.antetitulo), encabezado: limpiarHtml(texto(d.encabezado)), pie: limpiarHtml(texto(d.pie)) };
+  }
+  if (b.plantilla && typeof b.plantilla === "object") {
+    const p = b.plantilla as Record<string, unknown>;
+    const plantilla = texto(p.clave);
+    if (!esClavePlantilla(plantilla) || plantilla !== plantillaDeEvento(partirClave(clave).evento)) return undefined;
+    borrador.plantilla = { clave: plantilla, contenido: { asunto: texto(p.asunto), titulo: texto(p.titulo), cuerpo: limpiarHtml(texto(p.cuerpo)), boton: texto(p.boton) } };
+  }
+  return borrador.diseno || borrador.plantilla ? borrador : undefined;
+}
 
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session || session.rol !== "ADMIN") return NextResponse.json({ ok: false, mensaje: "Solo el administrador del sistema prueba el correo." }, { status: 403 });
-  const cuerpo = (await req.json().catch(() => ({}))) as { clave?: unknown; destino?: unknown; cuentaId?: unknown };
+  const cuerpo = (await req.json().catch(() => ({}))) as { clave?: unknown; destino?: unknown; cuentaId?: unknown; borrador?: unknown };
   const clave = String(cuerpo.clave ?? "");
   const destino = String(cuerpo.destino ?? "").trim().toLowerCase();
   if (!correoValido(destino)) return NextResponse.json({ ok: false, mensaje: "Indique un correo de prueba válido." }, { status: 400 });
@@ -43,7 +66,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(r.ok ? { ok: true, mensaje: `Conexión correcta: correo enviado a ${destino}.` } : { ok: false, mensaje: r.mensaje });
   }
 
-  const r = await enviarPruebaAviso(clave, destino, session.nombre, cuenta?.id).catch((err) => ({ ok: false, mensaje: err instanceof Error ? err.message : "No se pudo preparar la prueba." }));
+  const borrador = leerBorrador(clave as ClaveMatriz, cuerpo.borrador);
+  const r = await enviarPruebaAviso(clave, destino, session.nombre, cuenta?.id, borrador).catch((err) => ({ ok: false, mensaje: err instanceof Error ? err.message : "No se pudo preparar la prueba." }));
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",
     descripcion: `${session.nombre} ${r.ok ? "envió" : "intentó"} la prueba de la notificación ${clave} a ${destino}${r.ok ? "." : `: ${r.mensaje}`}`,

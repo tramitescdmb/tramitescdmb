@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { descifrarSecreto } from "@/lib/cifrado-config";
+import { envolverCorreo } from "@/lib/plantillas-correo-base";
 
 type Credencial = { clave: string; tenantId: string; clientId: string; clientSecret: string };
 type Configuracion = { cuentaId: string | null; remitente: string; credenciales: Credencial[] };
@@ -197,14 +198,5 @@ export async function enviarCorreo(correo: CorreoSaliente, cuentaId?: string): P
 }
 
 export function plantillaCorreo(titulo: string, cuerpoHtml: string, enlace?: { texto: string; url: string }): string {
-  const boton = enlace
-    ? `<p style="margin:20px 0"><a href="${enlace.url}" style="background:#038F67;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600">${enlace.texto}</a></p>`
-    : "";
-  return `<div style="font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;color:#1c1917;max-width:600px">
-<p style="font-size:12px;color:#038F67;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 0 8px">CDMB · Plataforma de trámites</p>
-<h2 style="font-size:18px;margin:0 0 12px">${titulo}</h2>
-${cuerpoHtml}
-${boton}
-<p style="font-size:11px;color:#78716c;border-top:1px solid #e7e5e4;padding-top:10px;margin-top:24px">Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — mensaje automático, por favor no responda a este correo.</p>
-</div>`;
+  return envolverCorreo(titulo, cuerpoHtml, enlace);
 }

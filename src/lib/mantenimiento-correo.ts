@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { prepararEnvio } from "@/lib/correo-microsoft";
+import { componerMensaje } from "@/lib/plantillas-correo-base";
+import { cargarPlantillas } from "@/lib/plantillas-correo";
 import {
   correoDeUsuario,
   direccionesSuprimidas,
@@ -117,12 +119,7 @@ export async function alertasAdministrador(): Promise<Alerta[]> {
 }
 
 export function mensajeAdministrador(alertas: Alerta[], base: string | null): Mensaje {
-  return {
-    asunto: `Correo institucional: ${alertas.length} novedad(es) · Plataforma CDMB`,
-    titulo: "Novedades del correo institucional",
-    cuerpoHtml: cuerpoAlertas(alertas, base),
-    enlace: { texto: "Abrir el correo institucional", ruta: RUTA_CORREO },
-  };
+  return componerMensaje("ADMIN_CORREO", { LISTA_NOVEDADES: cuerpoAlertas(alertas, base), CANTIDAD: String(alertas.length) }, RUTA_CORREO);
 }
 
 export type ResultadoAdministrador = { alertas: number; correos: number; fallidos: number; motivo?: string };
@@ -134,10 +131,11 @@ async function avisarAdministradores(): Promise<ResultadoAdministrador> {
   if (alertas.length === 0) return { alertas: 0, correos: 0, fallidos: 0 };
   const admins = await db.usuario.findMany({ where: { activo: true, rol: "ADMIN" }, select: { email: true, correoNotificacion: true } });
   const correos = [...new Set(admins.map(correoDeUsuario).filter((c): c is string => Boolean(c)))];
-  const [envio, suprimidas, enviadas] = await Promise.all([
+  const [envio, suprimidas, enviadas, vigentes] = await Promise.all([
     prepararEnvio(),
     direccionesSuprimidas(correos),
     db.correoEnviado.findMany({ where: { estado: "ENVIADO", clave: { in: alertas.map((a) => a.clave) } }, select: { clave: true, destinatario: true } }),
+    cargarPlantillas(),
   ]);
   const ya = new Set(enviadas.map((e) => `${e.clave}|${e.destinatario}`));
   const r: ResultadoAdministrador = { alertas: alertas.length, correos: 0, fallidos: 0 };
@@ -147,15 +145,15 @@ async function avisarAdministradores(): Promise<ResultadoAdministrador> {
     const nuevas = alertas.filter((a) => !ya.has(`${a.clave}|${correo}`));
     if (nuevas.length === 0) continue;
     try {
-      const mensaje = mensajeAdministrador(nuevas, base);
+      const { asunto, html } = renderizarMensaje(mensajeAdministrador(nuevas, base), base, vigentes);
       if (suprimidas.has(correo)) {
-        await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
+        await registrarLote(correo, nuevas, asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
         continue;
       }
       if (r.correos + r.fallidos > 0) await pausa();
       const lote = randomUUID();
-      const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
-      await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
+      const resultado = await envio.enviar({ para: [correo], asunto, html, encabezados: { [ENCABEZADO_ENVIO]: lote } });
+      await registrarLote(correo, nuevas, asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
       if (resultado.ok) r.correos++;
       else r.fallidos++;
     } catch (err) {

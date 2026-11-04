@@ -8,7 +8,8 @@ import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitar
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
-import { claveMatriz, escaparHtml, negrita, parrafos, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
+import { claveMatriz, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
+import { componerMensaje } from "@/lib/plantillas-correo-base";
 
 const SELECT_FIRMANTE_CARGO = {
   denominacionEmpleo: true,
@@ -92,33 +93,39 @@ export async function describirObjetivo(objetivo: ObjetivoSolicitud): Promise<{ 
 type DocumentoAviso = { nombre: string; referencia: string; ruta: string };
 
 export function mensajeFirmaSolicitada(d: { firma: boolean; asignador: string; doc: DocumentoAviso; ruta: string }): Mensaje {
-  return {
-    asunto: `${d.firma ? "Firma solicitada" : "Visto bueno solicitado"} · ${d.doc.referencia}`,
-    titulo: d.firma ? "Tiene un documento por firmar" : "Tiene un documento para visto bueno",
-    cuerpoHtml: parrafos(
-      `${negrita(d.asignador)} le solicitó ${d.firma ? "firmar" : "dar visto bueno a"} ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}).`,
-      "El documento queda en su buzón de firmas de la plataforma."
-    ),
-    enlace: { texto: d.firma ? "Abrir para firmar" : "Abrir para dar visto bueno", ruta: d.ruta },
-  };
+  return componerMensaje(
+    "FIRMA_SOLICITADA",
+    {
+      ASIGNADOR: d.asignador,
+      DOCUMENTO: d.doc.nombre,
+      REFERENCIA: d.doc.referencia,
+      TIPO_SOLICITUD: d.firma ? "Firma solicitada" : "Visto bueno solicitado",
+      PENDIENTE: d.firma ? "por firmar" : "para visto bueno",
+      ACCION: d.firma ? "firmar" : "dar visto bueno a",
+      ACCION_CORTA: d.firma ? "firmar" : "dar visto bueno",
+      ES_FIRMA: d.firma ? "sí" : "",
+    },
+    d.ruta
+  );
 }
 
 export function mensajeFirmaRecordada(d: { quien: string; doc: DocumentoAviso; ruta: string }): Mensaje {
-  return {
-    asunto: `Recordatorio de firma · ${d.doc.referencia}`,
-    titulo: "Hay una firma esperando su turno",
-    cuerpoHtml: parrafos(`${negrita(d.quien)} espera su firma de ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}) para poder firmar a continuación.`),
-    enlace: { texto: "Abrir para firmar", ruta: d.ruta },
-  };
+  return componerMensaje("FIRMA_RECORDADA", { QUIEN: d.quien, DOCUMENTO: d.doc.nombre, REFERENCIA: d.doc.referencia }, d.ruta);
 }
 
 export function mensajeFirmaRechazada(d: { visto: boolean; quien: string; doc: DocumentoAviso; motivo: string }): Mensaje {
-  return {
-    asunto: `${d.visto ? "Visto bueno rechazado" : "Firma rechazada"} · ${d.doc.referencia}`,
-    titulo: `Se rechazó ${d.visto ? "el visto bueno" : "la firma"} de un documento`,
-    cuerpoHtml: parrafos(`${negrita(d.quien)} rechazó ${negrita(d.doc.nombre)} (${escaparHtml(d.doc.referencia)}).`, `Motivo: ${escaparHtml(d.motivo.trim())}`),
-    enlace: { texto: "Abrir el documento", ruta: d.doc.ruta },
-  };
+  return componerMensaje(
+    "FIRMA_RECHAZADA",
+    {
+      QUIEN: d.quien,
+      DOCUMENTO: d.doc.nombre,
+      REFERENCIA: d.doc.referencia,
+      MOTIVO: d.motivo.trim(),
+      TIPO_RECHAZO: d.visto ? "Visto bueno rechazado" : "Firma rechazada",
+      OBJETO: d.visto ? "el visto bueno" : "la firma",
+    },
+    d.doc.ruta
+  );
 }
 
 const MAX_FIRMANTES_POR_OBJETIVO = 4;

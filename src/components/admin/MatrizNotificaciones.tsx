@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, Loader2, Send, Square, XCircle, PlugZap, BellRing } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Loader2, Send, Square, XCircle, PlugZap, BellRing, PencilLine } from "lucide-react";
 
-export type FilaMatriz = { clave: string; evento: string; categoria: string; destinatarios: string; plataforma: string; envio: string };
+export type FilaMatriz = { clave: string; evento: string; categoria: string; destinatarios: string; plataforma: string; envio: string; plantilla: string };
 export type SeccionMatriz = { modulo: string; nombre: string; filas: FilaMatriz[] };
 type Resultado = { estado: "enviando" | "ok" | "error"; mensaje?: string };
 
@@ -180,7 +181,7 @@ export function MatrizNotificaciones({
               <th className="hidden px-2 py-2 font-medium xl:table-cell">Siempre visible en</th>
               <th className="hidden px-2 py-2 font-medium md:table-cell">Envío</th>
               <th className="px-2 py-2 text-center font-medium">Correo</th>
-              <th className="px-4 py-2 text-right font-medium">Prueba</th>
+              <th className="px-4 py-2 text-right font-medium">Plantilla y prueba</th>
             </tr>
           </thead>
           {secciones.map((s) => {
@@ -233,6 +234,9 @@ export function MatrizNotificaciones({
                       <td className="px-4 py-1.5">
                         <div className="flex items-center justify-end gap-1.5">
                           <EstadoPrueba r={r} />
+                          <Link href={f.plantilla} className={BOTON} title={`Editar la plantilla de «${f.evento}»`}>
+                            <PencilLine className="h-3.5 w-3.5" aria-hidden /> Plantilla
+                          </Link>
                           <button type="button" disabled={ocupado} onClick={() => correoListo() && probar(f.clave)} className={BOTON} title={`Enviar la plantilla de «${f.evento}» al correo de prueba`}>
                             <Send className="h-3.5 w-3.5" aria-hidden /> Probar
                           </button>

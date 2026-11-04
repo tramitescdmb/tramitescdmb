@@ -29,6 +29,8 @@ import {
   type ModuloAviso,
 } from "@/lib/avisos-correo";
 import { prepararEnvio } from "@/lib/correo-microsoft";
+import { componerMensaje } from "@/lib/plantillas-correo-base";
+import { cargarPlantillas } from "@/lib/plantillas-correo";
 
 export type Alerta = { evento: EventoAviso; modulo: ModuloAviso; clave: string; grupo: string; texto: string; ruta: string; urgente: boolean };
 
@@ -310,12 +312,18 @@ export function cuerpoAlertas(alertas: Alerta[], base: string | null): string {
 
 export function mensajeAlertas(alertas: Alerta[], base: string | null): Mensaje {
   const urgentes = alertas.filter((a) => a.urgente).length;
-  return {
-    asunto: `${alertas.length} alerta(s) de vencimiento${urgentes ? ` — ${urgentes} vencida(s)` : ""} · Plataforma CDMB`,
-    titulo: "Alertas de vencimiento",
-    cuerpoHtml: cuerpoAlertas(alertas, base),
-    enlace: { texto: "Ir a la plataforma", ruta: "/" },
-  };
+  const contar = (evento: EventoAviso) => alertas.filter((a) => a.evento === evento).length || "";
+  return componerMensaje(
+    "RESUMEN_VENCIMIENTOS",
+    {
+      LISTA_ALERTAS: cuerpoAlertas(alertas, base),
+      CANTIDAD: String(alertas.length),
+      VENCIDAS: urgentes ? String(urgentes) : "",
+      PQRSD: String(contar("PQRSD_POR_VENCER")),
+      FIRMAS: String(contar("FIRMA_SIN_ATENDER")),
+    },
+    "/"
+  );
 }
 
 const PRESUPUESTO_MS = 240_000;
@@ -383,7 +391,7 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
     return r;
   }
   if (lotes.length === 0) return r;
-  const [envio, suprimidas] = await Promise.all([prepararEnvio(), direccionesSuprimidas(lotes.map((l) => l.correo))]);
+  const [envio, suprimidas, vigentes] = await Promise.all([prepararEnvio(), direccionesSuprimidas(lotes.map((l) => l.correo)), cargarPlantillas()]);
   if (!envio) return { ...r, ok: false, motivo: MENSAJE_SIN_CONFIGURAR };
   const base = urlBasePlataforma((await parametros()).urlPlataforma);
 
@@ -394,21 +402,21 @@ export async function procesarAlertasCorreo(opciones: { simular?: boolean } = {}
       break;
     }
     try {
-      const mensaje = mensajeAlertas(nuevas, base);
+      const { asunto, html } = renderizarMensaje(mensajeAlertas(nuevas, base), base, vigentes);
       if (suprimidas.has(correo)) {
-        await registrarLote(correo, nuevas, mensaje.asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
+        await registrarLote(correo, nuevas, asunto, { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA });
         r.omitidos!++;
         continue;
       }
       if (enviadosEnLote > 0) await pausa();
       enviadosEnLote++;
       const lote = randomUUID();
-      const resultado = await envio.enviar({ para: [correo], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base), encabezados: { [ENCABEZADO_ENVIO]: lote } });
+      const resultado = await envio.enviar({ para: [correo], asunto, html, encabezados: { [ENCABEZADO_ENVIO]: lote } });
       r.usuarios++;
       r.alertas += nuevas.length;
       if (resultado.ok) r.correos++;
       else r.fallidos++;
-      await registrarLote(correo, nuevas, mensaje.asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
+      await registrarLote(correo, nuevas, asunto, { estado: resultado.ok ? "ENVIADO" : "FALLIDO", error: resultado.ok ? null : resultado.mensaje, envio: lote });
     } catch (err) {
       r.fallidos++;
       console.error(`Alertas para ${correo} no procesadas:`, err);

@@ -12,7 +12,6 @@ import {
   MODULOS_AVISO,
   parametros,
   partirClave,
-  renderizarMensaje,
   urlBasePlataforma,
   type ClaveMatriz,
   type EventoAviso,
@@ -22,6 +21,7 @@ import {
 import { Bandeja, contextoAlertas, FUENTES_ALERTAS, mensajeAlertas, type Alerta } from "@/lib/alertas-correo";
 import { alertasAdministrador, mensajeAdministrador } from "@/lib/mantenimiento-correo";
 import { mensajeDeNotificacion } from "@/lib/notificaciones";
+import { cargarPlantillas, prepararCorreo, type Borrador } from "@/lib/plantillas-correo";
 import { mensajeRadicadoPqrsd, mensajeRadicadoTramite, mensajeRespuestaPqrsd } from "@/lib/avisos-externos";
 import {
   BUZON_POR_MODULO,
@@ -157,8 +157,8 @@ const NOTIFICACION_EJEMPLO: Partial<Record<EventoAviso, { titulo: string; mensaj
 async function muestraNotificacion(evento: EventoAviso): Promise<Muestra> {
   const tipos: TipoNotificacion[] = evento === "VISITA_PROGRAMADA" ? ["VISITA_PROGRAMADA", "EQUIPO_VISITA"] : [evento as TipoNotificacion];
   const n = await db.notificacion.findFirst({ where: { tipo: { in: tipos } }, orderBy: { updatedAt: "desc" }, select: { titulo: true, mensaje: true, enlace: true } });
-  if (n) return { referencia: n.titulo.split(" · ").pop() ?? n.titulo, mensaje: mensajeDeNotificacion(n) };
-  return { referencia: null, mensaje: mensajeDeNotificacion(NOTIFICACION_EJEMPLO[evento]!) };
+  if (n) return { referencia: n.titulo.split(" · ").pop() ?? n.titulo, mensaje: mensajeDeNotificacion(evento, n) };
+  return { referencia: null, mensaje: mensajeDeNotificacion(evento, NOTIFICACION_EJEMPLO[evento]!) };
 }
 
 async function muestraExterna(evento: EventoAviso): Promise<Muestra> {
@@ -258,20 +258,22 @@ export async function muestraAviso(clave: ClaveMatriz, quien: string, base: stri
   return muestraNotificacion(evento);
 }
 
-function notaPrueba(clave: ClaveMatriz, referencia: string | null): string {
+function notaPrueba(clave: ClaveMatriz, referencia: string | null, borrador?: Borrador): string {
   const { modulo, evento } = partirClave(clave);
   const def = definicionAviso(evento);
   const origen = referencia ? `datos de ${escaparHtml(referencia)}` : "datos de ejemplo";
-  return `<p style="margin:0 0 14px;padding:6px 10px;border-left:3px solid #FF8623;background:#fff7ed;font-size:12px;color:#7c2d12">Prueba · ${escaparHtml(MODULOS_AVISO[modulo])} · ${escaparHtml(CATEGORIAS_AVISO[def.categoria])}: ${escaparHtml(def.evento)} · ${origen}</p>`;
+  const version = borrador ? " · borrador sin guardar" : "";
+  return `<p style="margin:0 0 14px;padding:6px 10px;border-left:3px solid #FF8623;background:#fff7ed;font-size:12px;color:#7c2d12">Prueba · ${escaparHtml(MODULOS_AVISO[modulo])} · ${escaparHtml(CATEGORIAS_AVISO[def.categoria])}: ${escaparHtml(def.evento)} · ${origen}${version}</p>`;
 }
 
 export type ResultadoPrueba = { ok: boolean; mensaje: string };
 
-export async function enviarPruebaAviso(clave: ClaveMatriz, destino: string, solicitante: string, cuentaId?: string): Promise<ResultadoPrueba> {
+export async function enviarPruebaAviso(clave: ClaveMatriz, destino: string, solicitante: string, cuentaId?: string, borrador?: Borrador): Promise<ResultadoPrueba> {
   const { modulo, evento } = partirClave(clave);
   if ((await direccionesSuprimidas([destino])).has(destino)) return { ok: false, mensaje: `${destino} está en la lista de supresión por rebote.` };
   const base = urlBasePlataforma((await parametros()).urlPlataforma);
-  const { mensaje, referencia } = await muestraAviso(clave, solicitante, base);
+  const [{ mensaje: muestra, referencia }, vigentes] = await Promise.all([muestraAviso(clave, solicitante, base), cargarPlantillas()]);
+  const mensaje = prepararCorreo(muestra, vigentes, base, notaPrueba(clave, referencia, borrador), borrador);
   const envio = await prepararEnvio(cuentaId);
   const lote = randomUUID();
   const fila = await db.correoEnviado.create({
@@ -279,7 +281,7 @@ export async function enviarPruebaAviso(clave: ClaveMatriz, destino: string, sol
     select: { id: true },
   });
   const r = envio
-    ? await envio.enviar({ para: [destino], asunto: mensaje.asunto, html: renderizarMensaje(mensaje, base, notaPrueba(clave, referencia)), encabezados: { [ENCABEZADO_ENVIO]: lote } })
+    ? await envio.enviar({ para: [destino], asunto: mensaje.asunto, html: mensaje.html, encabezados: { [ENCABEZADO_ENVIO]: lote } })
     : ({ ok: false, mensaje: MENSAJE_SIN_CONFIGURAR } as const);
   await db.correoEnviado.update({
     where: { id: fila.id },

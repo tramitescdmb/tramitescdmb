@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { EstadoCorreo, Prisma } from "@prisma/client";
-import { Mail, KeyRound, Plus, BellRing, History, Wrench, CheckCircle2, AlertTriangle, Play, RotateCcw, Trash2 } from "lucide-react";
+import { Mail, KeyRound, Plus, BellRing, History, Wrench, CheckCircle2, AlertTriangle, Play, RotateCcw, Trash2, LayoutTemplate, PencilLine } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
@@ -25,6 +25,8 @@ import {
 } from "@/lib/avisos-correo";
 import { RETENCION_CUERPO_DIAS, RETENCION_REGISTRO_DIAS } from "@/lib/mantenimiento-correo";
 import { formatearFechaHora } from "@/lib/fecha";
+import { CLAVES_PLANTILLA, definicionPlantilla, GRUPOS_PLANTILLA, plantillaDeEvento, type GrupoPlantilla } from "@/lib/plantillas-correo-base";
+import { cargarPlantillas } from "@/lib/plantillas-correo";
 
 const CAMPO = "w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm";
 const BOTON = "inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50";
@@ -33,6 +35,7 @@ const DIA = 86_400_000;
 
 const PESTANAS = [
   { id: "notificaciones", label: "Notificaciones", icono: BellRing },
+  { id: "plantillas", label: "Plantillas", icono: LayoutTemplate },
   { id: "cuentas", label: "Cuentas", icono: KeyRound },
   { id: "envios", label: "Envíos", icono: History },
   { id: "mantenimiento", label: "Mantenimiento", icono: Wrench },
@@ -161,7 +164,7 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
       <CabeceraTablero
         icon={Mail}
         titulo="Correo institucional"
-        descripcion="Envío de correos desde buzones @cdmb.gov.co de Microsoft 365 por Microsoft Graph, con el registro de aplicación del tenant (permiso de aplicación Mail.Send con consentimiento de administrador; Mail.ReadWrite para leer los rebotes). La matriz define qué notificaciones salen por correo en cada módulo; las que no se envían siguen visibles en la plataforma. Cada correo queda en el registro de envíos: los que fallan se reintentan, los que rebotan por dirección inexistente suprimen esa dirección y el mantenimiento diario depura el registro."
+        descripcion="Envío de correos desde buzones @cdmb.gov.co de Microsoft 365 por Microsoft Graph, con el registro de aplicación del tenant (permiso de aplicación Mail.Send con consentimiento de administrador; Mail.ReadWrite para leer los rebotes). La matriz define qué notificaciones salen por correo en cada módulo; las que no se envían siguen visibles en la plataforma. Las plantillas definen el asunto, el texto, las imágenes y el botón de cada correo, con palabras reservadas que se reemplazan por los datos reales. Cada correo queda en el registro de envíos: los que fallan se reintentan, los que rebotan por dirección inexistente suprimen esa dirección y el mantenimiento diario depura el registro."
       />
       {sp.ok && <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{sp.ok}</div>}
       {sp.error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
@@ -189,6 +192,7 @@ export default async function CorreoInstitucionalPage({ searchParams }: { search
       </nav>
 
       {pestana === "notificaciones" && <PestanaNotificaciones cuentas={cuentas} ajustes={ajustes} ahora={ahora} enCola={enCola} suprimidas={suprimidas} usuarioId={session.userId} />}
+      {pestana === "plantillas" && <PestanaPlantillas activos={ajustes.activos} />}
       {pestana === "cuentas" && <PestanaCuentas cuentas={cuentas} ahora={ahora} />}
       {pestana === "envios" && <PestanaEnvios filtro={sp.estado ?? ""} />}
       {pestana === "mantenimiento" && <PestanaMantenimiento cuentas={cuentas} />}
@@ -232,6 +236,7 @@ async function PestanaNotificaciones({
         destinatarios: def.destinatarios,
         plataforma: def.plataforma,
         envio: def.diario ? `Diario, ${def.diario}` : "Inmediato",
+        plantilla: `/admin/correo/plantillas/${plantillaDeEvento(partirClave(clave).evento).toLowerCase()}`,
       };
     }),
   }));
@@ -261,6 +266,91 @@ async function PestanaNotificaciones({
         urlPlataforma={ajustes.urlPlataforma ?? ""}
         urlEfectiva={urlEfectiva}
       />
+    </>
+  );
+}
+
+async function PestanaPlantillas({ activos }: { activos: Set<string> }) {
+  const vigentes = await cargarPlantillas();
+  const grupos = (Object.keys(GRUPOS_PLANTILLA) as GrupoPlantilla[]).map((g) => ({ grupo: g, claves: CLAVES_PLANTILLA.filter((c) => definicionPlantilla(c).grupo === g) }));
+  const personalizadas = vigentes.personalizadas.size;
+  const fila = "border-b border-stone-100 last:border-0 align-top";
+  return (
+    <>
+      <section className="flex flex-wrap items-center gap-3 rounded-md border border-stone-200 bg-white px-4 py-3">
+        <LayoutTemplate className="h-5 w-5 text-cdmb-600" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-stone-900">Diseño general</p>
+          <p className="text-xs text-stone-500">Encabezado con logo o imagen, antetítulo y pie de página comunes a todos los correos.</p>
+        </div>
+        <Chip tono={vigentes.disenoPersonalizado ? "verde" : "neutro"}>{vigentes.disenoPersonalizado ? "Personalizado" : "Predeterminado"}</Chip>
+        <Link href="/admin/correo/plantillas/diseno" className={BOTON}>
+          <PencilLine className="h-3.5 w-3.5" aria-hidden /> Editar diseño
+        </Link>
+      </section>
+      <Seccion
+        titulo="Plantillas de correo"
+        icono={Mail}
+        extra={<span className="text-xs text-stone-500">{personalizadas} de {CLAVES_PLANTILLA.length} personalizadas</span>}
+      >
+        <p className="border-b border-stone-100 px-4 py-2 text-xs text-stone-500">
+          Cada plantilla define el asunto, el título, el cuerpo (texto, imágenes, enlaces) y el botón de un tipo de correo. Las palabras reservadas como{" "}
+          <code className="rounded bg-stone-100 px-1 font-mono">[RADICADO]</code> o <code className="rounded bg-stone-100 px-1 font-mono">[LISTA_ALERTAS]</code> se reemplazan por los datos reales al enviar; las obligatorias no se pueden quitar. Sin personalizar, el correo sale con la versión predeterminada.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className={FILA_TH}>
+                <th className={`${TH} pl-4`}>Plantilla</th>
+                <th className={`${TH} hidden md:table-cell`}>Se envía en</th>
+                <th className={TH}>Estado</th>
+                <th className={`${TH} hidden lg:table-cell`}>Última modificación</th>
+                <th className={`${TH} pr-4 text-right`}>Acción</th>
+              </tr>
+            </thead>
+            {grupos.map(({ grupo, claves }) => (
+              <tbody key={grupo}>
+                <tr className="border-b border-stone-200 bg-stone-100/80">
+                  <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-stone-700">{GRUPOS_PLANTILLA[grupo]}</td>
+                </tr>
+                {claves.map((clave) => {
+                  const def = definicionPlantilla(clave);
+                  const guardada = vigentes.personalizadas.get(clave);
+                  const usos = CLAVES_MATRIZ.filter((c) => plantillaDeEvento(partirClave(c).evento) === clave);
+                  const encendidos = usos.filter((c) => activos.has(c));
+                  const modulos = [...new Set(usos.map((c) => MODULOS_AVISO[partirClave(c).modulo]))];
+                  const href = `/admin/correo/plantillas/${clave.toLowerCase()}`;
+                  return (
+                    <tr key={clave} className={fila}>
+                      <td className="px-2 py-2 pl-4">
+                        <Link href={href} className="font-medium text-stone-900 hover:text-cdmb-700 hover:underline">{def.nombre}</Link>
+                        <span className="block text-[11px] text-stone-500">{def.descripcion}</span>
+                      </td>
+                      <td className="hidden px-2 py-2 text-xs text-stone-600 md:table-cell">
+                        {modulos.join(" · ")}
+                        <span className={`block text-[11px] ${encendidos.length ? "text-emerald-700" : "text-stone-400"}`}>
+                          {encendidos.length ? `Encendida en ${encendidos.length} de ${usos.length}` : "Apagada en la matriz"}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2">
+                        <Chip tono={guardada ? "verde" : "neutro"}>{guardada ? "Personalizada" : "Predeterminada"}</Chip>
+                      </td>
+                      <td className="hidden px-2 py-2 text-xs text-stone-500 lg:table-cell">
+                        {guardada ? `${formatearFechaHora(guardada.updatedAt)}${guardada.actualizadoPor ? ` · ${guardada.actualizadoPor}` : ""}` : "—"}
+                      </td>
+                      <td className="px-2 py-2 pr-4 text-right">
+                        <Link href={href} className={BOTON}>
+                          <PencilLine className="h-3.5 w-3.5" aria-hidden /> Editar
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      </Seccion>
     </>
   );
 }

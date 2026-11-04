@@ -2,7 +2,9 @@ import { randomUUID } from "crypto";
 import { after } from "next/server";
 import type { EstadoCorreo } from "@prisma/client";
 import { db } from "@/lib/db";
-import { correoConfigurado, plantillaCorreo, prepararEnvio, type ResultadoEnvio } from "@/lib/correo-microsoft";
+import { correoConfigurado, prepararEnvio, type ResultadoEnvio } from "@/lib/correo-microsoft";
+import type { ClavePlantilla, Valores } from "@/lib/plantillas-correo-base";
+import { cargarPlantillas, prepararCorreo, SIN_PERSONALIZAR, type PlantillasVigentes } from "@/lib/plantillas-correo";
 
 export type ModuloAviso = "TRAMITES" | "GECON" | "SGDEA" | "PLATAFORMA";
 
@@ -304,7 +306,14 @@ export async function direccionesSuprimidas(correos: string[]): Promise<Set<stri
   return new Set(filas.map((f) => f.correo));
 }
 
-export type Mensaje = { asunto: string; titulo: string; cuerpoHtml: string; enlace?: { texto: string; ruta: string } };
+export type Mensaje = {
+  asunto: string;
+  titulo: string;
+  cuerpoHtml: string;
+  enlace?: { texto: string; ruta: string };
+  /** Plantilla y valores con que se construyó, para aplicar la plantilla personalizada al enviar. */
+  plantilla?: { clave: ClavePlantilla; valores: Valores; ruta?: string };
+};
 
 export type Aviso = Mensaje & {
   evento: EventoAviso;
@@ -314,9 +323,9 @@ export type Aviso = Mensaje & {
   correos?: (string | null | undefined)[];
 };
 
-export function renderizarMensaje(m: Mensaje, base: string | null, nota = ""): string {
-  const enlace = m.enlace && base ? { texto: m.enlace.texto, url: `${base}${m.enlace.ruta}` } : undefined;
-  return plantillaCorreo(escaparHtml(m.titulo), `${nota}${m.cuerpoHtml}`, enlace);
+/** Asunto y HTML final con la plantilla personalizada (si existe) y el diseño general vigentes. */
+export function renderizarMensaje(m: Mensaje, base: string | null, vigentes: PlantillasVigentes = SIN_PERSONALIZAR, nota = ""): { asunto: string; html: string } {
+  return prepararCorreo(m, vigentes, base, nota);
 }
 
 export const ENCABEZADO_ENVIO = "X-CDMB-Envio";
@@ -344,13 +353,13 @@ export function estadoTrasEnvio(r: ResultadoEnvio, intentos: number) {
   };
 }
 
-async function reservarEnvio(aviso: Aviso, destinatario: string, html: string): Promise<{ id: string; envio: string } | null> {
+async function reservarEnvio(aviso: Aviso, destinatario: string, asunto: string, html: string): Promise<{ id: string; envio: string } | null> {
   const envio = randomUUID();
   const datos = {
     destinatario,
     categoria: aviso.evento,
     modulo: aviso.modulo,
-    asunto: aviso.asunto.slice(0, 300),
+    asunto: asunto.slice(0, 300),
     html,
     envio,
     estado: "EN_CURSO" as EstadoCorreo,
@@ -390,20 +399,20 @@ export async function enviarAvisos(avisos: Aviso[]): Promise<number> {
   const correos = await correosPorUsuario(aplican.flatMap((a) => a.usuarioIds ?? []));
   const lista = aplican.map((aviso) => ({ aviso, destinatarios: destinatariosDe(aviso, correos) })).filter((x) => x.destinatarios.length > 0);
   if (lista.length === 0) return 0;
-  const [envio, suprimidas] = await Promise.all([prepararEnvio(), direccionesSuprimidas(lista.flatMap((x) => x.destinatarios))]);
+  const [envio, suprimidas, vigentes] = await Promise.all([prepararEnvio(), direccionesSuprimidas(lista.flatMap((x) => x.destinatarios)), cargarPlantillas()]);
   const base = urlBasePlataforma(urlPlataforma);
   let enviados = 0;
   for (const { aviso, destinatarios } of lista) {
-    const html = renderizarMensaje(aviso, base);
+    const { asunto, html } = renderizarMensaje(aviso, base, vigentes);
     for (const destinatario of destinatarios) {
       try {
-        const fila = await reservarEnvio(aviso, destinatario, html);
+        const fila = await reservarEnvio(aviso, destinatario, asunto, html);
         if (!fila) continue;
         if (suprimidas.has(destinatario)) {
           await db.correoEnviado.update({ where: { id: fila.id }, data: { estado: "OMITIDO", error: MOTIVO_SUPRIMIDA, html: null } });
           continue;
         }
-        const r = envio ? await envio.enviar({ para: [destinatario], asunto: aviso.asunto, html, encabezados: { [ENCABEZADO_ENVIO]: fila.envio } }) : SIN_CONFIGURAR;
+        const r = envio ? await envio.enviar({ para: [destinatario], asunto, html, encabezados: { [ENCABEZADO_ENVIO]: fila.envio } }) : SIN_CONFIGURAR;
         await db.correoEnviado.update({ where: { id: fila.id }, data: estadoTrasEnvio(r, 1) });
         if (r.ok) enviados++;
       } catch (err) {
