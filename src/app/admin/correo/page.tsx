@@ -25,7 +25,7 @@ import {
 } from "@/lib/avisos-correo";
 import { RETENCION_CUERPO_DIAS, RETENCION_REGISTRO_DIAS } from "@/lib/mantenimiento-correo";
 import { formatearFechaHora } from "@/lib/fecha";
-import { CLAVES_PLANTILLA, definicionPlantilla, GRUPOS_PLANTILLA, plantillaDeEvento, type GrupoPlantilla } from "@/lib/plantillas-correo-base";
+import { CLAVES_PLANTILLA, definicionPlantilla, plantillaDeEvento } from "@/lib/plantillas-correo-base";
 import { cargarPlantillas } from "@/lib/plantillas-correo";
 
 const CAMPO = "w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-sm";
@@ -236,7 +236,7 @@ async function PestanaNotificaciones({
         destinatarios: def.destinatarios,
         plataforma: def.plataforma,
         envio: def.diario ? `Diario, ${def.diario}` : "Inmediato",
-        plantilla: `/admin/correo/plantillas/${plantillaDeEvento(partirClave(clave).evento).toLowerCase()}`,
+        plantilla: `/admin/correo/plantillas/${plantillaDeEvento(partirClave(clave).evento, partirClave(clave).modulo).toLowerCase()}`,
       };
     }),
   }));
@@ -272,7 +272,19 @@ async function PestanaNotificaciones({
 
 async function PestanaPlantillas({ activos }: { activos: Set<string> }) {
   const vigentes = await cargarPlantillas();
-  const grupos = (Object.keys(GRUPOS_PLANTILLA) as GrupoPlantilla[]).map((g) => ({ grupo: g, claves: CLAVES_PLANTILLA.filter((c) => definicionPlantilla(c).grupo === g) }));
+  const usosDe = (clave: string) => CLAVES_MATRIZ.filter((c) => plantillaDeEvento(partirClave(c).evento, partirClave(c).modulo) === clave);
+  const modulosDe = (clave: string) => [...new Set(usosDe(clave).map((c) => partirClave(c).modulo))];
+  const grupos = [
+    { grupo: "COMUN", nombre: "Comunes a todos los módulos", claves: CLAVES_PLANTILLA.filter((c) => modulosDe(c).length > 1) },
+    ...(Object.keys(MODULOS_AVISO) as ModuloAviso[]).map((m) => ({
+      grupo: m,
+      nombre: MODULOS_AVISO[m],
+      claves: CLAVES_PLANTILLA.filter((c) => {
+        const mods = modulosDe(c);
+        return mods.length === 1 && mods[0] === m;
+      }),
+    })),
+  ].filter((g) => g.claves.length > 0);
   const personalizadas = vigentes.personalizadas.size;
   const fila = "border-b border-stone-100 last:border-0 align-top";
   return (
@@ -293,10 +305,6 @@ async function PestanaPlantillas({ activos }: { activos: Set<string> }) {
         icono={Mail}
         extra={<span className="text-xs text-stone-500">{personalizadas} de {CLAVES_PLANTILLA.length} personalizadas</span>}
       >
-        <p className="border-b border-stone-100 px-4 py-2 text-xs text-stone-500">
-          Cada plantilla define el asunto, el título, el cuerpo (texto, imágenes, enlaces) y el botón de un tipo de correo. Las palabras reservadas como{" "}
-          <code className="rounded bg-stone-100 px-1 font-mono">[RADICADO]</code> o <code className="rounded bg-stone-100 px-1 font-mono">[LISTA_ALERTAS]</code> se reemplazan por los datos reales al enviar; las obligatorias no se pueden quitar. Sin personalizar, el correo sale con la versión predeterminada.
-        </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -308,17 +316,17 @@ async function PestanaPlantillas({ activos }: { activos: Set<string> }) {
                 <th className={`${TH} pr-4 text-right`}>Acción</th>
               </tr>
             </thead>
-            {grupos.map(({ grupo, claves }) => (
+            {grupos.map(({ grupo, nombre, claves }) => (
               <tbody key={grupo}>
                 <tr className="border-b border-stone-200 bg-stone-100/80">
-                  <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-stone-700">{GRUPOS_PLANTILLA[grupo]}</td>
+                  <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-stone-700">{nombre}</td>
                 </tr>
                 {claves.map((clave) => {
                   const def = definicionPlantilla(clave);
                   const guardada = vigentes.personalizadas.get(clave);
-                  const usos = CLAVES_MATRIZ.filter((c) => plantillaDeEvento(partirClave(c).evento) === clave);
+                  const usos = usosDe(clave);
                   const encendidos = usos.filter((c) => activos.has(c));
-                  const modulos = [...new Set(usos.map((c) => MODULOS_AVISO[partirClave(c).modulo]))];
+                  const eventos = [...new Set(usos.map((c) => definicionAviso(partirClave(c).evento).evento))];
                   const href = `/admin/correo/plantillas/${clave.toLowerCase()}`;
                   return (
                     <tr key={clave} className={fila}>
@@ -327,7 +335,7 @@ async function PestanaPlantillas({ activos }: { activos: Set<string> }) {
                         <span className="block text-[11px] text-stone-500">{def.descripcion}</span>
                       </td>
                       <td className="hidden px-2 py-2 text-xs text-stone-600 md:table-cell">
-                        {modulos.join(" · ")}
+                        {grupo === "COMUN" ? [...new Set(usos.map((c) => MODULOS_AVISO[partirClave(c).modulo]))].join(" · ") : eventos.join(" · ")}
                         <span className={`block text-[11px] ${encendidos.length ? "text-emerald-700" : "text-stone-400"}`}>
                           {encendidos.length ? `Encendida en ${encendidos.length} de ${usos.length}` : "Apagada en la matriz"}
                         </span>

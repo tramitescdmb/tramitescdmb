@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { buildBrandingPath, crearUrlSubidaFirmadaBranding, getBrandingPublicUrl } from "@/lib/branding-storage";
 
-// Las imágenes de los correos van al bucket público «branding» (carpeta correo/): los clientes de
-// correo las cargan por su dirección pública; Outlook bloquea las imágenes incrustadas en base64.
 const TIPOS = ["image/png", "image/jpeg", "image/gif"];
 const MAX_IMAGEN_BYTES = 2 * 1024 * 1024;
 

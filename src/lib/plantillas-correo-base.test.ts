@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EVENTOS_AVISO, type EventoAviso } from "@/lib/avisos-correo";
+import { CLAVES_MATRIZ, partirClave } from "@/lib/avisos-correo";
 import {
   CLAVES_PLANTILLA,
   componerMensaje,
@@ -33,8 +33,16 @@ describe("renderizarTexto", () => {
 });
 
 describe("plantillas predeterminadas", () => {
-  it("cada evento de la matriz tiene su plantilla", () => {
-    for (const evento of Object.keys(EVENTOS_AVISO) as EventoAviso[]) expect(plantillaDeEvento(evento), evento).toBeDefined();
+  it("cada notificación de la matriz tiene su plantilla", () => {
+    for (const c of CLAVES_MATRIZ) expect(plantillaDeEvento(partirClave(c).evento, partirClave(c).modulo), c).toBeDefined();
+  });
+
+  it("las firmas tienen una plantilla propia por módulo", () => {
+    expect(plantillaDeEvento("FIRMA_SOLICITADA", "GECON")).toBe("FIRMA_SOLICITADA_GECON");
+    expect(plantillaDeEvento("FIRMA_RECORDADA", "SGDEA")).toBe("FIRMA_RECORDADA_SGDEA");
+    expect(plantillaDeEvento("FIRMA_RECHAZADA", "TRAMITES")).toBe("FIRMA_RECHAZADA_TRAMITES");
+    expect(variablesDe("FIRMA_SOLICITADA_GECON").find((v) => v.clave === "REFERENCIA")?.ejemplo).toBe("CDMB-CTO-2026-000006");
+    expect(plantillaDeEvento("PQRSD_POR_VENCER", "SGDEA")).toBe("RESUMEN_VENCIMIENTOS");
   });
 
   it("son válidas y solo usan palabras reservadas declaradas", () => {
@@ -57,7 +65,7 @@ describe("plantillas predeterminadas", () => {
     expect(m.asunto).toBe("Expediente X-1 · CDMB");
     expect(m.enlace).toBeUndefined();
     expect(m.plantilla?.clave).toBe("TRAMITE_RADICADO");
-    const f = componerMensaje("FIRMA_SOLICITADA", { ACCION_CORTA: "firmar", REFERENCIA: "R", DOCUMENTO: "D" }, "/f/1");
+    const f = componerMensaje("FIRMA_SOLICITADA_GECON", { ACCION_CORTA: "firmar", REFERENCIA: "R", DOCUMENTO: "D" }, "/f/1");
     expect(f.enlace).toEqual({ texto: "Abrir para firmar", ruta: "/f/1" });
   });
 });

@@ -9,7 +9,7 @@ import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 import { claveMatriz, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
-import { componerMensaje } from "@/lib/plantillas-correo-base";
+import { componerMensaje, plantillaDeEvento } from "@/lib/plantillas-correo-base";
 
 const SELECT_FIRMANTE_CARGO = {
   denominacionEmpleo: true,
@@ -92,9 +92,9 @@ export async function describirObjetivo(objetivo: ObjetivoSolicitud): Promise<{ 
 
 type DocumentoAviso = { nombre: string; referencia: string; ruta: string };
 
-export function mensajeFirmaSolicitada(d: { firma: boolean; asignador: string; doc: DocumentoAviso; ruta: string }): Mensaje {
+export function mensajeFirmaSolicitada(d: { modulo: ModuloFirma; firma: boolean; asignador: string; doc: DocumentoAviso; ruta: string }): Mensaje {
   return componerMensaje(
-    "FIRMA_SOLICITADA",
+    plantillaDeEvento("FIRMA_SOLICITADA", d.modulo),
     {
       ASIGNADOR: d.asignador,
       DOCUMENTO: d.doc.nombre,
@@ -109,13 +109,13 @@ export function mensajeFirmaSolicitada(d: { firma: boolean; asignador: string; d
   );
 }
 
-export function mensajeFirmaRecordada(d: { quien: string; doc: DocumentoAviso; ruta: string }): Mensaje {
-  return componerMensaje("FIRMA_RECORDADA", { QUIEN: d.quien, DOCUMENTO: d.doc.nombre, REFERENCIA: d.doc.referencia }, d.ruta);
+export function mensajeFirmaRecordada(d: { modulo: ModuloFirma; quien: string; doc: DocumentoAviso; ruta: string }): Mensaje {
+  return componerMensaje(plantillaDeEvento("FIRMA_RECORDADA", d.modulo), { QUIEN: d.quien, DOCUMENTO: d.doc.nombre, REFERENCIA: d.doc.referencia }, d.ruta);
 }
 
-export function mensajeFirmaRechazada(d: { visto: boolean; quien: string; doc: DocumentoAviso; motivo: string }): Mensaje {
+export function mensajeFirmaRechazada(d: { modulo: ModuloFirma; visto: boolean; quien: string; doc: DocumentoAviso; motivo: string }): Mensaje {
   return componerMensaje(
-    "FIRMA_RECHAZADA",
+    plantillaDeEvento("FIRMA_RECHAZADA", d.modulo),
     {
       QUIEN: d.quien,
       DOCUMENTO: d.doc.nombre,
@@ -288,7 +288,7 @@ export async function asignarFirmantes(
           modulo,
           clave: `firma-solicitada:${objetivo.id}:${f.usuarioId}:${f.rol}:${marca}`,
           usuarioIds: [f.usuarioId],
-          ...mensajeFirmaSolicitada({ firma: f.rol === "FIRMA", asignador: asignador.nombre, doc, ruta: solicitud ? rutaDeFirma(solicitud.id, modulo, doc.ruta) : BUZON_POR_MODULO[modulo] }),
+          ...mensajeFirmaSolicitada({ modulo, firma: f.rol === "FIRMA", asignador: asignador.nombre, doc, ruta: solicitud ? rutaDeFirma(solicitud.id, modulo, doc.ruta) : BUZON_POR_MODULO[modulo] }),
         };
       });
     });
@@ -774,7 +774,7 @@ export async function rechazarSolicitudFirma(
         modulo,
         clave: `firma-rechazada:${solicitudId}`,
         usuarioIds: [avisar],
-        ...mensajeFirmaRechazada({ visto, quien: quien?.nombre ?? "El firmante", doc, motivo: comentario }),
+        ...mensajeFirmaRechazada({ modulo, visto, quien: quien?.nombre ?? "El firmante", doc, motivo: comentario }),
       };
     });
   }
@@ -1008,7 +1008,7 @@ export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId
         modulo,
         clave: `firma-recordada:${a.id}:${marca}`,
         usuarioIds: [a.usuarioAsignadoId],
-        ...mensajeFirmaRecordada({ quien: quien?.nombre ?? "Un firmante", doc, ruta: rutaDeFirma(a.id, modulo, doc.ruta) }),
+        ...mensajeFirmaRecordada({ modulo, quien: quien?.nombre ?? "Un firmante", doc, ruta: rutaDeFirma(a.id, modulo, doc.ruta) }),
       }));
     });
   }

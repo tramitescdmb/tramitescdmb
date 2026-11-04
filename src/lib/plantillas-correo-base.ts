@@ -1,20 +1,12 @@
-// Plantillas de correo: catálogo, palabras reservadas, render y validación.
-// Módulo puro (sin base de datos) para usarlo igual en el servidor y en el editor del navegador.
-//
-// Sintaxis (la misma de las plantillas de documentos del SGDEA):
-//   [RADICADO]                 → valor de la palabra reservada
-//   [SI:NOMBRE] … [/SI:NOMBRE] → el bloque solo aparece si NOMBRE tiene valor
-//   [NO:NOMBRE] … [/NO:NOMBRE] → el bloque solo aparece si NOMBRE está vacío
 
 import type { EventoAviso, Mensaje } from "@/lib/avisos-correo";
+import type { ModuloFirma } from "@/lib/jerarquia-firma";
 
 export type VariablePlantilla = {
   clave: string;
   descripcion: string;
   ejemplo: string;
-  /** El valor ya es HTML (listas): se inserta sin escapar y solo tiene sentido en el cuerpo. */
   html?: boolean;
-  /** Debe quedar en el cuerpo de la plantilla; no se puede guardar sin ella. */
   obligatoria?: boolean;
 };
 
@@ -26,8 +18,8 @@ export type DefinicionPlantilla = ContenidoPlantilla & {
   grupo: GrupoPlantilla;
   eventos: readonly EventoAviso[];
   variables: VariablePlantilla[];
-  /** Sin enlace de destino: el botón no se muestra aunque tenga texto. */
   sinEnlace?: boolean;
+  modulo?: ModuloFirma;
 };
 
 export type GrupoPlantilla = "FIRMAS" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS" | "ADMINISTRACION";
@@ -41,7 +33,6 @@ export const GRUPOS_PLANTILLA: Record<GrupoPlantilla, string> = {
   ADMINISTRACION: "Correo institucional",
 };
 
-/** Palabras reservadas disponibles en todas las plantillas y en el diseño general. */
 export const VARIABLES_GLOBALES: VariablePlantilla[] = [
   { clave: "FECHA_HOY", descripcion: "Fecha del envío en letras", ejemplo: "4 de noviembre de 2026" },
   { clave: "URL_PLATAFORMA", descripcion: "Dirección de la plataforma", ejemplo: "https://tramites.cdmb.gov.co" },
@@ -51,8 +42,79 @@ export const VARIABLES_GLOBALES: VariablePlantilla[] = [
 const P = (texto: string) => `<p style="margin:0 0 10px">${texto}</p>`;
 const PIE_CIUDADANO = "Este correo es una constancia automática; las respuestas se emiten por los canales oficiales de la Corporación.";
 
-const REFERENCIA = { clave: "REFERENCIA", descripcion: "Radicado o número de expediente del documento", ejemplo: "CDMB-E-2026-000123", obligatoria: true } as const;
-const DOCUMENTO = { clave: "DOCUMENTO", descripcion: "Nombre del documento", ejemplo: "Auto de inicio", obligatoria: true } as const;
+const DOCUMENTO_DE_EJEMPLO: Record<ModuloFirma, { documento: string; referencia: string; descripcion: string; lugar: string }> = {
+  TRAMITES: { documento: "Auto de inicio", referencia: "SCA-0123-2026", descripcion: "Número del expediente del trámite", lugar: "Trámites ambientales" },
+  GECON: { documento: "Informe de supervisión", referencia: "CDMB-CTO-2026-000006", descripcion: "Número del expediente del contrato", lugar: "GECON" },
+  SGDEA: { documento: "Oficio de respuesta", referencia: "CDMB-E-2026-000123", descripcion: "Radicado de la comunicación o número del expediente documental", lugar: "SGDEA" },
+};
+
+function documentoYReferencia(modulo: ModuloFirma): VariablePlantilla[] {
+  const e = DOCUMENTO_DE_EJEMPLO[modulo];
+  return [
+    { clave: "DOCUMENTO", descripcion: "Nombre del documento", ejemplo: e.documento, obligatoria: true },
+    { clave: "REFERENCIA", descripcion: e.descripcion, ejemplo: e.referencia, obligatoria: true },
+  ];
+}
+
+function firmaSolicitada(modulo: ModuloFirma): DefinicionPlantilla {
+  return {
+    nombre: "Firma o visto bueno solicitado",
+    descripcion: `Se solicita firmar o dar visto bueno a un documento de ${DOCUMENTO_DE_EJEMPLO[modulo].lugar}.`,
+    grupo: "FIRMAS",
+    modulo,
+    eventos: ["FIRMA_SOLICITADA"],
+    asunto: "[TIPO_SOLICITUD] · [REFERENCIA]",
+    titulo: "Tiene un documento [PENDIENTE]",
+    cuerpo:
+      P("<strong>[ASIGNADOR]</strong> le solicitó [ACCION] <strong>[DOCUMENTO]</strong> ([REFERENCIA]).") + P("El documento queda en su buzón de firmas de la plataforma."),
+    boton: "Abrir para [ACCION_CORTA]",
+    variables: [
+      { clave: "ASIGNADOR", descripcion: "Quien solicita la firma", ejemplo: "María Pérez" },
+      ...documentoYReferencia(modulo),
+      { clave: "TIPO_SOLICITUD", descripcion: "«Firma solicitada» o «Visto bueno solicitado»", ejemplo: "Firma solicitada" },
+      { clave: "PENDIENTE", descripcion: "«por firmar» o «para visto bueno»", ejemplo: "por firmar" },
+      { clave: "ACCION", descripcion: "«firmar» o «dar visto bueno a»", ejemplo: "firmar" },
+      { clave: "ACCION_CORTA", descripcion: "«firmar» o «dar visto bueno»", ejemplo: "firmar" },
+      { clave: "ES_FIRMA", descripcion: "«sí» cuando es firma, vacía cuando es visto bueno", ejemplo: "sí" },
+    ],
+  };
+}
+
+function firmaRecordada(modulo: ModuloFirma): DefinicionPlantilla {
+  return {
+    nombre: "Recordatorio de firma",
+    descripcion: `Un firmante posterior recuerda una firma pendiente en ${DOCUMENTO_DE_EJEMPLO[modulo].lugar}.`,
+    grupo: "FIRMAS",
+    modulo,
+    eventos: ["FIRMA_RECORDADA"],
+    asunto: "Recordatorio de firma · [REFERENCIA]",
+    titulo: "Hay una firma esperando su turno",
+    cuerpo: P("<strong>[QUIEN]</strong> espera su firma de <strong>[DOCUMENTO]</strong> ([REFERENCIA]) para poder firmar a continuación."),
+    boton: "Abrir para firmar",
+    variables: [{ clave: "QUIEN", descripcion: "Firmante que envía el recordatorio", ejemplo: "Carlos Gómez" }, ...documentoYReferencia(modulo)],
+  };
+}
+
+function firmaRechazada(modulo: ModuloFirma): DefinicionPlantilla {
+  return {
+    nombre: "Firma o visto bueno rechazado",
+    descripcion: `Se rechaza una firma o un visto bueno en ${DOCUMENTO_DE_EJEMPLO[modulo].lugar}; le llega a quien cargó o proyectó el documento.`,
+    grupo: "FIRMAS",
+    modulo,
+    eventos: ["FIRMA_RECHAZADA"],
+    asunto: "[TIPO_RECHAZO] · [REFERENCIA]",
+    titulo: "Se rechazó [OBJETO] de un documento",
+    cuerpo: P("<strong>[QUIEN]</strong> rechazó <strong>[DOCUMENTO]</strong> ([REFERENCIA]).") + P("Motivo: [MOTIVO]"),
+    boton: "Abrir el documento",
+    variables: [
+      { clave: "QUIEN", descripcion: "Quien rechazó", ejemplo: "Carlos Gómez" },
+      ...documentoYReferencia(modulo),
+      { clave: "MOTIVO", descripcion: "Motivo del rechazo", ejemplo: "Revisar el número de radicado citado en el asunto.", obligatoria: true },
+      { clave: "TIPO_RECHAZO", descripcion: "«Firma rechazada» o «Visto bueno rechazado»", ejemplo: "Firma rechazada" },
+      { clave: "OBJETO", descripcion: "«la firma» o «el visto bueno»", ejemplo: "la firma" },
+    ],
+  };
+}
 
 const VARIABLES_NOTIFICACION: VariablePlantilla[] = [
   { clave: "TITULO_AVISO", descripcion: "Título del aviso de la campana (incluye el expediente)", ejemplo: "Visita técnica asignada · SCA-0123-2026" },
@@ -77,56 +139,15 @@ function notificacion(evento: EventoAviso, grupo: GrupoPlantilla, nombre: string
 }
 
 export const PLANTILLAS = {
-  FIRMA_SOLICITADA: {
-    nombre: "Firma o visto bueno solicitado",
-    descripcion: "Se solicita firmar o dar visto bueno a un documento (Trámites, GECON y SGDEA).",
-    grupo: "FIRMAS",
-    eventos: ["FIRMA_SOLICITADA"],
-    asunto: "[TIPO_SOLICITUD] · [REFERENCIA]",
-    titulo: "Tiene un documento [PENDIENTE]",
-    cuerpo:
-      P("<strong>[ASIGNADOR]</strong> le solicitó [ACCION] <strong>[DOCUMENTO]</strong> ([REFERENCIA]).") + P("El documento queda en su buzón de firmas de la plataforma."),
-    boton: "Abrir para [ACCION_CORTA]",
-    variables: [
-      { clave: "ASIGNADOR", descripcion: "Quien solicita la firma", ejemplo: "María Pérez" },
-      DOCUMENTO,
-      REFERENCIA,
-      { clave: "TIPO_SOLICITUD", descripcion: "«Firma solicitada» o «Visto bueno solicitado»", ejemplo: "Firma solicitada" },
-      { clave: "PENDIENTE", descripcion: "«por firmar» o «para visto bueno»", ejemplo: "por firmar" },
-      { clave: "ACCION", descripcion: "«firmar» o «dar visto bueno a»", ejemplo: "firmar" },
-      { clave: "ACCION_CORTA", descripcion: "«firmar» o «dar visto bueno»", ejemplo: "firmar" },
-      { clave: "ES_FIRMA", descripcion: "Tiene valor («sí») cuando es firma y está vacía cuando es visto bueno; útil con [SI:ES_FIRMA]", ejemplo: "sí" },
-    ],
-  },
-  FIRMA_RECORDADA: {
-    nombre: "Recordatorio de firma",
-    descripcion: "Un firmante posterior recuerda una firma pendiente.",
-    grupo: "FIRMAS",
-    eventos: ["FIRMA_RECORDADA"],
-    asunto: "Recordatorio de firma · [REFERENCIA]",
-    titulo: "Hay una firma esperando su turno",
-    cuerpo: P("<strong>[QUIEN]</strong> espera su firma de <strong>[DOCUMENTO]</strong> ([REFERENCIA]) para poder firmar a continuación."),
-    boton: "Abrir para firmar",
-    variables: [{ clave: "QUIEN", descripcion: "Firmante que envía el recordatorio", ejemplo: "Carlos Gómez" }, DOCUMENTO, REFERENCIA],
-  },
-  FIRMA_RECHAZADA: {
-    nombre: "Firma o visto bueno rechazado",
-    descripcion: "Se rechaza una firma o un visto bueno; le llega a quien cargó o proyectó el documento.",
-    grupo: "FIRMAS",
-    eventos: ["FIRMA_RECHAZADA"],
-    asunto: "[TIPO_RECHAZO] · [REFERENCIA]",
-    titulo: "Se rechazó [OBJETO] de un documento",
-    cuerpo: P("<strong>[QUIEN]</strong> rechazó <strong>[DOCUMENTO]</strong> ([REFERENCIA]).") + P("Motivo: [MOTIVO]"),
-    boton: "Abrir el documento",
-    variables: [
-      { clave: "QUIEN", descripcion: "Quien rechazó", ejemplo: "Carlos Gómez" },
-      DOCUMENTO,
-      REFERENCIA,
-      { clave: "MOTIVO", descripcion: "Motivo del rechazo", ejemplo: "Revisar el número de radicado citado en el asunto.", obligatoria: true },
-      { clave: "TIPO_RECHAZO", descripcion: "«Firma rechazada» o «Visto bueno rechazado»", ejemplo: "Firma rechazada" },
-      { clave: "OBJETO", descripcion: "«la firma» o «el visto bueno»", ejemplo: "la firma" },
-    ],
-  },
+  FIRMA_SOLICITADA_TRAMITES: firmaSolicitada("TRAMITES"),
+  FIRMA_SOLICITADA_GECON: firmaSolicitada("GECON"),
+  FIRMA_SOLICITADA_SGDEA: firmaSolicitada("SGDEA"),
+  FIRMA_RECORDADA_TRAMITES: firmaRecordada("TRAMITES"),
+  FIRMA_RECORDADA_GECON: firmaRecordada("GECON"),
+  FIRMA_RECORDADA_SGDEA: firmaRecordada("SGDEA"),
+  FIRMA_RECHAZADA_TRAMITES: firmaRechazada("TRAMITES"),
+  FIRMA_RECHAZADA_GECON: firmaRechazada("GECON"),
+  FIRMA_RECHAZADA_SGDEA: firmaRechazada("SGDEA"),
   VISITA_SIN_PROGRAMAR: notificacion("VISITA_SIN_PROGRAMAR", "VISITAS", "Visita por programar", "Un expediente llega a un paso que requiere visita técnica.", {
     titulo: "Programar visita técnica · SCA-0123-2026",
     mensaje: "El trámite Concesión de aguas superficiales llegó al paso 4 (visita técnica) y requiere visita técnica. Asigne el personal y programe la visita.",
@@ -298,10 +319,15 @@ export function definicionPlantilla(clave: ClavePlantilla): DefinicionPlantilla 
   return PLANTILLAS[clave];
 }
 
-const PLANTILLA_DE_EVENTO = new Map<string, ClavePlantilla>(CLAVES_PLANTILLA.flatMap((c) => PLANTILLAS[c].eventos.map((e) => [e, c] as const)));
+const PLANTILLA_DE_EVENTO = new Map<string, ClavePlantilla>(
+  CLAVES_PLANTILLA.flatMap((c) => {
+    const def: DefinicionPlantilla = PLANTILLAS[c];
+    return def.eventos.map((e) => [def.modulo ? `${def.modulo}.${e}` : e, c] as const);
+  })
+);
 
-export function plantillaDeEvento(evento: EventoAviso): ClavePlantilla {
-  return PLANTILLA_DE_EVENTO.get(evento)!;
+export function plantillaDeEvento(evento: EventoAviso, modulo?: string): ClavePlantilla {
+  return (modulo && PLANTILLA_DE_EVENTO.get(`${modulo}.${evento}`)) || PLANTILLA_DE_EVENTO.get(evento)!;
 }
 
 export function variablesDe(clave: ClavePlantilla): VariablePlantilla[] {
@@ -312,8 +338,6 @@ export function ejemplosDe(variables: VariablePlantilla[]): Record<string, strin
   return Object.fromEntries(variables.map((v) => [v.clave, v.ejemplo]));
 }
 
-// ── Diseño general (marco común de todos los correos) ──────────────────────────────────────────
-
 export type DisenoCorreo = { antetitulo: string; encabezado: string; pie: string };
 
 export const DISENO_PREDETERMINADO: DisenoCorreo = {
@@ -323,8 +347,6 @@ export const DISENO_PREDETERMINADO: DisenoCorreo = {
 };
 
 export const CLAVE_DISENO = "DISENO";
-
-// ── Render ─────────────────────────────────────────────────────────────────────────────────────
 
 export function escaparHtmlPlantilla(texto: string): string {
   return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -350,11 +372,6 @@ const CIERRE = /\[\/(SI|NO):([A-Z][A-Z0-9_]*)\]/g;
 
 export type Valores = Record<string, string | null | undefined>;
 
-/**
- * Reemplaza las palabras reservadas. En modo «html» los valores se escapan (salvo las variables
- * HTML, que se insertan tal cual); en modo «texto» (asunto, título, botón) las variables HTML
- * se reducen a texto y nada se escapa: quien inserta el resultado en HTML lo escapa.
- */
 export function renderizarTexto(plantilla: string, valores: Valores, modo: "html" | "texto", variablesHtml: ReadonlySet<string> = new Set()): string {
   let texto = plantilla;
   for (let i = 0; i < 5; i++) {
@@ -386,7 +403,6 @@ export function renderizarPlantilla(clave: ClavePlantilla, contenido: ContenidoP
   };
 }
 
-/** Construye el mensaje con la plantilla predeterminada; al enviar se aplica la personalizada si existe. */
 export function componerMensaje(clave: ClavePlantilla, valores: Valores, ruta?: string): Mensaje {
   const def = PLANTILLAS[clave] as DefinicionPlantilla;
   const r = renderizarPlantilla(clave, def, valores);
@@ -403,7 +419,6 @@ export function botonCorreo(texto: string, url: string): string {
   return `<p style="margin:20px 0"><a href="${escaparHtmlPlantilla(url)}" style="background:#038F67;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block">${escaparHtmlPlantilla(texto)}</a></p>`;
 }
 
-/** Marco común del correo. `titulo` ya viene escapado; `cuerpoHtml` y el diseño ya vienen renderizados. */
 export function envolverCorreo(titulo: string, cuerpoHtml: string, enlace: { texto: string; url: string } | undefined, diseno: DisenoCorreo = DISENO_PREDETERMINADO): string {
   const boton = enlace && enlace.texto.trim() ? botonCorreo(enlace.texto, enlace.url) : "";
   const antetitulo = diseno.antetitulo.trim()
@@ -419,7 +434,6 @@ ${pie}
 </div>`;
 }
 
-/** Renderiza el diseño general con las palabras globales (el pie y el encabezado admiten HTML). */
 export function renderizarDiseno(diseno: DisenoCorreo, valores: Valores): DisenoCorreo {
   return {
     antetitulo: renderizarTexto(diseno.antetitulo, valores, "texto"),
@@ -432,11 +446,8 @@ export function fechaEnLetras(d: Date): string {
   return d.toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "long", year: "numeric" });
 }
 
-// ── Limpieza y validación ──────────────────────────────────────────────────────────────────────
-
 const PARRAFO_SIN_ESTILO = /<p>/gi;
 
-/** Quita lo que no debe ir en un correo (scripts, marcos, eventos, javascript:) y da margen a los párrafos sin estilo. */
 export function limpiarHtml(html: string): string {
   return html
     .replace(/<\s*(script|style|iframe|object|textarea|select|button)\b[\s\S]*?<\/\s*\1\s*>/gi, "")

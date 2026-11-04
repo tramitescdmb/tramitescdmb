@@ -59,12 +59,12 @@ export default async function EditarPlantillaCorreoPage({ params }: { params: Pr
   const claveP = clave as Parameters<typeof definicionPlantilla>[0];
   const def = definicionPlantilla(claveP);
   const guardada = vigentes.personalizadas.get(claveP);
-  const usos = CLAVES_MATRIZ.filter((c) => plantillaDeEvento(partirClave(c).evento) === claveP);
+  const usos = CLAVES_MATRIZ.filter((c) => plantillaDeEvento(partirClave(c).evento, partirClave(c).modulo) === claveP);
 
   return (
     <div className="mx-auto max-w-7xl space-y-3">
       {volver}
-      <CabeceraTablero icon={Mail} antetitulo={`Plantilla de correo · ${GRUPOS_PLANTILLA[def.grupo]}`} titulo={def.nombre} descripcion={def.descripcion}>
+      <CabeceraTablero icon={Mail} antetitulo={`Plantilla de correo · ${def.modulo ? MODULOS_AVISO[def.modulo] : GRUPOS_PLANTILLA[def.grupo]}`} titulo={def.nombre} descripcion={def.descripcion}>
         <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
           <span className="mr-0.5">Se usa en:</span>
           {usos.map((c) => (

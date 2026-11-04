@@ -11,7 +11,6 @@ import { partirClave, type ClaveMatriz } from "@/lib/avisos-correo";
 
 const texto = (v: unknown) => (typeof v === "string" ? v : "");
 
-/** Versión sin guardar que el editor de plantillas quiere probar. */
 function leerBorrador(clave: ClaveMatriz, valor: unknown): Borrador | undefined {
   if (!valor || typeof valor !== "object") return undefined;
   const b = valor as Record<string, unknown>;
@@ -23,7 +22,7 @@ function leerBorrador(clave: ClaveMatriz, valor: unknown): Borrador | undefined 
   if (b.plantilla && typeof b.plantilla === "object") {
     const p = b.plantilla as Record<string, unknown>;
     const plantilla = texto(p.clave);
-    if (!esClavePlantilla(plantilla) || plantilla !== plantillaDeEvento(partirClave(clave).evento)) return undefined;
+    if (!esClavePlantilla(plantilla) || plantilla !== plantillaDeEvento(partirClave(clave).evento, partirClave(clave).modulo)) return undefined;
     borrador.plantilla = { clave: plantilla, contenido: { asunto: texto(p.asunto), titulo: texto(p.titulo), cuerpo: limpiarHtml(texto(p.cuerpo)), boton: texto(p.boton) } };
   }
   return borrador.diseno || borrador.plantilla ? borrador : undefined;

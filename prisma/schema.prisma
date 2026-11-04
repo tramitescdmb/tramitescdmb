@@ -2668,10 +2668,6 @@ model CorreoEnviado {
   @@index([destinatario])
 }
 
-// Plantillas de correo personalizadas desde Administración → Correo institucional → Plantillas.
-// Una fila por plantilla (clave del catálogo en src/lib/plantillas-correo-base.ts) y la fila «DISENO»
-// con el marco común: titulo = antetítulo, cuerpo = encabezado, pie = pie de página.
-// Sin fila, el correo sale con la plantilla predeterminada del código.
 model PlantillaCorreo {
   clave          String   @id
   asunto         String   @default("")

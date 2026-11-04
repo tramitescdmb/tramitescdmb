@@ -19,6 +19,7 @@ import {
   variablesDe,
   type ClavePlantilla,
   type ContenidoPlantilla,
+  type DefinicionPlantilla,
   type DisenoCorreo,
   type ResultadoValidacion,
   type Valores,
@@ -43,8 +44,6 @@ function globales(url: string | null): Valores {
 function documentoPrevia(html: string) {
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px 16px;background:#f5f5f4}main{background:#fff;border:1px solid #e7e5e4;border-radius:8px;padding:24px 20px;max-width:600px;margin:0 auto}img{max-width:100%}</style></head><body><main>${html}</main></body></html>`;
 }
-
-// ── Piezas comunes ────────────────────────────────────────────────────────────────────────────
 
 function useCambiosSinGuardar(sucio: boolean) {
   useEffect(() => {
@@ -112,7 +111,7 @@ function PanelPalabras({ variables, usadas, alInsertar }: { variables: VariableP
     <section aria-label="Palabras reservadas" className="rounded-md border border-stone-200 bg-white">
       <div className="border-b border-stone-100 px-3 py-2">
         <p className="text-sm font-semibold text-stone-900">Palabras reservadas</p>
-        <p className="text-[11px] text-stone-500">Clic para insertarla en el campo donde está el cursor. Al enviar se reemplaza por el dato real.</p>
+        <p className="text-[11px] text-stone-500">Clic para insertarla donde está el cursor.</p>
       </div>
       {propias.length > 0 && <ul className="divide-y divide-stone-100 px-3">{propias.map(fila)}</ul>}
       <p className="border-t border-stone-100 px-3 pt-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500">En todos los correos</p>
@@ -235,7 +234,7 @@ function PanelPrueba({ correoInicial, opciones, alEnviar }: { correoInicial: str
   return (
     <section aria-label="Enviar una prueba" className="rounded-md border border-stone-200 bg-white px-3 py-3">
       <p className="text-sm font-semibold text-stone-900">Enviar una prueba</p>
-      <p className="mb-2 text-[11px] text-stone-500">Envía la versión que está editando, aunque no la haya guardado, con el registro más reciente del módulo (o datos de ejemplo).</p>
+      <p className="mb-2 text-[11px] text-stone-500">Se envía la versión en edición, aunque no esté guardada.</p>
       <div className="space-y-2">
         <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="nombre@cdmb.gov.co" aria-label="Correo de prueba" className={CAMPO} />
         {opciones.length > 1 && (
@@ -294,7 +293,6 @@ async function restaurar(clave: string): Promise<Estado> {
 
 type Campo = "asunto" | "titulo" | "boton" | "cuerpo" | "antetitulo" | "encabezado" | "pie";
 
-/** Inserta texto en la posición del cursor de un <input>. */
 function insertarEnInput(el: HTMLInputElement | null, actual: string, texto: string, poner: (v: string) => void) {
   const inicio = el?.selectionStart ?? actual.length;
   const fin = el?.selectionEnd ?? inicio;
@@ -308,8 +306,6 @@ function insertarEnInput(el: HTMLInputElement | null, actual: string, texto: str
 function usadasEn(...textos: string[]): Set<string> {
   return new Set(textos.flatMap((t) => [...t.matchAll(/\[(?:SI:|NO:)?([A-Z][A-Z0-9_]*)\]/g)].map((m) => m[1]!)));
 }
-
-// ── Editor de una plantilla ───────────────────────────────────────────────────────────────────
 
 export function EditorPlantillaCorreo({ clave, inicial, diseno, ...comun }: Comun & { clave: ClavePlantilla; inicial: ContenidoPlantilla; diseno: DisenoCorreo }) {
   const router = useRouter();
@@ -397,12 +393,12 @@ export function EditorPlantillaCorreo({ clave, inicial, diseno, ...comun }: Comu
               valor={c.cuerpo}
               alCambiar={(v) => setC((p) => ({ ...p, cuerpo: v }))}
               alEnfocar={() => setFoco("cuerpo")}
-              ayuda="Agregue texto, imágenes, enlaces o recuadros. Lo que pegue entra como texto sin formato."
+              ayuda="Lo pegado entra como texto sin formato."
             />
             {def.sinEnlace ? (
-              <p className="text-[11px] text-stone-500">Este correo no lleva botón: no hay una página de destino para quien lo recibe.</p>
+              <p className="text-[11px] text-stone-500">Este correo no lleva botón.</p>
             ) : (
-              campoTexto("boton", "Texto del botón", "Vacío: el correo sale sin botón. El destino lo pone la plataforma según el caso.")
+              campoTexto("boton", "Texto del botón", "Vacío: el correo sale sin botón.")
             )}
             <div className="border-t border-stone-100 pt-2">
               <Validacion v={validacion} />
@@ -423,8 +419,6 @@ export function EditorPlantillaCorreo({ clave, inicial, diseno, ...comun }: Comu
   );
 }
 
-// ── Editor del diseño general ─────────────────────────────────────────────────────────────────
-
 export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: DisenoCorreo }) {
   const router = useRouter();
   const [guardado, setGuardado] = useState(inicial);
@@ -432,7 +426,7 @@ export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: Dis
   const [estado, setEstado] = useState<Estado>(null);
   const [ocupado, setOcupado] = useState(false);
   const [foco, setFoco] = useState<Campo>("encabezado");
-  const [muestra, setMuestra] = useState<ClavePlantilla>("FIRMA_SOLICITADA");
+  const [muestra, setMuestra] = useState<ClavePlantilla>("FIRMA_SOLICITADA_TRAMITES");
   const encabezado = useRef<EditorHtmlHandle>(null);
   const pie = useRef<EditorHtmlHandle>(null);
   const antetitulo = useRef<HTMLInputElement>(null);
@@ -455,7 +449,9 @@ export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: Dis
     if (foco === "antetitulo") insertarEnInput(antetitulo.current, d.antetitulo, texto, (v) => setD((p) => ({ ...p, antetitulo: v })));
   }
 
-  const opcionMuestra = comun.opcionesPrueba.find((o) => o.clave.endsWith(`.${definicionPlantilla(muestra).eventos[0]}`))?.clave ?? comun.opcionesPrueba[0]?.clave ?? "";
+  const defMuestra: DefinicionPlantilla = definicionPlantilla(muestra);
+  const opcionMuestra =
+    comun.opcionesPrueba.find((o) => (defMuestra.modulo ? o.clave === `${defMuestra.modulo}.${defMuestra.eventos[0]}` : o.clave.endsWith(`.${defMuestra.eventos[0]}`)))?.clave ?? comun.opcionesPrueba[0]?.clave ?? "";
 
   return (
     <div className="space-y-3">
@@ -501,7 +497,7 @@ export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: Dis
               alCambiar={(v) => setD((p) => ({ ...p, encabezado: v }))}
               alEnfocar={() => setFoco("encabezado")}
               altoMinimo={110}
-              ayuda="Por ejemplo, el logo de la Corporación o una franja institucional. Vacío: el correo empieza por el antetítulo."
+              ayuda="Por ejemplo, el logo de la Corporación."
             />
             <label className="block text-sm">
               <span className="mb-1 block text-xs font-medium text-stone-600">Antetítulo (línea verde sobre el título)</span>
@@ -515,7 +511,7 @@ export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: Dis
               alCambiar={(v) => setD((p) => ({ ...p, pie: v }))}
               alEnfocar={() => setFoco("pie")}
               altoMinimo={110}
-              ayuda="Datos de contacto, aviso de confidencialidad o enlaces institucionales."
+              ayuda="Datos de contacto o aviso de confidencialidad."
             />
             <div className="border-t border-stone-100 pt-2">
               <Validacion v={validacion} />
@@ -527,7 +523,7 @@ export function EditorDisenoCorreo({ inicial, ...comun }: Comun & { inicial: Dis
           <label className="flex items-center gap-2 text-xs text-stone-600">
             <span className="shrink-0">Ver con la plantilla</span>
             <select value={muestra} onChange={(e) => setMuestra(e.target.value as ClavePlantilla)} className="min-w-0 rounded-md border border-stone-200 bg-white px-2.5 py-1.5 text-sm">
-              {(["FIRMA_SOLICITADA", "RESUMEN_VENCIMIENTOS", "PQRSD_RADICADO", "VISITA_PROGRAMADA", "TRAMITE_RADICADO"] as const).map((k) => (
+              {(["FIRMA_SOLICITADA_TRAMITES", "RESUMEN_VENCIMIENTOS", "PQRSD_RADICADO", "VISITA_PROGRAMADA", "TRAMITE_RADICADO"] as const).map((k) => (
                 <option key={k} value={k}>{definicionPlantilla(k).nombre}</option>
               ))}
             </select>

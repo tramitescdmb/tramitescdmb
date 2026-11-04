@@ -311,7 +311,6 @@ export type Mensaje = {
   titulo: string;
   cuerpoHtml: string;
   enlace?: { texto: string; ruta: string };
-  /** Plantilla y valores con que se construyó, para aplicar la plantilla personalizada al enviar. */
   plantilla?: { clave: ClavePlantilla; valores: Valores; ruta?: string };
 };
 
@@ -323,7 +322,6 @@ export type Aviso = Mensaje & {
   correos?: (string | null | undefined)[];
 };
 
-/** Asunto y HTML final con la plantilla personalizada (si existe) y el diseño general vigentes. */
 export function renderizarMensaje(m: Mensaje, base: string | null, vigentes: PlantillasVigentes = SIN_PERSONALIZAR, nota = ""): { asunto: string; html: string } {
   return prepararCorreo(m, vigentes, base, nota);
 }

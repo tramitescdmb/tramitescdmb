@@ -79,8 +79,6 @@ export const EditorHtmlCorreo = forwardRef<EditorHtmlHandle, Props>(function Edi
   const emitido = useRef<string | null>(null);
   const seleccion = useRef<Range | null>(null);
 
-  // El contenido del editor visual solo se reescribe al cambiar de modo o si el valor cambia desde
-  // fuera (p. ej. «Restaurar»), para no perder la posición del cursor mientras se escribe.
   useEffect(() => {
     if (modo !== "visual" || !visual.current) return;
     if (emitido.current === valor && visual.current.innerHTML !== "") return;
@@ -132,8 +130,6 @@ export const EditorHtmlCorreo = forwardRef<EditorHtmlHandle, Props>(function Edi
     emitir();
   }
 
-  // Se inserta con la API de rangos y no con execCommand("insertHTML"), que reescribe los estilos
-  // en línea (quita max-width y height:auto de las imágenes, necesarios en el celular).
   function insertarHtml(html: string) {
     if (modo === "html") return insertarEnCodigo(html);
     const el = visual.current;
@@ -278,7 +274,6 @@ export const EditorHtmlCorreo = forwardRef<EditorHtmlHandle, Props>(function Edi
             onFocus={alEnfocar}
             onBlur={guardarSeleccion}
             onPaste={(e) => {
-              // Lo pegado desde Word o la web entra como texto: su formato rompe el diseño en Outlook.
               const texto = e.clipboardData.getData("text/plain");
               e.preventDefault();
               document.execCommand("insertText", false, texto);

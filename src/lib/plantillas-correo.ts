@@ -16,9 +16,6 @@ import {
 } from "@/lib/plantillas-correo-base";
 import type { Mensaje } from "@/lib/avisos-correo";
 
-// La tabla se crea sola la primera vez (mismo DDL que genera `prisma db push` para el modelo
-// PlantillaCorreo), para que el despliegue no dependa de una migración manual. Si no se puede
-// crear o leer, los correos siguen saliendo con las plantillas predeterminadas.
 const DDL = [
   `CREATE TABLE IF NOT EXISTS "PlantillaCorreo" (
     "clave" TEXT NOT NULL,
@@ -75,7 +72,6 @@ export async function leerPlantillas(): Promise<PlantillasVigentes> {
   return { personalizadas, diseno, disenoPersonalizado };
 }
 
-/** Para los envíos: nunca falla; ante cualquier problema se usan las predeterminadas. */
 export async function cargarPlantillas(): Promise<PlantillasVigentes> {
   try {
     return await leerPlantillas();
@@ -102,7 +98,6 @@ function conBorrador(vigentes: PlantillasVigentes, borrador?: Borrador): Plantil
   return { ...vigentes, personalizadas, diseno: borrador.diseno ?? vigentes.diseno };
 }
 
-/** Aplica la plantilla personalizada (si existe) a un mensaje construido con la predeterminada. */
 export function aplicarPlantilla(m: Mensaje, vigentes: PlantillasVigentes, base: string | null): Mensaje {
   if (!m.plantilla) return m;
   const contenido = vigentes.personalizadas.get(m.plantilla.clave);
@@ -119,7 +114,6 @@ export function aplicarPlantilla(m: Mensaje, vigentes: PlantillasVigentes, base:
   };
 }
 
-/** Asunto y HTML final de un mensaje con las plantillas y el diseño vigentes. */
 export function prepararCorreo(m: Mensaje, vigentes: PlantillasVigentes, base: string | null, nota = "", borrador?: Borrador): { asunto: string; html: string } {
   const v = conBorrador(vigentes, borrador);
   const final = aplicarPlantilla(m, v, base);

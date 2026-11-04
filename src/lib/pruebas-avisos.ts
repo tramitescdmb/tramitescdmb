@@ -74,12 +74,13 @@ async function muestraFirma(evento: EventoAviso, modulo: ModuloFirma, quien: str
     : { ...DOCUMENTO_EJEMPLO[modulo], ruta: BUZON_POR_MODULO[modulo] };
   const ruta = s && objetivo ? rutaDeFirma(s.id, moduloDeObjetivo(objetivo.tipo), doc.ruta) : BUZON_POR_MODULO[modulo];
   const referencia = s ? doc.referencia : null;
-  if (evento === "FIRMA_SOLICITADA") return { referencia, mensaje: mensajeFirmaSolicitada({ firma: s?.rol !== "VISTO_BUENO", asignador: s?.asignadoPor.nombre ?? quien, doc, ruta }) };
-  if (evento === "FIRMA_RECORDADA") return { referencia, mensaje: mensajeFirmaRecordada({ quien, doc, ruta }) };
+  if (evento === "FIRMA_SOLICITADA") return { referencia, mensaje: mensajeFirmaSolicitada({ modulo, firma: s?.rol !== "VISTO_BUENO", asignador: s?.asignadoPor.nombre ?? quien, doc, ruta }) };
+  if (evento === "FIRMA_RECORDADA") return { referencia, mensaje: mensajeFirmaRecordada({ modulo, quien, doc, ruta }) };
   const real = s?.estado === "RECHAZADA";
   return {
     referencia: real ? referencia : null,
     mensaje: mensajeFirmaRechazada({
+      modulo,
       visto: s?.rol === "VISTO_BUENO",
       quien: real ? s.usuarioAsignado.nombre : quien,
       doc,
