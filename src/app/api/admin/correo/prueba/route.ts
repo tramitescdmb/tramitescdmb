@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!session || session.rol !== "ADMIN") return NextResponse.json({ ok: false, mensaje: "Solo el administrador del sistema prueba el correo." }, { status: 403 });
   const cuerpo = (await req.json().catch(() => ({}))) as { clave?: unknown; destino?: unknown; cuentaId?: unknown; borrador?: unknown };
   const clave = String(cuerpo.clave ?? "");
-  const destino = String(cuerpo.destino ?? "").trim().toLowerCase();
+  const destino = String(cuerpo.destino ?? "").trim().replace(/[\s.,;]+$/, "").toLowerCase();
   if (!correoValido(destino)) return NextResponse.json({ ok: false, mensaje: "Indique un correo de prueba válido." }, { status: 400 });
   if (clave !== "conexion" && !esClaveMatriz(clave)) return NextResponse.json({ ok: false, mensaje: "Notificación desconocida." }, { status: 400 });
   const cuentaPedida = String(cuerpo.cuentaId ?? "").trim();
