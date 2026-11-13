@@ -154,6 +154,18 @@ export async function autenticarDirectorioActivo(
     };
   }
 
+  if (respuesta.status === 401 || respuesta.status === 403) {
+    const mensaje = (cuerpo as { message?: unknown })?.message;
+    console.warn(`[directorio-activo] ${respuesta.status} en el login:`, cuerpo);
+    return {
+      ok: false,
+      mensaje:
+        typeof mensaje === "string" && mensaje
+          ? `El directorio activo rechazó el ingreso: ${mensaje}`
+          : "El directorio activo rechazó el ingreso de esta cuenta. Contacte al área de sistemas.",
+    };
+  }
+
   if (respuesta.status === 419) {
     console.error("[directorio-activo] 419 (CSRF) desde el API de login");
     return { ok: false, mensaje: "El directorio activo rechazó la solicitud (CSRF). Reporte el caso al área de sistemas." };
