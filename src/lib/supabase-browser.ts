@@ -4,7 +4,22 @@ function limpiarRuta(path: string) {
   return path.replace(/^\/|\/$/g, "").replace(/\/+/g, "/");
 }
 
+async function subirLocal(bucket: string, path: string, token: string, file: Blob): Promise<{ error: { message: string } | null }> {
+  const ruta = limpiarRuta(path).split("/").map(encodeURIComponent).join("/");
+  const body = new FormData();
+  body.append("", file);
+  try {
+    const res = await fetch(`/api/almacen/${bucket}/${ruta}?token=${encodeURIComponent(token)}`, { method: "PUT", body });
+    if (res.ok) return { error: null };
+    const datos = await res.json().catch(() => ({}));
+    return { error: { message: datos.message || datos.error || `HTTP ${res.status}` } };
+  } catch (e) {
+    return { error: { message: e instanceof Error ? e.message : "Error de red" } };
+  }
+}
+
 export async function subirAUrlFirmada(bucket: string, path: string, token: string, file: Blob): Promise<{ error: { message: string } | null }> {
+  if (process.env.NEXT_PUBLIC_ALMACEN_LOCAL === "1") return subirLocal(bucket, path, token, file);
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!base || !anonKey) {

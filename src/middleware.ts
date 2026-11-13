@@ -12,7 +12,7 @@ const PUBLIC_PATHS = [
   "/api/correo/alertas",
   "/api/correo/mantenimiento",
 ];
-const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico"];
+const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico", "/api/almacen"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
