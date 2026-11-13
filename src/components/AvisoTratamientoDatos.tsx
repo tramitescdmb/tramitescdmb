@@ -38,12 +38,12 @@ export function AvisoTratamientoDatos({ abierto }: { abierto: boolean }) {
         <div className="space-y-3 text-sm leading-relaxed text-graphite-700">
           <p>
             Al hacer clic en «Autorizar y aceptar», usted acepta la versión vigente de los{" "}
-            <a href="#" className="font-medium text-cdmb-700 hover:underline">Términos y condiciones</a> de Trámites CDMB.
+            <a href="https://www.cdmb.gov.co/politicas-y-lineamientos/terminos-y-condiciones-de-uso" target="_blank" rel="noopener noreferrer" className="font-medium text-cdmb-700 hover:underline">Términos y condiciones</a> de Trámites CDMB.
           </p>
           <p>
             Así mismo, autoriza a la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga (CDMB) a
             recolectar, almacenar, usar y tratar su información personal conforme a las finalidades definidas en la{" "}
-            <a href="#" className="font-medium text-cdmb-700 hover:underline">Política de tratamiento de datos personales</a>,
+            <a href="https://www.cdmb.gov.co/politicas-y-lineamientos/politica-de-tratamiento-y-proteccion-de-datos-personales-791763" target="_blank" rel="noopener noreferrer" className="font-medium text-cdmb-700 hover:underline">Política de tratamiento de datos personales</a>,
             de acuerdo con la Ley 1581 de 2012.
           </p>
           <p className="text-xs text-graphite-500">
