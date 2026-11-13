@@ -7,7 +7,7 @@ function limpiarRuta(path: string) {
 async function subirLocal(bucket: string, path: string, token: string, file: Blob): Promise<{ error: { message: string } | null }> {
   const ruta = limpiarRuta(path).split("/").map(encodeURIComponent).join("/");
   const body = new FormData();
-  body.append("", file);
+  body.append("archivo", file);
   try {
     const res = await fetch(`/api/almacen/${bucket}/${ruta}?token=${encodeURIComponent(token)}`, { method: "PUT", body });
     if (res.ok) return { error: null };
