@@ -10,7 +10,7 @@ import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
-import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 
 type DocumentoInput = {
   path: string;
@@ -118,8 +118,12 @@ export async function POST(req: NextRequest) {
   const flujo = tramite.flujos.find((f) => f.id === flujoId);
   if (!flujo) return NextResponse.json({ error: "Flujo no encontrado." }, { status: 404 });
 
+  // Solo cuentan los documentos con archivo: un requisito "aportado" sin archivo no cumple.
+  const documentosValidos = (Array.isArray(documentos) ? documentos : []).filter(
+    (d) => d && typeof d.path === "string" && d.path && typeof d.nombre === "string" && d.nombre.trim()
+  );
   const idsDocumentosAportados = new Set(
-    (documentos || []).map((d) => d.documentoRequeridoId).filter((id): id is string => Boolean(id))
+    documentosValidos.map((d) => d.documentoRequeridoId).filter((id): id is string => Boolean(id))
   );
   const documentosFaltantes = tramite.documentosRequeridos.filter(
     (d) => d.obligatorio && (d.aplicaA === null || d.aplicaA === solicitante.tipo) && !idsDocumentosAportados.has(d.id)
@@ -144,9 +148,27 @@ export async function POST(req: NextRequest) {
   if (yaTramite + yaContrato + yaDocumental > 0) {
     return NextResponse.json({ error: "Esta radicación ya se registró. Recargue la página antes de radicar otra." }, { status: 409 });
   }
-  if ((documentos || []).some((d) => d?.path && !rutaDeExpediente(d.path, expedienteId))) {
+  if (documentosValidos.some((d) => !rutaDeExpediente(d.path, expedienteId))) {
     return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }
+  if (new Set(documentosValidos.map((d) => d.path)).size !== documentosValidos.length) {
+    return NextResponse.json({ error: "El mismo archivo aparece dos veces." }, { status: 400 });
+  }
+  const requisitosDelTramite = new Set(tramite.documentosRequeridos.map((r) => r.id));
+  if (documentosValidos.some((d) => d.documentoRequeridoId && !requisitosDelTramite.has(d.documentoRequeridoId))) {
+    return NextResponse.json({ error: "Uno de los documentos no corresponde a los requisitos de este trámite. Recargue la página." }, { status: 400 });
+  }
+  // Antes de tomar el número: cada archivo debe haber llegado al almacén (si no, el trámite quedaría con documentos rotos).
+  for (const d of documentosValidos) {
+    const problema = await problemaArchivoSubido(d.path, 0);
+    if (problema) return NextResponse.json({ error: `«${d.nombre}»: ${problema}` }, { status: 409 });
+  }
+  const numeroONulo = (v: unknown, entero = false): number | null => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return null;
+    return entero ? Math.round(n) : n;
+  };
 
   const primerPaso = flujo.pasos[0]?.numero ?? 1;
   const numero = await generarNumeroExpediente(tramite.codigo);
@@ -224,41 +246,44 @@ export async function POST(req: NextRequest) {
     razonSocial: razonSocialTrim,
   });
 
-  const expediente = await db.expediente.create({
-    data: {
-      id: expedienteId,
-      numero,
-      tramiteTipoId: tramite.id,
-      flujoId: flujo.id,
-      solicitanteId: solicitanteRecord.id,
-      solicitanteTipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
-      solicitanteNombre: nombreCompleto,
-      solicitanteIdentificacion: identificacionSolicitante,
-      solicitanteEmail: solicitante.email?.trim() || null,
-      solicitanteTelefono: solicitante.telefono?.trim() || null,
-      solicitanteDireccion: solicitante.direccion?.trim() || null,
-      predioDireccion: predioDireccion.trim(),
-      predioNombre: predio?.nombre?.trim() || null,
-      predioCatastral: predio?.catastral?.trim() || null,
-      predioMatricula: predio?.matricula?.trim() || null,
-      predioAreaM2: predio?.areaM2 ?? null,
-      predioAreaCultivosM2: predio?.areaCultivosM2 ?? null,
-      predioAreaBosqueM2: predio?.areaBosqueM2 ?? null,
-      predioViviendas: predio?.viviendas ?? null,
-      claseSolicitud: claseSolicitud || null,
-      municipio,
-      ...datosUbicacion,
-      subserieId: tramite.subserieId,
-      estado: "RADICADO",
-      pasoActualNumero: primerPaso,
-      createdById: session.userId,
-      responsableActualId: session.userId,
-    },
+  const tipoDocumentalPorRequisito = new Map(tramite.documentosRequeridos.map((r) => [r.id, r.tipoDocumentalId]));
+  // Expediente, evento y documentos en una sola transacción: si algo falla no queda un trámite radicado sin sus documentos.
+  const expediente = await db.$transaction(async (tx) => {
+    const creado = await tx.expediente.create({
+      data: {
+        id: expedienteId,
+        numero,
+        tramiteTipoId: tramite.id,
+        flujoId: flujo.id,
+        solicitanteId: solicitanteRecord.id,
+        solicitanteTipo: solicitante.tipo === "JURIDICA" ? "JURIDICA" : "NATURAL",
+        solicitanteNombre: nombreCompleto,
+        solicitanteIdentificacion: identificacionSolicitante,
+        solicitanteEmail: solicitante.email?.trim() || null,
+        solicitanteTelefono: solicitante.telefono?.trim() || null,
+        solicitanteDireccion: solicitante.direccion?.trim() || null,
+        predioDireccion: predioDireccion.trim(),
+        predioNombre: predio?.nombre?.trim() || null,
+        predioCatastral: predio?.catastral?.trim() || null,
+        predioMatricula: predio?.matricula?.trim() || null,
+        predioAreaM2: numeroONulo(predio?.areaM2),
+        predioAreaCultivosM2: numeroONulo(predio?.areaCultivosM2),
+        predioAreaBosqueM2: numeroONulo(predio?.areaBosqueM2),
+        predioViviendas: numeroONulo(predio?.viviendas, true),
+        claseSolicitud: claseSolicitud || null,
+        municipio,
+        ...datosUbicacion,
+        subserieId: tramite.subserieId,
+        estado: "RADICADO",
+        pasoActualNumero: primerPaso,
+        createdById: session.userId,
+        responsableActualId: session.userId,
+      },
   });
 
-  await db.expedienteEvento.create({
+  await tx.expedienteEvento.create({
     data: {
-      expedienteId: expediente.id,
+      expedienteId: creado.id,
       tipo: "CREACION",
       descripcion: `Expediente radicado por ${session.nombre} para el trámite "${tramite.nombre}" (flujo: ${flujo.nombre}).`,
       estadoNuevo: "RADICADO",
@@ -266,13 +291,11 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  if (Array.isArray(documentos) && documentos.length > 0) {
-    const tipoDocumentalPorRequisito = new Map(tramite.documentosRequeridos.map((r) => [r.id, r.tipoDocumentalId]));
-    await db.expedienteDocumento.createMany({
-      data: documentos
-        .filter((d) => d?.path && d?.nombre)
+  if (documentosValidos.length > 0) {
+    await tx.expedienteDocumento.createMany({
+      data: documentosValidos
         .map((d) => ({
-          expedienteId: expediente.id,
+          expedienteId: creado.id,
           pasoNumero: null,
           requisitoId: d.documentoRequeridoId || null,
           tipoDocumentalId: d.documentoRequeridoId ? tipoDocumentalPorRequisito.get(d.documentoRequeridoId) ?? null : null,
@@ -286,6 +309,8 @@ export async function POST(req: NextRequest) {
         })),
     });
   }
+  return creado;
+  });
   await sincronizarAvisoVisita(expediente.id);
   await iniciarFlujoAutomaticoEnObjeto("TRAMITE", expediente.id, session.userId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
   avisarRadicadoTramite({
