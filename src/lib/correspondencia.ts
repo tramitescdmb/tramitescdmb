@@ -1,3 +1,4 @@
+import { anioColombia } from "@/lib/fecha";
 import { db } from "@/lib/db";
 import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion, CalidadFirma } from "@prisma/client";
 import { generarRadicado } from "@/lib/radicado";
@@ -120,7 +121,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   const calendario = entrada.tipoPqrsd ? await getCalendarioLaboral() : undefined;
   return db.$transaction(async (tx) => {
-    const { radicado, anio } = await generarRadicado("RECIBIDA", new Date().getFullYear(), tx);
+    const { radicado, anio } = await generarRadicado("RECIBIDA", anioColombia(), tx);
     const ident = entrada.tercero.identificacion?.trim() || null;
     const muni = entrada.tercero.municipio?.trim() || null;
     const terceroId = await resolverOCrearTercero(tx, entrada.tercero, entrada.radicadoPorId);
@@ -391,7 +392,7 @@ export type EntradaRadicacionEnviada = {
 export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
-    const { radicado, anio } = await generarRadicado("ENVIADA", new Date().getFullYear(), tx);
+    const { radicado, anio } = await generarRadicado("ENVIADA", anioColombia(), tx);
     const ident = entrada.destinatario.identificacion?.trim() || null;
     const muni = entrada.destinatario.municipio?.trim() || null;
     const terceroId = await resolverOCrearTercero(tx, entrada.destinatario, entrada.radicadoPorId);
@@ -495,7 +496,7 @@ export type EntradaRadicacionInterna = {
 export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
-    const { radicado, anio } = await generarRadicado("INTERNA", new Date().getFullYear(), tx);
+    const { radicado, anio } = await generarRadicado("INTERNA", anioColombia(), tx);
 
     const comunicacion = await tx.comunicacion.create({
       data: {

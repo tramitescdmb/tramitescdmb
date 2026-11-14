@@ -1,3 +1,4 @@
+import { anioColombia } from "@/lib/fecha";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
@@ -10,7 +11,7 @@ import { cancelarFlujosDeObjeto } from "@/lib/flujos";
 
 const SERIE_EXPEDIENTE = "X";
 
-export async function generarNumeroExpediente(anio: number = new Date().getFullYear()): Promise<string> {
+export async function generarNumeroExpediente(anio: number = anioColombia()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_EXPEDIENTE, anio);
   return formatearRadicado(SERIE_EXPEDIENTE, anio, numero);
 }

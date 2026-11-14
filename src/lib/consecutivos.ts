@@ -1,3 +1,4 @@
+import { anioColombia } from "@/lib/fecha";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatearRadicado, generarConsecutivo } from "@/lib/radicado";
@@ -173,7 +174,7 @@ export async function fijarSiguienteConsecutivo(serie: string, anio: number, sig
   });
 }
 
-export async function generarNumeroTramite(codigo: string, anio: number = new Date().getFullYear()): Promise<string> {
+export async function generarNumeroTramite(codigo: string, anio: number = anioColombia()): Promise<string> {
   const serie = serieTramite(codigo);
   const existe = await db.consecutivoRadicado.findUnique({ where: { serie_anio: { serie, anio } }, select: { id: true } });
   if (!existe) {

@@ -19,6 +19,14 @@ describe("vigenciaDeExpediente", () => {
   it("cae al año de creación cuando todavía no hay fecha de inicio (típico de Precontractual)", () => {
     expect(vigenciaDeExpediente(null, new Date("2026-09-29"))).toBe(2026);
   });
+
+  it("usa la hora de Colombia: creado el 31-dic a las 8 p. m. sigue siendo de ese año", () => {
+    expect(vigenciaDeExpediente(null, new Date("2027-01-01T01:00:00Z"))).toBe(2026);
+  });
+
+  it("una fecha de inicio 1-ene (sin hora) es de ese año aunque el servidor esté en hora de Bogotá", () => {
+    expect(vigenciaDeExpediente(new Date("2027-01-01"), new Date("2026-12-01"))).toBe(2027);
+  });
 });
 
 describe("validarOrdenFechasContrato", () => {

@@ -1,3 +1,4 @@
+import { anioColombia } from "@/lib/fecha";
 import { Prisma } from "@prisma/client";
 import type { TipoComunicacion } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -22,7 +23,7 @@ export type RadicadoGenerado = { radicado: string; anio: number; numero: number;
 
 export async function generarConsecutivo(
   serie: string,
-  anio: number = new Date().getFullYear(),
+  anio: number = anioColombia(),
   cliente: ClientePrisma = db
 ): Promise<{ anio: number; numero: number; serie: string }> {
   for (let intento = 0; intento < 6; intento++) {
@@ -50,7 +51,7 @@ export async function generarConsecutivo(
 
 export async function generarRadicado(
   tipo: TipoComunicacion,
-  anio: number = new Date().getFullYear(),
+  anio: number = anioColombia(),
   cliente: ClientePrisma = db
 ): Promise<RadicadoGenerado> {
   const serie = serieDeTipo(tipo);

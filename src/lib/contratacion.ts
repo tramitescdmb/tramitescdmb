@@ -38,7 +38,7 @@ import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion"
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
-import { fechaArchivoColombia } from "@/lib/fecha";
+import { anioColombia, fechaArchivoColombia } from "@/lib/fecha";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -54,13 +54,13 @@ export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
 const SERIE_CONTRATO = "CTO";
 
-export async function generarNumeroExpedienteContractual(anio: number = new Date().getFullYear()): Promise<string> {
+export async function generarNumeroExpedienteContractual(anio: number = anioColombia()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_CONTRATO, anio);
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
 }
 
 export function vigenciaDeExpediente(fechaInicio: Date | null | undefined, createdAt: Date): number {
-  return (fechaInicio ?? createdAt).getFullYear();
+  return anioColombia(fechaInicio ?? createdAt);
 }
 
 export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null): void {
@@ -350,7 +350,7 @@ export async function guardarTopeCuantia(datos: { anio: number; menorCuantia: nu
 
 export async function validarCuantiaContrato(modalidad: string, valor: number | null, fechaSuscripcion: Date | null): Promise<void> {
   if (valor === null) return;
-  const error = errorCuantia(modalidad, valor, await topeCuantiaDe((fechaSuscripcion ?? new Date()).getUTCFullYear()));
+  const error = errorCuantia(modalidad, valor, await topeCuantiaDe(anioColombia(fechaSuscripcion ?? new Date())));
   if (error) throw new Error(error);
 }
 
@@ -427,7 +427,7 @@ export async function crearExpedienteContractual(datos: {
     solicitado: datos.codigoProceso,
     modalidad: datos.modalidadSeleccion,
     causal,
-    anio: (datos.fechaSuscripcion ?? new Date()).getUTCFullYear(),
+    anio: anioColombia(datos.fechaSuscripcion ?? new Date()),
   });
   const numero = await generarNumeroExpedienteContractual();
   const expediente = await db.expedienteContractual.create({
@@ -1379,14 +1379,14 @@ export function usaSelectorDeVigencia(permisos: PermisosUsuario): boolean {
 export function vigenciaPorDefecto(permisos: PermisosUsuario, vigencia: string | undefined): string | undefined {
   if (vigencia === "todas") return undefined;
   if (vigencia) return vigencia;
-  return usaSelectorDeVigencia(permisos) ? String(new Date().getFullYear()) : undefined;
+  return usaSelectorDeVigencia(permisos) ? String(anioColombia()) : undefined;
 }
 
 export async function aniosDeExpedientes(where: Prisma.ExpedienteContractualWhereInput) {
   const filas = await db.expedienteContractual.findMany({ where, select: { fechaSuscripcion: true, createdAt: true } });
-  const conteo = new Map<number, number>([[new Date().getFullYear(), 0]]);
+  const conteo = new Map<number, number>([[anioColombia(), 0]]);
   for (const f of filas) {
-    const anio = (f.fechaSuscripcion ?? f.createdAt).getUTCFullYear();
+    const anio = anioColombia(f.fechaSuscripcion ?? f.createdAt);
     conteo.set(anio, (conteo.get(anio) ?? 0) + 1);
   }
   return {
@@ -1782,7 +1782,7 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     completar.codigoProceso = await resolverCodigoProceso({
       modalidad: String(completar.modalidadSeleccion ?? expediente.modalidadSeleccion),
       causal: (("causalContratacionDirecta" in completar ? completar.causalContratacionDirecta : expediente.causalContratacionDirecta) as string | null) ?? null,
-      anio: (fechaDb(c.fechaSuscripcion) ?? expediente.createdAt).getUTCFullYear(),
+      anio: anioColombia(fechaDb(c.fechaSuscripcion) ?? expediente.createdAt),
       actual: expediente.codigoProceso,
       excluirId: expedienteId,
     });
