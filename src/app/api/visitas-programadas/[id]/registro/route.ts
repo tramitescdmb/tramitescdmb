@@ -7,7 +7,7 @@ import { expedienteEnEjecucion, fechaHoraColombia } from "@/lib/planeador";
 import { rangoTexto } from "@/lib/planeador-db";
 import { codigoProcedimiento, normalizarNombreTema } from "@/lib/temas-visita";
 import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { errorRespuestas, sanearRespuestas, type Respuestas } from "@/lib/formato-visita";
 import { estructuraDesdeJson, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const recibe = respuestas && typeof respuestas.recibe_visita === "string" ? respuestas.recibe_visita : null;
   const detalle = formatoVersion ? `formato ${formatoVersion.codigo} v${formatoVersion.numero}` : `temas: ${temasValidos.map((t) => t.nombre).join("; ")}`;
 
-  const [visitaTecnica] = await db.$transaction([
+  const registro = await db.$transaction([
     db.visitaTecnica.create({
       data: {
         expedienteId: visita.expedienteId,
@@ -165,7 +165,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     }),
     db.expediente.update({ where: { id: visita.expedienteId }, data: { fechaUltimoMovimiento: new Date() } }),
-  ]);
+  ]).catch((e: unknown) => {
+    // Dos registros simultáneos de la misma visita (doble envío, o sin conexión + en línea): solo vale el primero.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return null;
+    throw e;
+  });
+  if (!registro) return NextResponse.json({ error: "Esta visita ya se registró (otra persona o un envío anterior). Recargue la página." }, { status: 409 });
+  const [visitaTecnica] = registro;
 
   await resolverNotificaciones({ clave: `visita:${id}` });
   await sincronizarAvisoVisita(visita.expedienteId);
