@@ -11,7 +11,7 @@ export const EXTENSIONES_PERMITIDAS = [
 
 export const ACCEPT_DOCUMENTOS = EXTENSIONES_PERMITIDAS.map((ext) => `.${ext}`).join(",");
 
-export const TAMANO_MAXIMO_BYTES = 25 * 1024 * 1024;
+export const TAMANO_MAXIMO_BYTES = 2 * 1024 * 1024;
 
 export const TAMANO_MAXIMO_CONTRATACION_BYTES = 2 * 1024 * 1024;
 

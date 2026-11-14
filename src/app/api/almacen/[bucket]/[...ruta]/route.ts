@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ bucket: string; ruta: string[] }> };
 
 // Tope por archivo para las subidas al almacenamiento local (NAS). Los formularios ya limitan
-// a 25 MB (trámites) o 2 MB (contratación); este tope evita que una subida directa, con un
+// a 2 MB por archivo; este tope evita que una subida directa, con un
 // token válido, llene el disco o la memoria del proceso. Ajustable con ALMACEN_MAX_MB.
 function topeBytes(): number {
   const mb = Number(process.env.ALMACEN_MAX_MB);
-  return (Number.isFinite(mb) && mb > 0 ? mb : 50) * 1024 * 1024;
+  return (Number.isFinite(mb) && mb > 0 ? mb : 2) * 1024 * 1024;
 }
 
 function demasiadoGrande() {
