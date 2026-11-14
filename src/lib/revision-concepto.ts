@@ -17,6 +17,7 @@ export const ETIQUETA_ACCION_REVISION: Record<AccionRevisionConcepto, string> = 
   DEVOLUCION: "Devolvió con observaciones",
   APROBACION: "Aprobó y envió a firma",
   REAPERTURA: "Reabrió para corrección",
+  DESCARTE: "Descartó el borrador",
 };
 
 export function etapaConcepto(c: { estadoRevision: EstadoRevisionConcepto; finalizadaEn: Date | null; firmado: boolean }): EtapaConcepto {
@@ -25,6 +26,8 @@ export function etapaConcepto(c: { estadoRevision: EstadoRevisionConcepto; final
   if (c.estadoRevision === "DEVUELTO") return "DEVUELTO";
   return "REGISTRADO";
 }
+
+export const MENSAJE_CONCEPTO_DESCARTADO = "Este concepto técnico se descartó: ya no admite cambios, revisión ni firma.";
 
 export function puedeEnviarARevision(estado: EstadoRevisionConcepto, finalizada: boolean): boolean {
   return !finalizada && (estado === "BORRADOR" || estado === "DEVUELTO");
@@ -43,7 +46,7 @@ async function datosVisita(visitaId: string) {
       expedienteId: true,
       participantes: { where: { rol: "ELABORA" }, select: { usuarioId: true } },
       expediente: { select: { numero: true, tramiteTipoId: true, archivado: true } },
-      visitaTecnica: { select: { id: true, estadoRevision: true, finalizadaEn: true, formatoVersionId: true, pasoNumero: true } },
+      visitaTecnica: { select: { id: true, estadoRevision: true, finalizadaEn: true, formatoVersionId: true, pasoNumero: true, conceptoDescartadoEn: true } },
     },
   });
 }
@@ -62,6 +65,7 @@ export async function enviarConceptoARevision(visitaId: string, usuario: { id: s
   if (!v || !vt) throw new Error("La visita no tiene hoja registrada.");
   if (!vt.formatoVersionId) throw new Error("La visita no se diligenció con un formato.");
   if (v.expediente.archivado) throw new Error("El expediente está cerrado y archivado.");
+  if (vt.conceptoDescartadoEn) throw new Error(MENSAJE_CONCEPTO_DESCARTADO);
   if (!planificador && !elaboradores(v).includes(usuario.id)) throw new Error("Solo quien elabora el concepto puede enviarlo a revisión.");
   if (!puedeEnviarARevision(vt.estadoRevision, Boolean(vt.finalizadaEn))) throw new Error("El concepto ya está en revisión o en firma.");
   await db.$transaction([
@@ -96,6 +100,7 @@ export async function devolverConcepto(visitaId: string, usuario: { id: string; 
   const vt = v?.visitaTecnica;
   if (!v || !vt) throw new Error("La visita no tiene hoja registrada.");
   if (vt.finalizadaEn) throw new Error("El concepto ya está en firma; para corregirlo use «Reabrir para corrección».");
+  if (vt.conceptoDescartadoEn) throw new Error(MENSAJE_CONCEPTO_DESCARTADO);
   if (vt.estadoRevision !== "EN_REVISION") throw new Error("El concepto no está en revisión.");
   await db.$transaction([
     db.visitaTecnica.update({ where: { id: vt.id }, data: { estadoRevision: "DEVUELTO" } }),
@@ -129,6 +134,7 @@ export async function conceptosPorRevisar(permisos: PermisosUsuario) {
     where: {
       estadoRevision: "EN_REVISION",
       finalizadaEn: null,
+      conceptoDescartadoEn: null,
       visitaProgramadaId: { not: null },
       ...(permisos.esAdmin ? {} : { expediente: { tramiteTipoId: { in: [...permisos.tramites.keys()] } } }),
     },
@@ -149,6 +155,7 @@ export async function conceptosDevueltosA(usuarioId: string) {
     where: {
       estadoRevision: "DEVUELTO",
       finalizadaEn: null,
+      conceptoDescartadoEn: null,
       visitaProgramada: { OR: [{ profesionalId: usuarioId }, { participantes: { some: { usuarioId, rol: "ELABORA" } } }] },
     },
     orderBy: { createdAt: "asc" },
@@ -161,4 +168,38 @@ export async function conceptosDevueltosA(usuarioId: string) {
       revisiones: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true, comentario: true, usuario: { select: { nombre: true } } } },
     },
   });
+}
+
+/**
+ * Descarta un concepto técnico que no se va a terminar (p. ej. el trámite se desistió): queda en el
+ * expediente como descartado, con el motivo, y deja de bloquear el cierre del expediente.
+ * No aplica a un concepto ya enviado a firma (para eso está «Reabrir para corrección»).
+ */
+export async function descartarConcepto(visitaId: string, usuario: { id: string; nombre: string }, motivo: string) {
+  const texto = motivo.trim();
+  if (!texto) throw new Error("Indique por qué se descarta el concepto.");
+  const v = await datosVisita(visitaId);
+  const vt = v?.visitaTecnica;
+  if (!v || !vt) throw new Error("La visita no tiene hoja registrada.");
+  if (v.expediente.archivado) throw new Error("El expediente está cerrado y archivado.");
+  if (vt.conceptoDescartadoEn) throw new Error("El concepto ya estaba descartado.");
+  const { count } = await db.visitaTecnica.updateMany({
+    where: { id: vt.id, finalizadaEn: null, conceptoDescartadoEn: null },
+    data: { conceptoDescartadoEn: new Date(), conceptoDescartadoPorId: usuario.id, motivoDescarteConcepto: texto },
+  });
+  if (count === 0) throw new Error("El concepto ya se envió a firma; no se puede descartar (use «Reabrir para corrección» si debe cambiarse).");
+  await db.$transaction([
+    db.revisionConcepto.create({ data: { visitaTecnicaId: vt.id, accion: "DESCARTE", usuarioId: usuario.id, comentario: texto } }),
+    db.expedienteEvento.create({
+      data: {
+        expedienteId: v.expedienteId,
+        tipo: "VISITA_REGISTRADA",
+        pasoNumero: vt.pasoNumero,
+        descripcion: `${usuario.nombre} descartó el borrador del concepto técnico: ${texto}`,
+        usuarioId: usuario.id,
+      },
+    }),
+  ]);
+  await resolverNotificaciones({ clave: `concepto-revision:${visitaId}` });
+  await resolverNotificaciones({ clave: `concepto-devuelto:${visitaId}` });
 }
