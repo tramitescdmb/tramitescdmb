@@ -53,8 +53,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.redirect(url, { status: 303 });
   }
 
+  const pasoDesde = form.get("pasoDesde") ? Number(form.get("pasoDesde")) : null;
   const siguientePasoNumero = siguientePasoRaw ? Number(siguientePasoRaw) : null;
-  if (!avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
+  if ((pasoDesde !== null && pasoDesde !== expediente.pasoActualNumero) || !avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
     const url = new URL(`/expedientes/${id}`, req.url);
     url.searchParams.set("error", "El avance pedido no corresponde al paso actual (la página pudo quedar desactualizada). Recárguela e inténtelo de nuevo.");
     return NextResponse.redirect(url, { status: 303 });
@@ -71,8 +72,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const nuevoEstado: EstadoExpediente =
     resultadoValido ?? (expediente.estado === "RADICADO" ? "EN_TRAMITE" : expediente.estado);
 
-  await db.expediente.update({
-    where: { id },
+  // Condicional: si otra persona avanzó el trámite al mismo tiempo, este avance no se aplica dos veces.
+  const { count } = await db.expediente.updateMany({
+    where: { id, pasoActualNumero: expediente.pasoActualNumero, estado: expediente.estado, archivado: false },
     data: {
       pasoActualNumero: nuevoPasoNumero,
       estado: nuevoEstado,
@@ -81,6 +83,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       fechaCierre: ESTADOS_TERMINALES.includes(nuevoEstado) ? new Date() : null,
     },
   });
+  if (count === 0) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "Otra persona avanzó o cambió este trámite al mismo tiempo. Recargue la página y revise el paso actual.");
+    return NextResponse.redirect(url, { status: 303 });
+  }
 
   const descripcionBase = pasoActual
     ? `Paso ${pasoActual.numero} ("${pasoActual.titulo}") gestionado por ${session.nombre}.`

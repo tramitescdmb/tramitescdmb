@@ -703,6 +703,7 @@ export default async function ExpedienteDetallePage({
                           {Array.isArray(pasoActual.opciones) &&
                             (pasoActual.opciones as unknown as Opcion[]).map((op, idx) => (
                               <form key={idx} action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                                <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
                                 {op.siguientePaso != null && (
                                   <input type="hidden" name="siguientePasoNumero" value={op.siguientePaso} />
                                 )}
@@ -717,6 +718,7 @@ export default async function ExpedienteDetallePage({
                             ))}
                           {!Array.isArray(pasoActual.opciones) && siguientePaso && (
                             <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                              <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
                               <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
                               <button
                                 type="submit"
@@ -733,6 +735,7 @@ export default async function ExpedienteDetallePage({
                       </div>
                     ) : siguientePaso ? (
                       <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                        <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
                         <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
                         <button
                           type="submit"
@@ -1418,6 +1421,7 @@ export default async function ExpedienteDetallePage({
               </a>
             ) : siguientePaso ? (
               <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+                <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
                 <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
                 <button type="submit" className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600">
                   <CheckCheck className="h-4 w-4" aria-hidden />

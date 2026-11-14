@@ -498,32 +498,32 @@ async function completarSolicitudFirmaReservada(
     }
 
     const huella = await huellaVerificada(doc, await db.firmaDocumentoContrato.count({ where: { documentoId: doc.id } }), (h) =>
-      db.documentoContrato.update({ where: { id: doc.id }, data: { hashSha256: h } })
+      db.documentoContrato.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
     );
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const supervisaDocContrato = (await supervisoresDelExpediente(doc.expedienteId)).has(usuarioId);
     const cargo = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
-    const firma = await db.firmaDocumentoContrato.create({
-      data: {
-        documentoId: doc.id,
-        usuarioId,
-        hashContenido,
-        calidad: solicitud.calidad,
-        ...cargo,
-        ip,
-        userAgent,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    });
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaDocContratoId: firma.id, ip, userAgent },
+    await db.$transaction(async (tx) => {
+      await exigirMismoArchivo(() => tx.documentoContrato.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: huella } }));
+      const f = await tx.firmaDocumentoContrato.create({
+        data: {
+          documentoId: doc.id,
+          usuarioId,
+          hashContenido,
+          calidad: solicitud.calidad,
+          ...cargo,
+          ip,
+          userAgent,
+          proveedor: resuelto.proveedor,
+          formato: resuelto.formato,
+          selloTiempoEn: resuelto.selloTiempoEn,
+          selloTiempoFuente: resuelto.selloTiempoFuente,
+          selloTiempoToken: resuelto.selloTiempoToken,
+        },
+      });
+      await cerrarSolicitudReservada(tx, solicitudId, { firmaDocContratoId: f.id, ip, userAgent });
     });
     await reevaluarEstadoDocumentoContrato(doc.id, usuarioId);
     await db.eventoContratacion.create({
@@ -539,31 +539,31 @@ async function completarSolicitudFirmaReservada(
     }
 
     const huella = await huellaVerificada(doc, await db.firmaExpedienteDocumento.count({ where: { documentoId: doc.id } }), (h) =>
-      db.expedienteDocumento.update({ where: { id: doc.id }, data: { hashSha256: h } })
+      db.expedienteDocumento.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
     );
     const fechaIso = new Date().toISOString();
     const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const cargo = await cargoActualDelFirmante(usuarioId, "TRAMITES");
-    const firma = await db.firmaExpedienteDocumento.create({
-      data: {
-        documentoId: doc.id,
-        usuarioId,
-        hashContenido,
-        calidad: solicitud.calidad,
-        ...cargo,
-        ip,
-        userAgent,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    });
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaExpedienteId: firma.id, ip, userAgent },
+    await db.$transaction(async (tx) => {
+      await exigirMismoArchivo(() => tx.expedienteDocumento.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: huella } }));
+      const f = await tx.firmaExpedienteDocumento.create({
+        data: {
+          documentoId: doc.id,
+          usuarioId,
+          hashContenido,
+          calidad: solicitud.calidad,
+          ...cargo,
+          ip,
+          userAgent,
+          proveedor: resuelto.proveedor,
+          formato: resuelto.formato,
+          selloTiempoEn: resuelto.selloTiempoEn,
+          selloTiempoFuente: resuelto.selloTiempoFuente,
+          selloTiempoToken: resuelto.selloTiempoToken,
+        },
+      });
+      await cerrarSolicitudReservada(tx, solicitudId, { firmaExpedienteId: f.id, ip, userAgent });
     });
     await reevaluarEstadoDocumentoExpediente(doc.id, usuarioId);
     await db.expedienteEvento.create({
@@ -649,6 +649,28 @@ async function completarSolicitudFirmaReservada(
   }
 }
 
+/**
+ * Dentro de la transacción de la firma: bloquea la fila del documento y comprueba que siga siendo el
+ * mismo archivo cuya huella se calculó. Si lo reemplazaron mientras se firmaba, no se firma.
+ */
+async function exigirMismoArchivo(actualizar: () => Promise<{ count: number }>) {
+  const { count } = await actualizar();
+  if (count === 0) throw new Error("El documento se reemplazó o eliminó mientras firmaba: recargue la página y revise la versión nueva.");
+}
+
+/** Marca la solicitud como completada solo si sigue pendiente (no la anularon ni la borraron al reemplazar el archivo). */
+async function cerrarSolicitudReservada(
+  tx: Pick<typeof db, "solicitudFirma">,
+  solicitudId: string,
+  data: { firmaDocContratoId?: string; firmaExpedienteId?: string; ip: string | null; userAgent: string | null }
+) {
+  const { count } = await tx.solicitudFirma.updateMany({
+    where: { id: solicitudId, estado: "PENDIENTE" },
+    data: { estado: "COMPLETADA", completadoEn: new Date(), ...data },
+  });
+  if (count === 0) throw new Error("La solicitud de firma ya no está vigente (se resolvió, anuló o se reemplazó el documento): recargue la página.");
+}
+
 async function crearFirmaDocumentoArchivo(
   doc: { id: string; nombre: string; hashSha256: string | null; storagePath: string },
   usuarioId: string,
@@ -659,7 +681,7 @@ async function crearFirmaDocumentoArchivo(
   cliente: Pick<typeof db, "firma"> = db,
 ) {
   const huella = await huellaVerificada(doc, await db.firma.count({ where: { documentoArchivoId: doc.id } }), (h) =>
-    db.documentoArchivo.update({ where: { id: doc.id }, data: { hashSha256: h } })
+    db.documentoArchivo.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
   );
   const fechaHora = new Date();
   const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso: fechaHora.toISOString() });
