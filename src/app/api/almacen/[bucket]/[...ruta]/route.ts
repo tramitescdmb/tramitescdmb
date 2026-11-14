@@ -92,9 +92,12 @@ async function recibir(req: NextRequest, { params }: Params) {
     contenido = Buffer.from(await req.arrayBuffer());
   }
   if (contenido.length > topeBytes) return demasiadoGrande(topeMb);
+  if (contenido.length === 0) return NextResponse.json({ message: "El archivo está vacío (0 bytes). Revíselo y vuelva a subirlo." }, { status: 400 });
   const destino = rutaFisica(bucket, ruta);
   try {
-    await escribirArchivo(destino, contenido, req.headers.get("x-upsert") === "true" ? "w" : "wx");
+    // Nunca se sobrescribe: el token de subida dura 2 horas y, con "x-upsert", quien subió un archivo
+    // podía reemplazarlo después de registrado (incluso ya firmado) sin dejar rastro.
+    await escribirArchivo(destino, contenido, "wx");
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "EEXIST") {
       return NextResponse.json({ message: "El archivo ya existe" }, { status: 409 });
