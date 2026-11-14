@@ -783,11 +783,19 @@ export async function validarDocumentoContrato(
 ): Promise<void> {
   const doc = await db.documentoContrato.findUnique({
     where: { id: documentoId },
-    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, verificacionRecepcionEn: true },
+    select: {
+      nombre: true,
+      expedienteId: true,
+      estadoValidacion: true,
+      etapa: true,
+      verificacionRecepcionEn: true,
+      solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
+    },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan documentos de la etapa Precontractual.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+  if (doc.solicitudesFirma.length > 0) throw new Error("Este documento tiene firmas pendientes: se valida cuando terminen de firmar.");
   if (doc.estadoValidacion === "RECHAZADO") {
     throw new Error(
       "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."
@@ -812,6 +820,55 @@ export async function validarDocumentoContrato(
     entidad: "DocumentoContrato",
     entidadId: documentoId,
     accion: "VALIDA",
+    usuarioId,
+    ip: opts.ip ?? null,
+    userAgent: opts.userAgent ?? null,
+    detalle,
+  });
+}
+
+/**
+ * Devuelve un documento de Precontractual (p. ej. la hoja de vida) con observaciones: queda rechazado,
+ * quien lo subió recibe el aviso y debe cargar una versión corregida, que es la que cuenta en la lista.
+ */
+export async function devolverDocumentoContrato(
+  documentoId: string,
+  usuarioId: string,
+  observaciones: string,
+  opts: { ip?: string | null; userAgent?: string | null } = {}
+): Promise<void> {
+  const texto = observaciones.trim();
+  if (!texto) throw new Error("Escriba qué debe corregirse.");
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, subidoPorId: true },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan (o devuelven) documentos de la etapa Precontractual.");
+  if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+  if (doc.estadoValidacion === "RECHAZADO") throw new Error("Este documento ya fue devuelto: espere la versión corregida.");
+
+  const ahora = new Date();
+  await db.documentoContrato.update({
+    where: { id: documentoId },
+    data: {
+      estadoValidacion: "RECHAZADO",
+      validadoPorId: usuarioId,
+      validadoEn: ahora,
+      verificacionRecepcionEn: ahora,
+      verificacionRecepcionPorId: usuarioId,
+      verificacionRecepcionObservaciones: texto,
+    },
+  });
+  await db.avisoRechazoDocumento.create({
+    data: { expedienteId: doc.expedienteId, documentoContratoId: documentoId, mensaje: texto, rechazadoPorId: usuarioId, subidoPorId: doc.subidoPorId },
+  });
+  const detalle = `Devolvió "${doc.nombre}" para corrección: ${texto}`;
+  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_RECHAZADO", detalle, usuarioId);
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documentoId,
+    accion: "DEVUELVE",
     usuarioId,
     ip: opts.ip ?? null,
     userAgent: opts.userAgent ?? null,

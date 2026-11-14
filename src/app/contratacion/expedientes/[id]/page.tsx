@@ -370,7 +370,7 @@ export default async function DetalleExpedienteContractualPage({
         <EstadoFirmaDocumento requiereFirma={doc.requiereFirma} cargadoEnSecop={doc.cargadoEnSecop} solicitudes={solicitudes} totalFirmas={doc.firmas.length} />
         {marcaFirma(doc, doc.firmas.length, etapa)}
         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
-        {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+        {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} permitirDevolver={doc.estadoValidacion === "PENDIENTE"} />}
         {firmado && (
           <a
             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -968,7 +968,7 @@ export default async function DetalleExpedienteContractualPage({
                                 mimeType={item.documento.mimeType}
                               />
                               {puedeValidarEn(etapa) && item.documento.estadoValidacion !== "APROBADO" && (
-                                <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
+                                <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} permitirDevolver={item.documento.estadoValidacion === "PENDIENTE"} />
                               )}
                               {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                                 <a
@@ -1083,7 +1083,7 @@ export default async function DetalleExpedienteContractualPage({
                                   nombre={doc.nombre}
                                   mimeType={doc.mimeType}
                                 />
-                                {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+                                {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} permitirDevolver={doc.estadoValidacion === "PENDIENTE"} />}
                                 {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                                   <a
                                     href={`/api/contratacion-documentos/${doc.id}/rotulado`}
