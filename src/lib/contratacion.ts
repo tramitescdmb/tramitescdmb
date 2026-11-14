@@ -39,6 +39,7 @@ import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, pr
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { anioColombia, fechaArchivoColombia } from "@/lib/fecha";
+import { MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -663,9 +664,13 @@ export async function editarDocumentoContratoSinTraza(
 ): Promise<{ storagePathAnterior: string | null }> {
   const nombre = datos.nombre?.trim();
   const anterior = datos.archivo
-    ? await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } })
+    ? await db.documentoContrato.findUnique({
+        where: { id: documentoId },
+        select: { storagePath: true, nombre: true, expedienteId: true, estadoValidacion: true, firmas: { select: { usuario: { select: { nombre: true } } } } },
+      })
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
+  if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
 
   await db.documentoContrato.update({
     where: { id: documentoId },
@@ -692,6 +697,8 @@ export async function editarDocumentoContratoSinTraza(
     await db.firmaDocumentoContrato.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoContratoId: documentoId } });
     await db.avisoRechazoDocumento.deleteMany({ where: { documentoContratoId: documentoId } });
+    const anuladas = anterior ? detalleFirmasAnuladas(anterior.nombre, anterior.firmas.map((f) => f.usuario.nombre), "reemplazo") : null;
+    if (anterior && anuladas) await db.eventoContratacion.create({ data: { expedienteId: anterior.expedienteId, tipo: "FIRMAS_ANULADAS", detalle: anuladas } });
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };
@@ -700,10 +707,20 @@ export async function editarDocumentoContratoSinTraza(
 export async function eliminarDocumentoContratoSinTraza(documentoId: string): Promise<{ storagePath: string }> {
   const doc = await db.documentoContrato.findUnique({
     where: { id: documentoId },
-    select: { storagePath: true, expedienteId: true, requisito: { select: { codigoFormato: true } } },
+    select: {
+      storagePath: true,
+      nombre: true,
+      expedienteId: true,
+      estadoValidacion: true,
+      requisito: { select: { codigoFormato: true } },
+      firmas: { select: { usuario: { select: { nombre: true } } } },
+    },
   });
   if (!doc) throw new Error("El documento no existe.");
+  if (doc.firmas.length > 0 && doc.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
   await db.documentoContrato.delete({ where: { id: documentoId } });
+  const anuladas = detalleFirmasAnuladas(doc.nombre, doc.firmas.map((f) => f.usuario.nombre), "borrado");
+  if (anuladas) await db.eventoContratacion.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMAS_ANULADAS", detalle: anuladas } });
   // Si se borra la terminación anticipada (cargada por error), el contrato deja de exigir liquidación
   // salvo que quede otra cargada.
   if (doc.requisito?.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA)) {

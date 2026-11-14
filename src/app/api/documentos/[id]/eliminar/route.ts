@@ -5,6 +5,7 @@ import { deleteDocumento } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
+import { MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,7 +17,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const documento = await db.expedienteDocumento.findUnique({
     where: { id },
-    include: { expediente: { select: { pasoActualNumero: true, archivado: true } } },
+    include: {
+      expediente: { select: { pasoActualNumero: true, archivado: true } },
+      firmas: { select: { usuario: { select: { nombre: true } } } },
+    },
   });
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
   if (documento.expediente.archivado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
@@ -40,15 +44,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
-  await deleteDocumento(documento.storagePath).catch(() => {});
+  if (documento.firmas.length > 0 && documento.estadoValidacion === "APROBADO") {
+    return NextResponse.json({ error: MENSAJE_DOCUMENTO_YA_FIRMADO }, { status: 409 });
+  }
 
+  // Primero el registro y luego el archivo: si el borrado en la base falla, el archivo sigue en el NAS.
   await db.expedienteDocumento.delete({ where: { id } });
+  await deleteDocumento(documento.storagePath).catch(() => {});
 
   const descripcion = [
     `${session.nombre} eliminó el documento "${documento.nombre}"${
       documento.pasoNumero ? ` (paso ${documento.pasoNumero})` : " (radicación)"
     }.`,
     !etapaAbierta ? `Etapa ya cerrada — oficio de solicitud del Subdirector: ${oficio}.` : null,
+    detalleFirmasAnuladas(documento.nombre, documento.firmas.map((f) => f.usuario.nombre), "borrado"),
   ]
     .filter(Boolean)
     .join(" ");

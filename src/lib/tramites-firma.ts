@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 
 export async function editarDocumentoTramite(
   documentoId: string,
@@ -9,12 +10,16 @@ export async function editarDocumentoTramite(
     requiereFirma?: boolean;
     archivo?: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
   }
-): Promise<{ storagePathAnterior: string | null }> {
+): Promise<{ storagePathAnterior: string | null; firmasAnuladas?: string | null }> {
   const nombre = datos.nombre?.trim();
   const anterior = datos.archivo
-    ? await db.expedienteDocumento.findUnique({ where: { id: documentoId }, select: { storagePath: true } })
+    ? await db.expedienteDocumento.findUnique({
+        where: { id: documentoId },
+        select: { storagePath: true, nombre: true, expedienteId: true, pasoNumero: true, estadoValidacion: true, firmas: { select: { usuario: { select: { nombre: true } } } } },
+      })
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
+  if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
 
   await db.expedienteDocumento.update({
     where: { id: documentoId },
@@ -40,6 +45,8 @@ export async function editarDocumentoTramite(
     await db.firmaExpedienteDocumento.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoExpedienteId: documentoId } });
     await db.avisoRechazoDocumento.deleteMany({ where: { documentoExpedienteId: documentoId } });
+    const anuladas = anterior ? detalleFirmasAnuladas(anterior.nombre, anterior.firmas.map((f) => f.usuario.nombre), "reemplazo") : null;
+    return { storagePathAnterior: anterior?.storagePath ?? null, firmasAnuladas: anuladas };
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };

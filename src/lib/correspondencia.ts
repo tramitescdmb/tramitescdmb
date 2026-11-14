@@ -4,7 +4,7 @@ import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante,
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";
-import { completarSolicitudFirma, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { bloquearFirma, completarSolicitudFirma, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { nivelFirma, puedeSerFirmantePrincipal } from "@/lib/jerarquia-firma";
 import { solicitarSelloTiempo } from "@/lib/sello-tiempo";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -15,7 +15,7 @@ import { validarPalabrasClave } from "@/lib/vocabulario";
 import { generarNumeroExpediente } from "@/lib/expedientes-documentales";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
-import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
+import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdjuntos, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
 import { cancelarFlujosDeObjeto, iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import { avisarRadicadoPqrsd, avisarRespuestaPqrsd } from "@/lib/avisos-externos";
@@ -303,13 +303,18 @@ export async function agregarCofirma(
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
 
+  await verificarHuellasAdjuntos(c);
   const fechaHora = new Date();
   const hashContenido = await hashFirmaComunicacion(c, fechaHora);
   const datos = await resolverFirma(hashContenido);
   const puedePrincipal = puedeSerFirmantePrincipal(usuario, "SGDEA");
   if (calidadElegida === "PRINCIPAL" && !puedePrincipal) throw new Error("Su cargo no le permite firmar como firmante principal.");
   const calidad: CalidadFirma = calidadElegida ?? (c.tipo === "RECIBIDA" || !puedePrincipal ? "PROYECTO" : "PRINCIPAL");
-  return db.firma.create({
+  return db.$transaction(async (tx) => {
+    // Bloqueo por comunicación y firmante: un doble clic no crea dos firmas.
+    await bloquearFirma(tx, `comunicacion:${comunicacionId}:${usuarioId}`);
+    if (await tx.firma.findFirst({ where: { comunicacionId, usuarioId }, select: { id: true } })) throw new Error("Usted ya firmó esta comunicación.");
+    return tx.firma.create({
     data: {
       calidad,
       actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null,
@@ -326,6 +331,7 @@ export async function agregarCofirma(
       selloTiempoFuente: datos.selloTiempoFuente,
       selloTiempoToken: datos.selloTiempoToken,
     },
+    });
   });
 }
 
@@ -669,6 +675,9 @@ export async function devolverReparto(comunicacionId: string, usuarioId: string,
   if (!devolucionDeReparoPermitida(c.fechaVencimiento, calendario)) {
     throw new Error("No se puede devolver: faltan 3 días hábiles o menos para el vencimiento del término de ley. Atiéndala o coordínelo con la ventanilla.");
   }
+  // Al devolver se borra la respuesta en borrador: las firmas y solicitudes de firma sobre ella ya no
+  // tienen qué amparar y, si quedaran, bloquearían a quien reciba el nuevo reparto.
+  const firmasRespuesta = await db.firma.findMany({ where: { comunicacionId }, select: { id: true, usuario: { select: { nombre: true } } } });
   await db.$transaction([
     db.distribucion.updateMany({
       where: { comunicacionId, activa: true },
@@ -678,8 +687,10 @@ export async function devolverReparto(comunicacionId: string, usuarioId: string,
       where: { id: comunicacionId },
       data: { estado: "EN_REPARTO", respuestaTexto: null, respuestaPorId: null, respuestaEn: null },
     }),
+    db.solicitudFirma.deleteMany({ where: { comunicacionId, rol: { not: "LECTURA" } } }),
+    db.firma.deleteMany({ where: { comunicacionId } }),
   ]);
-  return { radicado: c.radicado };
+  return { radicado: c.radicado, firmasAnuladas: firmasRespuesta.map((f) => f.usuario.nombre) };
 }
 
 export async function cambiarNivelAccesoComunicacion(comunicacionId: string, nivelAcceso: NivelAccesoInformacion, fundamento: string) {

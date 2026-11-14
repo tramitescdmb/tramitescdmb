@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { huellaVerificada } from "@/lib/hash-archivo";
 import { resolverFirma } from "@/lib/firma-proveedor";
 import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
@@ -6,7 +7,7 @@ import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
+import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdjuntos, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 import { claveMatriz, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
 import { componerMensaje, plantillaDeEvento } from "@/lib/plantillas-correo-base";
@@ -488,8 +489,11 @@ async function completarSolicitudFirmaReservada(
       return;
     }
 
+    const huella = await huellaVerificada(doc, await db.firmaDocumentoContrato.count({ where: { documentoId: doc.id } }), (h) =>
+      db.documentoContrato.update({ where: { id: doc.id }, data: { hashSha256: h } })
+    );
     const fechaIso = new Date().toISOString();
-    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
+    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const supervisaDocContrato = (await supervisoresDelExpediente(doc.expedienteId)).has(usuarioId);
     const cargo = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
@@ -526,8 +530,11 @@ async function completarSolicitudFirmaReservada(
       return;
     }
 
+    const huella = await huellaVerificada(doc, await db.firmaExpedienteDocumento.count({ where: { documentoId: doc.id } }), (h) =>
+      db.expedienteDocumento.update({ where: { id: doc.id }, data: { hashSha256: h } })
+    );
     const fechaIso = new Date().toISOString();
-    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
+    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const cargo = await cargoActualDelFirmante(usuarioId, "TRAMITES");
     const firma = await db.firmaExpedienteDocumento.create({
@@ -568,6 +575,7 @@ async function completarSolicitudFirmaReservada(
     if (previa) {
       firmaId = previa.id;
     } else {
+      await verificarHuellasAdjuntos(c);
       const fechaHora = new Date();
       const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
@@ -634,17 +642,21 @@ async function completarSolicitudFirmaReservada(
 }
 
 async function crearFirmaDocumentoArchivo(
-  doc: { id: string; nombre: string; hashSha256: string | null },
+  doc: { id: string; nombre: string; hashSha256: string | null; storagePath: string },
   usuarioId: string,
   calidad: CalidadFirma | null,
   cargo: { cargoAlFirmar: string; actoAdministrativoAlFirmar: string | null },
   ip: string | null,
   userAgent: string | null,
+  cliente: Pick<typeof db, "firma"> = db,
 ) {
+  const huella = await huellaVerificada(doc, await db.firma.count({ where: { documentoArchivoId: doc.id } }), (h) =>
+    db.documentoArchivo.update({ where: { id: doc.id }, data: { hashSha256: h } })
+  );
   const fechaHora = new Date();
-  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso: fechaHora.toISOString() });
+  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso: fechaHora.toISOString() });
   const resuelto = await resolverFirma(hashContenido);
-  return db.firma.create({
+  return cliente.firma.create({
     data: {
       usuarioId,
       documentoArchivoId: doc.id,
@@ -664,9 +676,14 @@ async function crearFirmaDocumentoArchivo(
   });
 }
 
+/** Bloqueo de PostgreSQL que dura lo que la transacción: serializa dos firmas simultáneas de la misma persona. */
+export async function bloquearFirma(tx: Pick<typeof db, "$queryRaw">, clave: string) {
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${clave}))::text AS ok`;
+}
+
 export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, usuarioId: string, ip: string | null, userAgent: string | null) {
   await validarDocumentoArchivoFirmable(documentoArchivoId);
-  const doc = await db.documentoArchivo.findUnique({ where: { id: documentoArchivoId }, select: { id: true, nombre: true, hashSha256: true } });
+  const doc = await db.documentoArchivo.findUnique({ where: { id: documentoArchivoId }, select: { id: true, nombre: true, hashSha256: true, storagePath: true } });
   if (!doc) throw new Error("El documento no existe.");
   if (await db.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) {
     throw new Error("Usted ya firmó este documento.");
@@ -685,14 +702,20 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
-  await crearFirmaDocumentoArchivo(
-    doc,
-    usuarioId,
-    puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
-    { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
-    ip,
-    userAgent,
-  );
+  // Bloqueo por documento y firmante: un doble clic no crea dos firmas.
+  await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `archivo:${documentoArchivoId}:${usuarioId}`);
+    if (await tx.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) throw new Error("Usted ya firmó este documento.");
+    await crearFirmaDocumentoArchivo(
+      doc,
+      usuarioId,
+      puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
+      { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
+      ip,
+      userAgent,
+      tx,
+    );
+  });
 }
 
 export async function rechazarSolicitudFirma(
@@ -717,10 +740,16 @@ export async function rechazarSolicitudFirma(
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
 
-  await db.solicitudFirma.update({
-    where: { id: solicitudId },
+  // Condicional: si la misma persona ya está firmando (reserva en curso) o la resolvió en otra pestaña, no se rechaza.
+  const rechazada = await db.solicitudFirma.updateMany({
+    where: {
+      id: solicitudId,
+      estado: "PENDIENTE",
+      OR: [{ completadoEn: null }, { completadoEn: { lt: new Date(Date.now() - 2 * 60_000) } }],
+    },
     data: { estado: "RECHAZADA", comentario: comentario.trim(), completadoEn: new Date() },
   });
+  if (rechazada.count === 0) throw new Error("Esta solicitud ya fue resuelta o se está firmando en este momento. Recargue la página.");
 
   if (solicitud.documentoContrato) {
     await reevaluarEstadoDocumentoContrato(solicitud.documentoContrato.id, usuarioId);

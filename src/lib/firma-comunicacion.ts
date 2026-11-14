@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { hashContenidoFirma } from "@/lib/firma";
+import { huellaVerificada } from "@/lib/hash-archivo";
 
 type ClienteDb = Pick<Prisma.TransactionClient, "comunicacionDocumento">;
 
@@ -13,6 +14,21 @@ export type ComunicacionFirmable = {
   contenido: string | null;
   respuestaTexto: string | null;
 };
+
+/** Antes de firmar, comprueba que la huella de cada adjunto que entra en la firma sea la del archivo guardado. */
+export async function verificarHuellasAdjuntos(c: Pick<ComunicacionFirmable, "id" | "tipo">): Promise<void> {
+  const esRespuesta = c.tipo === "RECIBIDA";
+  const [documentos, firmasPrevias] = await Promise.all([
+    db.comunicacionDocumento.findMany({
+      where: { comunicacionId: c.id, ...(esRespuesta ? { esRespuesta: true } : {}) },
+      select: { id: true, storagePath: true, hashSha256: true },
+    }),
+    db.firma.count({ where: { comunicacionId: c.id } }),
+  ]);
+  for (const d of documentos) {
+    await huellaVerificada(d, firmasPrevias, (h) => db.comunicacionDocumento.update({ where: { id: d.id }, data: { hashSha256: h } }));
+  }
+}
 
 export async function hashFirmaComunicacion(c: ComunicacionFirmable, fechaHora: Date, cliente: ClienteDb = db): Promise<string> {
   const esRespuesta = c.tipo === "RECIBIDA";

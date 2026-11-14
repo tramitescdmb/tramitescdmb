@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    const { storagePathAnterior } = await editarDocumentoTramite(id, {
+    const { storagePathAnterior, firmasAnuladas } = await editarDocumentoTramite(id, {
       nombre: typeof body.nombre === "string" ? body.nombre : undefined,
       descripcion: "descripcion" in body ? (body.descripcion ? String(body.descripcion) : null) : undefined,
       requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const descripcion = [
       `${session.nombre} editó el documento "${documento.nombre}"${documento.pasoNumero ? ` (paso ${documento.pasoNumero})` : " (radicación)"}.`,
       !etapaAbierta ? `Etapa ya cerrada — oficio de solicitud del Subdirector: ${oficio}.` : null,
+      firmasAnuladas ?? null,
     ]
       .filter(Boolean)
       .join(" ");
