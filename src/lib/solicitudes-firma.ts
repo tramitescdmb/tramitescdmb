@@ -377,7 +377,45 @@ function hashContenidoFirmaDocumento(datos: { documentoId: string; nombre: strin
   return crypto.createHash("sha256").update(base, "utf8").digest("hex");
 }
 
+/**
+ * Firma o da visto bueno a una solicitud. Primero la "reserva" (marca completadoEn solo si sigue
+ * pendiente y sin marca) para que un doble clic o dos pestañas no generen dos firmas del mismo
+ * firmante sobre el mismo documento; si algo falla, la reserva se libera.
+ */
 export async function completarSolicitudFirma(
+  solicitudId: string,
+  usuarioId: string,
+  ip: string | null,
+  userAgent: string | null
+) {
+  const reservada = await db.solicitudFirma.updateMany({
+    where: {
+      id: solicitudId,
+      usuarioAsignadoId: usuarioId,
+      estado: "PENDIENTE",
+      // Una reserva de más de 2 minutos se da por perdida (p. ej. el servicio se reinició a mitad de la firma).
+      OR: [{ completadoEn: null }, { completadoEn: { lt: new Date(Date.now() - 2 * 60_000) } }],
+    },
+    data: { completadoEn: new Date() },
+  });
+  if (reservada.count === 0) {
+    const actual = await db.solicitudFirma.findUnique({ where: { id: solicitudId }, select: { estado: true, usuarioAsignadoId: true } });
+    if (!actual) throw new Error("La solicitud no existe.");
+    if (actual.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
+    if (actual.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
+    throw new Error("Esta firma ya se está procesando; espere unos segundos y recargue la página.");
+  }
+  try {
+    await completarSolicitudFirmaReservada(solicitudId, usuarioId, ip, userAgent);
+  } catch (e) {
+    await db.solicitudFirma
+      .updateMany({ where: { id: solicitudId, estado: "PENDIENTE" }, data: { completadoEn: null } })
+      .catch((err) => console.error("No se pudo liberar la reserva de la solicitud de firma:", err));
+    throw e;
+  }
+}
+
+async function completarSolicitudFirmaReservada(
   solicitudId: string,
   usuarioId: string,
   ip: string | null,
