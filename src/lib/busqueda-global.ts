@@ -8,13 +8,14 @@ import {
 import { construirWhereExpedientes } from "@/lib/expedientes";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
 import { construirWhereCorrespondencia } from "@/lib/correspondencia-data";
+import { filtroNivelAccesoComunicacion } from "@/lib/correspondencia-acceso";
 
 export type ResultadoBusqueda = { href: string; titulo: string; detalle?: string };
 export type GrupoBusqueda = { modulo: string; titulo: string; verTodos: string; resultados: ResultadoBusqueda[] };
 
 const POR_GRUPO = 5;
 
-export async function buscarGlobal(consulta: string, permisos: PermisosUsuario): Promise<GrupoBusqueda[]> {
+export async function buscarGlobal(consulta: string, permisos: PermisosUsuario, usuarioId: string): Promise<GrupoBusqueda[]> {
   const q = consulta.trim();
   if (q.length < 2) return [];
   const qs = encodeURIComponent(q);
@@ -98,7 +99,7 @@ export async function buscarGlobal(consulta: string, permisos: PermisosUsuario):
     tareas.push(
       db.comunicacion
         .findMany({
-          where: construirWhereCorrespondencia({ q }),
+          where: construirWhereCorrespondencia({ q }, null, filtroNivelAccesoComunicacion(permisos, usuarioId)),
           orderBy: { fechaRadicacion: "desc" },
           take: POR_GRUPO,
           select: { id: true, radicado: true, asunto: true, terceroNombre: true },

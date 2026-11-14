@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -71,6 +72,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  if (!(await puedeVerComunicacion(permisos, session.userId, doc.comunicacionId))) {
+    return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  }
   if (doc.mimeType !== "application/pdf") {
     return NextResponse.json({ error: "El rótulo solo se puede estampar sobre documentos PDF." }, { status: 400 });
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { RegistrarReciente } from "@/components/RegistrarReciente";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { contextoMemorandos, marcarMemorandoLeido, memorandoPendienteDe } from "@/lib/memorandos";
@@ -198,6 +199,7 @@ export default async function CorrespondenciaDetallePage({
     },
   });
   if (!c) notFound();
+  if (!(await puedeVerComunicacion(permisos, session.userId, c.id))) notFound();
 
   const ctxMemo = c.tipo === "INTERNA" ? await contextoMemorandos(session.userId, permisos) : null;
   const memorandoPorResponder = ctxMemo ? await memorandoPendienteDe(c.id, ctxMemo) : null;
