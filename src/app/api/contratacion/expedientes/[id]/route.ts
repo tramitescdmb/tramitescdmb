@@ -49,6 +49,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "fechaFinEstimada",
     "modalidadSeleccion",
     "tipoContrato",
+    "causalContratacionDirecta",
+    "codigoProceso",
     "valor",
     "dependenciaSolicitanteId",
     "expedienteRelacionadoId",

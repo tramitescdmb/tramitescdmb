@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoTramite, puedeVerExpedienteTramite } from "@/lib/permisos";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
 import type { RolFirmante, CalidadFirma } from "@prisma/client";
 import { esCalidadFirma } from "@/lib/calidad-firma";
@@ -17,8 +17,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No tiene permiso para asignar firmantes." }, { status: 403 });
   }
 
-  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true } });
+  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true, expediente: { select: { id: true, tramiteTipoId: true } } } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  // Asignar firmantes (también "solo lectura") da acceso al documento: exige ver ese trámite.
+  if (!puedeVerExpedienteTramite(permisos, doc.expediente)) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => null);
   const firmantesBody = Array.isArray(body?.firmantes) ? body.firmantes : null;
