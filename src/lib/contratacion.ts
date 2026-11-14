@@ -359,6 +359,7 @@ export async function guardarTopeCuantia(datos: { anio: number; menorCuantia: nu
 
 export async function validarCuantiaContrato(modalidad: string, valor: number | null, fechaSuscripcion: Date | null): Promise<void> {
   if (valor === null) return;
+  if (!Number.isFinite(valor) || valor < 0) throw new Error("El valor del contrato debe ser un número positivo, sin puntos ni símbolos.");
   const error = errorCuantia(modalidad, valor, await topeCuantiaDe(anioColombia(fechaSuscripcion ?? new Date())));
   if (error) throw new Error(error);
 }

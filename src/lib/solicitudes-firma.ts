@@ -262,7 +262,18 @@ export async function asignarFirmantes(
     estado: (f.rol === "LECTURA" ? "COMPLETADA" : "PENDIENTE") as EstadoSolicitudFirma,
     completadoEn: f.rol === "LECTURA" ? new Date() : null,
   }));
-  await db.solicitudFirma.createMany({ data });
+  // Dos asignaciones simultáneas sobre el mismo documento (doble clic, dos personas) se serializan y se
+  // vuelve a comprobar dentro de la transacción, para que nadie quede asignado dos veces.
+  await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `asignar:${objetivo.tipo}:${objetivo.id}`);
+    if (conAccion.length > 0) {
+      const repetidas = await tx.solicitudFirma.count({
+        where: { ...whereObjetivo(objetivo), usuarioAsignadoId: { in: conAccion.map((f) => f.usuarioId) }, rol: { not: "LECTURA" }, estado: { not: "RECHAZADA" } },
+      });
+      if (repetidas > 0) throw new Error("Otra persona acaba de asignar a alguno de estos firmantes en este documento. Recargue la página.");
+    }
+    await tx.solicitudFirma.createMany({ data });
+  });
 
   if (firmantes.some((f) => f.rol === "FIRMA")) {
     if (objetivo.tipo === "documentoContrato") {

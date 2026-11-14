@@ -83,7 +83,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!contratistaId) return NextResponse.json({ error: "Falta el contratista." }, { status: 400 });
     const [contratista, actual] = await Promise.all([
       db.contratista.findUnique({ where: { id: contratistaId }, select: { nombreORazonSocial: true } }),
-      db.expedienteContractual.findUnique({ where: { id }, select: { contratista: { select: { id: true, nombreORazonSocial: true } } } }),
+      db.expedienteContractual.findUnique({ where: { id }, select: { contratista: { select: { id: true, nombreORazonSocial: true, usuarioId: true } } } }),
     ]);
     if (!contratista) return NextResponse.json({ error: "El contratista no existe." }, { status: 404 });
     if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
@@ -96,6 +96,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { contratistaId },
     });
     if (count === 0) return NextResponse.json({ error: "El contratista de este expediente acaba de cambiar; no se modificó." }, { status: 409 });
+    // El contratista anterior deja de firmar en este contrato: sus solicitudes pendientes se cierran (y con ellas
+    // el acceso que le daban a los documentos del expediente). Quien gestiona asigna de nuevo al contratista nuevo.
+    let anuladas = 0;
+    if (actual.contratista?.usuarioId) {
+      // Se borran (no se marcan rechazadas): un rechazo dejaría el documento como "devuelto por el firmante".
+      const r = await db.solicitudFirma.deleteMany({
+        where: { usuarioAsignadoId: actual.contratista.usuarioId, estado: "PENDIENTE", documentoContrato: { expedienteId: id } },
+      });
+      anuladas = r.count;
+    }
     await registrarEventoContratacion(
       id,
       "CONTRATISTA_VINCULADO",
@@ -104,6 +114,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : `Se vinculó a ${contratista.nombreORazonSocial} como contratista.`,
       session.userId
     );
+    if (anuladas > 0) {
+      await registrarEventoContratacion(
+        id,
+        "FIRMAS_ANULADAS",
+        `Se cerraron ${anuladas} solicitud(es) de firma pendientes del contratista anterior (${actual.contratista!.nombreORazonSocial}); asigne las firmas al contratista nuevo.`,
+        session.userId
+      );
+    }
     return NextResponse.json({ ok: true });
   }
 
