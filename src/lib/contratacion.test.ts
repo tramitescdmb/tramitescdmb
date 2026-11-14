@@ -42,6 +42,18 @@ describe("validarOrdenFechasContrato", () => {
   });
 });
 
+describe("validarOrdenFechasContrato — terminación y fechas inválidas", () => {
+  it("rechaza una terminación anterior al inicio (no se armarían cuentas mensuales)", () => {
+    expect(() => validarOrdenFechasContrato(null, new Date("2026-05-01"), new Date("2026-04-30"))).toThrow(/terminación/);
+  });
+  it("rechaza una fecha que no es válida", () => {
+    expect(() => validarOrdenFechasContrato(new Date("no-es-fecha"), null, null)).toThrow(/no es válida/);
+  });
+  it("acepta terminación igual o posterior al inicio", () => {
+    expect(() => validarOrdenFechasContrato(null, new Date("2026-05-01"), new Date("2026-05-01"))).not.toThrow();
+  });
+});
+
 describe("validarFormatoSecop", () => {
   it("acepta números de proceso con letras, dígitos, puntos, guiones y barras", () => {
     expect(() => validarFormatoSecop("IPS-045-2026")).not.toThrow();

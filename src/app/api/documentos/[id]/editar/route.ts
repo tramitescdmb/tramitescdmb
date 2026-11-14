@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { MENSAJE_RUTA_AJENA, deleteDocumento, rutaDeExpediente } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import { editarDocumentoTramite } from "@/lib/tramites-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -52,6 +52,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       : undefined;
   if (archivo && !rutaDeExpediente(archivo.storagePath, documento.expedienteId)) {
     return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
+  if (archivo) {
+    const problema = await problemaArchivoSubido(archivo.storagePath, await db.expedienteDocumento.count({ where: { storagePath: archivo.storagePath } }));
+    if (problema) return NextResponse.json({ error: problema }, { status: 409 });
   }
 
   try {

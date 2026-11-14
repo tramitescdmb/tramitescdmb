@@ -25,6 +25,7 @@ import {
   validarOrdenFechasContrato,
 } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { anioColombia } from "@/lib/fecha";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { MENSAJE_EXPEDIENTE_CERRADO, contratoCerrado, sincronizarArchivoContrato } from "@/lib/archivo-central";
 
@@ -54,6 +55,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "valor",
     "dependenciaSolicitanteId",
     "expedienteRelacionadoId",
+    "supervisorUsuarioIds",
+    "personalAsignadoIds",
   ];
   if (CAMPOS_CONTENIDO.some((c) => c in body) && (await contratoCerrado(id))) {
     return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
@@ -156,7 +159,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           solicitado: "codigoProceso" in body ? body.codigoProceso : null,
           modalidad,
           causal: causalNueva,
-          anio: (suscripcion ?? vigente.createdAt).getUTCFullYear(),
+          anio: anioColombia(suscripcion ?? vigente.createdAt),
           actual: vigente.codigoProceso,
           excluirId: id,
         });
@@ -183,16 +186,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!dependencia) return NextResponse.json({ error: "La dependencia indicada no existe." }, { status: 404 });
     }
     const numeroProcesoSecop = "numeroProcesoSecop" in body && body.numeroProcesoSecop ? String(body.numeroProcesoSecop).trim() : null;
-    if (numeroProcesoSecop || "fechaSuscripcion" in body || "fechaInicio" in body) {
+    if (numeroProcesoSecop || "fechaSuscripcion" in body || "fechaInicio" in body || "fechaFinEstimada" in body) {
       try {
         const actual = await db.expedienteContractual.findUnique({
           where: { id },
-          select: { fechaSuscripcion: true, fechaInicio: true, createdAt: true },
+          select: { fechaSuscripcion: true, fechaInicio: true, fechaFinEstimada: true, createdAt: true },
         });
         if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
         const fechaSuscripcionEfectiva = "fechaSuscripcion" in body ? (body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null) : actual.fechaSuscripcion;
         const fechaInicioEfectiva = "fechaInicio" in body ? (body.fechaInicio ? new Date(body.fechaInicio) : null) : actual.fechaInicio;
-        validarOrdenFechasContrato(fechaSuscripcionEfectiva, fechaInicioEfectiva);
+        const fechaFinEfectiva = "fechaFinEstimada" in body ? (body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null) : actual.fechaFinEstimada;
+        validarOrdenFechasContrato(fechaSuscripcionEfectiva, fechaInicioEfectiva, fechaFinEfectiva);
         if (numeroProcesoSecop) {
           validarFormatoSecop(numeroProcesoSecop);
           await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(fechaInicioEfectiva, actual.createdAt), id);

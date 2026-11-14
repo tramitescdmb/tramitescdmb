@@ -5,7 +5,7 @@ import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/cl
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
-import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, esContratista, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdjuntos, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
@@ -431,6 +431,13 @@ async function completarSolicitudFirmaReservada(
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   if (solicitud.rol === "LECTURA") throw new Error("Un acceso de solo lectura no requiere ninguna acción.");
   await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
+  // Regla de GECON, aplicada aquí para que valga por cualquier ruta (no solo la de contratación).
+  if (solicitud.documentoContrato?.etapa === "PRECONTRACTUAL") {
+    const firmante = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
+    if (firmante && esContratista(firmante)) {
+      throw new Error("El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos.");
+    }
+  }
 
   const hermanas = await db.solicitudFirma.findMany({
     where: solicitud.comunicacionId

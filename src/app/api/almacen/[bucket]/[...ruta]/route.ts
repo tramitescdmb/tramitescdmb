@@ -53,6 +53,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       "Content-Disposition": `${descargar ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(nombre)}`,
       "Cache-Control": BUCKETS_PUBLICOS.has(bucket) ? "public, max-age=3600" : "private, no-store",
       "X-Content-Type-Options": "nosniff",
+      // Un HTML, SVG o XML subido no debe ejecutar código con la sesión de la plataforma.
+      ...(/^(text\/html|image\/svg|application\/xml)/.test(tipoPorExtension(ruta)) ? { "Content-Security-Policy": "sandbox; default-src 'none'" } : {}),
     },
   });
 }

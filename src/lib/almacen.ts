@@ -148,6 +148,16 @@ export async function descargar(bucket: string, ruta: string): Promise<Buffer> {
   return Buffer.from(await data.arrayBuffer());
 }
 
+/** true si el archivo está guardado. Fuera del almacenamiento local no se consulta y se asume que sí. */
+export async function existe(bucket: string, ruta: string): Promise<boolean> {
+  if (!almacenLocal()) return true;
+  try {
+    return (await fs.stat(rutaFisica(bucket, ruta))).isFile();
+  } catch {
+    return false;
+  }
+}
+
 export async function eliminar(bucket: string, rutas: string[]) {
   if (rutas.length === 0) return;
   if (almacenLocal()) {

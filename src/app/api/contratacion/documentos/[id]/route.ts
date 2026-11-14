@@ -10,7 +10,7 @@ import {
   eliminarDocumentoContratoConTraza,
   ETAPAS_ORDEN,
 } from "@/lib/contratacion";
-import { MENSAJE_RUTA_AJENA, deleteDocumento, rutaDeExpediente } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
@@ -45,6 +45,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       : undefined;
   if (archivo && !rutaDeExpediente(archivo.storagePath, doc.expedienteId)) {
     return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
+  if (archivo) {
+    const problema = await problemaArchivoSubido(archivo.storagePath, await db.documentoContrato.count({ where: { storagePath: archivo.storagePath } }));
+    if (problema) return NextResponse.json({ error: problema }, { status: 409 });
   }
   const datos = {
     nombre: typeof body.nombre === "string" ? body.nombre : undefined,

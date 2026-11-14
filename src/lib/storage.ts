@@ -1,4 +1,4 @@
-import { descargar, eliminar, firmarSubida, subir, urlFirmada } from "@/lib/almacen";
+import { descargar, eliminar, existe, firmarSubida, subir, urlFirmada } from "@/lib/almacen";
 
 const BUCKET = "documentos";
 
@@ -22,6 +22,17 @@ export function rutaDeExpediente(ruta: unknown, expedienteId: string): ruta is s
 }
 
 export const MENSAJE_RUTA_AJENA = "El archivo no corresponde a este expediente. Vuelva a subirlo.";
+
+/**
+ * Antes de registrar un archivo subido: que exista en el almacenamiento (la subida pudo fallar) y que
+ * ningún otro documento lo use ya (un doble envío lo registraría dos veces y, al borrar uno, el otro
+ * quedaría sin archivo). Devuelve el mensaje de error o null.
+ */
+export async function problemaArchivoSubido(ruta: string, usosExistentes: number): Promise<string | null> {
+  if (usosExistentes > 0) return "Este archivo ya está registrado en otro documento. Si fue un doble clic, recargue la página.";
+  if (!(await existe(BUCKET, ruta))) return "El archivo no terminó de subirse. Vuelva a subirlo.";
+  return null;
+}
 
 export async function uploadDocumento(path: string, file: Buffer, mimeType: string) {
   await subir(BUCKET, path, file, mimeType);

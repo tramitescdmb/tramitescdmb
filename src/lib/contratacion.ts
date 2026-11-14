@@ -65,9 +65,16 @@ export function vigenciaDeExpediente(fechaInicio: Date | null | undefined, creat
   return anioColombia(fechaInicio ?? createdAt);
 }
 
-export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null): void {
+export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null, fechaFin: Date | null = null): void {
+  for (const [f, nombre] of [[fechaSuscripcion, "suscripción"], [fechaInicio, "inicio"], [fechaFin, "terminación"]] as const) {
+    if (f && Number.isNaN(f.getTime())) throw new Error(`La fecha de ${nombre} no es válida.`);
+  }
   if (fechaSuscripcion && fechaInicio && fechaSuscripcion > fechaInicio) {
     throw new Error("La fecha de suscripción no puede ser posterior a la fecha de inicio (acta de inicio).");
+  }
+  // Con la terminación antes del inicio no se arma ninguna cuenta mensual.
+  if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+    throw new Error("La fecha de terminación no puede ser anterior a la fecha de inicio.");
   }
 }
 
@@ -417,7 +424,7 @@ export async function crearExpedienteContractual(datos: {
   const subserieElegida = datos.subserieId ?? automatica?.subserieId ?? null;
   const subserie = subserieElegida ? await validarSubserieContrato(subserieElegida) : null;
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
-  validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null);
+  validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null, datos.fechaFinEstimada ?? null);
 
   const numeroProcesoSecop = datos.numeroProcesoSecop?.trim() || null;
   if (numeroProcesoSecop) {

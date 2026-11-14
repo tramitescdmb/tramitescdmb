@@ -47,7 +47,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (doc.etapa === "PRECONTRACTUAL") {
     const contratistas = await db.usuario.count({
-      where: { id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) }, AND: [await whereDesignacionGecon("CONTRATISTA")] },
+      where: {
+        id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) },
+        // Mismo criterio que la jerarquía de firma: por rol de GECON o por denominación de empleo.
+        OR: [await whereDesignacionGecon("CONTRATISTA"), { denominacionEmpleo: "CONTRATISTA" }],
+      },
     });
     if (contratistas > 0) return NextResponse.json({ error: "El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos." }, { status: 400 });
   }
