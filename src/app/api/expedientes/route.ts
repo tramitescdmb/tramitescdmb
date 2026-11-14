@@ -10,6 +10,7 @@ import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
+import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
 
 type DocumentoInput = {
   path: string;
@@ -128,6 +129,10 @@ export async function POST(req: NextRequest) {
       { error: `Faltan documentos obligatorios para radicar: ${documentosFaltantes.map((d) => d.nombre).join(", ")}.` },
       { status: 400 }
     );
+  }
+
+  if ((documentos || []).some((d) => d?.path && !rutaDeExpediente(d.path, expedienteId))) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }
 
   const primerPaso = flujo.pasos[0]?.numero ?? 1;

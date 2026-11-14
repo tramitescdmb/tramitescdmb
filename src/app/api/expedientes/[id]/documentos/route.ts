@@ -4,6 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
+import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
 
 type ArchivoInput = {
   path: string;
@@ -34,6 +35,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const validos = archivos.filter((a) => a?.path && a?.nombre);
   if (validos.length === 0) {
     return NextResponse.json({ error: "No hay archivos para guardar." }, { status: 400 });
+  }
+  if (validos.some((a) => !rutaDeExpediente(a.path, id))) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }
 
   const subidos = await db.$transaction(

@@ -7,7 +7,7 @@ import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
-import { resultadosDelPaso } from "@/lib/reglas-estado";
+import { avanceValido, resultadosDelPaso } from "@/lib/reglas-estado";
 
 const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
@@ -48,6 +48,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const siguientePasoNumero = siguientePasoRaw ? Number(siguientePasoRaw) : null;
+  if (!avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "El avance pedido no corresponde al paso actual (la página pudo quedar desactualizada). Recárguela e inténtelo de nuevo.");
+    return NextResponse.redirect(url, { status: 303 });
+  }
   const siguienteExiste = siguientePasoNumero
     ? expediente.flujo.pasos.some((p) => p.numero === siguientePasoNumero)
     : false;

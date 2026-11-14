@@ -8,6 +8,18 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ bucket: string; ruta: string[] }> };
 
+// Tope por archivo para las subidas al almacenamiento local (NAS). Los formularios ya limitan
+// a 25 MB (trámites) o 2 MB (contratación); este tope evita que una subida directa, con un
+// token válido, llene el disco o la memoria del proceso. Ajustable con ALMACEN_MAX_MB.
+function topeBytes(): number {
+  const mb = Number(process.env.ALMACEN_MAX_MB);
+  return (Number.isFinite(mb) && mb > 0 ? mb : 50) * 1024 * 1024;
+}
+
+function demasiadoGrande() {
+  return NextResponse.json({ message: `El archivo supera el máximo de ${Math.round(topeBytes() / (1024 * 1024))} MB.` }, { status: 413 });
+}
+
 function noEncontrado() {
   return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 }
@@ -53,6 +65,8 @@ async function recibir(req: NextRequest, { params }: Params) {
   if (!/^\d+$/.test(exp ?? "") || Number(exp) < Date.now() / 1000 || !firmaValida(firmar("subir", bucket, ruta, exp), firma ?? null)) {
     return NextResponse.json({ message: "Token de subida no válido o vencido" }, { status: 403 });
   }
+  const declarado = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declarado) && declarado > topeBytes() + 64 * 1024) return demasiadoGrande();
   let contenido: Buffer;
   const tipo = req.headers.get("content-type") ?? "";
   if (tipo.startsWith("multipart/form-data")) {
@@ -63,6 +77,7 @@ async function recibir(req: NextRequest, { params }: Params) {
   } else {
     contenido = Buffer.from(await req.arrayBuffer());
   }
+  if (contenido.length > topeBytes()) return demasiadoGrande();
   const destino = rutaFisica(bucket, ruta);
   await fs.mkdir(path.dirname(destino), { recursive: true });
   try {

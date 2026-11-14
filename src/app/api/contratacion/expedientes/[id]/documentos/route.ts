@@ -7,6 +7,7 @@ import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualqu
 import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { datosPeticion } from "@/lib/auditoria-doc";
+import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const tamanoBytes = Number(body.tamanoBytes) || 0;
   if (!nombre || !storagePath || !mimeType) {
     return NextResponse.json({ error: "Faltan datos del archivo subido." }, { status: 400 });
+  }
+  if (!rutaDeExpediente(storagePath, id)) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }
   if (tamanoBytes > TAMANO_MAXIMO_CONTRATACION_BYTES) {
     return NextResponse.json({ error: mensajeArchivoDemasiadoGrandeContratacion(nombre) }, { status: 400 });

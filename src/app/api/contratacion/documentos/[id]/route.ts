@@ -10,7 +10,7 @@ import {
   eliminarDocumentoContratoConTraza,
   ETAPAS_ORDEN,
 } from "@/lib/contratacion";
-import { deleteDocumento } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, deleteDocumento, rutaDeExpediente } from "@/lib/storage";
 import { datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
@@ -43,6 +43,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           hashSha256: typeof body.archivo.hashSha256 === "string" ? body.archivo.hashSha256 : null,
         }
       : undefined;
+  if (archivo && !rutaDeExpediente(archivo.storagePath, doc.expedienteId)) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
   const datos = {
     nombre: typeof body.nombre === "string" ? body.nombre : undefined,
     categoria: "categoria" in body ? (body.categoria ? String(body.categoria) : null) : undefined,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { deleteDocumento } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, deleteDocumento, rutaDeExpediente } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import { editarDocumentoTramite } from "@/lib/tramites-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -50,6 +50,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           hashSha256: typeof body.archivo.hashSha256 === "string" ? body.archivo.hashSha256 : null,
         }
       : undefined;
+  if (archivo && !rutaDeExpediente(archivo.storagePath, documento.expedienteId)) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
 
   try {
     const { storagePathAnterior } = await editarDocumentoTramite(id, {
