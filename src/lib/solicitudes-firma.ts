@@ -137,7 +137,8 @@ async function validarObjetivoAbierto(objetivo: ObjetivoSolicitud) {
     const d = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { archivado: true } } } });
     if (d?.expediente.archivado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
   } else if (objetivo.tipo === "documentoContrato") {
-    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { cerrado: true } } } });
+    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { cerrado: true, eliminado: true } } } });
+    if (d?.expediente.eliminado) throw new Error("El expediente fue eliminado: sus documentos ya no se pueden firmar.");
     if (d?.expediente.cerrado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
   } else if (objetivo.tipo === "documentoArchivo") {
     const d = await db.documentoArchivo.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { estado: true } } } });

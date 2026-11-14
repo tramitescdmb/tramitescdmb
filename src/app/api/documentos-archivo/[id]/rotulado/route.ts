@@ -11,6 +11,7 @@ import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { basePublica } from "@/lib/base-publica";
 
 const USUARIO_SELLO = {
   nombre: true,
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   ]);
 
   const h = await headers();
-  const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const base = await basePublica(h);
   const datos = {
     numeroExpediente: doc.expediente.numero,
     baseUrl: base,

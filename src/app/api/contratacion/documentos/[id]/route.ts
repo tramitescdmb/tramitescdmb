@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { EtapaContratacion } from "@prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeEditarSinTrazaDocumentoContrato, puedeEditarConTrazaDocumentoContrato } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeEditarSinTrazaDocumentoContrato, puedeEditarConTrazaDocumentoContrato, puedeSubirEnCualquierEtapaContrato } from "@/lib/permisos";
+import { etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import {
   editarDocumentoContratoSinTraza,
   editarDocumentoContratoConTraza,
@@ -20,7 +21,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const doc = await db.documentoContrato.findUnique({ where: { id }, select: { expedienteId: true, etapa: true, expediente: { select: { cerrado: true } } } });
+  const doc = await db.documentoContrato.findUnique({
+    where: { id },
+    select: { expedienteId: true, etapa: true, requisitoId: true, expediente: { select: { cerrado: true, etapaActual: true } } },
+  });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
   if (doc.expediente.cerrado) return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
 
@@ -33,7 +37,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
 
-  const etapa = body.etapa && (ETAPAS_ORDEN as string[]).includes(body.etapa) ? (body.etapa as EtapaContratacion) : undefined;
+  const etapa = body.etapa && (ETAPAS_ORDEN as string[]).includes(body.etapa) && body.etapa !== doc.etapa ? (body.etapa as EtapaContratacion) : undefined;
+  if (etapa) {
+    // Un documento del catálogo pertenece a la etapa de su requisito; uno libre solo pasa a una etapa ya habilitada
+    // y en la que quien edita también tenga permiso.
+    if (doc.requisitoId) return NextResponse.json({ error: "Un documento del catálogo no cambia de etapa: cárguelo en la etapa que corresponde." }, { status: 400 });
+    if (!puedeSubirEnCualquierEtapaContrato(permisos) && !etapaHabilitada(doc.expediente.etapaActual, etapa)) {
+      return NextResponse.json({ error: mensajeEtapaNoHabilitada(etapa) }, { status: 409 });
+    }
+    if (!sinTraza && !puedeEditarConTrazaDocumentoContrato(permisos, { id: doc.expedienteId }, etapa)) {
+      return NextResponse.json({ error: "No tiene permiso para mover el documento a esa etapa." }, { status: 403 });
+    }
+  }
   const archivo =
     body.archivo && typeof body.archivo.storagePath === "string" && typeof body.archivo.mimeType === "string" && Number.isFinite(body.archivo.tamanoBytes)
       ? {

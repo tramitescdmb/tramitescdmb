@@ -9,6 +9,7 @@ import { estamparFirmaGecon } from "@/lib/pdf-rotulado";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 import { SELECT_FIRMAS_DOCUMENTO_GECON, datosRotuloGecon, firmantesDocumentoGecon, supervisoresDelExpediente } from "@/lib/firmantes-gecon";
+import { basePublica } from "@/lib/base-publica";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const h = await headers();
-  const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const base = await basePublica(h);
   const datos = datosRotuloGecon({ id, nombre: doc.nombre, hashSha256: doc.hashSha256 }, doc.expediente.numero, base);
   const firmantes = firmantesDocumentoGecon(doc, await supervisoresDelExpediente(doc.expediente.id));
 

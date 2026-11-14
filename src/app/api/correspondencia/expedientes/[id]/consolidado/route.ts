@@ -11,6 +11,7 @@ import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { mensajeSoloEnModulo } from "@/lib/archivo-central";
+import { basePublica } from "@/lib/base-publica";
 
 const ETIQUETA_PIEZA: Record<string, string> = {
   ENVIADA: "Oficio de salida",
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (exp.origen !== "SGDEA") return NextResponse.json({ error: mensajeSoloEnModulo(exp.origen) }, { status: 409 });
 
   const h = await headers();
-  const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const base = await basePublica(h);
 
   const bajar = async (storagePath: string, mimeType: string) => {
     if (!DESCARGABLE.has(mimeType)) return null;

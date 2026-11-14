@@ -568,9 +568,9 @@ export async function agregarDocumentoContrato(datos: {
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
-    select: { cerrado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true, etapaActual: true },
+    select: { cerrado: true, eliminado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true, etapaActual: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
   if (!datos.cualquierEtapa && !etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
   const posicion = ETAPAS_ORDEN.indexOf(datos.etapa) - ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -893,9 +893,9 @@ export class FaltanRequisitosError extends Error {
 export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null, etapaEsperada?: string) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
+    select: { etapaActual: true, cerrado: true, eliminado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
   // La página pudo quedar desactualizada (otra pestaña u otra persona ya aprobó): no cerrar una etapa que no se veía.
   if (etapaEsperada && etapaEsperada !== expediente.etapaActual) {
@@ -1015,9 +1015,9 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true },
+    select: { etapaActual: true, cerrado: true, eliminado: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
 
   const idxEfectivo = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -1049,6 +1049,11 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
   await db.expedienteContractual.update({
     where: { id: expedienteId },
     data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
+  });
+  // Las firmas y vistos buenos pendientes salen de los buzones: ya no hay expediente que firmar.
+  await db.solicitudFirma.updateMany({
+    where: { estado: "PENDIENTE", rol: { not: "LECTURA" }, documentoContrato: { expedienteId } },
+    data: { estado: "RECHAZADA", completadoEn: new Date(), comentario: `Expediente eliminado: ${motivo}` },
   });
   await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
   await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, `se eliminó el expediente (${motivo}).`).catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));

@@ -13,6 +13,7 @@ import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
+import { basePublica } from "@/lib/base-publica";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const h = await headers();
-  const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const base = await basePublica(h);
 
   const datos = {
     numeroExpediente: doc.expediente.numero,
