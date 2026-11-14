@@ -3,7 +3,14 @@ import { descargar, eliminar, existe, firmarSubida, subir, urlFirmada } from "@/
 const BUCKET = "documentos";
 
 export function buildStoragePath(expedienteId: string, fileName: string) {
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  let safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  // Un nombre muy largo supera el límite del sistema de archivos (255 bytes) y la subida fallaba con error 500:
+  // se recorta conservando la extensión.
+  if (safeName.length > 120) {
+    const punto = safeName.lastIndexOf(".");
+    const ext = punto > 0 && safeName.length - punto <= 11 ? safeName.slice(punto) : "";
+    safeName = safeName.slice(0, 120 - ext.length) + ext;
+  }
   return `expedientes/${expedienteId}/${Date.now()}-${safeName}`;
 }
 

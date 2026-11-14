@@ -42,7 +42,9 @@ function valorColumna(f: FilaExportExpediente, key: keyof FilaExportExpediente):
   return String(f[key] ?? "");
 }
 
-function csvCampo(v: string): string {
+function csvCampo(valor: string): string {
+  // Un texto que empieza por = + - @ lo ejecuta Excel como fórmula (inyección en CSV): se antepone un apóstrofo.
+  const v = /^[=+\-@\t\r]/.test(valor) ? `'${valor}` : valor;
   return /[,"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 

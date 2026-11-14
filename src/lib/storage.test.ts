@@ -20,3 +20,13 @@ describe("rutaDeExpediente", () => {
     expect(rutaDeExpediente(`expedientes/${ID}/a.pdf`, "")).toBe(false);
   });
 });
+
+describe("buildStoragePath", () => {
+  it("recorta nombres muy largos conservando la extensión", () => {
+    const ruta = buildStoragePath(ID, `${"á".repeat(300)}.pdf`);
+    const archivo = ruta.slice(ruta.lastIndexOf("/") + 1);
+    expect(archivo.length).toBeLessThan(150);
+    expect(archivo.endsWith(".pdf")).toBe(true);
+    expect(rutaDeExpediente(ruta, ID)).toBe(true);
+  });
+});
