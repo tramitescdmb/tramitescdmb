@@ -783,6 +783,8 @@ export async function eliminarDocumentoContratoConTraza(
   return resultado;
 }
 
+const MENSAJE_DOCUMENTO_CAMBIO_VALIDACION = "El documento cambió mientras lo revisaba (otra persona lo validó o devolvió, o se cargó una versión nueva): recargue la página.";
+
 export async function validarDocumentoContrato(
   documentoId: string,
   usuarioId: string,
@@ -795,6 +797,7 @@ export async function validarDocumentoContrato(
       expedienteId: true,
       estadoValidacion: true,
       etapa: true,
+      storagePath: true,
       verificacionRecepcionEn: true,
       solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
     },
@@ -810,8 +813,9 @@ export async function validarDocumentoContrato(
   }
 
   const ahora = new Date();
-  await db.documentoContrato.update({
-    where: { id: documentoId },
+  // Condicional: si otra persona lo devolvió/validó o se reemplazó el archivo mientras tanto, no se pisa.
+  const { count } = await db.documentoContrato.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
     data: {
       estadoValidacion: "APROBADO",
       validadoPorId: usuarioId,
@@ -819,6 +823,7 @@ export async function validarDocumentoContrato(
       ...(!doc.verificacionRecepcionEn ? { verificacionRecepcionEn: ahora, verificacionRecepcionPorId: usuarioId } : {}),
     },
   });
+  if (count === 0) throw new Error(MENSAJE_DOCUMENTO_CAMBIO_VALIDACION);
 
   if (opts.sinTraza) return;
   const detalle = `Validó "${doc.nombre}"`;
@@ -848,7 +853,7 @@ export async function devolverDocumentoContrato(
   if (!texto) throw new Error("Escriba qué debe corregirse.");
   const doc = await db.documentoContrato.findUnique({
     where: { id: documentoId },
-    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, subidoPorId: true },
+    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, subidoPorId: true, storagePath: true },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan (o devuelven) documentos de la etapa Precontractual.");
@@ -856,8 +861,8 @@ export async function devolverDocumentoContrato(
   if (doc.estadoValidacion === "RECHAZADO") throw new Error("Este documento ya fue devuelto: espere la versión corregida.");
 
   const ahora = new Date();
-  await db.documentoContrato.update({
-    where: { id: documentoId },
+  const { count } = await db.documentoContrato.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
     data: {
       estadoValidacion: "RECHAZADO",
       validadoPorId: usuarioId,
@@ -867,6 +872,7 @@ export async function devolverDocumentoContrato(
       verificacionRecepcionObservaciones: texto,
     },
   });
+  if (count === 0) throw new Error(MENSAJE_DOCUMENTO_CAMBIO_VALIDACION);
   await db.avisoRechazoDocumento.create({
     data: { expedienteId: doc.expedienteId, documentoContratoId: documentoId, mensaje: texto, rechazadoPorId: usuarioId, subidoPorId: doc.subidoPorId },
   });

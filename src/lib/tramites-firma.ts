@@ -65,6 +65,7 @@ export async function validarDocumentoTramite(
       expedienteId: true,
       pasoNumero: true,
       estadoValidacion: true,
+      storagePath: true,
       solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
     },
   });
@@ -77,10 +78,12 @@ export async function validarDocumentoTramite(
     );
   }
 
-  await db.expedienteDocumento.update({
-    where: { id: documentoId },
+  // Condicional: si otra persona lo resolvió o se reemplazó el archivo mientras tanto, no se pisa.
+  const { count } = await db.expedienteDocumento.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
     data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
   });
+  if (count === 0) throw new Error("El documento cambió mientras lo revisaba (otra persona lo resolvió o se cargó una versión nueva): recargue la página.");
   const detalle = `Se validó "${doc.nombre}".`;
   await db.expedienteEvento.create({
     data: {
