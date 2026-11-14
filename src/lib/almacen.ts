@@ -93,11 +93,25 @@ export function tipoPorExtension(ruta: string): string {
   return TIPOS[ext] ?? "application/octet-stream";
 }
 
+/**
+ * mkdir -p + escritura. Si otra petición borra la carpeta vacía entre las dos (limpiarCarpetasVacias
+ * tras mover un archivo), la escritura da ENOENT: se vuelve a crear la carpeta y se reintenta.
+ */
+export async function escribirArchivo(destino: string, contenido: Buffer, flag: "w" | "wx") {
+  for (let intento = 1; ; intento++) {
+    await fs.mkdir(path.dirname(destino), { recursive: true });
+    try {
+      await fs.writeFile(destino, contenido, { flag });
+      return;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "ENOENT" || intento >= 5) throw e;
+    }
+  }
+}
+
 export async function subir(bucket: string, ruta: string, contenido: Buffer, contentType: string, upsert = false) {
   if (almacenLocal()) {
-    const destino = rutaFisica(bucket, ruta);
-    await fs.mkdir(path.dirname(destino), { recursive: true });
-    await fs.writeFile(destino, contenido, { flag: upsert ? "w" : "wx" });
+    await escribirArchivo(rutaFisica(bucket, ruta), contenido, upsert ? "w" : "wx");
     return;
   }
   const { error } = await supabaseAdmin().storage.from(bucket).upload(ruta, contenido, { contentType, upsert });
@@ -174,6 +188,7 @@ export async function eliminar(bucket: string, rutas: string[]) {
  * "nombre_3"… Devuelve la ruta final. El contenido no cambia (la huella de firma sigue valiendo).
  */
 export async function mover(bucket: string, origen: string, destino: string, variante: (ruta: string, n: number) => string): Promise<string> {
+  let reintentos = 0;
   for (let n = 1; n <= 500; n++) {
     const candidata = limpiar(variante(destino, n));
     if (candidata === limpiar(origen)) return candidata;
@@ -187,12 +202,24 @@ export async function mover(bucket: string, origen: string, destino: string, var
       } catch (e) {
         const code = (e as NodeJS.ErrnoException).code;
         if (code === "EEXIST") continue;
-        if (code === "ENOENT") throw e;
+        if (code === "ENOENT") {
+          // Puede faltar el origen, o la carpeta destino recién creada la borró otra petición
+          // (limpiarCarpetasVacias): en ese caso se crea de nuevo y se reintenta el mismo nombre.
+          const origenExiste = await fs.stat(src).then(() => true, () => false);
+          if (!origenExiste || ++reintentos > 5) throw e;
+          n--;
+          continue;
+        }
         // Sistemas de archivos sin enlaces duros: copia exclusiva y comprobación del tamaño.
         try {
           await fs.copyFile(src, dst, fsConst.COPYFILE_EXCL);
         } catch (e2) {
-          if ((e2 as NodeJS.ErrnoException).code === "EEXIST") continue;
+          const code2 = (e2 as NodeJS.ErrnoException).code;
+          if (code2 === "EEXIST") continue;
+          if (code2 === "ENOENT" && ++reintentos <= 5 && (await fs.stat(src).then(() => true, () => false))) {
+            n--;
+            continue;
+          }
           throw e2;
         }
         const [a, b] = await Promise.all([fs.stat(src), fs.stat(dst)]);

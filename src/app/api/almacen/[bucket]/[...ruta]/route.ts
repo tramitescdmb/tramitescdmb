@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { BUCKETS_PUBLICOS, almacenLocal, firmaValida, firmar, rutaFisica, tipoPorExtension } from "@/lib/almacen";
+import { BUCKETS_PUBLICOS, almacenLocal, escribirArchivo, firmaValida, firmar, rutaFisica, tipoPorExtension } from "@/lib/almacen";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,9 +93,8 @@ async function recibir(req: NextRequest, { params }: Params) {
   }
   if (contenido.length > topeBytes) return demasiadoGrande(topeMb);
   const destino = rutaFisica(bucket, ruta);
-  await fs.mkdir(path.dirname(destino), { recursive: true });
   try {
-    await fs.writeFile(destino, contenido, { flag: req.headers.get("x-upsert") === "true" ? "w" : "wx" });
+    await escribirArchivo(destino, contenido, req.headers.get("x-upsert") === "true" ? "w" : "wx");
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "EEXIST") {
       return NextResponse.json({ message: "El archivo ya existe" }, { status: 409 });

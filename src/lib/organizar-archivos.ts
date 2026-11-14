@@ -10,7 +10,8 @@
  * - Un mismo archivo puede estar registrado en varias filas (p. ej. los adjuntos de la respuesta de
  *   un radicado se reutilizan en el oficio de salida): se actualizan todas. Si ya está en la carpeta de
  *   otro módulo/expediente y lo comparte, no se mueve.
- * - Si la fila cambió mientras se movía, el archivo vuelve a su lugar.
+ * - Si la fila cambió mientras se movía, el archivo vuelve a su lugar. (Caso raro: si en ese instante se
+ *   reemplazó el archivo del documento, la versión vieja puede quedar sin fila en el NAS; no afecta nada.)
  * - Nunca lanza: un fallo deja el archivo donde estaba (su ruta vieja sigue sirviendo) y se registra.
  */
 import { db } from "@/lib/db";
