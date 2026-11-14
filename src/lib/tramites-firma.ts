@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
+import { MENSAJE_DOCUMENTO_YA_FIRMADO, MENSAJE_NOMBRE_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 
 export async function editarDocumentoTramite(
   documentoId: string,
@@ -20,6 +20,11 @@ export async function editarDocumentoTramite(
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
   if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
+  // El nombre entra en el hash de cada firma: con firmas vigentes (y el mismo archivo) no se cambia.
+  if (nombre && !datos.archivo) {
+    const actual = await db.expedienteDocumento.findUnique({ where: { id: documentoId }, select: { nombre: true, _count: { select: { firmas: true } } } });
+    if (actual && actual.nombre !== nombre && actual._count.firmas > 0) throw new Error(MENSAJE_NOMBRE_FIRMADO);
+  }
 
   await db.expedienteDocumento.update({
     where: { id: documentoId },
