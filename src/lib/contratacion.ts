@@ -914,25 +914,6 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   );
 }
 
-async function pasarAContractualPorSecop(expedienteId: string, fechaFirma: string) {
-  const ahora = new Date();
-  const comentario = `Paso automático: SECOP II reporta el contrato firmado el ${fechaFirma}.`;
-  await db.$transaction([
-    db.etapaExpedienteContractual.upsert({
-      where: { expedienteId_etapa: { expedienteId, etapa: "PRECONTRACTUAL" } },
-      update: { completadaEn: ahora, comentario },
-      create: { expedienteId, etapa: "PRECONTRACTUAL", completadaEn: ahora, comentario },
-    }),
-    db.expedienteContractual.update({ where: { id: expedienteId }, data: { etapaActual: "CONTRACTUAL" } }),
-    db.etapaExpedienteContractual.upsert({
-      where: { expedienteId_etapa: { expedienteId, etapa: "CONTRACTUAL" } },
-      update: {},
-      create: { expedienteId, etapa: "CONTRACTUAL" },
-    }),
-  ]);
-  await registrarEventoContratacion(expedienteId, "ETAPA_APROBADA", `Pasó de Precontractual a Contractual. ${comentario}`, null);
-}
-
 export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
@@ -1814,6 +1795,9 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     if (contratistaId && contratistaId !== expediente.contratistaId) completar.contratistaId = contratistaId;
   }
 
+  // Expediente cerrado: solo se refresca la consulta de SECOP II; sus datos ya no cambian.
+  if (expediente.cerrado) for (const k of Object.keys(completar)) delete completar[k];
+
   const espejo = {
     idContrato,
     datos: secop.datos as Prisma.InputJsonValue,
@@ -1841,8 +1825,8 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     `Sincronizado con SECOP II (${idContrato})`,
     Object.keys(completar).length ? `actualizado desde SECOP II: ${Object.keys(completar).map((k) => ETIQUETA_CAMPO_SECOP[k] ?? k).join(", ")}` : null,
   ].filter(Boolean);
-  const avanzo = expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado && Boolean(c.fechaSuscripcion);
-  if (avanzo) await pasarAContractualPorSecop(expedienteId, c.fechaSuscripcion!);
+  // SECOP II solo alimenta datos (fechas, valor, supervisor…); nunca cambia la etapa de GECON:
+  // un contrato puede cargarse en GECON después de su inicio y las etapas se aprueban a mano.
   const anterior = expediente.secop ? jsonEstable(expediente.secop) : null;
   const cambio = anterior !== jsonEstable(secop);
   if (cambio || Object.keys(completar).length > 0 || usuarioId) {
