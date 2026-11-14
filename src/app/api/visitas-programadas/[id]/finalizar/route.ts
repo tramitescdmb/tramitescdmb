@@ -10,6 +10,7 @@ import { deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 import { puedeFinalizarSegunRevision, registrarRevision } from "@/lib/revision-concepto";
 import { resolverNotificaciones } from "@/lib/notificaciones";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -119,5 +120,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }),
     db.expediente.update({ where: { id: visita.expedienteId }, data: { fechaUltimoMovimiento: ahora } }),
   ]);
+  await organizarTrasRegistro({ tipo: "tramite", id: visita.expedienteId });
   return NextResponse.json({ ok: true, documentoId: documento.id });
 }

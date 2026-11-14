@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { BUCKETS_PUBLICOS, almacenLocal, firmaValida, firmar, rutaFisica, tipoPorExtension } from "@/lib/almacen";
+import { BUCKETS_PUBLICOS, almacenLocal, escribirArchivo, firmaValida, firmar, rutaFisica, tipoPorExtension } from "@/lib/almacen";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,11 +94,10 @@ async function recibir(req: NextRequest, { params }: Params) {
   if (contenido.length > topeBytes) return demasiadoGrande(topeMb);
   if (contenido.length === 0) return NextResponse.json({ message: "El archivo está vacío (0 bytes). Revíselo y vuelva a subirlo." }, { status: 400 });
   const destino = rutaFisica(bucket, ruta);
-  await fs.mkdir(path.dirname(destino), { recursive: true });
   try {
     // Nunca se sobrescribe: el token de subida dura 2 horas y, con "x-upsert", quien subió un archivo
     // podía reemplazarlo después de registrado (incluso ya firmado) sin dejar rastro.
-    await fs.writeFile(destino, contenido, { flag: "wx" });
+    await escribirArchivo(destino, contenido, "wx");
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "EEXIST") {
       return NextResponse.json({ message: "El archivo ya existe" }, { status: 409 });
