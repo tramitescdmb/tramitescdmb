@@ -9,3 +9,6 @@ export function detalleFirmasAnuladas(nombreDocumento: string, firmantes: string
     ? `Al reemplazar el archivo de "${nombreDocumento}" se anularon las firmas de ${quien}; deben volver a firmar.`
     : `Se borró "${nombreDocumento}", que ya tenía firmas de ${quien}.`;
 }
+
+export const MENSAJE_NOMBRE_FIRMADO =
+  "Este documento ya tiene firmas y su nombre hace parte de lo firmado: no se puede renombrar. Si el nombre está mal, cargue el documento de nuevo con el nombre correcto.";

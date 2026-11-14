@@ -39,7 +39,7 @@ import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, pr
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { anioColombia, fechaArchivoColombia } from "@/lib/fecha";
-import { MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
+import { MENSAJE_NOMBRE_FIRMADO, MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -678,6 +678,11 @@ export async function editarDocumentoContratoSinTraza(
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
   if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
+  // El nombre entra en el hash de cada firma: con firmas vigentes (y el mismo archivo) no se cambia.
+  if (nombre && !datos.archivo) {
+    const actual = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, _count: { select: { firmas: true } } } });
+    if (actual && actual.nombre !== nombre && actual._count.firmas > 0) throw new Error(MENSAJE_NOMBRE_FIRMADO);
+  }
 
   await db.documentoContrato.update({
     where: { id: documentoId },
@@ -1017,7 +1022,7 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   );
 }
 
-export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
+export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string, etapaEsperada?: string) {
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
@@ -1026,14 +1031,19 @@ export async function retrocederEtapaContratacion(expedienteId: string, usuarioI
   if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
 
+  if (etapaEsperada && etapaEsperada !== expediente.etapaActual) {
+    throw new Error(`El expediente ya está en ${ETIQUETA_ETAPA[expediente.etapaActual]}: recargue la página antes de retroceder.`);
+  }
   const idxEfectivo = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   if (idxEfectivo === 0) throw new Error("El expediente ya está en la primera etapa (Precontractual).");
 
   const anterior = ETAPAS_ORDEN[idxEfectivo - 1]!;
-  await db.expedienteContractual.update({
-    where: { id: expedienteId },
+  // Condicional: dos solicitudes simultáneas no retroceden dos etapas.
+  const { count } = await db.expedienteContractual.updateMany({
+    where: { id: expedienteId, etapaActual: expediente.etapaActual, cerrado: false },
     data: { etapaActual: anterior },
   });
+  if (count === 0) throw new Error("Otra persona cambió la etapa de este expediente al mismo tiempo: recargue la página.");
   await db.etapaExpedienteContractual.upsert({
     where: { expedienteId_etapa: { expedienteId, etapa: anterior } },
     update: { completadaEn: null, aprobadaPorId: null },

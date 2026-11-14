@@ -1,3 +1,4 @@
+import { hoyColombia } from "@/lib/contratacion-panel";
 import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import Link from "next/link";
@@ -300,7 +301,9 @@ export default async function DetalleExpedienteContractualPage({
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
-  const hoy = new Date();
+  // Día de hoy en Colombia (medianoche UTC), igual que el panel y las alertas: un periodo se habilita
+  // el día siguiente a su cierre en hora colombiana, no 5 horas antes.
+  const hoy = hoyColombia();
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
@@ -752,6 +755,7 @@ export default async function DetalleExpedienteContractualPage({
               <RetrocederEtapaBoton
                 expedienteId={id}
                 etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[(expediente.cerrado ? ETAPAS_ORDEN.length - 1 : idxActual) - 1]!]}
+                etapaActual={expediente.etapaActual}
               />
             )}
             {!expediente.cerrado && puedeAprobar && !faltaContratista && (siguienteEtapa || esUltimaEtapa) && (
@@ -1282,7 +1286,7 @@ export default async function DetalleExpedienteContractualPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {puedeRetroceder && (
-              <RetrocederEtapaBoton expedienteId={id} etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[idxActual - 1]!]} />
+              <RetrocederEtapaBoton expedienteId={id} etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[idxActual - 1]!]} etapaActual={expediente.etapaActual} />
             )}
             {puedeAprobarDesdeBotonera && (
               <AprobarEtapaContratoBoton

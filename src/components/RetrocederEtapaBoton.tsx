@@ -4,7 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Undo2 } from "lucide-react";
 
-export function RetrocederEtapaBoton({ expedienteId, etiquetaAnterior }: { expedienteId: string; etiquetaAnterior: string }) {
+export function RetrocederEtapaBoton({
+  expedienteId,
+  etiquetaAnterior,
+  etapaActual,
+}: {
+  expedienteId: string;
+  etiquetaAnterior: string;
+  /** Etapa que se ve en la página: si otra persona ya movió el expediente, el servidor no retrocede de nuevo. */
+  etapaActual: string;
+}) {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +28,7 @@ export function RetrocederEtapaBoton({ expedienteId, etiquetaAnterior }: { exped
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}/retroceder-etapa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motivo }),
+        body: JSON.stringify({ motivo, etapa: etapaActual }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "No se pudo retroceder la etapa.");
