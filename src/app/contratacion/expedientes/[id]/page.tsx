@@ -1,3 +1,4 @@
+import { hoyColombia } from "@/lib/contratacion-panel";
 import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import Link from "next/link";
@@ -300,7 +301,9 @@ export default async function DetalleExpedienteContractualPage({
 
   const periodosMensuales = calcularPeriodosInforme(expediente.fechaInicio, expediente.fechaFinEstimada);
   const datosSecop = (expediente.secop?.datos ?? null) as Record<string, unknown> | null;
-  const hoy = new Date();
+  // Día de hoy en Colombia (medianoche UTC), igual que el panel y las alertas: un periodo se habilita
+  // el día siguiente a su cierre en hora colombiana, no 5 horas antes.
+  const hoy = hoyColombia();
 
   const idxActual = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   const puedeAprobar = puedeAprobarEtapaContratacion(permisos);
@@ -370,7 +373,7 @@ export default async function DetalleExpedienteContractualPage({
         <EstadoFirmaDocumento requiereFirma={doc.requiereFirma} cargadoEnSecop={doc.cargadoEnSecop} solicitudes={solicitudes} totalFirmas={doc.firmas.length} />
         {marcaFirma(doc, doc.firmas.length, etapa)}
         <VistaPreviaDocumento url={`/api/contratacion-documentos/${doc.id}${firmado ? "/rotulado" : ""}`} nombre={doc.nombre} mimeType={doc.mimeType} />
-        {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+        {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} permitirDevolver={doc.estadoValidacion === "PENDIENTE"} />}
         {firmado && (
           <a
             href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -394,7 +397,7 @@ export default async function DetalleExpedienteContractualPage({
           />
         )}
         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-          <AsignarFirmantesModal conCalidad contratistaPrincipal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} firmantesActuales={solicitudes} />
+          <AsignarFirmantesModal conCalidad contratistaPrincipal permiteQuitar endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} firmantesActuales={solicitudes} />
         )}
         {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
           <EditarEliminarDocumentoContrato
@@ -752,11 +755,13 @@ export default async function DetalleExpedienteContractualPage({
               <RetrocederEtapaBoton
                 expedienteId={id}
                 etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[(expediente.cerrado ? ETAPAS_ORDEN.length - 1 : idxActual) - 1]!]}
+                etapaActual={expediente.etapaActual}
               />
             )}
             {!expediente.cerrado && puedeAprobar && !faltaContratista && (siguienteEtapa || esUltimaEtapa) && (
               <AprobarEtapaContratoBoton
                 expedienteId={id}
+                etapaActual={expediente.etapaActual}
                 etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
                 etiquetaSiguiente={siguienteEtapa ? ETIQUETA_ETAPA[siguienteEtapa] : "Cierre del expediente"}
               />
@@ -967,7 +972,7 @@ export default async function DetalleExpedienteContractualPage({
                                 mimeType={item.documento.mimeType}
                               />
                               {puedeValidarEn(etapa) && item.documento.estadoValidacion !== "APROBADO" && (
-                                <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} />
+                                <ValidarDocumentoBoton documentoId={item.documento.id} nombre={item.documento.nombre} permitirDevolver={item.documento.estadoValidacion === "PENDIENTE"} />
                               )}
                               {item.documento.mimeType === "application/pdf" && (item.documento.totalFirmas > 0 || item.documento.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                                 <a
@@ -1000,7 +1005,7 @@ export default async function DetalleExpedienteContractualPage({
                               })()}
                               {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                 <AsignarFirmantesModal conCalidad contratistaPrincipal
-                                  endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
+                                  permiteQuitar endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
                                  
                                   firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
                                     id: s.id,
@@ -1082,7 +1087,7 @@ export default async function DetalleExpedienteContractualPage({
                                   nombre={doc.nombre}
                                   mimeType={doc.mimeType}
                                 />
-                                {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} />}
+                                {puedeValidarEn(etapa) && doc.estadoValidacion !== "APROBADO" && <ValidarDocumentoBoton documentoId={doc.id} nombre={doc.nombre} permitirDevolver={doc.estadoValidacion === "PENDIENTE"} />}
                                 {doc.mimeType === "application/pdf" && (doc.firmas.length > 0 || doc.solicitudesFirma.some((s) => s.rol === "VISTO_BUENO" && s.estado === "COMPLETADA")) && (
                                   <a
                                     href={`/api/contratacion-documentos/${doc.id}/rotulado`}
@@ -1107,7 +1112,7 @@ export default async function DetalleExpedienteContractualPage({
                                 )}
                                 {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                   <AsignarFirmantesModal conCalidad contratistaPrincipal
-                                    endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
+                                    permiteQuitar endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
                                    
                                     firmantesActuales={solicitudes}
                                   />
@@ -1249,7 +1254,7 @@ export default async function DetalleExpedienteContractualPage({
                         : null,
                   control:
                     esUltimaEtapa && puedeAprobar && expediente.subserieId && firmasPendientes === 0 ? (
-                      <AprobarEtapaContratoBoton expedienteId={id} etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]} etiquetaSiguiente="Cierre del expediente" />
+                      <AprobarEtapaContratoBoton expedienteId={id} etapaActual={expediente.etapaActual} etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]} etiquetaSiguiente="Cierre del expediente" />
                     ) : null,
                 }}
               />
@@ -1281,11 +1286,12 @@ export default async function DetalleExpedienteContractualPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {puedeRetroceder && (
-              <RetrocederEtapaBoton expedienteId={id} etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[idxActual - 1]!]} />
+              <RetrocederEtapaBoton expedienteId={id} etiquetaAnterior={ETIQUETA_ETAPA[ETAPAS_ORDEN[idxActual - 1]!]} etapaActual={expediente.etapaActual} />
             )}
             {puedeAprobarDesdeBotonera && (
               <AprobarEtapaContratoBoton
                 expedienteId={id}
+                etapaActual={expediente.etapaActual}
                 etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
                 etiquetaSiguiente={ETIQUETA_ETAPA[siguienteEtapa!]}
               />

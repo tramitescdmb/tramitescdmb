@@ -19,6 +19,14 @@ describe("vigenciaDeExpediente", () => {
   it("cae al año de creación cuando todavía no hay fecha de inicio (típico de Precontractual)", () => {
     expect(vigenciaDeExpediente(null, new Date("2026-09-29"))).toBe(2026);
   });
+
+  it("usa la hora de Colombia: creado el 31-dic a las 8 p. m. sigue siendo de ese año", () => {
+    expect(vigenciaDeExpediente(null, new Date("2027-01-01T01:00:00Z"))).toBe(2026);
+  });
+
+  it("una fecha de inicio 1-ene (sin hora) es de ese año aunque el servidor esté en hora de Bogotá", () => {
+    expect(vigenciaDeExpediente(new Date("2027-01-01"), new Date("2026-12-01"))).toBe(2027);
+  });
 });
 
 describe("validarOrdenFechasContrato", () => {
@@ -31,6 +39,18 @@ describe("validarOrdenFechasContrato", () => {
     expect(() => validarOrdenFechasContrato(new Date("2026-03-01"), new Date("2026-04-01"))).not.toThrow();
     expect(() => validarOrdenFechasContrato(null, new Date("2026-04-01"))).not.toThrow();
     expect(() => validarOrdenFechasContrato(new Date("2026-03-01"), null)).not.toThrow();
+  });
+});
+
+describe("validarOrdenFechasContrato — terminación y fechas inválidas", () => {
+  it("rechaza una terminación anterior al inicio (no se armarían cuentas mensuales)", () => {
+    expect(() => validarOrdenFechasContrato(null, new Date("2026-05-01"), new Date("2026-04-30"))).toThrow(/terminación/);
+  });
+  it("rechaza una fecha que no es válida", () => {
+    expect(() => validarOrdenFechasContrato(new Date("no-es-fecha"), null, null)).toThrow(/no es válida/);
+  });
+  it("acepta terminación igual o posterior al inicio", () => {
+    expect(() => validarOrdenFechasContrato(null, new Date("2026-05-01"), new Date("2026-05-01"))).not.toThrow();
   });
 });
 

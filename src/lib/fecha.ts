@@ -45,3 +45,9 @@ export function formatearFechaHoraLarga(d: Date | string | null | undefined): st
 export function fechaArchivoColombia(d: Date = new Date()): string {
   return d.toLocaleDateString("en-CA", { timeZone: ZONA_HORARIA });
 }
+
+/** Año calendario en Colombia: una fecha sin hora (medianoche UTC) usa su propio año; un instante, el de Bogotá. */
+export function anioColombia(d: Date = new Date()): number {
+  if (esSoloFecha(d)) return d.getUTCFullYear();
+  return Number(new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: ZONA_HORARIA }).format(d));
+}

@@ -87,6 +87,18 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
   if (!actual.subserieId) throw new Error("Asigne la clasificación TRD antes de cerrar el expediente.");
   const pendientes = await firmasPendientesTramite(expedienteId);
   if (pendientes > 0) throw new Error(mensajeFirmasPendientes(pendientes));
+  const visitasProgramadas = await db.visitaProgramada.count({ where: { expedienteId, estado: "PROGRAMADA" } });
+  if (visitasProgramadas > 0) {
+    throw new Error(`Hay ${visitasProgramadas} visita(s) programada(s) en este expediente: regístrelas o cancélelas antes de cerrarlo.`);
+  }
+  const conceptosAbiertos = await db.visitaTecnica.count({
+    where: { expedienteId, visitaProgramadaId: { not: null }, formatoVersionId: { not: null }, finalizadaEn: null, conceptoDescartadoEn: null },
+  });
+  if (conceptosAbiertos > 0) {
+    throw new Error(
+      `Hay ${conceptosAbiertos} concepto(s) técnico(s) sin terminar: envíelos a firma o, si no se van a terminar, use «Descartar borrador» en el concepto antes de cerrar el expediente.`
+    );
+  }
 
   const ahora = new Date();
   await db.expediente.update({

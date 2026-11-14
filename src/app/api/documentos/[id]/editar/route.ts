@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { deleteDocumento } from "@/lib/storage";
+import { MENSAJE_RUTA_AJENA, deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/documentos";
 import { editarDocumentoTramite } from "@/lib/tramites-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -50,9 +50,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           hashSha256: typeof body.archivo.hashSha256 === "string" ? body.archivo.hashSha256 : null,
         }
       : undefined;
+  if (archivo && !rutaDeExpediente(archivo.storagePath, documento.expedienteId)) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
+  if (archivo) {
+    const problema = await problemaArchivoSubido(archivo.storagePath, await db.expedienteDocumento.count({ where: { storagePath: archivo.storagePath } }));
+    if (problema) return NextResponse.json({ error: problema }, { status: 409 });
+  }
 
   try {
-    const { storagePathAnterior } = await editarDocumentoTramite(id, {
+    const { storagePathAnterior, firmasAnuladas } = await editarDocumentoTramite(id, {
       nombre: typeof body.nombre === "string" ? body.nombre : undefined,
       descripcion: "descripcion" in body ? (body.descripcion ? String(body.descripcion) : null) : undefined,
       requiereFirma: "requiereFirma" in body ? Boolean(body.requiereFirma) : undefined,
@@ -65,6 +72,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const descripcion = [
       `${session.nombre} editó el documento "${documento.nombre}"${documento.pasoNumero ? ` (paso ${documento.pasoNumero})` : " (radicación)"}.`,
       !etapaAbierta ? `Etapa ya cerrada — oficio de solicitud del Subdirector: ${oficio}.` : null,
+      firmasAnuladas ?? null,
     ]
       .filter(Boolean)
       .join(" ");

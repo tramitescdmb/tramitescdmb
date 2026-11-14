@@ -15,7 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => ({}));
   const motivo = typeof body?.motivo === "string" ? body.motivo : "";
   try {
-    await retrocederEtapaContratacion(id, session.userId, motivo);
+    const etapa = typeof body?.etapa === "string" ? body.etapa : undefined;
+    await retrocederEtapaContratacion(id, session.userId, motivo, etapa);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo retroceder la etapa." }, { status: 400 });

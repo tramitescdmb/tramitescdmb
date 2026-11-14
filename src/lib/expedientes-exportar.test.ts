@@ -54,3 +54,10 @@ describe("xlsxExpedientes", () => {
     expect(buffer.length).toBeGreaterThan(0);
   });
 });
+
+describe("csvExpedientes: inyección de fórmulas", () => {
+  it("antepone un apóstrofo a los textos que Excel tomaría como fórmula", () => {
+    const filaDatos = csvExpedientes([{ ...fila, solicitanteNombre: '=HYPERLINK("http://x","clic")' }], "").trim().split("\n")[6];
+    expect(filaDatos).toContain(`"'=HYPERLINK(""http://x"",""clic"")"`);
+  });
+});

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const form = await req.formData();
   const motivo = String(form.get("motivo") || "");
 
-  let resultado: { radicado: string };
+  let resultado: { radicado: string; firmasAnuladas: string[] };
   try {
     resultado = await devolverReparto(id, session.userId, motivo);
   } catch (err) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     usuarioId: session.userId,
     ip,
     userAgent,
-    detalle: `${session.nombre} devolvió ${resultado.radicado} a la ventanilla — motivo: ${motivo.trim().slice(0, 300)}`,
+    detalle: `${session.nombre} devolvió ${resultado.radicado} a la ventanilla — motivo: ${motivo.trim().slice(0, 300)}${resultado.firmasAnuladas.length ? ` · se anularon las firmas de la respuesta en borrador (${resultado.firmasAnuladas.join(", ")})` : ""}`,
   });
 
   volver.searchParams.set("ok", `${resultado.radicado} devuelta a la ventanilla. La ventanilla la repartirá de nuevo.`);

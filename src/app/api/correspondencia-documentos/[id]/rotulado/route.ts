@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -11,6 +12,7 @@ import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { servirDerivado, huellaDerivado } from "@/lib/derivados";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
+import { basePublica } from "@/lib/base-publica";
 
 const ETIQUETA_TIPO: Record<string, string> = { RECIBIDA: "Recibida", ENVIADA: "Enviada", INTERNA: "Memorando" };
 
@@ -71,13 +73,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  if (!(await puedeVerComunicacion(permisos, session.userId, doc.comunicacionId))) {
+    return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  }
   if (doc.mimeType !== "application/pdf") {
     return NextResponse.json({ error: "El rótulo solo se puede estampar sobre documentos PDF." }, { status: 400 });
   }
 
   const c = doc.comunicacion;
   const h = await headers();
-  const base = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
+  const base = await basePublica(h);
   const dependencia = c.tipo === "RECIBIDA" ? c.dependenciaDestino?.nombre : c.dependenciaOrigen?.nombre;
 
   const datos = {

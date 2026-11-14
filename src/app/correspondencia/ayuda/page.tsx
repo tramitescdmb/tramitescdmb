@@ -854,7 +854,7 @@ export default async function CorrespondenciaAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5">Adjuntos del SGDEA: <strong>máximo 10 archivos por radicado, 2 MB cada uno</strong>. No se aceptan comprimidos (.zip, .rar).</td>
-            <td className="px-2.5 py-1.5">Un radicado debe ser liviano y consultable. Trámites Ambientales 2.0 (planos, estudios) tiene su propio límite de 25 MB, aparte.</td>
+            <td className="px-2.5 py-1.5">Un radicado debe ser liviano y consultable. Trámites Ambientales 2.0 tiene el mismo límite de 2 MB por archivo.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5">La verificación pública de un radicado (<span className="font-mono text-[11px]">/verificar</span>) muestra existencia, tipo, fecha y estado — <strong>nunca el contenido</strong>.</td>

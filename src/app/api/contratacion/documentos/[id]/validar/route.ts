@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeValidarDocumentoContrato, puedeEditarSinTrazaDocumentoContrato } from "@/lib/permisos";
-import { validarDocumentoContrato } from "@/lib/contratacion";
+import { devolverDocumentoContrato, validarDocumentoContrato } from "@/lib/contratacion";
 import { datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
 
@@ -25,7 +25,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Validan el personal de contratación asignado, el jefe de contratación o el jefe de la dependencia solicitante." }, { status: 403 });
   }
 
+  const body = (await req.json().catch(() => null)) as { accion?: unknown; observaciones?: unknown } | null;
   try {
+    if (body?.accion === "devolver") {
+      await devolverDocumentoContrato(id, session.userId, typeof body.observaciones === "string" ? body.observaciones : "", datosPeticion(req.headers));
+      return NextResponse.json({ ok: true });
+    }
     await validarDocumentoContrato(id, session.userId, {
       sinTraza: puedeEditarSinTrazaDocumentoContrato(permisos),
       ...datosPeticion(req.headers),

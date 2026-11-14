@@ -39,8 +39,14 @@ export async function POST(req: NextRequest) {
   if (!dependencia) return NextResponse.json({ error: "La dependencia seleccionada no existe." }, { status: 400 });
 
   const supervisorUsuarioIds: string[] = Array.isArray(body.supervisorUsuarioIds)
-    ? body.supervisorUsuarioIds.filter((v: unknown): v is string => typeof v === "string" && v.trim() !== "")
+    ? [...new Set<string>(body.supervisorUsuarioIds.filter((v: unknown): v is string => typeof v === "string" && v.trim() !== ""))]
     : [];
+  if (supervisorUsuarioIds.length > 0) {
+    const activos = await db.usuario.count({ where: { id: { in: supervisorUsuarioIds }, activo: true } });
+    if (activos !== supervisorUsuarioIds.length) {
+      return NextResponse.json({ error: "Alguno de los supervisores elegidos no existe o está inactivo." }, { status: 400 });
+    }
+  }
 
   const personalAsignadoIds: string[] = Array.isArray(body.personalAsignadoIds)
     ? [...new Set<string>(body.personalAsignadoIds.filter((v: unknown): v is string => typeof v === "string" && v.trim() !== ""))]

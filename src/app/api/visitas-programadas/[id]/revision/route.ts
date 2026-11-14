@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
-import { devolverConcepto, enviarConceptoARevision } from "@/lib/revision-concepto";
+import { descartarConcepto, devolverConcepto, enviarConceptoARevision } from "@/lib/revision-concepto";
+import { db } from "@/lib/db";
+import { puedeEditarExpediente } from "@/lib/permisos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,6 +19,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     } else if (body?.accion === "devolver") {
       if (!planificador) return NextResponse.json({ error: "Solo quien planea las visitas puede devolver el concepto." }, { status: 403 });
       await devolverConcepto(id, usuario, comentario);
+    } else if (body?.accion === "descartar") {
+      const visita = await db.visitaProgramada.findUnique({ where: { id }, select: { expedienteId: true } });
+      if (!visita) return NextResponse.json({ error: "La visita no existe." }, { status: 404 });
+      if (!planificador || !(await puedeEditarExpediente(session.userId, visita.expedienteId))) {
+        return NextResponse.json({ error: "Solo el coordinador, el subdirector o un administrador pueden descartar un concepto." }, { status: 403 });
+      }
+      await descartarConcepto(id, usuario, comentario);
     } else {
       return NextResponse.json({ error: "Acción no reconocida." }, { status: 400 });
     }

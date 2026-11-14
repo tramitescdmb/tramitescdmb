@@ -26,3 +26,31 @@ export function evaluarCambioManualEstado(pasos: PasoReglas[], pasoActualNumero:
     motivo: `El procedimiento no define un paso de decisión: el trámite solo puede quedar ${etiqueta} en el último paso (${ultimo.numero}, ${ultimo.titulo.toLowerCase()}). Está en el paso ${pasoActualNumero}.`,
   };
 }
+
+type OpcionDecision = { siguientePaso?: unknown; resultado?: unknown };
+
+/**
+ * Valida que el avance pedido corresponda a lo que el paso actual ofrece en pantalla:
+ * en un paso de decisión, una de sus opciones (paso siguiente + resultado); en los demás,
+ * el paso inmediatamente siguiente del flujo. Evita saltar pasos o devolverse por esta vía
+ * (devolver es solo del administrador, con motivo, en /retroceder).
+ */
+export function avanceValido(
+  pasos: Pick<PasoReglas, "numero" | "esDecision" | "opciones">[],
+  pasoActualNumero: number,
+  siguientePasoNumero: number | null,
+  resultado: string | null
+): boolean {
+  const ordenados = [...pasos].sort((a, b) => a.numero - b.numero);
+  const actual = ordenados.find((p) => p.numero === pasoActualNumero);
+  const natural = ordenados.find((p) => p.numero > pasoActualNumero)?.numero ?? null;
+  if (actual?.esDecision && Array.isArray(actual.opciones) && actual.opciones.length > 0) {
+    return (actual.opciones as OpcionDecision[]).some((o) => {
+      const sig = o?.siguientePaso == null || o.siguientePaso === "" ? null : Number(o.siguientePaso);
+      const res = typeof o?.resultado === "string" && o.resultado ? o.resultado : null;
+      return sig === siguientePasoNumero && res === resultado;
+    });
+  }
+  if (resultado && !resultadosDelPaso(actual).includes(resultado)) return false;
+  return siguientePasoNumero === natural;
+}

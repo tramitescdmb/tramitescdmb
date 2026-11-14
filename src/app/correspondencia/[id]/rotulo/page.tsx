@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ArrowLeft } from "lucide-react";
@@ -33,6 +34,7 @@ export default async function RotuloPage({ params }: { params: Promise<{ id: str
     headers(),
   ]);
   if (!c) notFound();
+  if (!(await puedeVerComunicacion(permisos, session.userId, c.id))) notFound();
 
   const proto = h.get("x-forwarded-proto") ?? "https";
   const host = h.get("host") ?? "";

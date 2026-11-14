@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { MENSAJE_DOCUMENTO_YA_FIRMADO, MENSAJE_NOMBRE_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 
 export async function editarDocumentoTramite(
   documentoId: string,
@@ -9,12 +10,21 @@ export async function editarDocumentoTramite(
     requiereFirma?: boolean;
     archivo?: { storagePath: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
   }
-): Promise<{ storagePathAnterior: string | null }> {
+): Promise<{ storagePathAnterior: string | null; firmasAnuladas?: string | null }> {
   const nombre = datos.nombre?.trim();
   const anterior = datos.archivo
-    ? await db.expedienteDocumento.findUnique({ where: { id: documentoId }, select: { storagePath: true } })
+    ? await db.expedienteDocumento.findUnique({
+        where: { id: documentoId },
+        select: { storagePath: true, nombre: true, expedienteId: true, pasoNumero: true, estadoValidacion: true, firmas: { select: { usuario: { select: { nombre: true } } } } },
+      })
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
+  if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
+  // El nombre entra en el hash de cada firma: con firmas vigentes (y el mismo archivo) no se cambia.
+  if (nombre && !datos.archivo) {
+    const actual = await db.expedienteDocumento.findUnique({ where: { id: documentoId }, select: { nombre: true, _count: { select: { firmas: true } } } });
+    if (actual && actual.nombre !== nombre && actual._count.firmas > 0) throw new Error(MENSAJE_NOMBRE_FIRMADO);
+  }
 
   await db.expedienteDocumento.update({
     where: { id: documentoId },
@@ -40,6 +50,8 @@ export async function editarDocumentoTramite(
     await db.firmaExpedienteDocumento.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoExpedienteId: documentoId } });
     await db.avisoRechazoDocumento.deleteMany({ where: { documentoExpedienteId: documentoId } });
+    const anuladas = anterior ? detalleFirmasAnuladas(anterior.nombre, anterior.firmas.map((f) => f.usuario.nombre), "reemplazo") : null;
+    return { storagePathAnterior: anterior?.storagePath ?? null, firmasAnuladas: anuladas };
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };
@@ -52,20 +64,31 @@ export async function validarDocumentoTramite(
 ) {
   const doc = await db.expedienteDocumento.findUnique({
     where: { id: documentoId },
-    select: { id: true, nombre: true, expedienteId: true, pasoNumero: true, estadoValidacion: true },
+    select: {
+      id: true,
+      nombre: true,
+      expedienteId: true,
+      pasoNumero: true,
+      estadoValidacion: true,
+      storagePath: true,
+      solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
+    },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está aprobado.");
+  if (doc.solicitudesFirma.length > 0) throw new Error("Este documento tiene firmas pendientes: queda aprobado cuando terminen de firmar.");
   if (doc.estadoValidacion === "RECHAZADO") {
     throw new Error(
       "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."
     );
   }
 
-  await db.expedienteDocumento.update({
-    where: { id: documentoId },
+  // Condicional: si otra persona lo resolvió o se reemplazó el archivo mientras tanto, no se pisa.
+  const { count } = await db.expedienteDocumento.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
     data: { estadoValidacion: "APROBADO", validadoPorId: usuarioId, validadoEn: new Date() },
   });
+  if (count === 0) throw new Error("El documento cambió mientras lo revisaba (otra persona lo resolvió o se cargó una versión nueva): recargue la página.");
   const detalle = `Se validó "${doc.nombre}".`;
   await db.expedienteEvento.create({
     data: {

@@ -12,7 +12,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   const visita = await db.visitaProgramada.findUnique({
     where: { id },
-    select: { profesionalId: true, expedienteId: true, visitaTecnica: { select: { id: true, conceptoNumero: true, formatoVersionId: true, pasoNumero: true } } },
+    select: { profesionalId: true, expedienteId: true, visitaTecnica: { select: { id: true, conceptoNumero: true, formatoVersionId: true, pasoNumero: true, conceptoDescartadoEn: true } } },
   });
   const vt = visita?.visitaTecnica;
   if (!visita || !vt) return NextResponse.json({ error: "La visita no tiene hoja registrada." }, { status: 404 });
@@ -25,6 +25,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
   if (!vt.formatoVersionId) return NextResponse.json({ error: "La visita no se diligenció con un formato." }, { status: 409 });
   if (vt.conceptoNumero) return NextResponse.json({ error: "El concepto ya tiene número." }, { status: 409 });
+  if (vt.conceptoDescartadoEn) return NextResponse.json({ error: "Este concepto técnico se descartó: no recibe número." }, { status: 409 });
 
   const ahora = new Date();
   const anio = Number(partesColombia(ahora).fecha.slice(0, 4));

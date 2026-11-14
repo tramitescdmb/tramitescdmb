@@ -25,6 +25,7 @@ import {
   validarOrdenFechasContrato,
 } from "@/lib/contratacion";
 import { registrarAccesoDenegadoAccion } from "@/lib/auditoria-doc";
+import { anioColombia } from "@/lib/fecha";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
 import { MENSAJE_EXPEDIENTE_CERRADO, contratoCerrado, sincronizarArchivoContrato } from "@/lib/archivo-central";
 
@@ -49,9 +50,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     "fechaFinEstimada",
     "modalidadSeleccion",
     "tipoContrato",
+    "causalContratacionDirecta",
+    "codigoProceso",
     "valor",
     "dependenciaSolicitanteId",
     "expedienteRelacionadoId",
+    "supervisorUsuarioIds",
+    "personalAsignadoIds",
   ];
   if (CAMPOS_CONTENIDO.some((c) => c in body) && (await contratoCerrado(id))) {
     return NextResponse.json({ error: MENSAJE_EXPEDIENTE_CERRADO }, { status: 409 });
@@ -78,7 +83,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!contratistaId) return NextResponse.json({ error: "Falta el contratista." }, { status: 400 });
     const [contratista, actual] = await Promise.all([
       db.contratista.findUnique({ where: { id: contratistaId }, select: { nombreORazonSocial: true } }),
-      db.expedienteContractual.findUnique({ where: { id }, select: { contratista: { select: { id: true, nombreORazonSocial: true } } } }),
+      db.expedienteContractual.findUnique({ where: { id }, select: { contratista: { select: { id: true, nombreORazonSocial: true, usuarioId: true } } } }),
     ]);
     if (!contratista) return NextResponse.json({ error: "El contratista no existe." }, { status: 404 });
     if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
@@ -91,6 +96,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: { contratistaId },
     });
     if (count === 0) return NextResponse.json({ error: "El contratista de este expediente acaba de cambiar; no se modificó." }, { status: 409 });
+    // El contratista anterior deja de firmar en este contrato: sus solicitudes pendientes se cierran (y con ellas
+    // el acceso que le daban a los documentos del expediente). Quien gestiona asigna de nuevo al contratista nuevo.
+    let anuladas = 0;
+    if (actual.contratista?.usuarioId) {
+      // Se borran (no se marcan rechazadas): un rechazo dejaría el documento como "devuelto por el firmante".
+      const r = await db.solicitudFirma.deleteMany({
+        where: { usuarioAsignadoId: actual.contratista.usuarioId, estado: "PENDIENTE", documentoContrato: { expedienteId: id } },
+      });
+      anuladas = r.count;
+    }
     await registrarEventoContratacion(
       id,
       "CONTRATISTA_VINCULADO",
@@ -99,6 +114,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         : `Se vinculó a ${contratista.nombreORazonSocial} como contratista.`,
       session.userId
     );
+    if (anuladas > 0) {
+      await registrarEventoContratacion(
+        id,
+        "FIRMAS_ANULADAS",
+        `Se cerraron ${anuladas} solicitud(es) de firma pendientes del contratista anterior (${actual.contratista!.nombreORazonSocial}); asigne las firmas al contratista nuevo.`,
+        session.userId
+      );
+    }
     return NextResponse.json({ ok: true });
   }
 
@@ -154,7 +177,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           solicitado: "codigoProceso" in body ? body.codigoProceso : null,
           modalidad,
           causal: causalNueva,
-          anio: (suscripcion ?? vigente.createdAt).getUTCFullYear(),
+          anio: anioColombia(suscripcion ?? vigente.createdAt),
           actual: vigente.codigoProceso,
           excluirId: id,
         });
@@ -181,16 +204,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!dependencia) return NextResponse.json({ error: "La dependencia indicada no existe." }, { status: 404 });
     }
     const numeroProcesoSecop = "numeroProcesoSecop" in body && body.numeroProcesoSecop ? String(body.numeroProcesoSecop).trim() : null;
-    if (numeroProcesoSecop || "fechaSuscripcion" in body || "fechaInicio" in body) {
+    if (numeroProcesoSecop || "fechaSuscripcion" in body || "fechaInicio" in body || "fechaFinEstimada" in body) {
       try {
         const actual = await db.expedienteContractual.findUnique({
           where: { id },
-          select: { fechaSuscripcion: true, fechaInicio: true, createdAt: true },
+          select: { fechaSuscripcion: true, fechaInicio: true, fechaFinEstimada: true, createdAt: true },
         });
         if (!actual) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
         const fechaSuscripcionEfectiva = "fechaSuscripcion" in body ? (body.fechaSuscripcion ? new Date(body.fechaSuscripcion) : null) : actual.fechaSuscripcion;
         const fechaInicioEfectiva = "fechaInicio" in body ? (body.fechaInicio ? new Date(body.fechaInicio) : null) : actual.fechaInicio;
-        validarOrdenFechasContrato(fechaSuscripcionEfectiva, fechaInicioEfectiva);
+        const fechaFinEfectiva = "fechaFinEstimada" in body ? (body.fechaFinEstimada ? new Date(body.fechaFinEstimada) : null) : actual.fechaFinEstimada;
+        validarOrdenFechasContrato(fechaSuscripcionEfectiva, fechaInicioEfectiva, fechaFinEfectiva);
         if (numeroProcesoSecop) {
           validarFormatoSecop(numeroProcesoSecop);
           await verificarUnicidadSecopPorVigencia(numeroProcesoSecop, vigenciaDeExpediente(fechaInicioEfectiva, actual.createdAt), id);

@@ -103,10 +103,15 @@ export async function subir(bucket: string, ruta: string, contenido: Buffer, con
   if (error) throw error;
 }
 
-export async function firmarSubida(bucket: string, ruta: string): Promise<{ path: string; token: string }> {
+/** `topeMb` amplía, solo para esta subida, el tope por archivo del almacenamiento local (lo firma el servidor). */
+export async function firmarSubida(bucket: string, ruta: string, topeMb?: number): Promise<{ path: string; token: string }> {
   if (almacenLocal()) {
     const exp = String(Math.floor(Date.now() / 1000) + 2 * 3600);
     const r = limpiar(ruta);
+    if (topeMb && topeMb > 0) {
+      const mb = String(Math.floor(topeMb));
+      return { path: r, token: `${exp}.${mb}.${firmar("subir", bucket, r, exp, mb)}` };
+    }
     return { path: r, token: `${exp}.${firmar("subir", bucket, r, exp)}` };
   }
   const { data, error } = await supabaseAdmin().storage.from(bucket).createSignedUploadUrl(ruta);
@@ -141,6 +146,16 @@ export async function descargar(bucket: string, ruta: string): Promise<Buffer> {
   const { data, error } = await supabaseAdmin().storage.from(bucket).download(ruta);
   if (error || !data) throw error ?? new Error("No se pudo descargar el documento");
   return Buffer.from(await data.arrayBuffer());
+}
+
+/** true si el archivo está guardado. Fuera del almacenamiento local no se consulta y se asume que sí. */
+export async function existe(bucket: string, ruta: string): Promise<boolean> {
+  if (!almacenLocal()) return true;
+  try {
+    return (await fs.stat(rutaFisica(bucket, ruta))).isFile();
+  } catch {
+    return false;
+  }
 }
 
 export async function eliminar(bucket: string, rutas: string[]) {

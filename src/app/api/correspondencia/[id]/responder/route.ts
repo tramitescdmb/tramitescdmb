@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
+import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia, puedeResponderComoAsignado } from "@/lib/permisos";
@@ -56,6 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const errLote = validarLoteDocumentosSGDEA(documentos);
   if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
+  if (!(await rutasDeCarpetaNueva(documentos))) return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
 
   try {
     await registrarRespuestaFuncionario(id, session.userId, texto, documentos);

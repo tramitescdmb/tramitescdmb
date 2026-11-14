@@ -38,7 +38,8 @@ import { CODIGO_ACTA_LIQUIDACION, requiereLiquidacion } from "@/lib/liquidacion"
 import { errorCodigoProceso, formatearCodigoProceso, normalizarCodigoProceso, prefijoProceso } from "@/lib/codigo-proceso";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ETIQUETA_ROL_CONTRATACION, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 import { subserieDeModalidad } from "@/lib/trd-clasificacion";
-import { fechaArchivoColombia } from "@/lib/fecha";
+import { anioColombia, fechaArchivoColombia } from "@/lib/fecha";
+import { MENSAJE_NOMBRE_FIRMADO, MENSAJE_DOCUMENTO_YA_FIRMADO, detalleFirmasAnuladas } from "@/lib/firmas-reemplazo";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
   MENSAJE_EXPEDIENTE_CERRADO,
@@ -53,19 +54,27 @@ export * from "@/lib/contratacion-etiquetas";
 export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
 const SERIE_CONTRATO = "CTO";
+const FORMATO_TERMINACION_ANTICIPADA = "A-BS-FO131";
 
-export async function generarNumeroExpedienteContractual(anio: number = new Date().getFullYear()): Promise<string> {
+export async function generarNumeroExpedienteContractual(anio: number = anioColombia()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_CONTRATO, anio);
   return formatearRadicado(SERIE_CONTRATO, anio, numero);
 }
 
 export function vigenciaDeExpediente(fechaInicio: Date | null | undefined, createdAt: Date): number {
-  return (fechaInicio ?? createdAt).getFullYear();
+  return anioColombia(fechaInicio ?? createdAt);
 }
 
-export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null): void {
+export function validarOrdenFechasContrato(fechaSuscripcion: Date | null, fechaInicio: Date | null, fechaFin: Date | null = null): void {
+  for (const [f, nombre] of [[fechaSuscripcion, "suscripción"], [fechaInicio, "inicio"], [fechaFin, "terminación"]] as const) {
+    if (f && Number.isNaN(f.getTime())) throw new Error(`La fecha de ${nombre} no es válida.`);
+  }
   if (fechaSuscripcion && fechaInicio && fechaSuscripcion > fechaInicio) {
     throw new Error("La fecha de suscripción no puede ser posterior a la fecha de inicio (acta de inicio).");
+  }
+  // Con la terminación antes del inicio no se arma ninguna cuenta mensual.
+  if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+    throw new Error("La fecha de terminación no puede ser anterior a la fecha de inicio.");
   }
 }
 
@@ -350,7 +359,8 @@ export async function guardarTopeCuantia(datos: { anio: number; menorCuantia: nu
 
 export async function validarCuantiaContrato(modalidad: string, valor: number | null, fechaSuscripcion: Date | null): Promise<void> {
   if (valor === null) return;
-  const error = errorCuantia(modalidad, valor, await topeCuantiaDe((fechaSuscripcion ?? new Date()).getUTCFullYear()));
+  if (!Number.isFinite(valor) || valor < 0) throw new Error("El valor del contrato debe ser un número positivo, sin puntos ni símbolos.");
+  const error = errorCuantia(modalidad, valor, await topeCuantiaDe(anioColombia(fechaSuscripcion ?? new Date())));
   if (error) throw new Error(error);
 }
 
@@ -415,7 +425,7 @@ export async function crearExpedienteContractual(datos: {
   const subserieElegida = datos.subserieId ?? automatica?.subserieId ?? null;
   const subserie = subserieElegida ? await validarSubserieContrato(subserieElegida) : null;
   if (!datos.dependenciaSolicitanteId) throw new Error("Debe indicarse la dependencia solicitante.");
-  validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null);
+  validarOrdenFechasContrato(datos.fechaSuscripcion ?? null, datos.fechaInicio ?? null, datos.fechaFinEstimada ?? null);
 
   const numeroProcesoSecop = datos.numeroProcesoSecop?.trim() || null;
   if (numeroProcesoSecop) {
@@ -427,7 +437,7 @@ export async function crearExpedienteContractual(datos: {
     solicitado: datos.codigoProceso,
     modalidad: datos.modalidadSeleccion,
     causal,
-    anio: (datos.fechaSuscripcion ?? new Date()).getUTCFullYear(),
+    anio: anioColombia(datos.fechaSuscripcion ?? new Date()),
   });
   const numero = await generarNumeroExpedienteContractual();
   const expediente = await db.expedienteContractual.create({
@@ -559,9 +569,9 @@ export async function agregarDocumentoContrato(datos: {
 }) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: datos.expedienteId },
-    select: { cerrado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true, etapaActual: true },
+    select: { cerrado: true, eliminado: true, modalidadSeleccion: true, fechaInicio: true, fechaFinEstimada: true, etapaActual: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente está cerrado: no se pueden agregar más documentos.");
   if (!datos.cualquierEtapa && !etapaHabilitada(expediente.etapaActual, datos.etapa)) throw new Error(mensajeEtapaNoHabilitada(datos.etapa));
   const posicion = ETAPAS_ORDEN.indexOf(datos.etapa) - ETAPAS_ORDEN.indexOf(expediente.etapaActual);
@@ -573,15 +583,16 @@ export async function agregarDocumentoContrato(datos: {
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;
   let tipoDocumentalId: string | null = null;
+  let marcaTerminacion = false;
   if (datos.requisitoId) {
     const requisito = await db.requisitoDocumentoContratacion.findUnique({ where: { id: datos.requisitoId } });
     if (!requisito || requisito.etapa !== datos.etapa || (requisito.modalidadSeleccion && requisito.modalidadSeleccion !== expediente.modalidadSeleccion)) {
       throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
     }
+    if (!requisito.activo) throw new Error("Ese requisito del catálogo ya no está vigente. Recargue la página.");
     nombre = requisito.nombre;
-    if (requisito.codigoFormato?.includes("A-BS-FO131")) {
-      await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
-    }
+    // La marca de terminación anticipada se pone después de registrar el documento (si algo falla antes, no queda puesta).
+    marcaTerminacion = Boolean(requisito.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA));
     categoria = null;
     tipoDocumentalId = requisito.tipoDocumentalId;
 
@@ -631,6 +642,9 @@ export async function agregarDocumentoContrato(datos: {
       periodoEventualId: datos.periodoEventualId?.trim() || null,
     },
   });
+  if (marcaTerminacion) {
+    await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
+  }
 
   await registrarEventoContratacion(
     datos.expedienteId,
@@ -662,9 +676,18 @@ export async function editarDocumentoContratoSinTraza(
 ): Promise<{ storagePathAnterior: string | null }> {
   const nombre = datos.nombre?.trim();
   const anterior = datos.archivo
-    ? await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } })
+    ? await db.documentoContrato.findUnique({
+        where: { id: documentoId },
+        select: { storagePath: true, nombre: true, expedienteId: true, estadoValidacion: true, firmas: { select: { usuario: { select: { nombre: true } } } } },
+      })
     : null;
   if (datos.archivo && !anterior) throw new Error("El documento no existe.");
+  if (anterior && anterior.firmas.length > 0 && anterior.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
+  // El nombre entra en el hash de cada firma: con firmas vigentes (y el mismo archivo) no se cambia.
+  if (nombre && !datos.archivo) {
+    const actual = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { nombre: true, _count: { select: { firmas: true } } } });
+    if (actual && actual.nombre !== nombre && actual._count.firmas > 0) throw new Error(MENSAJE_NOMBRE_FIRMADO);
+  }
 
   await db.documentoContrato.update({
     where: { id: documentoId },
@@ -691,15 +714,38 @@ export async function editarDocumentoContratoSinTraza(
     await db.firmaDocumentoContrato.deleteMany({ where: { documentoId } });
     await db.solicitudFirma.deleteMany({ where: { documentoContratoId: documentoId } });
     await db.avisoRechazoDocumento.deleteMany({ where: { documentoContratoId: documentoId } });
+    const anuladas = anterior ? detalleFirmasAnuladas(anterior.nombre, anterior.firmas.map((f) => f.usuario.nombre), "reemplazo") : null;
+    if (anterior && anuladas) await db.eventoContratacion.create({ data: { expedienteId: anterior.expedienteId, tipo: "FIRMAS_ANULADAS", detalle: anuladas } });
   }
 
   return { storagePathAnterior: anterior?.storagePath ?? null };
 }
 
 export async function eliminarDocumentoContratoSinTraza(documentoId: string): Promise<{ storagePath: string }> {
-  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } });
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: {
+      storagePath: true,
+      nombre: true,
+      expedienteId: true,
+      estadoValidacion: true,
+      requisito: { select: { codigoFormato: true } },
+      firmas: { select: { usuario: { select: { nombre: true } } } },
+    },
+  });
   if (!doc) throw new Error("El documento no existe.");
+  if (doc.firmas.length > 0 && doc.estadoValidacion === "APROBADO") throw new Error(MENSAJE_DOCUMENTO_YA_FIRMADO);
   await db.documentoContrato.delete({ where: { id: documentoId } });
+  const anuladas = detalleFirmasAnuladas(doc.nombre, doc.firmas.map((f) => f.usuario.nombre), "borrado");
+  if (anuladas) await db.eventoContratacion.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMAS_ANULADAS", detalle: anuladas } });
+  // Si se borra la terminación anticipada (cargada por error), el contrato deja de exigir liquidación
+  // salvo que quede otra cargada.
+  if (doc.requisito?.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA)) {
+    const quedan = await db.documentoContrato.count({
+      where: { expedienteId: doc.expedienteId, requisito: { codigoFormato: { contains: FORMATO_TERMINACION_ANTICIPADA } } },
+    });
+    if (quedan === 0) await db.expedienteContractual.update({ where: { id: doc.expedienteId }, data: { terminadoAnticipadamente: false } });
+  }
   return { storagePath: doc.storagePath };
 }
 
@@ -747,6 +793,8 @@ export async function eliminarDocumentoContratoConTraza(
   return resultado;
 }
 
+const MENSAJE_DOCUMENTO_CAMBIO_VALIDACION = "El documento cambió mientras lo revisaba (otra persona lo validó o devolvió, o se cargó una versión nueva): recargue la página.";
+
 export async function validarDocumentoContrato(
   documentoId: string,
   usuarioId: string,
@@ -754,11 +802,20 @@ export async function validarDocumentoContrato(
 ): Promise<void> {
   const doc = await db.documentoContrato.findUnique({
     where: { id: documentoId },
-    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, verificacionRecepcionEn: true },
+    select: {
+      nombre: true,
+      expedienteId: true,
+      estadoValidacion: true,
+      etapa: true,
+      storagePath: true,
+      verificacionRecepcionEn: true,
+      solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
+    },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan documentos de la etapa Precontractual.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+  if (doc.solicitudesFirma.length > 0) throw new Error("Este documento tiene firmas pendientes: se valida cuando terminen de firmar.");
   if (doc.estadoValidacion === "RECHAZADO") {
     throw new Error(
       "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."
@@ -766,8 +823,9 @@ export async function validarDocumentoContrato(
   }
 
   const ahora = new Date();
-  await db.documentoContrato.update({
-    where: { id: documentoId },
+  // Condicional: si otra persona lo devolvió/validó o se reemplazó el archivo mientras tanto, no se pisa.
+  const { count } = await db.documentoContrato.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
     data: {
       estadoValidacion: "APROBADO",
       validadoPorId: usuarioId,
@@ -775,6 +833,7 @@ export async function validarDocumentoContrato(
       ...(!doc.verificacionRecepcionEn ? { verificacionRecepcionEn: ahora, verificacionRecepcionPorId: usuarioId } : {}),
     },
   });
+  if (count === 0) throw new Error(MENSAJE_DOCUMENTO_CAMBIO_VALIDACION);
 
   if (opts.sinTraza) return;
   const detalle = `Validó "${doc.nombre}"`;
@@ -790,6 +849,56 @@ export async function validarDocumentoContrato(
   });
 }
 
+/**
+ * Devuelve un documento de Precontractual (p. ej. la hoja de vida) con observaciones: queda rechazado,
+ * quien lo subió recibe el aviso y debe cargar una versión corregida, que es la que cuenta en la lista.
+ */
+export async function devolverDocumentoContrato(
+  documentoId: string,
+  usuarioId: string,
+  observaciones: string,
+  opts: { ip?: string | null; userAgent?: string | null } = {}
+): Promise<void> {
+  const texto = observaciones.trim();
+  if (!texto) throw new Error("Escriba qué debe corregirse.");
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: { nombre: true, expedienteId: true, estadoValidacion: true, etapa: true, subidoPorId: true, storagePath: true },
+  });
+  if (!doc) throw new Error("El documento no existe.");
+  if (doc.etapa !== "PRECONTRACTUAL") throw new Error("Solo se validan (o devuelven) documentos de la etapa Precontractual.");
+  if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está validado.");
+  if (doc.estadoValidacion === "RECHAZADO") throw new Error("Este documento ya fue devuelto: espere la versión corregida.");
+
+  const ahora = new Date();
+  const { count } = await db.documentoContrato.updateMany({
+    where: { id: documentoId, estadoValidacion: doc.estadoValidacion, storagePath: doc.storagePath },
+    data: {
+      estadoValidacion: "RECHAZADO",
+      validadoPorId: usuarioId,
+      validadoEn: ahora,
+      verificacionRecepcionEn: ahora,
+      verificacionRecepcionPorId: usuarioId,
+      verificacionRecepcionObservaciones: texto,
+    },
+  });
+  if (count === 0) throw new Error(MENSAJE_DOCUMENTO_CAMBIO_VALIDACION);
+  await db.avisoRechazoDocumento.create({
+    data: { expedienteId: doc.expedienteId, documentoContratoId: documentoId, mensaje: texto, rechazadoPorId: usuarioId, subidoPorId: doc.subidoPorId },
+  });
+  const detalle = `Devolvió "${doc.nombre}" para corrección: ${texto}`;
+  await registrarEventoContratacion(doc.expedienteId, "DOCUMENTO_RECHAZADO", detalle, usuarioId);
+  await registrarAuditoriaDoc({
+    entidad: "DocumentoContrato",
+    entidadId: documentoId,
+    accion: "DEVUELVE",
+    usuarioId,
+    ip: opts.ip ?? null,
+    userAgent: opts.userAgent ?? null,
+    detalle,
+  });
+}
+
 export class FaltanRequisitosError extends Error {
   constructor(public readonly faltantes: string[]) {
     super(`Hay ${faltantes.length} documento(s) obligatorio(s) pendiente(s) en esta etapa: ${faltantes.join("; ")}`);
@@ -797,13 +906,17 @@ export class FaltanRequisitosError extends Error {
   }
 }
 
-export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
+export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null, etapaEsperada?: string) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
+    select: { etapaActual: true, cerrado: true, eliminado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
+  // La página pudo quedar desactualizada (otra pestaña u otra persona ya aprobó): no cerrar una etapa que no se veía.
+  if (etapaEsperada && etapaEsperada !== expediente.etapaActual) {
+    throw new Error(`El expediente ya está en ${ETIQUETA_ETAPA[expediente.etapaActual]}: recargue la página antes de aprobar.`);
+  }
 
   if (expediente.etapaActual === "PRECONTRACTUAL") {
     if (!expediente.contratistaId) {
@@ -914,42 +1027,28 @@ export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: 
   );
 }
 
-async function pasarAContractualPorSecop(expedienteId: string, fechaFirma: string) {
-  const ahora = new Date();
-  const comentario = `Paso automático: SECOP II reporta el contrato firmado el ${fechaFirma}.`;
-  await db.$transaction([
-    db.etapaExpedienteContractual.upsert({
-      where: { expedienteId_etapa: { expedienteId, etapa: "PRECONTRACTUAL" } },
-      update: { completadaEn: ahora, comentario },
-      create: { expedienteId, etapa: "PRECONTRACTUAL", completadaEn: ahora, comentario },
-    }),
-    db.expedienteContractual.update({ where: { id: expedienteId }, data: { etapaActual: "CONTRACTUAL" } }),
-    db.etapaExpedienteContractual.upsert({
-      where: { expedienteId_etapa: { expedienteId, etapa: "CONTRACTUAL" } },
-      update: {},
-      create: { expedienteId, etapa: "CONTRACTUAL" },
-    }),
-  ]);
-  await registrarEventoContratacion(expedienteId, "ETAPA_APROBADA", `Pasó de Precontractual a Contractual. ${comentario}`, null);
-}
-
-export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string) {
+export async function retrocederEtapaContratacion(expedienteId: string, usuarioId: string, motivo: string, etapaEsperada?: string) {
   if (!motivo.trim()) throw new Error("Indique el motivo para retroceder de etapa.");
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
-    select: { etapaActual: true, cerrado: true },
+    select: { etapaActual: true, cerrado: true, eliminado: true },
   });
-  if (!expediente) throw new Error("El expediente no existe.");
+  if (!expediente || expediente.eliminado) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error(MENSAJE_EXPEDIENTE_CERRADO);
 
+  if (etapaEsperada && etapaEsperada !== expediente.etapaActual) {
+    throw new Error(`El expediente ya está en ${ETIQUETA_ETAPA[expediente.etapaActual]}: recargue la página antes de retroceder.`);
+  }
   const idxEfectivo = ETAPAS_ORDEN.indexOf(expediente.etapaActual);
   if (idxEfectivo === 0) throw new Error("El expediente ya está en la primera etapa (Precontractual).");
 
   const anterior = ETAPAS_ORDEN[idxEfectivo - 1]!;
-  await db.expedienteContractual.update({
-    where: { id: expedienteId },
+  // Condicional: dos solicitudes simultáneas no retroceden dos etapas.
+  const { count } = await db.expedienteContractual.updateMany({
+    where: { id: expedienteId, etapaActual: expediente.etapaActual, cerrado: false },
     data: { etapaActual: anterior },
   });
+  if (count === 0) throw new Error("Otra persona cambió la etapa de este expediente al mismo tiempo: recargue la página.");
   await db.etapaExpedienteContractual.upsert({
     where: { expedienteId_etapa: { expedienteId, etapa: anterior } },
     update: { completadaEn: null, aprobadaPorId: null },
@@ -971,6 +1070,11 @@ export async function eliminarExpedienteContractualCompleto(expedienteId: string
   await db.expedienteContractual.update({
     where: { id: expedienteId },
     data: { eliminado: true, eliminadoEn: new Date(), eliminadoPorId: usuarioId, motivoEliminacion: motivo },
+  });
+  // Las firmas y vistos buenos pendientes salen de los buzones: ya no hay expediente que firmar.
+  await db.solicitudFirma.updateMany({
+    where: { estado: "PENDIENTE", rol: { not: "LECTURA" }, documentoContrato: { expedienteId } },
+    data: { estado: "RECHAZADA", completadoEn: new Date(), comentario: `Expediente eliminado: ${motivo}` },
   });
   await registrarEventoContratacion(expedienteId, "EXPEDIENTE_ELIMINADO", `Se eliminó el expediente ${expediente.numero}. Motivo: ${motivo}`, usuarioId);
   await cancelarFlujosDeObjeto("CONTRATO", expedienteId, usuarioId, `se eliminó el expediente (${motivo}).`).catch((e) => console.error("cancelarFlujosDeObjeto falló:", e));
@@ -1398,14 +1502,14 @@ export function usaSelectorDeVigencia(permisos: PermisosUsuario): boolean {
 export function vigenciaPorDefecto(permisos: PermisosUsuario, vigencia: string | undefined): string | undefined {
   if (vigencia === "todas") return undefined;
   if (vigencia) return vigencia;
-  return usaSelectorDeVigencia(permisos) ? String(new Date().getFullYear()) : undefined;
+  return usaSelectorDeVigencia(permisos) ? String(anioColombia()) : undefined;
 }
 
 export async function aniosDeExpedientes(where: Prisma.ExpedienteContractualWhereInput) {
   const filas = await db.expedienteContractual.findMany({ where, select: { fechaSuscripcion: true, createdAt: true } });
-  const conteo = new Map<number, number>([[new Date().getFullYear(), 0]]);
+  const conteo = new Map<number, number>([[anioColombia(), 0]]);
   for (const f of filas) {
-    const anio = (f.fechaSuscripcion ?? f.createdAt).getUTCFullYear();
+    const anio = anioColombia(f.fechaSuscripcion ?? f.createdAt);
     conteo.set(anio, (conteo.get(anio) ?? 0) + 1);
   }
   return {
@@ -1801,7 +1905,7 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     completar.codigoProceso = await resolverCodigoProceso({
       modalidad: String(completar.modalidadSeleccion ?? expediente.modalidadSeleccion),
       causal: (("causalContratacionDirecta" in completar ? completar.causalContratacionDirecta : expediente.causalContratacionDirecta) as string | null) ?? null,
-      anio: (fechaDb(c.fechaSuscripcion) ?? expediente.createdAt).getUTCFullYear(),
+      anio: anioColombia(fechaDb(c.fechaSuscripcion) ?? expediente.createdAt),
       actual: expediente.codigoProceso,
       excluirId: expedienteId,
     });
@@ -1813,6 +1917,9 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     const contratistaId = usuario ? (await asegurarContratistaDeUsuario(usuario.id)).id : await asegurarPerfilDesdeSecop(c.contratista);
     if (contratistaId && contratistaId !== expediente.contratistaId) completar.contratistaId = contratistaId;
   }
+
+  // Expediente cerrado: solo se refresca la consulta de SECOP II; sus datos ya no cambian.
+  if (expediente.cerrado) for (const k of Object.keys(completar)) delete completar[k];
 
   const espejo = {
     idContrato,
@@ -1841,8 +1948,8 @@ export async function sincronizarExpedienteSecop(expedienteId: string, usuarioId
     `Sincronizado con SECOP II (${idContrato})`,
     Object.keys(completar).length ? `actualizado desde SECOP II: ${Object.keys(completar).map((k) => ETIQUETA_CAMPO_SECOP[k] ?? k).join(", ")}` : null,
   ].filter(Boolean);
-  const avanzo = expediente.etapaActual === "PRECONTRACTUAL" && !expediente.cerrado && Boolean(c.fechaSuscripcion);
-  if (avanzo) await pasarAContractualPorSecop(expedienteId, c.fechaSuscripcion!);
+  // SECOP II solo alimenta datos (fechas, valor, supervisor…); nunca cambia la etapa de GECON:
+  // un contrato puede cargarse en GECON después de su inicio y las etapas se aprueban a mano.
   const anterior = expediente.secop ? jsonEstable(expediente.secop) : null;
   const cambio = anterior !== jsonEstable(secop);
   if (cambio || Object.keys(completar).length > 0 || usuarioId) {
