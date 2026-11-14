@@ -131,6 +131,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // El identificador lo genera el navegador (para la carpeta de los archivos): debe ser nuevo, o el trámite
+  // compartiría carpeta con un contrato o expediente existente y podría registrar sus archivos.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(expedienteId)) {
+    return NextResponse.json({ error: "Identificador de radicación no válido. Recargue la página." }, { status: 400 });
+  }
+  const [yaTramite, yaContrato, yaDocumental] = await Promise.all([
+    db.expediente.count({ where: { id: expedienteId } }),
+    db.expedienteContractual.count({ where: { id: expedienteId } }),
+    db.expedienteDocumental.count({ where: { id: expedienteId } }),
+  ]);
+  if (yaTramite + yaContrato + yaDocumental > 0) {
+    return NextResponse.json({ error: "Esta radicación ya se registró. Recargue la página antes de radicar otra." }, { status: 409 });
+  }
   if ((documentos || []).some((d) => d?.path && !rutaDeExpediente(d.path, expedienteId))) {
     return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }

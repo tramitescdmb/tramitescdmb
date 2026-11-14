@@ -6,7 +6,7 @@ import { equipoDeVisita } from "@/lib/concepto-visita-db";
 import { firmantesDeParticipantes } from "@/lib/participantes-visita";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import { deleteDocumento } from "@/lib/storage";
+import { deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 import { puedeFinalizarSegunRevision, registrarRevision } from "@/lib/revision-concepto";
 import { resolverNotificaciones } from "@/lib/notificaciones";
@@ -41,12 +41,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = (await req.json().catch(() => null)) as { path?: unknown; tamanoBytes?: unknown; hashSha256?: unknown } | null;
   const path = typeof body?.path === "string" ? body.path : "";
   const tamanoBytes = Number(body?.tamanoBytes);
-  if (!path || !path.startsWith(`expedientes/${visita.expedienteId}/`) || !Number.isFinite(tamanoBytes) || tamanoBytes <= 0) {
+  if (!path || !rutaDeExpediente(path, visita.expedienteId) || !Number.isFinite(tamanoBytes) || tamanoBytes <= 0) {
     return NextResponse.json({ error: "No se recibió el PDF del concepto." }, { status: 400 });
   }
+  const problema = await problemaArchivoSubido(path, await db.expedienteDocumento.count({ where: { storagePath: path } }));
+  if (problema) return NextResponse.json({ error: problema }, { status: 409 });
 
   const { lista, contratistas } = await equipoDeVisita(id, visita.profesionalId);
   const firmantes = firmantesDeParticipantes(lista, contratistas);
+  if (!firmantes.some((f) => f.rol === "FIRMA" && f.calidad === "PRINCIPAL")) {
+    return NextResponse.json(
+      { error: "Nadie firmaría el concepto como firmante principal (quien elabora es contratista). Asigne en el equipo de la visita a un funcionario con el rol «Aprueba»." },
+      { status: 409 }
+    );
+  }
   const etiqueta = etiquetaConcepto(vt.conceptoNumero, vt.conceptoFecha);
   const ahora = new Date();
 

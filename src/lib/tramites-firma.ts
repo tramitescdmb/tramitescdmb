@@ -59,10 +59,18 @@ export async function validarDocumentoTramite(
 ) {
   const doc = await db.expedienteDocumento.findUnique({
     where: { id: documentoId },
-    select: { id: true, nombre: true, expedienteId: true, pasoNumero: true, estadoValidacion: true },
+    select: {
+      id: true,
+      nombre: true,
+      expedienteId: true,
+      pasoNumero: true,
+      estadoValidacion: true,
+      solicitudesFirma: { where: { rol: "FIRMA", estado: "PENDIENTE" }, select: { id: true } },
+    },
   });
   if (!doc) throw new Error("El documento no existe.");
   if (doc.estadoValidacion === "APROBADO") throw new Error("Este documento ya está aprobado.");
+  if (doc.solicitudesFirma.length > 0) throw new Error("Este documento tiene firmas pendientes: queda aprobado cuando terminen de firmar.");
   if (doc.estadoValidacion === "RECHAZADO") {
     throw new Error(
       "El firmante rechazó este documento: no se puede aprobar directamente. Suba una versión corregida o pida al firmante que resuelva de nuevo la solicitud."

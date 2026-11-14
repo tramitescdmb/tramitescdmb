@@ -35,6 +35,10 @@ export function validarParticipantes(
   if (!lista.some((p) => p.rol === "ELABORA")) return "Debe haber al menos una persona con el rol «Elabora».";
   if (lista.filter((p) => p.rol === "APRUEBA").length > 1) return "Solo una persona puede aprobar el concepto.";
   if (lista.filter((p) => p.rol !== "VISTO_BUENO").length > MAX_FIRMAS_CONCEPTO) return `Máximo ${MAX_FIRMAS_CONCEPTO} personas firman el concepto (sin contar los vistos buenos).`;
+  const hayAprobador = lista.some((p) => p.rol === "APRUEBA");
+  if (!hayAprobador && lista.filter((p) => p.rol === "ELABORA").every((p) => opciones.contratistas.has(p.usuarioId))) {
+    return "Quien elabora es contratista: asigne a un funcionario con el rol «Aprueba» para que alguien firme el concepto como firmante principal.";
+  }
   for (const p of lista) {
     const nombre = opciones.nombres.get(p.usuarioId) ?? "Una de las personas";
     if (!opciones.permitidos.has(p.usuarioId)) return `${nombre} no existe o está inactiva.`;
