@@ -222,7 +222,7 @@ export default async function ExpedienteDetallePage({
   const siguientePaso = currentIndex >= 0 ? pasos[currentIndex + 1] : null;
   const esTerminal = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"].includes(expediente.estado);
   const esMiPaso = pasoActual ? cargoCoincideConPaso(session?.cargos, pasoActual.responsables) : false;
-  const puedeAvanzar = puedeEditar && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
+  const puedeAvanzar = puedeEditar && !esTerminal && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const misCargosConEncargo = (session?.cargos ?? []).map((c) => (session?.cargosEncargo.includes(c) ? `${c} (E)` : c));
   const visitasDelPasoActual = pasoActual
@@ -674,6 +674,11 @@ export default async function ExpedienteDetallePage({
                       <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
                         <Eye className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
                         Su acceso a este trámite es de solo lectura — no puede avanzar este paso.
+                      </p>
+                    ) : esTerminal ? (
+                      <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">
+                        <Lock className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                        El trámite ya tiene un estado final: para seguir avanzando, primero cambie el estado en la pestaña Administración.
                       </p>
                     ) : !puedeAvanzar ? (
                       <p className="flex items-start gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-500">

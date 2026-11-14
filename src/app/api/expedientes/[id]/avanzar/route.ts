@@ -39,6 +39,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
 
+  if (ESTADOS_TERMINALES.includes(expediente.estado)) {
+    const url = new URL(`/expedientes/${id}`, req.url);
+    url.searchParams.set("error", "El expediente ya tiene un estado final; cámbielo primero en la pestaña Administración.");
+    return NextResponse.redirect(url, { status: 303 });
+  }
+
   const pasoActual = expediente.flujo.pasos.find((p) => p.numero === expediente.pasoActualNumero);
 
   if (pasoActual && !puedeGestionarPaso(session, pasoActual.responsables)) {
