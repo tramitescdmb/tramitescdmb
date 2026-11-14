@@ -14,7 +14,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => ({}));
   try {
-    await aprobarEtapaContratacion(id, session.userId, typeof body?.comentario === "string" ? body.comentario : null);
+    await aprobarEtapaContratacion(
+      id,
+      session.userId,
+      typeof body?.comentario === "string" ? body.comentario : null,
+      typeof body?.etapa === "string" ? body.etapa : undefined
+    );
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof FaltanRequisitosError) {

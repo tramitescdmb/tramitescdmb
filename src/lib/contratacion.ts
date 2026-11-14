@@ -809,13 +809,17 @@ export class FaltanRequisitosError extends Error {
   }
 }
 
-export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null) {
+export async function aprobarEtapaContratacion(expedienteId: string, usuarioId: string, comentario?: string | null, etapaEsperada?: string) {
   const expediente = await db.expedienteContractual.findUnique({
     where: { id: expedienteId },
     select: { etapaActual: true, cerrado: true, modalidadSeleccion: true, tipoContrato: true, terminadoAnticipadamente: true, contratistaId: true, subserieId: true },
   });
   if (!expediente) throw new Error("El expediente no existe.");
   if (expediente.cerrado) throw new Error("Este expediente ya está cerrado.");
+  // La página pudo quedar desactualizada (otra pestaña u otra persona ya aprobó): no cerrar una etapa que no se veía.
+  if (etapaEsperada && etapaEsperada !== expediente.etapaActual) {
+    throw new Error(`El expediente ya está en ${ETIQUETA_ETAPA[expediente.etapaActual]}: recargue la página antes de aprobar.`);
+  }
 
   if (expediente.etapaActual === "PRECONTRACTUAL") {
     if (!expediente.contratistaId) {

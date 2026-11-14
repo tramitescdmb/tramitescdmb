@@ -6,10 +6,12 @@ import { CheckCircle2 } from "lucide-react";
 
 export function AprobarEtapaContratoBoton({
   expedienteId,
+  etapaActual,
   etiquetaActual,
   etiquetaSiguiente,
 }: {
   expedienteId: string;
+  etapaActual: string;
   etiquetaActual: string;
   etiquetaSiguiente: string;
 }) {
@@ -26,7 +28,7 @@ export function AprobarEtapaContratoBoton({
       const res = await fetch(`/api/contratacion/expedientes/${expedienteId}/aprobar-etapa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comentario }),
+        body: JSON.stringify({ comentario, etapa: etapaActual }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 409 && Array.isArray(body.faltantes)) {

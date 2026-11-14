@@ -757,6 +757,7 @@ export default async function DetalleExpedienteContractualPage({
             {!expediente.cerrado && puedeAprobar && !faltaContratista && (siguienteEtapa || esUltimaEtapa) && (
               <AprobarEtapaContratoBoton
                 expedienteId={id}
+                etapaActual={expediente.etapaActual}
                 etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
                 etiquetaSiguiente={siguienteEtapa ? ETIQUETA_ETAPA[siguienteEtapa] : "Cierre del expediente"}
               />
@@ -1249,7 +1250,7 @@ export default async function DetalleExpedienteContractualPage({
                         : null,
                   control:
                     esUltimaEtapa && puedeAprobar && expediente.subserieId && firmasPendientes === 0 ? (
-                      <AprobarEtapaContratoBoton expedienteId={id} etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]} etiquetaSiguiente="Cierre del expediente" />
+                      <AprobarEtapaContratoBoton expedienteId={id} etapaActual={expediente.etapaActual} etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]} etiquetaSiguiente="Cierre del expediente" />
                     ) : null,
                 }}
               />
@@ -1286,6 +1287,7 @@ export default async function DetalleExpedienteContractualPage({
             {puedeAprobarDesdeBotonera && (
               <AprobarEtapaContratoBoton
                 expedienteId={id}
+                etapaActual={expediente.etapaActual}
                 etiquetaActual={ETIQUETA_ETAPA[expediente.etapaActual]}
                 etiquetaSiguiente={ETIQUETA_ETAPA[siguienteEtapa!]}
               />
