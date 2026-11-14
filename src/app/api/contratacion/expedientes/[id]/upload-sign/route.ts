@@ -16,9 +16,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const expediente = await db.expedienteContractual.findUnique({
     where: { id },
-    select: { id: true, contratistaId: true, etapaActual: true, cerrado: true },
+    select: { id: true, contratistaId: true, etapaActual: true, cerrado: true, eliminado: true },
   });
-  if (!expediente) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
+  if (!expediente || expediente.eliminado) return NextResponse.json({ error: "El expediente no existe." }, { status: 404 });
   if (expediente.cerrado) return NextResponse.json({ error: "Este expediente está cerrado." }, { status: 409 });
 
   const body = await req.json().catch(() => null);

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     select: {
       profesionalId: true,
       expedienteId: true,
-      visitaTecnica: { select: { id: true, conceptoNumero: true, conceptoFecha: true, formatoVersionId: true, pasoNumero: true, finalizadaEn: true, estadoRevision: true } },
+      visitaTecnica: { select: { id: true, conceptoNumero: true, conceptoFecha: true, formatoVersionId: true, pasoNumero: true, finalizadaEn: true, estadoRevision: true, conceptoDescartadoEn: true } },
     },
   });
   const vt = visita?.visitaTecnica;
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!vt.formatoVersionId) return NextResponse.json({ error: "La visita no se diligenció con un formato." }, { status: 409 });
   if (!vt.conceptoNumero) return NextResponse.json({ error: "Asigne primero el número del concepto técnico." }, { status: 409 });
   if (vt.finalizadaEn) return NextResponse.json({ error: "El concepto ya fue finalizado." }, { status: 409 });
+  if (vt.conceptoDescartadoEn) return NextResponse.json({ error: "Este concepto técnico se descartó: no se envía a firma." }, { status: 409 });
   if (!puedeFinalizarSegunRevision(vt.estadoRevision)) {
     return NextResponse.json({ error: "El concepto fue devuelto con observaciones; quien elabora debe corregirlo y enviarlo de nuevo a revisión." }, { status: 409 });
   }
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
 
   const reservado = await db.visitaTecnica.updateMany({
-    where: { id: vt.id, finalizadaEn: null },
+    where: { id: vt.id, finalizadaEn: null, conceptoDescartadoEn: null },
     data: { finalizadaEn: ahora, finalizadaPorId: session.userId, documentoConceptoId: documento.id, estadoRevision: "APROBADO" },
   });
   if (reservado.count === 0) {

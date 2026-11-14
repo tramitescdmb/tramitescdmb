@@ -583,15 +583,16 @@ export async function agregarDocumentoContrato(datos: {
   let nombre = datos.nombre.trim();
   let categoria = datos.categoria?.trim() || null;
   let tipoDocumentalId: string | null = null;
+  let marcaTerminacion = false;
   if (datos.requisitoId) {
     const requisito = await db.requisitoDocumentoContratacion.findUnique({ where: { id: datos.requisitoId } });
     if (!requisito || requisito.etapa !== datos.etapa || (requisito.modalidadSeleccion && requisito.modalidadSeleccion !== expediente.modalidadSeleccion)) {
       throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
     }
+    if (!requisito.activo) throw new Error("Ese requisito del catálogo ya no está vigente. Recargue la página.");
     nombre = requisito.nombre;
-    if (requisito.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA)) {
-      await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
-    }
+    // La marca de terminación anticipada se pone después de registrar el documento (si algo falla antes, no queda puesta).
+    marcaTerminacion = Boolean(requisito.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA));
     categoria = null;
     tipoDocumentalId = requisito.tipoDocumentalId;
 
@@ -641,6 +642,9 @@ export async function agregarDocumentoContrato(datos: {
       periodoEventualId: datos.periodoEventualId?.trim() || null,
     },
   });
+  if (marcaTerminacion) {
+    await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
+  }
 
   await registrarEventoContratacion(
     datos.expedienteId,
