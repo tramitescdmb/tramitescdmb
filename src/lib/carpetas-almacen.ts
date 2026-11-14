@@ -17,8 +17,6 @@ import type { EtapaContratacion, TipoComunicacion, TipoContratoEstatal } from "@
 
 /** Carpeta de llegada de lo que sube el navegador, antes de registrar el documento. */
 export const CARPETA_SUBIDAS = "_subidas";
-/** Carpeta de llegada de versiones anteriores; lo que ya se haya subido ahí sigue valiendo. */
-export const CARPETA_SUBIDAS_ANTERIOR = "expedientes";
 
 function sinTildes(texto: string): string {
   return texto.normalize("NFD").replace(/\p{M}/gu, "");

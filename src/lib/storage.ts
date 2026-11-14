@@ -1,5 +1,5 @@
 import { descargar, eliminar, existe, firmarSubida, subir, urlFirmada } from "@/lib/almacen";
-import { CARPETA_SUBIDAS, CARPETA_SUBIDAS_ANTERIOR, nombreArchivo, variante } from "@/lib/carpetas-almacen";
+import { CARPETA_SUBIDAS, nombreArchivo, variante } from "@/lib/carpetas-almacen";
 
 const BUCKET = "documentos";
 
@@ -17,15 +17,13 @@ function escaparRegex(texto: string): string {
 
 /**
  * Indica si una ruta de almacenamiento enviada por el navegador está en la carpeta de llegada
- * de ese expediente, tal como la arma buildStoragePath (o la de versiones anteriores,
- * `expedientes/<id>/`). Evita que se registre en un expediente un archivo de otro (para luego
+ * de ese expediente, tal como la arma buildStoragePath. Evita que se registre en un expediente un archivo de otro (para luego
  * leerlo o borrarlo con los permisos de este): las carpetas definitivas por módulo nunca se
  * aceptan desde el navegador.
  */
 export function rutaDeExpediente(ruta: unknown, expedienteId: string): ruta is string {
   if (typeof ruta !== "string" || !expedienteId) return false;
-  const prefijos = [CARPETA_SUBIDAS, CARPETA_SUBIDAS_ANTERIOR].map(escaparRegex).join("|");
-  return new RegExp(`^(${prefijos})/${escaparRegex(expedienteId)}/[A-Za-z0-9._-]+$`).test(ruta) && ![".", ".."].includes(ruta.slice(ruta.lastIndexOf("/") + 1));
+  return new RegExp(`^${escaparRegex(CARPETA_SUBIDAS)}/${escaparRegex(expedienteId)}/[A-Za-z0-9._-]+$`).test(ruta) && ![".", ".."].includes(ruta.slice(ruta.lastIndexOf("/") + 1));
 }
 
 export const MENSAJE_RUTA_AJENA = "El archivo no corresponde a este expediente. Vuelva a subirlo.";

@@ -1,8 +1,8 @@
 /**
  * Mueve los archivos de un expediente, contrato, trámite, radicado o solicitud VITAL a su carpeta por
  * módulo/año/tipo (carpetas-almacen.ts) y actualiza la ruta en la base. Se llama al registrar
- * documentos (lo recién subido sale de `_subidas/`) y desde scripts/organizar-archivos.ts para
- * reordenar lo que ya estaba guardado.
+ * documentos: lo recién subido sale de `_subidas/` y, si el contrato o trámite cambió de carpeta
+ * (p. ej. se le asignó el número de contrato), sus demás archivos pasan a la carpeta nueva.
  *
  * Reglas:
  * - El contenido del archivo no cambia: la huella SHA-256 y las firmas siguen valiendo.
@@ -18,7 +18,6 @@ import { limpiarCarpetasVacias, mover } from "@/lib/almacen";
 import {
   CARPETA_ETAPA_CONTRATO,
   CARPETA_SUBIDAS,
-  CARPETA_SUBIDAS_ANTERIOR,
   carpetaComunicacion,
   carpetaContrato,
   carpetaDocumental,
@@ -152,7 +151,7 @@ async function cambiarRuta(origen: string, destino: string): Promise<number> {
 }
 
 function esDeLlegada(ruta: string): boolean {
-  return ruta.startsWith(`${CARPETA_SUBIDAS}/`) || ruta.startsWith(`${CARPETA_SUBIDAS_ANTERIOR}/`);
+  return ruta.startsWith(`${CARPETA_SUBIDAS}/`);
 }
 
 export async function organizarArchivos(ambito: AmbitoArchivos, opciones: { simular?: boolean } = {}): Promise<MovimientoArchivo[]> {

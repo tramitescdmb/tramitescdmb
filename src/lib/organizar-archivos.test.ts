@@ -98,7 +98,7 @@ describe("organizarArchivos", () => {
     expect(await fs.readFile(fisico(`${carpeta}/Estudio_2.pdf`), "utf8")).toBe("nuevo");
   });
 
-  it("al asignarse el número de contrato, la reorganización pasa los archivos a la carpeta nueva; la simulación no toca nada", async () => {
+  it("al asignarse el número de contrato, el siguiente registro pasa los archivos a la carpeta nueva; la simulación no toca nada", async () => {
     contrato.numeroContrato = null;
     const viejo = "Gecon/2026/prestacion-de-servicios/expediente-CDMB-CTO-2026-000003/precontractual/Estudio.pdf";
     await crear(viejo);
@@ -116,10 +116,10 @@ describe("organizarArchivos", () => {
   });
 
   it("un archivo ausente se informa y su ruta no cambia", async () => {
-    tablas.documentoContrato = [{ id: "d1", storagePath: "expedientes/u1/1-Falta.pdf", etapa: "CONTRACTUAL" }];
+    tablas.documentoContrato = [{ id: "d1", storagePath: "_subidas/u1/1731600000003-Falta.pdf", etapa: "CONTRACTUAL" }];
     const r = await organizarArchivos({ tipo: "contrato", id: "c1" });
     expect(r[0]!.estado).toBe("error");
-    expect(tablas.documentoContrato[0]!.storagePath).toBe("expedientes/u1/1-Falta.pdf");
+    expect(tablas.documentoContrato[0]!.storagePath).toBe("_subidas/u1/1731600000003-Falta.pdf");
   });
 
   it("un adjunto compartido entre dos radicados se actualiza en ambos y, ya ordenado, no se vuelve a mover", async () => {

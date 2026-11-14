@@ -10,9 +10,6 @@ describe("rutaDeExpediente", () => {
     expect(ruta).toMatch(new RegExp(`^_subidas/${ID}/\\d+-Acta_de_visita_firmada\\.pdf$`));
     expect(rutaDeExpediente(ruta, ID)).toBe(true);
   });
-  it("sigue aceptando la carpeta de llegada anterior (expedientes/<id>/)", () => {
-    expect(rutaDeExpediente(`expedientes/${ID}/1731600000000-a.pdf`, ID)).toBe(true);
-  });
   it("nunca acepta desde el navegador una carpeta definitiva de módulo", () => {
     expect(rutaDeExpediente(`Gecon/2026/obra/contrato-1-2026/contractual/a.pdf`, ID)).toBe(false);
     expect(rutaDeExpediente(`Tramites/2026/x/${ID}/a.pdf`, ID)).toBe(false);
@@ -23,11 +20,12 @@ describe("rutaDeExpediente", () => {
     expect(rutaDeExpediente(buildStoragePath(OTRO, "a.pdf"), ID)).toBe(false);
     expect(rutaDeExpediente(`gecon/${ID}/a.pdf`, ID)).toBe(false);
     expect(rutaDeExpediente(`vital/123/a.pdf`, ID)).toBe(false);
-    expect(rutaDeExpediente(`expedientes/${ID}/sub/a.pdf`, ID)).toBe(false);
-    expect(rutaDeExpediente(`expedientes/${ID}/../${OTRO}/a.pdf`, ID)).toBe(false);
-    expect(rutaDeExpediente(`expedientes/${ID}/..`, ID)).toBe(false);
-    expect(rutaDeExpediente(`/expedientes/${ID}/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`expedientes/${ID}/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${ID}/sub/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${ID}/../${OTRO}/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${ID}/..`, ID)).toBe(false);
+    expect(rutaDeExpediente(`/_subidas/${ID}/a.pdf`, ID)).toBe(false);
     expect(rutaDeExpediente(null, ID)).toBe(false);
-    expect(rutaDeExpediente(`expedientes/${ID}/a.pdf`, "")).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${ID}/a.pdf`, "")).toBe(false);
   });
 });
