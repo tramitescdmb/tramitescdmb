@@ -19,6 +19,7 @@ import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdj
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
 import { cancelarFlujosDeObjeto, iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import { avisarRadicadoPqrsd, avisarRespuestaPqrsd } from "@/lib/avisos-externos";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -166,6 +167,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
 
     return comunicacion;
   }).then(async (comunicacion) => {
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     avisarRadicadoPqrsd(comunicacion);
@@ -478,6 +480,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
@@ -545,6 +548,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
@@ -652,6 +656,7 @@ export async function registrarRespuestaFuncionario(
     await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
     return actualizada;
   }).then(async (actualizada) => {
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacionId });
     await extraerTextoAdjuntosPdf(comunicacionId).catch(() => {});
     return actualizada;
   });

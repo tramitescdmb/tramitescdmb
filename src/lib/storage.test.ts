@@ -6,7 +6,18 @@ const OTRO = "9a8b7c6d-1e2f-4a3b-8c9d-0e1f2a3b4c5d";
 
 describe("rutaDeExpediente", () => {
   it("acepta lo que arma buildStoragePath para ese expediente", () => {
-    expect(rutaDeExpediente(buildStoragePath(ID, "Acta de visita (firmada).pdf"), ID)).toBe(true);
+    const ruta = buildStoragePath(ID, "Acta de visita (firmada).pdf");
+    expect(ruta).toMatch(new RegExp(`^_subidas/${ID}/\\d+-Acta_de_visita_firmada\\.pdf$`));
+    expect(rutaDeExpediente(ruta, ID)).toBe(true);
+  });
+  it("sigue aceptando la carpeta de llegada anterior (expedientes/<id>/)", () => {
+    expect(rutaDeExpediente(`expedientes/${ID}/1731600000000-a.pdf`, ID)).toBe(true);
+  });
+  it("nunca acepta desde el navegador una carpeta definitiva de módulo", () => {
+    expect(rutaDeExpediente(`Gecon/2026/obra/contrato-1-2026/contractual/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`Tramites/2026/x/${ID}/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${ID}/../../Gecon/a.pdf`, ID)).toBe(false);
+    expect(rutaDeExpediente(`_subidas/${OTRO}/a.pdf`, ID)).toBe(false);
   });
   it("rechaza archivos de otro expediente o de otras carpetas", () => {
     expect(rutaDeExpediente(buildStoragePath(OTRO, "a.pdf"), ID)).toBe(false);

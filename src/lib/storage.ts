@@ -1,10 +1,14 @@
 import { descargar, eliminar, existe, firmarSubida, subir, urlFirmada } from "@/lib/almacen";
+import { CARPETA_SUBIDAS, CARPETA_SUBIDAS_ANTERIOR, nombreArchivo, variante } from "@/lib/carpetas-almacen";
 
 const BUCKET = "documentos";
 
+/**
+ * Ruta de llegada de un archivo que sube el navegador: `_subidas/<identificador>/<sello>-<nombre>`.
+ * Al registrar el documento se mueve a la carpeta de su módulo (ver organizar-archivos.ts).
+ */
 export function buildStoragePath(expedienteId: string, fileName: string) {
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `expedientes/${expedienteId}/${Date.now()}-${safeName}`;
+  return `${CARPETA_SUBIDAS}/${expedienteId}/${Date.now()}-${nombreArchivo(fileName)}`;
 }
 
 function escaparRegex(texto: string): string {
@@ -12,13 +16,16 @@ function escaparRegex(texto: string): string {
 }
 
 /**
- * Indica si una ruta de almacenamiento enviada por el navegador pertenece a la carpeta
- * de ese expediente, tal como la arma buildStoragePath. Evita que se registre en un
- * expediente un archivo de otro (para luego leerlo o borrarlo con los permisos de este).
+ * Indica si una ruta de almacenamiento enviada por el navegador está en la carpeta de llegada
+ * de ese expediente, tal como la arma buildStoragePath (o la de versiones anteriores,
+ * `expedientes/<id>/`). Evita que se registre en un expediente un archivo de otro (para luego
+ * leerlo o borrarlo con los permisos de este): las carpetas definitivas por módulo nunca se
+ * aceptan desde el navegador.
  */
 export function rutaDeExpediente(ruta: unknown, expedienteId: string): ruta is string {
   if (typeof ruta !== "string" || !expedienteId) return false;
-  return new RegExp(`^expedientes/${escaparRegex(expedienteId)}/[A-Za-z0-9._-]+$`).test(ruta) && ![".", ".."].includes(ruta.slice(ruta.lastIndexOf("/") + 1));
+  const prefijos = [CARPETA_SUBIDAS, CARPETA_SUBIDAS_ANTERIOR].map(escaparRegex).join("|");
+  return new RegExp(`^(${prefijos})/${escaparRegex(expedienteId)}/[A-Za-z0-9._-]+$`).test(ruta) && ![".", ".."].includes(ruta.slice(ruta.lastIndexOf("/") + 1));
 }
 
 export const MENSAJE_RUTA_AJENA = "El archivo no corresponde a este expediente. Vuelva a subirlo.";
@@ -37,6 +44,21 @@ export async function problemaArchivoSubido(ruta: string, usosExistentes: number
 export async function uploadDocumento(path: string, file: Buffer, mimeType: string) {
   await subir(BUCKET, path, file, mimeType);
   return path;
+}
+
+/** Guarda un archivo generado en el servidor sin pisar otro: "Acta.pdf", "Acta_2.pdf"… Devuelve la ruta usada. */
+export async function uploadDocumentoNuevo(path: string, file: Buffer, mimeType: string): Promise<string> {
+  for (let n = 1; n <= 500; n++) {
+    const ruta = variante(path, n);
+    try {
+      await subir(BUCKET, ruta, file, mimeType);
+      return ruta;
+    } catch (e) {
+      const yaExiste = (e as NodeJS.ErrnoException).code === "EEXIST" || /exist/i.test(e instanceof Error ? e.message : "");
+      if (!yaExiste) throw e;
+    }
+  }
+  throw new Error(`No se encontró un nombre libre para ${path}`);
 }
 
 export async function crearUrlSubidaFirmada(path: string, topeMb?: number) {

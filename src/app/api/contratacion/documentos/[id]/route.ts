@@ -14,6 +14,7 @@ import {
 import { MENSAJE_RUTA_AJENA, deleteDocumento, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -80,6 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (archivo && storagePathAnterior) {
       await deleteDocumento(storagePathAnterior).catch(() => {});
     }
+    await organizarTrasRegistro({ tipo: "contrato", id: doc.expedienteId });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo editar el documento." }, { status: 400 });

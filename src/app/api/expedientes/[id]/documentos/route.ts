@@ -5,6 +5,7 @@ import { puedeEditarExpediente } from "@/lib/permisos";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 import { MENSAJE_RUTA_AJENA, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 type ArchivoInput = {
   path: string;
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   await db.expediente.update({ where: { id }, data: { fechaUltimoMovimiento: new Date() } });
+  await organizarTrasRegistro({ tipo: "tramite", id });
 
   return NextResponse.json({ ok: true });
 }

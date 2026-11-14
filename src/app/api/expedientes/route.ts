@@ -11,6 +11,7 @@ import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 type DocumentoInput = {
   path: string;
@@ -286,6 +287,7 @@ export async function POST(req: NextRequest) {
         })),
     });
   }
+  await organizarTrasRegistro({ tipo: "tramite", id: expediente.id });
   await sincronizarAvisoVisita(expediente.id);
   await iniciarFlujoAutomaticoEnObjeto("TRAMITE", expediente.id, session.userId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
   avisarRadicadoTramite({

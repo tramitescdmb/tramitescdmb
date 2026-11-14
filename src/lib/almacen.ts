@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { constants as fsConst } from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
@@ -166,6 +167,62 @@ export async function eliminar(bucket: string, rutas: string[]) {
   }
   const { error } = await supabaseAdmin().storage.from(bucket).remove(rutas);
   if (error) throw error;
+}
+
+/**
+ * Mueve un archivo dentro del mismo bucket sin pisar otro: si `destino` ya existe prueba "nombre_2",
+ * "nombre_3"… Devuelve la ruta final. El contenido no cambia (la huella de firma sigue valiendo).
+ */
+export async function mover(bucket: string, origen: string, destino: string, variante: (ruta: string, n: number) => string): Promise<string> {
+  for (let n = 1; n <= 500; n++) {
+    const candidata = limpiar(variante(destino, n));
+    if (candidata === limpiar(origen)) return candidata;
+    if (almacenLocal()) {
+      const src = rutaFisica(bucket, origen);
+      const dst = rutaFisica(bucket, candidata);
+      await fs.mkdir(path.dirname(dst), { recursive: true });
+      try {
+        // link falla con EEXIST si ya hay un archivo con ese nombre: así no se pisa nada, ni en carrera.
+        await fs.link(src, dst);
+      } catch (e) {
+        const code = (e as NodeJS.ErrnoException).code;
+        if (code === "EEXIST") continue;
+        if (code === "ENOENT") throw e;
+        // Sistemas de archivos sin enlaces duros: copia exclusiva y comprobación del tamaño.
+        try {
+          await fs.copyFile(src, dst, fsConst.COPYFILE_EXCL);
+        } catch (e2) {
+          if ((e2 as NodeJS.ErrnoException).code === "EEXIST") continue;
+          throw e2;
+        }
+        const [a, b] = await Promise.all([fs.stat(src), fs.stat(dst)]);
+        if (a.size !== b.size) {
+          await fs.rm(dst, { force: true });
+          throw new Error(`La copia de ${origen} quedó incompleta`);
+        }
+      }
+      await fs.unlink(src);
+      return candidata;
+    }
+    const { error } = await supabaseAdmin().storage.from(bucket).move(origen, candidata);
+    if (!error) return candidata;
+    if (!/exist/i.test(error.message)) throw error;
+  }
+  throw new Error(`No se encontró un nombre libre para ${destino}`);
+}
+
+/** Borra las carpetas que quedaron vacías desde `carpeta` hacia arriba (sin tocar la raíz del bucket). */
+export async function limpiarCarpetasVacias(bucket: string, carpeta: string) {
+  if (!almacenLocal()) return;
+  let actual = limpiar(carpeta);
+  while (actual) {
+    try {
+      await fs.rmdir(rutaFisica(bucket, actual));
+    } catch {
+      return;
+    }
+    actual = actual.includes("/") ? actual.slice(0, actual.lastIndexOf("/")) : "";
+  }
 }
 
 export async function listar(bucket: string, carpeta: string): Promise<string[]> {
