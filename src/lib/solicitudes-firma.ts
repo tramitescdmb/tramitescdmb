@@ -1125,3 +1125,47 @@ export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId
     yaAvisados: anteriores.filter((a) => !porAvisar.includes(a)).map((a) => a.usuarioAsignado.nombre),
   };
 }
+
+/**
+ * Quita a un firmante (o visto bueno) que aún no ha actuado: p. ej. se retiró de la entidad, se asignó
+ * por error o su usuario se desactivó, y su turno pendiente bloquea a los demás. Solo GECON y trámites.
+ * No toca firmas ya hechas. Queda constancia en el historial del expediente.
+ */
+export async function quitarFirmantePendiente(
+  objetivo: { tipo: "documentoContrato" | "documentoExpediente"; id: string },
+  solicitudId: string,
+  usuarioId: string,
+  motivo: string
+) {
+  const texto = motivo.trim();
+  if (!texto) throw new Error("Indique por qué se quita a esta persona.");
+  await validarObjetivoAbierto(objetivo);
+  const quitada = await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `asignar:${objetivo.tipo}:${objetivo.id}`);
+    const s = await tx.solicitudFirma.findFirst({
+      where: { id: solicitudId, ...whereObjetivo(objetivo) },
+      select: { id: true, estado: true, rol: true, completadoEn: true, usuarioAsignado: { select: { nombre: true } } },
+    });
+    if (!s) throw new Error("La solicitud no existe en este documento.");
+    if (s.estado !== "PENDIENTE" || s.rol === "LECTURA") throw new Error("Solo se puede quitar a quien todavía no ha firmado ni dado visto bueno.");
+    // Una firma en curso (reservada hace menos de 2 minutos) no se interrumpe.
+    if (s.completadoEn && s.completadoEn > new Date(Date.now() - 2 * 60_000)) {
+      throw new Error("Esta persona está firmando en este momento. Espere un minuto y recargue la página.");
+    }
+    await tx.solicitudFirma.delete({ where: { id: s.id } });
+    return s;
+  });
+  const que = quitada.rol === "FIRMA" ? "la firma" : "el visto bueno";
+  const detalle = `Quitó a ${quitada.usuarioAsignado.nombre} (${que} pendiente): ${texto}`;
+  if (objetivo.tipo === "documentoContrato") {
+    await reevaluarEstadoDocumentoContrato(objetivo.id, usuarioId);
+    const doc = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true } });
+    if (doc) await db.eventoContratacion.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMAS_ANULADAS", detalle, usuarioId } });
+  } else {
+    await reevaluarEstadoDocumentoExpediente(objetivo.id, usuarioId);
+    const doc = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true, pasoNumero: true } });
+    if (doc) {
+      await db.expedienteEvento.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMA_SOLICITADA", descripcion: detalle, pasoNumero: doc.pasoNumero, usuarioId } });
+    }
+  }
+}

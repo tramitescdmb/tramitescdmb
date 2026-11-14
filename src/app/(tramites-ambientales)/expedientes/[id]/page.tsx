@@ -339,7 +339,7 @@ export default async function ExpedienteDetallePage({
           )}
           {puedeAsignarFirmantes && (
             <AsignarFirmantesModal conCalidad
-              endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
+              permiteQuitar endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
               usuarios={usuariosOpciones}
               firmantesActuales={solicitudes}
             />

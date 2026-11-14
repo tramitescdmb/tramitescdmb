@@ -397,7 +397,7 @@ export default async function DetalleExpedienteContractualPage({
           />
         )}
         {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
-          <AsignarFirmantesModal conCalidad contratistaPrincipal endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} firmantesActuales={solicitudes} />
+          <AsignarFirmantesModal conCalidad contratistaPrincipal permiteQuitar endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`} firmantesActuales={solicitudes} />
         )}
         {puedeGestionarEtapaCerrada && (puedeEditarSinTrazaDocumentoContrato(permisos) || puedeEditarConTrazaDocumentoContrato(permisos, expediente, etapa)) && (
           <EditarEliminarDocumentoContrato
@@ -1005,7 +1005,7 @@ export default async function DetalleExpedienteContractualPage({
                               })()}
                               {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                 <AsignarFirmantesModal conCalidad contratistaPrincipal
-                                  endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
+                                  permiteQuitar endpointAsignar={`/api/contratacion/documentos/${item.documento.id}/solicitudes-firma`}
                                  
                                   firmantesActuales={item.documento.solicitudesFirma.map((s) => ({
                                     id: s.id,
@@ -1112,7 +1112,7 @@ export default async function DetalleExpedienteContractualPage({
                                 )}
                                 {puedeGestionarEtapaCerrada && puedeAsignarFirmantes && (
                                   <AsignarFirmantesModal conCalidad contratistaPrincipal
-                                    endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
+                                    permiteQuitar endpointAsignar={`/api/contratacion/documentos/${doc.id}/solicitudes-firma`}
                                    
                                     firmantesActuales={solicitudes}
                                   />
