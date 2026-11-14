@@ -53,6 +53,7 @@ export * from "@/lib/contratacion-etiquetas";
 export const TAG_CATALOGO_REQUISITOS = "catalogo-requisitos";
 
 const SERIE_CONTRATO = "CTO";
+const FORMATO_TERMINACION_ANTICIPADA = "A-BS-FO131";
 
 export async function generarNumeroExpedienteContractual(anio: number = anioColombia()): Promise<string> {
   const { numero } = await generarConsecutivo(SERIE_CONTRATO, anio);
@@ -579,7 +580,7 @@ export async function agregarDocumentoContrato(datos: {
       throw new Error("El requisito del catálogo indicado no corresponde a esta etapa/modalidad del expediente.");
     }
     nombre = requisito.nombre;
-    if (requisito.codigoFormato?.includes("A-BS-FO131")) {
+    if (requisito.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA)) {
       await db.expedienteContractual.update({ where: { id: datos.expedienteId }, data: { terminadoAnticipadamente: true } });
     }
     categoria = null;
@@ -697,9 +698,20 @@ export async function editarDocumentoContratoSinTraza(
 }
 
 export async function eliminarDocumentoContratoSinTraza(documentoId: string): Promise<{ storagePath: string }> {
-  const doc = await db.documentoContrato.findUnique({ where: { id: documentoId }, select: { storagePath: true } });
+  const doc = await db.documentoContrato.findUnique({
+    where: { id: documentoId },
+    select: { storagePath: true, expedienteId: true, requisito: { select: { codigoFormato: true } } },
+  });
   if (!doc) throw new Error("El documento no existe.");
   await db.documentoContrato.delete({ where: { id: documentoId } });
+  // Si se borra la terminación anticipada (cargada por error), el contrato deja de exigir liquidación
+  // salvo que quede otra cargada.
+  if (doc.requisito?.codigoFormato?.includes(FORMATO_TERMINACION_ANTICIPADA)) {
+    const quedan = await db.documentoContrato.count({
+      where: { expedienteId: doc.expedienteId, requisito: { codigoFormato: { contains: FORMATO_TERMINACION_ANTICIPADA } } },
+    });
+    if (quedan === 0) await db.expedienteContractual.update({ where: { id: doc.expedienteId }, data: { terminadoAnticipadamente: false } });
+  }
   return { storagePath: doc.storagePath };
 }
 
