@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
-import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { TAMANO_MAXIMO_CONCEPTO_MB, extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 export async function POST(req: NextRequest) {
@@ -37,8 +37,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El expediente indicado no existe." }, { status: 404 });
   }
 
+  // Solo el PDF del concepto técnico, y solo para quien puede finalizarlo, tiene un tope mayor.
+  let topeMb: number | undefined;
+  if (body?.conceptoTecnico === true) {
+    if (esExpedienteNuevo || !fileName.toLowerCase().endsWith(".pdf") || !puedePlanearVisitas(await obtenerPermisosUsuario(session.userId))) {
+      return NextResponse.json({ error: "Solo quien finaliza el concepto técnico puede subir su PDF." }, { status: 403 });
+    }
+    topeMb = TAMANO_MAXIMO_CONCEPTO_MB;
+  }
+
   const path = buildStoragePath(expedienteId, fileName);
-  const { token } = await crearUrlSubidaFirmada(path);
+  const { token } = await crearUrlSubidaFirmada(path, topeMb);
 
   return NextResponse.json({ path, token });
 }

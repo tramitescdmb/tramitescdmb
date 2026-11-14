@@ -13,6 +13,10 @@ export const ACCEPT_DOCUMENTOS = EXTENSIONES_PERMITIDAS.map((ext) => `.${ext}`).
 
 export const TAMANO_MAXIMO_BYTES = 2 * 1024 * 1024;
 
+/** El PDF del concepto técnico lo genera el sistema (una imagen por página, con fotos): no se puede reducir a mano. */
+export const TAMANO_MAXIMO_CONCEPTO_MB = 10;
+export const TAMANO_MAXIMO_CONCEPTO_BYTES = TAMANO_MAXIMO_CONCEPTO_MB * 1024 * 1024;
+
 export const TAMANO_MAXIMO_CONTRATACION_BYTES = 2 * 1024 * 1024;
 
 export function mensajeArchivoDemasiadoGrandeContratacion(fileName: string): string {

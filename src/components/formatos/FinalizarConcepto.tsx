@@ -32,7 +32,7 @@ export function FinalizarConcepto({
       const bytes = await documentoAPdf(raiz, `Concepto técnico ${numero}`);
       const archivo = new File([bytes as BlobPart], `Concepto-tecnico-${numero}.pdf`, { type: "application/pdf" });
       setPaso("Subiendo el PDF…");
-      const [subida, hash] = await Promise.all([subirArchivoDirecto(expedienteId, archivo), sha256Hex(archivo)]);
+      const [subida, hash] = await Promise.all([subirArchivoDirecto(expedienteId, archivo, { conceptoTecnico: true }), sha256Hex(archivo)]);
       setPaso("Enviando a firma…");
       const res = await fetch(`/api/visitas-programadas/${visitaId}/finalizar`, {
         method: "POST",

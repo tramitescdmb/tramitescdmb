@@ -11,13 +11,13 @@ type Params = { params: Promise<{ bucket: string; ruta: string[] }> };
 // Tope por archivo para las subidas al almacenamiento local (NAS). Los formularios ya limitan
 // a 2 MB por archivo; este tope evita que una subida directa, con un
 // token válido, llene el disco o la memoria del proceso. Ajustable con ALMACEN_MAX_MB.
-function topeBytes(): number {
+function topePorDefectoMb(): number {
   const mb = Number(process.env.ALMACEN_MAX_MB);
-  return (Number.isFinite(mb) && mb > 0 ? mb : 2) * 1024 * 1024;
+  return Number.isFinite(mb) && mb > 0 ? mb : 2;
 }
 
-function demasiadoGrande() {
-  return NextResponse.json({ message: `El archivo supera el máximo de ${Math.round(topeBytes() / (1024 * 1024))} MB.` }, { status: 413 });
+function demasiadoGrande(topeMb: number) {
+  return NextResponse.json({ message: `El archivo supera el máximo de ${topeMb} MB.` }, { status: 413 });
 }
 
 function noEncontrado() {
@@ -61,12 +61,24 @@ async function recibir(req: NextRequest, { params }: Params) {
   if (!almacenLocal()) return noEncontrado();
   const { bucket, ruta: partes } = await params;
   const ruta = partes.join("/");
-  const [exp, firma] = (req.nextUrl.searchParams.get("token") ?? "").split(".");
-  if (!/^\d+$/.test(exp ?? "") || Number(exp) < Date.now() / 1000 || !firmaValida(firmar("subir", bucket, ruta, exp), firma ?? null)) {
+  // Token: "exp.firma" (tope por defecto) o "exp.topeMb.firma" (tope ampliado, p. ej. el PDF del concepto técnico).
+  const trozos = (req.nextUrl.searchParams.get("token") ?? "").split(".");
+  const [exp, mb, firma] = trozos.length === 3 ? trozos : [trozos[0], undefined, trozos[1]];
+  const firmaEsperada = mb === undefined ? firmar("subir", bucket, ruta, exp ?? "") : firmar("subir", bucket, ruta, exp ?? "", mb);
+  if (
+    trozos.length < 2 ||
+    trozos.length > 3 ||
+    !/^\d+$/.test(exp ?? "") ||
+    (mb !== undefined && !/^\d+$/.test(mb)) ||
+    Number(exp) < Date.now() / 1000 ||
+    !firmaValida(firmaEsperada, firma ?? null)
+  ) {
     return NextResponse.json({ message: "Token de subida no válido o vencido" }, { status: 403 });
   }
+  const topeMb = mb !== undefined ? Number(mb) : topePorDefectoMb();
+  const topeBytes = topeMb * 1024 * 1024;
   const declarado = Number(req.headers.get("content-length"));
-  if (Number.isFinite(declarado) && declarado > topeBytes() + 64 * 1024) return demasiadoGrande();
+  if (Number.isFinite(declarado) && declarado > topeBytes + 64 * 1024) return demasiadoGrande(topeMb);
   let contenido: Buffer;
   const tipo = req.headers.get("content-type") ?? "";
   if (tipo.startsWith("multipart/form-data")) {
@@ -77,7 +89,7 @@ async function recibir(req: NextRequest, { params }: Params) {
   } else {
     contenido = Buffer.from(await req.arrayBuffer());
   }
-  if (contenido.length > topeBytes()) return demasiadoGrande();
+  if (contenido.length > topeBytes) return demasiadoGrande(topeMb);
   const destino = rutaFisica(bucket, ruta);
   await fs.mkdir(path.dirname(destino), { recursive: true });
   try {

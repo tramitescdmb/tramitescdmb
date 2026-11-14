@@ -28,8 +28,8 @@ export async function uploadDocumento(path: string, file: Buffer, mimeType: stri
   return path;
 }
 
-export async function crearUrlSubidaFirmada(path: string) {
-  return firmarSubida(BUCKET, path);
+export async function crearUrlSubidaFirmada(path: string, topeMb?: number) {
+  return firmarSubida(BUCKET, path, topeMb);
 }
 
 export async function getSignedDownloadUrl(path: string, expiresInSeconds = 300) {
