@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extensionDe, extensionPermitida, mensajeTipoNoPermitido } from "./uploads-config";
+import { esRequisitoPlano, extensionDe, extensionPermitida, mensajeTipoNoPermitido } from "./uploads-config";
 
 describe("extensionDe", () => {
   it("toma lo que sigue al último punto, en minúsculas", () => {
@@ -29,5 +29,18 @@ describe("extensionPermitida", () => {
 describe("mensajeTipoNoPermitido", () => {
   it("incluye el nombre del archivo rechazado", () => {
     expect(mensajeTipoNoPermitido("virus.exe")).toContain("virus.exe");
+  });
+});
+
+describe("esRequisitoPlano", () => {
+  it("reconoce los requisitos de planos", () => {
+    expect(esRequisitoPlano("Planos que soportan el EIA, conforme al Modelo de Almacenamiento Geográfico")).toBe(true);
+    expect(esRequisitoPlano("Plano de localización de la fuente hídrica en el área de influencia")).toBe(true);
+    expect(esRequisitoPlano("Memorias técnicas, diseños de ingeniería y planos de detalle")).toBe(true);
+  });
+  it("no confunde otras palabras", () => {
+    expect(esRequisitoPlano("Formulario único nacional")).toBe(false);
+    expect(esRequisitoPlano("Certificado de planificación predial")).toBe(false);
+    expect(esRequisitoPlano("Archivos planosos")).toBe(false);
   });
 });

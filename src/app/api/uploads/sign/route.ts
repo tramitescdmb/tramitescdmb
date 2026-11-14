@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
-import { TAMANO_MAXIMO_CONCEPTO_MB, extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
+import { TAMANO_MAXIMO_CONCEPTO_MB, TAMANO_MAXIMO_PLANO_MB, esRequisitoPlano, extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 export async function POST(req: NextRequest) {
@@ -44,6 +44,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Solo quien finaliza el concepto técnico puede subir su PDF." }, { status: 403 });
     }
     topeMb = TAMANO_MAXIMO_CONCEPTO_MB;
+  } else if (typeof body?.requisitoPlanoId === "string" && body.requisitoPlanoId) {
+    // Los planos aportados como requisito del trámite admiten hasta 10 MB.
+    const requisito = await db.documentoRequeridoDefinicion.findUnique({ where: { id: body.requisitoPlanoId }, select: { nombre: true } });
+    if (!requisito || !esRequisitoPlano(requisito.nombre)) {
+      return NextResponse.json({ error: "El requisito indicado no es de planos." }, { status: 400 });
+    }
+    topeMb = TAMANO_MAXIMO_PLANO_MB;
   }
 
   const path = buildStoragePath(expedienteId, fileName);

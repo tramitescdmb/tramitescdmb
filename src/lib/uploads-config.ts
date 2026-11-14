@@ -17,6 +17,15 @@ export const TAMANO_MAXIMO_BYTES = 2 * 1024 * 1024;
 export const TAMANO_MAXIMO_CONCEPTO_MB = 10;
 export const TAMANO_MAXIMO_CONCEPTO_BYTES = TAMANO_MAXIMO_CONCEPTO_MB * 1024 * 1024;
 
+/** Los planos que se aportan como requisito al radicar un trámite admiten más que el resto de documentos. */
+export const TAMANO_MAXIMO_PLANO_MB = 10;
+export const TAMANO_MAXIMO_PLANO_BYTES = TAMANO_MAXIMO_PLANO_MB * 1024 * 1024;
+
+/** Un requisito es "de planos" si su nombre menciona plano o planos (p. ej. "Planos que soportan el EIA"). */
+export function esRequisitoPlano(nombre: string): boolean {
+  return /(^|[^\p{L}])planos?([^\p{L}]|$)/iu.test(nombre);
+}
+
 export const TAMANO_MAXIMO_CONTRATACION_BYTES = 2 * 1024 * 1024;
 
 export function mensajeArchivoDemasiadoGrandeContratacion(fileName: string): string {

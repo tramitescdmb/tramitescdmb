@@ -7,6 +7,8 @@ import {
   TAMANO_MAXIMO_BYTES,
   TAMANO_MAXIMO_CONCEPTO_BYTES,
   TAMANO_MAXIMO_CONCEPTO_MB,
+  TAMANO_MAXIMO_PLANO_BYTES,
+  TAMANO_MAXIMO_PLANO_MB,
   TAMANO_MAXIMO_CONTRATACION_BYTES,
 } from "@/lib/uploads-config";
 
@@ -35,19 +37,21 @@ export async function sha256Hex(file: File): Promise<string | null> {
 export async function subirArchivoDirecto(
   expedienteId: string,
   file: File,
-  opciones?: { nuevo?: boolean; conceptoTecnico?: boolean }
+  opciones?: { nuevo?: boolean; conceptoTecnico?: boolean; requisitoPlanoId?: string }
 ): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (opciones?.conceptoTecnico) {
     if (file.size > TAMANO_MAXIMO_CONCEPTO_BYTES) {
       throw new Error(`El PDF del concepto pesa más de ${TAMANO_MAXIMO_CONCEPTO_MB} MB. Quite algunas fotos o redúzcalas e inténtelo de nuevo.`);
     }
+  } else if (opciones?.requisitoPlanoId) {
+    if (file.size > TAMANO_MAXIMO_PLANO_BYTES) throw new Error(`"${file.name}" pesa más de ${TAMANO_MAXIMO_PLANO_MB} MB, el máximo para planos.`);
   } else if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
 
   const signRes = await fetch("/api/uploads/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ expedienteId, fileName: file.name, nuevo: opciones?.nuevo === true, conceptoTecnico: opciones?.conceptoTecnico === true }),
+    body: JSON.stringify({ expedienteId, fileName: file.name, nuevo: opciones?.nuevo === true, conceptoTecnico: opciones?.conceptoTecnico === true, requisitoPlanoId: opciones?.requisitoPlanoId ?? null }),
   });
   if (!signRes.ok) {
     const body = await signRes.json().catch(() => ({}));
