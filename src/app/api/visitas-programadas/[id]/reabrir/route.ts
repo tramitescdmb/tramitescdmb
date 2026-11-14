@@ -41,15 +41,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const motivo = typeof body?.motivo === "string" ? body.motivo.trim().slice(0, 500) : "";
   if (!motivo) return NextResponse.json({ error: "Indique por qué se reabre el concepto." }, { status: 400 });
 
-  await db.$transaction([
-    db.solicitudFirma.deleteMany({ where: { documentoExpedienteId: doc.id, estado: "PENDIENTE" } }),
-    db.expedienteDocumento.update({
+  const reabierto = await db.$transaction(async (tx) => {
+    // Si mientras tanto firmó el último firmante, ya no queda firma pendiente: no se reabre un concepto firmado por todos.
+    // Se bloquean las solicitudes del documento (espera a una firma en curso) y se recuenta dentro de la transacción.
+    await tx.$queryRaw`SELECT id FROM "SolicitudFirma" WHERE "documentoExpedienteId" = ${doc.id} FOR UPDATE`;
+    const sinCompletar = await tx.solicitudFirma.count({ where: { documentoExpedienteId: doc.id, rol: { not: "LECTURA" }, estado: { not: "COMPLETADA" } } });
+    if (firmas.length > 0 && sinCompletar === 0) return false;
+    await tx.solicitudFirma.deleteMany({ where: { documentoExpedienteId: doc.id, estado: "PENDIENTE" } });
+    await tx.expedienteDocumento.update({
       where: { id: doc.id },
       data: { nombre: doc.nombre.replace(/\.pdf$/i, " (versión reemplazada).pdf"), requiereFirma: false, estadoValidacion: "RECHAZADO" },
-    }),
-    db.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null, estadoRevision: "DEVUELTO" } }),
-    db.revisionConcepto.create({ data: { visitaTecnicaId: vt.id, accion: "REAPERTURA", usuarioId: session.userId, comentario: motivo } }),
-    db.expedienteEvento.create({
+    });
+    await tx.visitaTecnica.update({ where: { id: vt.id }, data: { finalizadaEn: null, finalizadaPorId: null, documentoConceptoId: null, estadoRevision: "DEVUELTO" } });
+    await tx.revisionConcepto.create({ data: { visitaTecnicaId: vt.id, accion: "REAPERTURA", usuarioId: session.userId, comentario: motivo } });
+    await tx.expedienteEvento.create({
       data: {
         expedienteId: visita.expedienteId,
         tipo: "VISITA_REGISTRADA",
@@ -57,8 +62,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         descripcion: `${session.nombre} reabrió el concepto técnico para corrección: ${motivo} La versión enviada a firma queda en el expediente como reemplazada.`,
         usuarioId: session.userId,
       },
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!reabierto) return NextResponse.json({ error: "El concepto terminó de firmarse mientras tanto; ya no se puede reabrir." }, { status: 409 });
   const v = await db.visitaProgramada.findUnique({
     where: { id },
     select: { profesionalId: true, participantes: { where: { rol: "ELABORA" }, select: { usuarioId: true } }, expediente: { select: { numero: true } } },
