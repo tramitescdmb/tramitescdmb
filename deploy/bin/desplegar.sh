@@ -30,6 +30,9 @@ RAMA="${1:-$ACTUAL}"
 ANTES=$(cat "$ESTADO/.desplegado" 2>/dev/null || git_app rev-parse HEAD)
 git_app fetch origin "$RAMA"
 DESPUES=$(git_app rev-parse FETCH_HEAD)
+# Cualquier fallo a partir de aquí (copia de la base, npm ci...) anota el commit para que el automático
+# no lo reintente cada 5 minutos. Una interrupción (Ctrl+C, kill: código >= 128) NO se anota: se reintenta.
+trap 'rc=$?; if [ "$rc" -ne 0 ] && [ "$rc" -lt 128 ]; then echo "$DESPUES" > "$ESTADO/.despliegue-fallido"; fi' EXIT
 
 CAMBIA_ESQUEMA=0
 if ! git_app diff --quiet "$ANTES" "$DESPUES" -- prisma/schema.prisma; then CAMBIA_ESQUEMA=1; fi
@@ -93,4 +96,4 @@ else
 fi
 
 # Copias previas a un despliegue: se conservan 60 días.
-find "$RESPALDOS" -name 'antes-desplegar-*.dump' -mtime +60 -delete
+find "$RESPALDOS" -name 'antes-desplegar-*.dump' -mtime +60 -delete || true
