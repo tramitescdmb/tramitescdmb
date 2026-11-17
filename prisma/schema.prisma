@@ -837,6 +837,8 @@ model FirmaExpedienteDocumento {
   usuario          Usuario             @relation("FirmaExpedienteDocumentoUsuario", fields: [usuarioId], references: [id])
   solicitudesFirma SolicitudFirma[]    @relation("SolicitudFirmaEventoExpediente")
 
+  // Una sola firma por persona y documento (además de la reserva y el bloqueo del código).
+  @@unique([documentoId, usuarioId])
   @@index([documentoId])
   @@index([usuarioId])
 }
@@ -1688,6 +1690,10 @@ model Firma {
   documentoArchivo DocumentoArchivo? @relation(fields: [documentoArchivoId], references: [id], onDelete: Cascade)
   solicitudesFirma SolicitudFirma[]  @relation("SolicitudFirmaEvento")
 
+  // Una sola firma por persona y comunicación o documento de archivo. Las filas con la columna en
+  // NULL no chocan entre sí (PostgreSQL), así que cada índice solo cuenta las de su tipo.
+  @@unique([comunicacionId, usuarioId])
+  @@unique([documentoArchivoId, usuarioId])
   @@index([comunicacionId])
   @@index([documentoArchivoId])
   @@index([usuarioId])
@@ -2474,6 +2480,8 @@ model FirmaDocumentoContrato {
   usuario          Usuario           @relation("FirmaDocContratoUsuario", fields: [usuarioId], references: [id])
   solicitudesFirma SolicitudFirma[]  @relation("SolicitudFirmaEventoContrato")
 
+  // Una sola firma por persona y documento (además de la reserva y el bloqueo del código).
+  @@unique([documentoId, usuarioId])
   @@index([documentoId])
   @@index([usuarioId])
 }
