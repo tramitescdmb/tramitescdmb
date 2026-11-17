@@ -14,7 +14,7 @@
 #   chmod 755 /var/www/cgi-bin/verdoc.cgi
 #   service httpd reload
 #   # probar:  curl -sI "http://192.168.7.70/cgi-bin/verdoc.cgi?f=Documentos/00000101/ADMINISTRADOR/00083608.001"
-# Luego, en Vercel:  FONDO_PSDOCUMENTS_VISOR=http://192.168.7.70/cgi-bin/verdoc.cgi  y redesplegar.
+# Luego, en el .env de la VM:  FONDO_PSDOCUMENTS_VISOR=http://192.168.7.70/cgi-bin/verdoc.cgi  y reiniciar el servicio.
 
 BASE=/gestion
 

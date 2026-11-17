@@ -1,4 +1,4 @@
-import { subirAUrlFirmada } from "@/lib/supabase-browser";
+import { subirAUrlFirmada } from "@/lib/almacen-cliente";
 import {
   extensionPermitida,
   mensajeArchivoDemasiadoGrande,

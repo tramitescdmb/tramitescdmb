@@ -13,7 +13,7 @@
 # El servidor (/api/fondo-historico/ingest, modo "dump") arma el JSON.
 #
 # Uso (como usuario `oracle`, o como root — el script fija ORACLE_HOME):
-#   export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
+#   export FONDO_INGEST_URL="https://<URL_PLATAFORMA>/api/fondo-historico/ingest"
 #   export FONDO_INGEST_TOKEN="…"
 #   export FONDO_SERIES="101"            # opcional; sin esto, todas las series
 #   bash extraer-psdocuments.sh

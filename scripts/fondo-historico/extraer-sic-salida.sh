@@ -19,7 +19,7 @@
 #   =<trozo>            → (0..n) contenido del campo
 #
 # Uso:
-#   export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
+#   export FONDO_INGEST_URL="https://<URL_PLATAFORMA>/api/fondo-historico/ingest"
 #   export FONDO_INGEST_TOKEN="…"
 #   bash extraer-sic-salida.sh
 #
