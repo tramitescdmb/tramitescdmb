@@ -341,7 +341,7 @@ export function ejemplosDe(variables: VariablePlantilla[]): Record<string, strin
 export type DisenoCorreo = { antetitulo: string; encabezado: string; pie: string };
 
 export const DISENO_PREDETERMINADO: DisenoCorreo = {
-  antetitulo: "CDMB · Plataforma de trámites",
+  antetitulo: "CDMB · SIC CDMB",
   encabezado: "",
   pie: "Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga — mensaje automático, por favor no responda a este correo.",
 };

@@ -109,7 +109,7 @@ export function geoJsonTramites(
         tramites: puntos.length,
         ...(Object.keys(ctx).length > 0 ? { contexto: ctx } : {}),
         generado: new Date().toISOString().slice(0, 19),
-        fuente: `Visor de trámites CDMB — ${origen}`,
+        fuente: `Visor geográfico SIC CDMB — ${origen}`,
       },
       geometry: {
         type: "Polygon",
