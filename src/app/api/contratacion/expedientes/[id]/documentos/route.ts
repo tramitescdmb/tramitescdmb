@@ -8,6 +8,7 @@ import { agregarDocumentoContrato, ETAPAS_ORDEN } from "@/lib/contratacion";
 import { TAMANO_MAXIMO_CONTRATACION_BYTES, mensajeArchivoDemasiadoGrandeContratacion } from "@/lib/uploads-config";
 import { datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_RUTA_AJENA, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       userAgent,
       cualquierEtapa: puedeSubirEnCualquierEtapaContrato(permisos),
     });
+    await organizarTrasRegistro({ tipo: "contrato", id });
     return NextResponse.json({ id: documento.id }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo registrar el documento." }, { status: 400 });

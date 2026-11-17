@@ -8,6 +8,7 @@ import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@p
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { cancelarFlujosDeObjeto } from "@/lib/flujos";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 const SERIE_EXPEDIENTE = "X";
 
@@ -96,12 +97,16 @@ export async function agregarDocumentoArchivo(datos: {
       ordenIndice: (ultimo?.ordenIndice ?? 0) + 1,
     },
   });
-  if (documento.mimeType === "application/pdf") {
-    await extraerTextoDocumentoArchivo(documento.id, documento.storagePath).catch((e) =>
-      console.error(`extraerTextoDocumentoArchivo falló para ${documento.id}:`, e)
+  // Del área de llegada a SGDEA/<año>/<dependencia>/<expediente>/ (la ruta guardada cambia).
+  await organizarTrasRegistro({ tipo: "documental", id: datos.expedienteDocumentalId });
+  const ordenado = await db.documentoArchivo.findUnique({ where: { id: documento.id } });
+  const final = ordenado ?? documento;
+  if (final.mimeType === "application/pdf") {
+    await extraerTextoDocumentoArchivo(final.id, final.storagePath).catch((e) =>
+      console.error(`extraerTextoDocumentoArchivo falló para ${final.id}:`, e)
     );
   }
-  return documento;
+  return final;
 }
 
 export async function extraerTextoDocumentoArchivo(documentoId: string, storagePath: string) {
