@@ -18,7 +18,7 @@ describe("csvExpedientes", () => {
   it("incluye el encabezado de fuente, la fecha de generación, los filtros y el total antes de las columnas", () => {
     const csv = csvExpedientes([fila], "estado \"EN TRAMITE\"; municipio Bucaramanga");
     const lineas = csv.trim().split("\n");
-    expect(lineas[0]).toContain("Trámites CDMB");
+    expect(lineas[0]).toContain("SIC CDMB");
     expect(lineas[1]).toContain("Generado el");
     expect(lineas[2]).toContain('Filtros: estado ""EN TRAMITE""; municipio Bucaramanga');
     expect(lineas[3]).toBe("Total de registros: 1");

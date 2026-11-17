@@ -1,4 +1,4 @@
-# Esquema de datos — Trámites CDMB
+# Esquema de datos — SIC CDMB
 
 Cada archivo `data/tramites/<CODIGO>.json` describe UN procedimiento (trámite) extraído de su PDF
 en `procedimientos/`, siguiendo la plantilla estándar del SIGC de la CDMB (Objeto, Alcance,

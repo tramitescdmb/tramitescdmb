@@ -109,7 +109,7 @@ export function ConfirmarFirmaModal({
                   {esPdf && <iframe src={documentoUrl} title={documentoNombre} className="h-full min-h-[60vh] w-full" />}
                   {esImagen && (
                     <div className="flex h-full items-center justify-center p-4">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada de Supabase */}
+                      {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada del NAS */}
                       <img src={documentoUrl} alt={documentoNombre} className="max-h-full max-w-full object-contain" />
                     </div>
                   )}

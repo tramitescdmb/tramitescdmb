@@ -5,7 +5,7 @@ import { esTipoContrato } from "@/lib/tipo-contrato";
 import type { ModalidadSeleccion } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, esPersonalContratacion } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato, tieneRolContratacion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato } from "@/lib/permisos";
 import { sincronizarExpedienteSecop, asegurarContratistaDeUsuario, crearExpedienteContractual, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
 
 const MODALIDADES_VALIDAS = Object.keys(ETIQUETA_MODALIDAD) as ModalidadSeleccion[];

@@ -27,7 +27,7 @@ export default async function AparienciaPage() {
           campo="logo"
           urlActual={config.logoUrl}
           etiqueta="Logo de la CDMB"
-          ayuda="Aparece en el encabezado (junto a 'Trámites CDMB') y en el pie de página. Fondo transparente recomendado (PNG o SVG)."
+          ayuda="Aparece en el encabezado (junto a 'SIC CDMB') y en el pie de página. Fondo transparente recomendado (PNG o SVG)."
         />
         <SubirLogoForm
           campo="govco"

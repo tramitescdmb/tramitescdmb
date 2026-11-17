@@ -1349,7 +1349,7 @@
     "orden": 38,
     "titulo": "Copias de seguridad automáticas de todos los elementos del sistema",
     "estado": "PARCIAL",
-    "nota": "Cubierto a nivel de infraestructura (Supabase), no como función propia de la aplicación"
+    "nota": "Cubierto a nivel de infraestructura (copia diaria de la base y respaldo del NAS), no como función propia de la aplicación"
   },
   {
     "numero": "6.39",
@@ -1581,7 +1581,7 @@
     "orden": 8,
     "titulo": "Soporte de almacenamiento tipo NAS, DAS y SAN",
     "estado": "PENDIENTE",
-    "nota": "Usa almacenamiento en la nube (Supabase Storage), arquitectura distinta"
+    "nota": "Usa almacenamiento en el NAS de la CDMB, arquitectura distinta"
   },
   {
     "numero": "8.9",

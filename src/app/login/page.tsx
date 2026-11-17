@@ -37,7 +37,7 @@ export default async function LoginPage({
               C
             </span>
           )}
-          <h1 className="text-lg font-semibold tracking-tight text-stone-900">Trámites CDMB</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-stone-900">SIC CDMB</h1>
           <p className="text-sm text-stone-500">Ingreso de funcionarios de la CDMB</p>
         </div>
 

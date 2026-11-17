@@ -4,6 +4,8 @@ import { ShieldCheck, MessageSquareText } from "lucide-react";
 import { PqrsdPublicoForm } from "@/components/PqrsdPublicoForm";
 import { CabeceraTablero } from "@/components/tablero";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Radicar PQRSD — CDMB",
   description: "Radique peticiones, quejas, reclamos, sugerencias y denuncias ante la CDMB.",
