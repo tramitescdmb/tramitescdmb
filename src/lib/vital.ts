@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
-import { uploadDocumento } from "@/lib/storage";
+import { uploadDocumentoNuevo } from "@/lib/storage";
+import { carpetaVital, rutaDestino } from "@/lib/carpetas-almacen";
+import { anioColombia } from "@/lib/fecha";
 
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
 const XROAD_URL = process.env.VITAL_XROAD_URL?.trim();
@@ -491,10 +493,11 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
     if (yaTengo.has(doc.nombre_archivo)) continue;
     const archivo = await descargarDocumentoVital(doc.url_archivo);
     if (!archivo) continue;
-    const safeName = doc.nombre_archivo.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `vital/${resumen.idVital}/${Date.now()}-${safeName}`;
+    // Vital/<año de radicación>/<id VITAL>/<archivo>; sin pisar un archivo con el mismo nombre.
+    const anio = anioColombia(solicitud.fechaRadicacion ?? solicitud.createdAt);
+    const base = rutaDestino(carpetaVital({ anio, idVital: String(resumen.idVital) }), doc.nombre_archivo);
     try {
-      await uploadDocumento(path, archivo.buffer, archivo.mimeType);
+      const path = await uploadDocumentoNuevo(base, archivo.buffer, archivo.mimeType);
       await db.solicitudVitalDocumento.create({
         data: { solicitudId: solicitud.id, nombre: doc.nombre_archivo, storagePath: path, mimeType: archivo.mimeType, tamanoBytes: archivo.buffer.length },
       });

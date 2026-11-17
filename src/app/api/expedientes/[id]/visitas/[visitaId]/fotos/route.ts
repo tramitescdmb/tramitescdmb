@@ -6,6 +6,7 @@ import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
 import { MAX_FOTOS_VISITA, TAMANO_MAXIMO_FOTO_VISITA_BYTES, mensajeFotoGrande, mensajeDemasiadasFotos } from "@/lib/visita-tecnica-fotos";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
 import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -65,5 +66,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
 
+  await organizarTrasRegistro({ tipo: "tramite", id });
   return NextResponse.json({ id: foto.id });
 }

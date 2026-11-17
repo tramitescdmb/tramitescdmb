@@ -6,6 +6,7 @@ import { documentoEtapaAbierta, puedeIntentarEliminarDocumento } from "@/lib/doc
 import { editarDocumentoTramite } from "@/lib/tramites-firma";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { MENSAJE_EXPEDIENTE_CERRADO } from "@/lib/archivo-central";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (archivo && storagePathAnterior) {
       await deleteDocumento(storagePathAnterior).catch(() => {});
     }
+    if (archivo) await organizarTrasRegistro({ tipo: "tramite", id: documento.expedienteId });
 
     const descripcion = [
       `${session.nombre} editó el documento "${documento.nombre}"${documento.pasoNumero ? ` (paso ${documento.pasoNumero})` : " (radicación)"}.`,

@@ -4,7 +4,7 @@ import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante,
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";
-import { bloquearFirma, completarSolicitudFirma, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
+import { bloquearFirma, completarSolicitudFirma, esFirmaDuplicada, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { nivelFirma, puedeSerFirmantePrincipal } from "@/lib/jerarquia-firma";
 import { solicitarSelloTiempo } from "@/lib/sello-tiempo";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -19,6 +19,7 @@ import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdj
 import { nombreCompletoPersona, nulo, separarNombreCompleto, type DatosPersona } from "@/lib/datos-persona";
 import { cancelarFlujosDeObjeto, iniciarFlujoAutomatico, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import { avisarRadicadoPqrsd, avisarRespuestaPqrsd } from "@/lib/avisos-externos";
+import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 
 export type EntradaTercero = {
   tipo: TipoSolicitante;
@@ -166,6 +167,7 @@ export async function radicarRecibida(entrada: EntradaRadicacionRecibida) {
 
     return comunicacion;
   }).then(async (comunicacion) => {
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     avisarRadicadoPqrsd(comunicacion);
@@ -310,7 +312,8 @@ export async function agregarCofirma(
   const puedePrincipal = puedeSerFirmantePrincipal(usuario, "SGDEA");
   if (calidadElegida === "PRINCIPAL" && !puedePrincipal) throw new Error("Su cargo no le permite firmar como firmante principal.");
   const calidad: CalidadFirma = calidadElegida ?? (c.tipo === "RECIBIDA" || !puedePrincipal ? "PROYECTO" : "PRINCIPAL");
-  return db.$transaction(async (tx) => {
+  return db
+    .$transaction(async (tx) => {
     // Bloqueo por comunicación y firmante: un doble clic no crea dos firmas.
     await bloquearFirma(tx, `comunicacion:${comunicacionId}:${usuarioId}`);
     if (await tx.firma.findFirst({ where: { comunicacionId, usuarioId }, select: { id: true } })) throw new Error("Usted ya firmó esta comunicación.");
@@ -332,7 +335,11 @@ export async function agregarCofirma(
       selloTiempoToken: datos.selloTiempoToken,
     },
     });
-  });
+    })
+    .catch((e) => {
+      if (esFirmaDuplicada(e)) throw new Error("Usted ya firmó esta comunicación.");
+      throw e;
+    });
 }
 
 export async function firmarEnLote(comunicacionIds: string[], usuarioId: string, ip: string | null) {
@@ -478,6 +485,7 @@ export async function radicarEnviada(entrada: EntradaRadicacionEnviada) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
@@ -545,6 +553,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
     return comunicacion;
   }).then(async (comunicacion) => {
     await sellarFirmasConTsa(comunicacion.id).catch(() => {});
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacion.id });
     await extraerTextoAdjuntosPdf(comunicacion.id).catch(() => {});
     await iniciarFlujoAutomatico(comunicacion.id, entrada.radicadoPorId).catch((e) => console.error("iniciarFlujoAutomatico falló:", e));
     return comunicacion;
@@ -652,6 +661,7 @@ export async function registrarRespuestaFuncionario(
     await crearDocumentos(tx, comunicacionId, documentos, usuarioId, true);
     return actualizada;
   }).then(async (actualizada) => {
+    await organizarTrasRegistro({ tipo: "comunicacion", id: comunicacionId });
     await extraerTextoAdjuntosPdf(comunicacionId).catch(() => {});
     return actualizada;
   });
