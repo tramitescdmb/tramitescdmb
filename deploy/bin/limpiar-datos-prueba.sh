@@ -59,7 +59,7 @@ SQLEOF
 
 echo "== Vista previa (no se borra nada) =="
 generar ROLLBACK
-sudo -u postgres psql -d tramites -f "$SQL"
+sudo -u postgres psql -P pager=off -d tramites -f "$SQL"
 
 if [ "$EJECUTAR" = 0 ]; then
   echo; echo "Fue solo una vista previa. Para borrar de verdad: $0 $GRUPOS --ejecutar"; exit 0
@@ -77,5 +77,5 @@ chmod 600 "$COPIA"
 echo "Copia previa guardada en $COPIA ($(du -h "$COPIA" | cut -f1))"
 
 generar COMMIT
-sudo -u postgres psql -d tramites -f "$SQL"
+sudo -u postgres psql -P pager=off -d tramites -f "$SQL"
 echo; echo "Listo: los datos de prueba se borraron. Para deshacerlo: pg_restore desde $COPIA."
