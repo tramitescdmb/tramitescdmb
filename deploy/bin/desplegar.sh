@@ -52,12 +52,13 @@ instalar_dependencias() {
   fi
 }
 
+COPIA_NEXT=0   # 1 cuando ya se guardó la compilación actual en .next-anterior (solo entonces hay algo que restaurar)
 volver_atras() {
   echo "$1"
   echo "$DESPUES" > "$ESTADO/.despliegue-fallido"
   git_app checkout -q -B "$ACTUAL" "$ANTES"
   instalar_dependencias
-  if [ -d "$ESTADO/.next-anterior" ]; then
+  if [ "$COPIA_NEXT" = 1 ] && [ -d "$ESTADO/.next-anterior" ]; then
     rm -rf .next
     cp -a "$ESTADO/.next-anterior" .next
     chown -R tramites:tramites .next
@@ -82,7 +83,7 @@ if [ "$CAMBIA_ESQUEMA" = 1 ]; then
 fi
 
 rm -rf "$ESTADO/.next-anterior"
-if [ -d .next ]; then cp -a .next "$ESTADO/.next-anterior"; fi
+if [ -d .next ]; then cp -a .next "$ESTADO/.next-anterior"; COPIA_NEXT=1; fi
 if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && npm run build" > "/tmp/desplegar-$F.log" 2>&1; then
   systemctl restart tramites
   sleep 5
