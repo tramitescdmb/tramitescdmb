@@ -47,7 +47,7 @@ instalar_dependencias() {
   hash=$(sha256sum package-lock.json | cut -d' ' -f1)
   if [ ! -d node_modules ] || [ "$(cat "$ESTADO/.deps-hash" 2>/dev/null || true)" != "$hash" ]; then
     rm -f "$ESTADO/.deps-hash"
-    sudo -u tramites bash -lc "cd $APP && npm ci"
+    sudo -u tramites bash -lc "cd $APP && npm ci" || return 1
     echo "$hash" > "$ESTADO/.deps-hash"
   fi
 }
@@ -71,10 +71,10 @@ echo "Código: ${ANTES:0:8} -> ${DESPUES:0:8} ($RAMA)"
 
 F=$(date -u +%Y%m%d-%H%M)
 mkdir -p "$RESPALDOS"
-sudo -u postgres pg_dump -Fc -d tramites > "$RESPALDOS/antes-desplegar-$F.dump"
+sudo -u postgres pg_dump -Fc -d tramites > "$RESPALDOS/antes-desplegar-$F.dump" || volver_atras "ERROR al copiar la base de datos. Se vuelve a la versión anterior."
 chmod 600 "$RESPALDOS/antes-desplegar-$F.dump"
 
-instalar_dependencias
+instalar_dependencias || volver_atras "ERROR al instalar las dependencias. Se vuelve a la versión anterior."
 
 if [ "$CAMBIA_ESQUEMA" = 1 ]; then
   echo "Cambió prisma/schema.prisma: se aplica con prisma db push (sin --accept-data-loss: si pudiera perder datos, se detiene)."
