@@ -17,10 +17,18 @@ export type SelloTiempo = {
   tiempo: Date;
 };
 
+/**
+ * Pide un sello de tiempo RFC 3161 a la TSA. Devuelve null si no se obtuvo, y deja el motivo en el
+ * registro del servicio (journalctl) para que una TSA caída o mal configurada no pase inadvertida.
+ */
 export async function solicitarSelloTiempo(hashHex: string, tsaUrl: string): Promise<SelloTiempo | null> {
+  const fallo = (motivo: string) => {
+    console.error(`[sello-tiempo] No se obtuvo sello de la TSA ${tsaUrl}: ${motivo}`);
+    return null;
+  };
   try {
     const hashBytes = Buffer.from(hashHex, "hex");
-    if (hashBytes.length !== 32) return null;
+    if (hashBytes.length !== 32) return fallo("la huella a sellar no es SHA-256");
 
     const req = new TimeStampReq({
       version: TimeStampReqVersion.v1,
@@ -37,16 +45,16 @@ export async function solicitarSelloTiempo(hashHex: string, tsaUrl: string): Pro
       body: new Uint8Array(AsnConvert.serialize(req)),
       signal: AbortSignal.timeout(9000),
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) return fallo(`respondió HTTP ${resp.status}`);
 
     const tsResp = AsnConvert.parse(await resp.arrayBuffer(), TimeStampResp);
-    if (tsResp.status.status !== 0 && tsResp.status.status !== 1) return null;
+    if (tsResp.status.status !== 0 && tsResp.status.status !== 1) return fallo(`rechazó la solicitud (estado ${tsResp.status.status})`);
     const token = tsResp.timeStampToken;
-    if (!token) return null;
+    if (!token) return fallo("la respuesta no trae sello");
 
     const signedData = AsnConvert.parse(token.content, SignedData);
     const eContent = signedData.encapContentInfo.eContent?.single;
-    if (!eContent) return null;
+    if (!eContent) return fallo("el sello no trae contenido");
     const tstInfo = AsnConvert.parse(eContent.buffer, TSTInfo);
     const tiempo = tstInfo.genTime instanceof Date ? tstInfo.genTime : new Date(tstInfo.genTime);
 
@@ -54,8 +62,8 @@ export async function solicitarSelloTiempo(hashHex: string, tsaUrl: string): Pro
       token: Buffer.from(AsnConvert.serialize(token)).toString("base64"),
       tiempo,
     };
-  } catch {
-    return null;
+  } catch (e) {
+    return fallo(e instanceof Error ? e.message : String(e));
   }
 }
 

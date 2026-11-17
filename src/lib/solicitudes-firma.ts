@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { huellaVerificada } from "@/lib/hash-archivo";
 import { resolverFirma } from "@/lib/firma-proveedor";
-import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
+import { Prisma, type RolFirmante, type EstadoSolicitudFirma, type CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
@@ -390,6 +390,13 @@ function hashContenidoFirmaDocumento(datos: { documentoId: string; nombre: strin
   return crypto.createHash("sha256").update(base, "utf8").digest("hex");
 }
 
+export const MENSAJE_FIRMA_DUPLICADA = "Usted ya firmó este documento.";
+
+/** La base rechazó una segunda firma de la misma persona sobre el mismo documento (índice único). */
+export function esFirmaDuplicada(e: unknown): boolean {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
+}
+
 /**
  * Firma o da visto bueno a una solicitud. Primero la "reserva" (marca completadoEn solo si sigue
  * pendiente y sin marca) para que un doble clic o dos pestañas no generen dos firmas del mismo
@@ -424,6 +431,7 @@ export async function completarSolicitudFirma(
     await db.solicitudFirma
       .updateMany({ where: { id: solicitudId, estado: "PENDIENTE" }, data: { completadoEn: null } })
       .catch((err) => console.error("No se pudo liberar la reserva de la solicitud de firma:", err));
+    if (esFirmaDuplicada(e)) throw new Error(MENSAJE_FIRMA_DUPLICADA);
     throw e;
   }
 }
@@ -469,7 +477,7 @@ async function completarSolicitudFirmaReservada(
       ? (await supervisoresDelExpediente(solicitud.documentoContrato.expedienteId)).has(usuarioId)
       : false;
     const cargo = await cargoActualDelFirmante(usuarioId, moduloDeObjetivo(objetivoDeSolicitud(solicitud).tipo), supervisaVistoBueno);
-    await db.solicitudFirma.update({ where: { id: solicitudId }, data: { estado: "COMPLETADA", completadoEn: new Date(), ...cargo, ip, userAgent } });
+    await cerrarSolicitudReservada(db, solicitudId, { ...cargo, ip, userAgent });
     const sgdea = solicitud.comunicacion
       ? { entidad: "Comunicacion" as const, entidadId: solicitud.comunicacion.id, ref: solicitud.comunicacion.radicado }
       : solicitud.documentoArchivo
@@ -589,40 +597,42 @@ async function completarSolicitudFirmaReservada(
   } else if (solicitud.comunicacion) {
     const c = solicitud.comunicacion;
     await validarComunicacionFirmable(c);
-    let firmaId: string;
     const previa = await db.firma.findFirst({ where: { comunicacionId: c.id, usuarioId }, select: { id: true } });
     if (previa) {
-      firmaId = previa.id;
+      await cerrarSolicitudReservada(db, solicitudId, { firmaId: previa.id, ip, userAgent });
     } else {
+      // Lo lento (huellas de los adjuntos, sello de la TSA) va antes de la transacción; dentro solo se
+      // crea la firma y se cierra la solicitud, juntas: o quedan las dos o ninguna.
       await verificarHuellasAdjuntos(c);
       const fechaHora = new Date();
       const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
       const cargo = await cargoActualDelFirmante(usuarioId, "SGDEA");
-      const firma = await db.firma.create({
-        data: {
-          calidad: solicitud.calidad,
-          usuarioId,
-          comunicacionId: c.id,
-          fechaHora,
-          hashContenido,
-          tipo: "ELECTRONICA_HASH",
-          ...cargo,
-          ip,
-          userAgent,
-          proveedor: resuelto.proveedor,
-          formato: resuelto.formato,
-          selloTiempoEn: resuelto.selloTiempoEn,
-          selloTiempoFuente: resuelto.selloTiempoFuente,
-          selloTiempoToken: resuelto.selloTiempoToken,
-        },
+      await db.$transaction(async (tx) => {
+        // Mismo bloqueo que la firma directa (agregarCofirma): las dos rutas no pueden cruzarse.
+        await bloquearFirma(tx, `comunicacion:${c.id}:${usuarioId}`);
+        if (await tx.firma.findFirst({ where: { comunicacionId: c.id, usuarioId }, select: { id: true } })) throw new Error(MENSAJE_FIRMA_DUPLICADA);
+        const firma = await tx.firma.create({
+          data: {
+            calidad: solicitud.calidad,
+            usuarioId,
+            comunicacionId: c.id,
+            fechaHora,
+            hashContenido,
+            tipo: "ELECTRONICA_HASH",
+            ...cargo,
+            ip,
+            userAgent,
+            proveedor: resuelto.proveedor,
+            formato: resuelto.formato,
+            selloTiempoEn: resuelto.selloTiempoEn,
+            selloTiempoFuente: resuelto.selloTiempoFuente,
+            selloTiempoToken: resuelto.selloTiempoToken,
+          },
+        });
+        await cerrarSolicitudReservada(tx, solicitudId, { firmaId: firma.id, ip, userAgent });
       });
-      firmaId = firma.id;
     }
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId, ip, userAgent },
-    });
     await registrarAuditoriaDoc({
       entidad: "Comunicacion",
       entidadId: c.id,
@@ -635,19 +645,19 @@ async function completarSolicitudFirmaReservada(
   } else if (solicitud.documentoArchivo) {
     const doc = solicitud.documentoArchivo;
     await validarDocumentoArchivoFirmable(doc.id);
-    let firmaId: string;
     const previa = await db.firma.findFirst({ where: { documentoArchivoId: doc.id, usuarioId }, select: { id: true } });
     if (previa) {
-      firmaId = previa.id;
+      await cerrarSolicitudReservada(db, solicitudId, { firmaId: previa.id, ip, userAgent });
     } else {
       const cargo = await cargoActualDelFirmante(usuarioId, "SGDEA");
-      const firma = await crearFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, cargo, ip, userAgent);
-      firmaId = firma.id;
+      const datos = await prepararFirmaDocumentoArchivo(doc, usuarioId, solicitud.calidad, cargo, ip, userAgent);
+      await db.$transaction(async (tx) => {
+        await bloquearFirma(tx, `archivo:${doc.id}:${usuarioId}`);
+        if (await tx.firma.findFirst({ where: { documentoArchivoId: doc.id, usuarioId }, select: { id: true } })) throw new Error(MENSAJE_FIRMA_DUPLICADA);
+        const firma = await tx.firma.create({ data: datos });
+        await cerrarSolicitudReservada(tx, solicitudId, { firmaId: firma.id, ip, userAgent });
+      });
     }
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaId, ip, userAgent },
-    });
     await registrarAuditoriaDoc({
       entidad: "DocumentoArchivo",
       entidadId: doc.id,
@@ -673,7 +683,15 @@ async function exigirMismoArchivo(actualizar: () => Promise<{ count: number }>) 
 async function cerrarSolicitudReservada(
   tx: Pick<typeof db, "solicitudFirma">,
   solicitudId: string,
-  data: { firmaDocContratoId?: string; firmaExpedienteId?: string; ip: string | null; userAgent: string | null }
+  data: {
+    firmaDocContratoId?: string;
+    firmaExpedienteId?: string;
+    firmaId?: string;
+    cargoAlFirmar?: string;
+    actoAdministrativoAlFirmar?: string | null;
+    ip: string | null;
+    userAgent: string | null;
+  }
 ) {
   const { count } = await tx.solicitudFirma.updateMany({
     where: { id: solicitudId, estado: "PENDIENTE" },
@@ -682,39 +700,40 @@ async function cerrarSolicitudReservada(
   if (count === 0) throw new Error("La solicitud de firma ya no está vigente (se resolvió, anuló o se reemplazó el documento): recargue la página.");
 }
 
-async function crearFirmaDocumentoArchivo(
+/**
+ * Prepara (fuera de cualquier transacción: descarga el archivo y pide el sello a la TSA) los datos de
+ * la firma de un documento de archivo. La fila se crea después, dentro de la transacción.
+ */
+async function prepararFirmaDocumentoArchivo(
   doc: { id: string; nombre: string; hashSha256: string | null; storagePath: string },
   usuarioId: string,
   calidad: CalidadFirma | null,
   cargo: { cargoAlFirmar: string; actoAdministrativoAlFirmar: string | null },
   ip: string | null,
   userAgent: string | null,
-  cliente: Pick<typeof db, "firma"> = db,
-) {
+): Promise<Prisma.FirmaUncheckedCreateInput> {
   const huella = await huellaVerificada(doc, await db.firma.count({ where: { documentoArchivoId: doc.id } }), (h) =>
     db.documentoArchivo.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
   );
   const fechaHora = new Date();
   const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso: fechaHora.toISOString() });
   const resuelto = await resolverFirma(hashContenido);
-  return cliente.firma.create({
-    data: {
-      usuarioId,
-      documentoArchivoId: doc.id,
-      calidad,
-      ...cargo,
-      fechaHora,
-      hashContenido,
-      tipo: "ELECTRONICA_HASH",
-      ip,
-      userAgent,
-      proveedor: resuelto.proveedor,
-      formato: resuelto.formato,
-      selloTiempoEn: resuelto.selloTiempoEn,
-      selloTiempoFuente: resuelto.selloTiempoFuente,
-      selloTiempoToken: resuelto.selloTiempoToken,
-    },
-  });
+  return {
+    usuarioId,
+    documentoArchivoId: doc.id,
+    calidad,
+    ...cargo,
+    fechaHora,
+    hashContenido,
+    tipo: "ELECTRONICA_HASH",
+    ip,
+    userAgent,
+    proveedor: resuelto.proveedor,
+    formato: resuelto.formato,
+    selloTiempoEn: resuelto.selloTiempoEn,
+    selloTiempoFuente: resuelto.selloTiempoFuente,
+    selloTiempoToken: resuelto.selloTiempoToken,
+  };
 }
 
 /** Bloqueo de PostgreSQL que dura lo que la transacción: serializa dos firmas simultáneas de la misma persona. */
@@ -743,20 +762,25 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
+  const datos = await prepararFirmaDocumentoArchivo(
+    doc,
+    usuarioId,
+    puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
+    { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
+    ip,
+    userAgent,
+  );
   // Bloqueo por documento y firmante: un doble clic no crea dos firmas.
-  await db.$transaction(async (tx) => {
-    await bloquearFirma(tx, `archivo:${documentoArchivoId}:${usuarioId}`);
-    if (await tx.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) throw new Error("Usted ya firmó este documento.");
-    await crearFirmaDocumentoArchivo(
-      doc,
-      usuarioId,
-      puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
-      { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
-      ip,
-      userAgent,
-      tx,
-    );
-  });
+  try {
+    await db.$transaction(async (tx) => {
+      await bloquearFirma(tx, `archivo:${documentoArchivoId}:${usuarioId}`);
+      if (await tx.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) throw new Error(MENSAJE_FIRMA_DUPLICADA);
+      await tx.firma.create({ data: datos });
+    });
+  } catch (e) {
+    if (esFirmaDuplicada(e)) throw new Error(MENSAJE_FIRMA_DUPLICADA);
+    throw e;
+  }
 }
 
 export async function rechazarSolicitudFirma(
