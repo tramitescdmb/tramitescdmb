@@ -7,7 +7,7 @@
 # Sin más argumentos solo MUESTRA lo que se borraría (hace el borrado y lo deshace). Con --ejecutar, pide
 # confirmación, hace una copia de la base y borra de verdad.
 # El SGDEA (comunicaciones) se limpia con el botón «Reiniciar datos de prueba» de Correspondencia → Administración.
-# Nunca toca usuarios, perfiles, catálogos, TRD, SINCA 1.0, VITAL, SECOP, contratistas, auditoría ni configuración:
+# Nunca toca usuarios, perfiles, catálogos, TRD, SINCA 1.0, VITAL, SECOP (salvo la copia espejo de cada contrato borrado), contratistas, auditoría ni configuración:
 # si el borrado alcanzara alguna de esas tablas, se cancela solo.
 # Los archivos del NAS de lo borrado quedan sin referencia (ocupan disco, pero no se ven): se pueden limpiar después.
 set -euo pipefail
@@ -17,7 +17,7 @@ EJECUTAR=0; [ "${2:-}" = "--ejecutar" ] && EJECUTAR=1
 if [ -z "$GRUPOS" ]; then sed -n '2,12p' "$0"; exit 1; fi
 
 SQL=/tmp/limpieza-prueba.sql
-PROTEGIDAS="'Usuario','Cargo','UsuarioCargo','Perfil','PermisoPerfil','UsuarioPerfil','RolUsuario','Dependencia','TramiteTipo','DocumentoRequeridoDefinicion','Flujo','PasoDefinicion','FlujoTrabajo','PasoFlujo','TransicionPaso','SerieDocumental','SubserieDocumental','TipoDocumental','ConfiguracionSitio','SincaResolucion','SincaNitSnapshot','SincaSincronizacion','SolicitudVital','VitalTramite','VitalDescubrimiento','SecopContratoEspejo','Contratista','RegistroAuditoria','CuentaCorreo','ClaveCorreo','PlantillaCorreo','TopeCuantiaContratacion','Tercero','Comunicacion','ExpedienteDocumental'"
+PROTEGIDAS="'Usuario','Cargo','UsuarioCargo','Perfil','PermisoPerfil','UsuarioPerfil','RolUsuario','Dependencia','TramiteTipo','DocumentoRequeridoDefinicion','Flujo','PasoDefinicion','FlujoTrabajo','PasoFlujo','TransicionPaso','SerieDocumental','SubserieDocumental','TipoDocumental','ConfiguracionSitio','SincaResolucion','SincaNitSnapshot','SincaSincronizacion','SolicitudVital','VitalTramite','VitalDescubrimiento','Contratista','RegistroAuditoria','CuentaCorreo','ClaveCorreo','PlantillaCorreo','TopeCuantiaContratacion','Tercero','Comunicacion','ExpedienteDocumental'"
 
 borrados=""
 IFS=',' read -ra LISTA <<< "$GRUPOS"
