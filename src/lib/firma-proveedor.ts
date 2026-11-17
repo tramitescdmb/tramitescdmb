@@ -11,10 +11,16 @@ export type DatosFirmaResueltos = {
 
 const SELLO_INTERNO = "Bitácora encadenada del SGDEA (SHA-256)";
 
+let avisoSinTsa = false;
+
 export async function resolverFirma(hashContenidoHex: string): Promise<DatosFirmaResueltos> {
   const config = await getConfiguracionSitio();
   const tsaUrl = config.selloTiempoTsaUrl?.trim();
 
+  if (!tsaUrl && !avisoSinTsa) {
+    avisoSinTsa = true;
+    console.warn("[sello-tiempo] No hay TSA configurada (Administración → Seguridad): las firmas llevan la hora del servidor.");
+  }
   if (tsaUrl) {
     const sello = await solicitarSelloTiempo(hashContenidoHex, tsaUrl);
     if (sello) {
@@ -28,6 +34,7 @@ export async function resolverFirma(hashContenidoHex: string): Promise<DatosFirm
     }
   }
 
+  if (tsaUrl) console.error("[sello-tiempo] La firma queda con la hora del servidor porque la TSA no respondió.");
   return {
     proveedor: "interno",
     formato: "hash-sha256",
