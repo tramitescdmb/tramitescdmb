@@ -61,7 +61,7 @@ export async function NavBar() {
           C
         </span>
       )}
-      <span className="truncate">Trámites CDMB</span>
+      <span className="truncate">SIC CDMB</span>
     </Link>
   );
 

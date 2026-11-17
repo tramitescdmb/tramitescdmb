@@ -1,4 +1,5 @@
 import { etiquetaDatoIdentificacion } from "@/lib/identificacion-firma";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { notFound, redirect } from "next/navigation";
 import { FileSignature, ShieldCheck, Eye } from "lucide-react";
 import { db } from "@/lib/db";
@@ -59,6 +60,7 @@ export default async function FichaFirmaComunicacionPage({ params }: { params: P
     },
   });
   if (!c) notFound();
+  if (!(await puedeVerComunicacion(permisos, session.userId, id))) notFound();
 
   return (
     <section className="mx-auto max-w-3xl space-y-4">

@@ -36,7 +36,7 @@ export function Sidebar({
         className={`flex h-14 flex-none items-center gap-2.5 border-b border-black/20 bg-cdmb-900 font-semibold text-white ${
           colapsado ? "justify-center px-2" : "px-5"
         }`}
-        title={colapsado ? "Trámites CDMB" : undefined}
+        title={colapsado ? "SIC CDMB" : undefined}
       >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -44,7 +44,7 @@ export function Sidebar({
         ) : (
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded bg-white text-sm font-bold text-cdmb-700">C</span>
         )}
-        {!colapsado && <span className="truncate text-[15px]">Trámites CDMB</span>}
+        {!colapsado && <span className="truncate text-[15px]">SIC CDMB</span>}
       </Link>
 
       <SidebarNav

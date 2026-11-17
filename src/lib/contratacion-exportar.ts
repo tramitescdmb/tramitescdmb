@@ -54,7 +54,8 @@ function valorColumna(f: FilaExportContrato, key: keyof FilaExportContrato): str
 }
 
 function csvCampo(v: string | number): string {
-  const s = String(v);
+  // Un texto que empieza por = + - @ lo ejecuta Excel como fórmula (inyección en CSV): se antepone un apóstrofo.
+  const s = typeof v === "string" && /^[=+\-@\t\r]/.test(v) ? `'${v}` : String(v);
   return /[,"\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

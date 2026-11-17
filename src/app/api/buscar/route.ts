@@ -7,6 +7,6 @@ export async function GET(req: Request) {
   if (!session) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
   const q = (new URL(req.url).searchParams.get("q") ?? "").slice(0, 100);
   const permisos = await obtenerPermisosUsuario(session.userId);
-  const grupos = await buscarGlobal(q, permisos);
+  const grupos = await buscarGlobal(q, permisos, session.userId);
   return NextResponse.json({ grupos });
 }

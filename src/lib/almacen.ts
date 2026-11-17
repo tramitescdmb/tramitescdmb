@@ -1,22 +1,13 @@
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
-import { createClient } from "@supabase/supabase-js";
 
 export const BUCKETS_PUBLICOS = new Set(["branding"]);
 const BUCKETS_VALIDOS = new Set(["documentos", "branding"]);
 
+/** Los archivos viven siempre en el NAS (ALMACEN_LOCAL_DIR). */
 export function almacenLocal(): string | null {
   return process.env.ALMACEN_LOCAL_DIR?.trim() || null;
-}
-
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error("Supabase no está configurado (faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)");
-  }
-  return createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 function secreto(): string {
@@ -93,75 +84,61 @@ export function tipoPorExtension(ruta: string): string {
 }
 
 export async function subir(bucket: string, ruta: string, contenido: Buffer, contentType: string, upsert = false) {
-  if (almacenLocal()) {
-    const destino = rutaFisica(bucket, ruta);
-    await fs.mkdir(path.dirname(destino), { recursive: true });
-    await fs.writeFile(destino, contenido, { flag: upsert ? "w" : "wx" });
-    return;
-  }
-  const { error } = await supabaseAdmin().storage.from(bucket).upload(ruta, contenido, { contentType, upsert });
-  if (error) throw error;
+  void contentType;
+  const destino = rutaFisica(bucket, ruta);
+  await fs.mkdir(path.dirname(destino), { recursive: true });
+  await fs.writeFile(destino, contenido, { flag: upsert ? "w" : "wx" });
 }
 
-export async function firmarSubida(bucket: string, ruta: string): Promise<{ path: string; token: string }> {
-  if (almacenLocal()) {
-    const exp = String(Math.floor(Date.now() / 1000) + 2 * 3600);
-    const r = limpiar(ruta);
-    return { path: r, token: `${exp}.${firmar("subir", bucket, r, exp)}` };
+/** `topeMb` amplía, solo para esta subida, el tope por archivo del almacenamiento local (lo firma el servidor). */
+export async function firmarSubida(bucket: string, ruta: string, topeMb?: number): Promise<{ path: string; token: string }> {
+  const exp = String(Math.floor(Date.now() / 1000) + 2 * 3600);
+  const r = limpiar(ruta);
+  if (topeMb && topeMb > 0) {
+    const mb = String(Math.floor(topeMb));
+    return { path: r, token: `${exp}.${mb}.${firmar("subir", bucket, r, exp, mb)}` };
   }
-  const { data, error } = await supabaseAdmin().storage.from(bucket).createSignedUploadUrl(ruta);
-  if (error) throw error;
-  return { path: data.path, token: data.token };
+  return { path: r, token: `${exp}.${firmar("subir", bucket, r, exp)}` };
 }
 
 export async function urlFirmada(bucket: string, ruta: string, segundos: number, descargar?: string): Promise<string> {
-  if (almacenLocal()) {
-    const r = limpiar(ruta);
-    const exp = String(Math.floor(Date.now() / 1000) + segundos);
-    const u = new URL(`${urlBase()}/api/almacen/${bucket}/${codificar(r)}`);
-    u.searchParams.set("exp", exp);
-    if (descargar) u.searchParams.set("descargar", descargar);
-    u.searchParams.set("firma", firmar("leer", bucket, r, exp, descargar ?? ""));
-    return u.toString();
-  }
-  const { data, error } = await supabaseAdmin()
-    .storage.from(bucket)
-    .createSignedUrl(ruta, segundos, descargar ? { download: descargar } : undefined);
-  if (error || !data) throw error ?? new Error("No se pudo firmar la URL del archivo.");
-  return data.signedUrl;
+  rutaFisica(bucket, ruta); // valida el bucket y la ruta
+  const r = limpiar(ruta);
+  const exp = String(Math.floor(Date.now() / 1000) + segundos);
+  const u = new URL(`${urlBase()}/api/almacen/${bucket}/${codificar(r)}`);
+  u.searchParams.set("exp", exp);
+  if (descargar) u.searchParams.set("descargar", descargar);
+  u.searchParams.set("firma", firmar("leer", bucket, r, exp, descargar ?? ""));
+  return u.toString();
 }
 
 export function urlPublica(bucket: string, ruta: string): string {
-  if (almacenLocal()) return `${urlBase()}/api/almacen/${bucket}/${codificar(ruta)}`;
-  return supabaseAdmin().storage.from(bucket).getPublicUrl(ruta).data.publicUrl;
+  return `${urlBase()}/api/almacen/${bucket}/${codificar(ruta)}`;
 }
 
 export async function descargar(bucket: string, ruta: string): Promise<Buffer> {
-  if (almacenLocal()) return fs.readFile(rutaFisica(bucket, ruta));
-  const { data, error } = await supabaseAdmin().storage.from(bucket).download(ruta);
-  if (error || !data) throw error ?? new Error("No se pudo descargar el documento");
-  return Buffer.from(await data.arrayBuffer());
+  return fs.readFile(rutaFisica(bucket, ruta));
+}
+
+/** true si el archivo está guardado en el NAS. */
+export async function existe(bucket: string, ruta: string): Promise<boolean> {
+  try {
+    return (await fs.stat(rutaFisica(bucket, ruta))).isFile();
+  } catch {
+    return false;
+  }
 }
 
 export async function eliminar(bucket: string, rutas: string[]) {
   if (rutas.length === 0) return;
-  if (almacenLocal()) {
-    for (const r of rutas) await fs.rm(rutaFisica(bucket, r), { force: true });
-    return;
-  }
-  const { error } = await supabaseAdmin().storage.from(bucket).remove(rutas);
-  if (error) throw error;
+  for (const r of rutas) await fs.rm(rutaFisica(bucket, r), { force: true });
 }
 
 export async function listar(bucket: string, carpeta: string): Promise<string[]> {
-  if (almacenLocal()) {
-    try {
-      const items = await fs.readdir(rutaFisica(bucket, carpeta), { withFileTypes: true });
-      return items.filter((i) => i.isFile()).map((i) => i.name);
-    } catch {
-      return [];
-    }
+  try {
+    const items = await fs.readdir(rutaFisica(bucket, carpeta), { withFileTypes: true });
+    return items.filter((i) => i.isFile()).map((i) => i.name);
+  } catch {
+    return [];
   }
-  const { data } = await supabaseAdmin().storage.from(bucket).list(carpeta, { limit: 100 });
-  return (data ?? []).map((f) => f.name);
 }

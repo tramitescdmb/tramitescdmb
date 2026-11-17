@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoTramite } from "@/lib/permisos";
-import { asignarFirmantes } from "@/lib/solicitudes-firma";
+import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoTramite, puedeVerExpedienteTramite } from "@/lib/permisos";
+import { asignarFirmantes, quitarFirmantePendiente } from "@/lib/solicitudes-firma";
 import type { RolFirmante, CalidadFirma } from "@prisma/client";
 import { esCalidadFirma } from "@/lib/calidad-firma";
 
@@ -17,8 +17,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No tiene permiso para asignar firmantes." }, { status: 403 });
   }
 
-  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true } });
+  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true, expediente: { select: { id: true, tramiteTipoId: true } } } });
   if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  // Asignar firmantes (también "solo lectura") da acceso al documento: exige ver ese trámite.
+  if (!puedeVerExpedienteTramite(permisos, doc.expediente)) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => null);
   const firmantesBody = Array.isArray(body?.firmantes) ? body.firmantes : null;
@@ -46,5 +50,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo asignar." }, { status: 400 });
+  }
+}
+
+/** Quita a un firmante pendiente (?solicitudId=…), con motivo en el cuerpo: { "motivo": "…" }. */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAsignarFirmantesDocumentoTramite(permisos)) {
+    return NextResponse.json({ error: "No tiene permiso para asignar firmantes." }, { status: 403 });
+  }
+  const doc = await db.expedienteDocumento.findUnique({ where: { id }, select: { id: true, expediente: { select: { id: true, tramiteTipoId: true } } } });
+  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (!puedeVerExpedienteTramite(permisos, doc.expediente)) {
+    return NextResponse.json({ error: "Su rol de acceso no le permite ver este trámite." }, { status: 403 });
+  }
+  const solicitudId = req.nextUrl.searchParams.get("solicitudId") ?? "";
+  const body = await req.json().catch(() => null);
+  const motivo = typeof body?.motivo === "string" ? body.motivo.slice(0, 500) : "";
+  try {
+    await quitarFirmantePendiente({ tipo: "documentoExpediente", id }, solicitudId, session.userId, motivo);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo quitar al firmante." }, { status: 400 });
   }
 }

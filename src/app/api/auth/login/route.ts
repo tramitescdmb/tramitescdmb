@@ -182,10 +182,12 @@ export async function POST(req: NextRequest) {
       emailIntento: identidad,
     });
     if (intentosFallidosRecientes + 1 >= maxIntentosFallidos) {
-      await db.usuario.update({ where: { id: usuario.id }, data: { activo: false, estadoCuenta: "BLOQUEADA" } });
+      // Bloqueo temporal: la cuenta no se desactiva. Durante la ventana configurada se rechazan los
+      // intentos (ver el conteo al inicio) y luego vuelve a permitir el ingreso. Antes la cuenta quedaba
+      // inactiva, y como este ingreso es solo del administrador, cualquiera podía dejarlo por fuera.
       await registrarAuditoria({
         tipo: "USUARIO_BLOQUEADO",
-        descripcion: `Cuenta "${identidad}" bloqueada automáticamente tras ${intentosFallidosRecientes + 1} intentos fallidos. Un administrador debe habilitarla de nuevo.`,
+        descripcion: `Ingreso de "${identidad}" bloqueado ${ventanaMinutos} minutos tras ${intentosFallidosRecientes + 1} intentos fallidos.`,
         usuarioId: usuario.id,
         emailIntento: identidad,
       });

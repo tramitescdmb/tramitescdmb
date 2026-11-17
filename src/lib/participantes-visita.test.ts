@@ -55,3 +55,16 @@ describe("participantes de la visita", () => {
     expect(participantesEfectivos([], "p")).toEqual([{ usuarioId: "p", rol: "ELABORA" }]);
   });
 });
+
+describe("validarParticipantes — firmante principal", () => {
+  const nombres = new Map([["k", "Kevin"], ["f", "Fabiola"]]);
+  const permitidos = new Set(["k", "f"]);
+  it("exige un aprobador cuando quien elabora es contratista", () => {
+    expect(validarParticipantes([{ usuarioId: "k", rol: "ELABORA" }], { permitidos, contratistas: new Set(["k"]), nombres })).toMatch(/Aprueba/);
+  });
+  it("con un funcionario que aprueba, el contratista puede elaborar", () => {
+    expect(
+      validarParticipantes([{ usuarioId: "k", rol: "ELABORA" }, { usuarioId: "f", rol: "APRUEBA" }], { permitidos, contratistas: new Set(["k"]), nombres })
+    ).toBeNull();
+  });
+});

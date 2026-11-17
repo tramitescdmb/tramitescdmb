@@ -7,6 +7,7 @@ import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 import { mensajeSoloEnModulo } from "@/lib/archivo-central";
+import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
 
 type DocumentoSubido = { path: string; nombre: string; mimeType: string; tamanoBytes: number; hashSha256: string | null };
 
@@ -28,6 +29,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (documentos.length === 0) return NextResponse.json({ error: "No se recibió ningún documento." }, { status: 400 });
   const errLote = validarLoteDocumentosSGDEA(documentos);
   if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
+  if (documentos.some((d) => d?.path && !rutaDeExpediente(d.path, id))) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
+  }
   const fechaDocumentoRaw = typeof body?.fechaDocumento === "string" ? body.fechaDocumento : "";
   const fechaDocumento = fechaDocumentoRaw ? parsearFechaLocal(fechaDocumentoRaw) : null;
   const tipoDocumentalId = typeof body?.tipoDocumentalId === "string" && body.tipoDocumentalId ? body.tipoDocumentalId : null;

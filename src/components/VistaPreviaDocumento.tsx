@@ -36,7 +36,7 @@ export function VistaPreviaDocumento({
           title={`Ampliar ${nombre}`}
           className="flex-none overflow-hidden rounded-md border border-stone-200 hover:border-cdmb-400"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada de Supabase, no /public */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada del NAS, no /public */}
           <img src={url} alt={`Miniatura de ${nombre}`} loading="lazy" className="h-12 w-12 object-cover" />
         </button>
       )}
@@ -88,7 +88,7 @@ export function VistaPreviaDocumento({
               {esPdf && <iframe src={url} title={nombre} className="h-full min-h-[70vh] w-full" />}
               {esImagen && (
                 <div className="flex h-full items-center justify-center p-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- viene de una URL firmada externa (Supabase), no de /public */}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- viene de una URL firmada del NAS, no de /public */}
                   <img src={url} alt={nombre} className="max-h-full max-w-full object-contain" />
                 </div>
               )}

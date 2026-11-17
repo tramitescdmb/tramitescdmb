@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
 import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
+import { esRequisitoPlano } from "@/lib/uploads-config";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
@@ -237,7 +238,7 @@ export function NuevoExpedienteForm({
         const file = archivosPorDoc[doc.id];
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
-          const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
+          const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true, requisitoPlanoId: esRequisitoPlano(doc.nombre) ? doc.id : undefined });
           documentos.push({ ...subido, hashSha256: await sha256Hex(file), descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre, documentoRequeridoId: doc.id });
         }
       }

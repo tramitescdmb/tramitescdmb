@@ -930,6 +930,10 @@ model VisitaTecnica {
   finalizadaPor       Usuario?               @relation("VisitaTecnicaFinalizadaPor", fields: [finalizadaPorId], references: [id])
   estadoRevision      EstadoRevisionConcepto @default(BORRADOR)
   revisiones          RevisionConcepto[]
+  /// Concepto en borrador descartado (no se terminará): no bloquea el cierre del expediente.
+  conceptoDescartadoEn    DateTime?
+  conceptoDescartadoPorId String?
+  motivoDescarteConcepto  String?                @db.Text
 
   formatoVersion   FormatoVisitaVersion? @relation(fields: [formatoVersionId], references: [id])
   expediente       Expediente            @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
@@ -979,6 +983,7 @@ enum AccionRevisionConcepto {
   DEVOLUCION
   APROBACION
   REAPERTURA
+  DESCARTE
 }
 
 model RevisionConcepto {

@@ -126,9 +126,11 @@ export function parseConsultaBusqueda(q: string): { texto: string; excluir: bool
 
 export function construirWhereCorrespondencia(
   f: FiltrosCorrespondencia,
-  rango: RangoPeriodo = null
+  rango: RangoPeriodo = null,
+  acceso: Prisma.ComunicacionWhereInput | null = null
 ): Prisma.ComunicacionWhereInput {
   const and: Prisma.ComunicacionWhereInput[] = [];
+  if (acceso) and.push(acceso);
   if (esTipoValido(f.tipo)) and.push({ tipo: f.tipo });
   if (f.tipo === "EXTERNA") and.push({ tipo: { in: ["RECIBIDA", "ENVIADA"] } });
   if (f.asignadas === "mi" && f.usuarioId) {
@@ -185,10 +187,10 @@ export async function getComunicacionesSinClasificar(limite = 100) {
   return { total, filas };
 }
 
-export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia, rango: RangoPeriodo = null) {
+export async function getCorrespondenciaListado(filtros: FiltrosCorrespondencia, rango: RangoPeriodo = null, acceso: Prisma.ComunicacionWhereInput | null = null) {
   const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
   const { porPagina, vista } = parsePorPagina(filtros.vista);
-  const where = construirWhereCorrespondencia(filtros, rango);
+  const where = construirWhereCorrespondencia(filtros, rango, acceso);
   const q = filtros.q?.trim();
 
   const orden = esOrdenValido(filtros.orden) ? filtros.orden : "fecha_desc";

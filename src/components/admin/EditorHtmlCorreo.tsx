@@ -20,7 +20,7 @@ import {
   Underline,
   Upload,
 } from "lucide-react";
-import { subirAUrlFirmada } from "@/lib/supabase-browser";
+import { subirAUrlFirmada } from "@/lib/almacen-cliente";
 
 export type EditorHtmlHandle = { insertar: (texto: string) => void };
 

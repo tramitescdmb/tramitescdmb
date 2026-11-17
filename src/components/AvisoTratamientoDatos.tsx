@@ -38,7 +38,7 @@ export function AvisoTratamientoDatos({ abierto }: { abierto: boolean }) {
         <div className="space-y-3 text-sm leading-relaxed text-graphite-700">
           <p>
             Al hacer clic en «Autorizar y aceptar», usted acepta la versión vigente de los{" "}
-            <a href="https://www.cdmb.gov.co/politicas-y-lineamientos/terminos-y-condiciones-de-uso" target="_blank" rel="noopener noreferrer" className="font-medium text-cdmb-700 hover:underline">Términos y condiciones</a> de Trámites CDMB.
+            <a href="https://www.cdmb.gov.co/politicas-y-lineamientos/terminos-y-condiciones-de-uso" target="_blank" rel="noopener noreferrer" className="font-medium text-cdmb-700 hover:underline">Términos y condiciones</a> de SIC CDMB.
           </p>
           <p>
             Así mismo, autoriza a la Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga (CDMB) a

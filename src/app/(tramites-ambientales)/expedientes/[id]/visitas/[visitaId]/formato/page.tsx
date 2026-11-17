@@ -47,6 +47,8 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           conceptoFecha: true,
           finalizadaEn: true,
           estadoRevision: true,
+          conceptoDescartadoEn: true,
+          motivoDescarteConcepto: true,
           revisiones: { orderBy: { createdAt: "asc" }, select: { id: true, accion: true, comentario: true, createdAt: true, usuario: { select: { nombre: true } } } },
           documentoConceptoId: true,
           documentoConcepto: {
@@ -74,10 +76,12 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
   const [precarga, config] = await Promise.all([precargaDeVisita(visita.id, vt.inicioReal ?? vt.capturadoEn), getConfiguracionSitio()]);
   const f = vt.formatoVersion.formato;
   const puedeAsignar =
+    !vt.conceptoDescartadoEn &&
     !vt.conceptoNumero && (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId) && (session.userId === visita.profesionalId || puedeEditarTramite(permisos, visita.expediente.tramiteTipoId));
   const { lista, porId } = await equipoDeVisita(visita.id, visita.profesionalId);
   const firmantesDoc = firmantesParaDocumento(lista, porId);
   const correccion = await accesoCorreccionConcepto(visita.id, session.userId, puedePlanearVisitas(permisos));
+  const descartado = Boolean(vt.conceptoDescartadoEn);
   const puedeCorregir = !("error" in correccion);
   const firmasConcepto = (vt.documentoConcepto?.solicitudesFirma ?? []).filter((s) => s.rol !== "LECTURA");
   const puedeReabrir =
@@ -113,6 +117,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
     faltan.some((f) => f.estado === "TURNO" && f.usuarioId !== session.userId) &&
     (puedePlanearVisitas(permisos) || session.userId === visita.profesionalId || lista.some((p) => p.usuarioId === session.userId));
   const puedeFinalizar =
+    !descartado &&
     Boolean(vt.conceptoNumero) &&
     !vt.finalizadaEn &&
     puedeFinalizarSegunRevision(vt.estadoRevision) &&
@@ -123,8 +128,9 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
     finalizadaEn: vt.finalizadaEn,
     firmado: firmasConcepto.length > 0 && firmasConcepto.every((s) => s.estado === "COMPLETADA"),
   });
-  const puedeEnviarRevision = puedeCorregir && puedeEnviarARevision(vt.estadoRevision, Boolean(vt.finalizadaEn));
-  const puedeDevolverRevision = !vt.finalizadaEn && vt.estadoRevision === "EN_REVISION" && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+  const puedeEnviarRevision = !descartado && puedeCorregir && puedeEnviarARevision(vt.estadoRevision, Boolean(vt.finalizadaEn));
+  const puedeDevolverRevision = !descartado && !vt.finalizadaEn && vt.estadoRevision === "EN_REVISION" && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
+  const puedeDescartar = !descartado && !vt.finalizadaEn && puedePlanearVisitas(permisos) && puedeEditarTramite(permisos, visita.expediente.tramiteTipoId);
 
   return (
     <div className="space-y-3">
@@ -135,7 +141,7 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           Hoja de visita · {visita.expediente.numero}
         </Link>
         <span className="flex flex-wrap items-start gap-2">
-          <AccionesRevisionConcepto visitaId={visita.id} puedeEnviar={puedeEnviarRevision} puedeDevolver={puedeDevolverRevision} />
+          <AccionesRevisionConcepto visitaId={visita.id} puedeEnviar={puedeEnviarRevision} puedeDevolver={puedeDevolverRevision} puedeDescartar={puedeDescartar} />
           {puedeCorregir && (
             <Link href={`/expedientes/${id}/visitas/${visita.id}/formato/corregir`} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
               <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -166,6 +172,11 @@ export default async function FormatoVisitaDiligenciadoPage({ params }: { params
           )}
         </span>
       </div>
+      {descartado && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 print:hidden">
+          Concepto descartado el {formatearFechaHora(vt.conceptoDescartadoEn!)}: {vt.motivoDescarteConcepto}. Queda como constancia en el expediente y no se puede editar, revisar ni firmar.
+        </p>
+      )}
       <LineaEstadoConcepto etapa={etapa} revisiones={vt.revisiones} />
 
       {vt.documentoConcepto && (
