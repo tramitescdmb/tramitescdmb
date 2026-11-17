@@ -17,7 +17,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Trámites CDMB",
+  title: "SIC CDMB",
   description: "Gestión de trámites ambientales de la CDMB",
 };
 

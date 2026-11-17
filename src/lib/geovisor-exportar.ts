@@ -215,7 +215,7 @@ export function htmlReporte(opts: {
     .join("\n");
 
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>${esc(titulo)} — Trámites CDMB</title>
+<title>${esc(titulo)} — SIC CDMB</title>
 <style>
   body{font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif;color:#1a1a1a;max-width:900px;margin:24px auto;padding:0 16px}
   h1{font-size:20px;margin:0 0 4px} .sub{color:#666;margin:0 0 20px}
