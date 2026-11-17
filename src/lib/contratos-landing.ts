@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { puedeGestionarContratistas, tieneRolContratacion, type PermisosUsuario, esPersonalContratacion } from "@/lib/permisos";
+import { puedeGestionarContratistas, type PermisosUsuario, esPersonalContratacion } from "@/lib/permisos";
 import { listarBuzon } from "@/lib/solicitudes-firma";
 import { hoyColombia } from "@/lib/contratacion-panel";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
