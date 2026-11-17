@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ETIQUETA_MODALIDAD } from "@/lib/contratacion-etiquetas";
 import type { PermisosUsuario } from "@/lib/permisos";

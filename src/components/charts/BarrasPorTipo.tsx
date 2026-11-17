@@ -1,4 +1,4 @@
-import type { TipoComunicacion } from "@prisma/client";
+import type { TipoComunicacion } from "@/generated/prisma/client";
 
 const COLOR_TIPO: Record<TipoComunicacion, string> = {
   RECIBIDA: "#038f67",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { EtapaContratacion, RolContratacion } from "@prisma/client";
+import type { EtapaContratacion, RolContratacion } from "@/generated/prisma/client";
 import * as P from "@/lib/permisos";
 import { PERFILES_SEMILLA, matrizSemilla, permisosDeReferencia } from "@/lib/perfiles-equivalencia";
 import type { Matriz } from "@/lib/perfiles-catalogo";

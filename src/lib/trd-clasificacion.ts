@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import type { SerieBuscable } from "@/components/BuscadorSubserieTRD";
-import type { ModalidadSeleccion } from "@prisma/client";
+import type { ModalidadSeleccion } from "@/generated/prisma/client";
 
 // Mismo catálogo que ya usan los formularios de radicar del SGDEA (BuscadorSubserieTRD) — un solo
 // origen de datos para el selector en cascada dependencia → serie → subserie en toda la aplicación.

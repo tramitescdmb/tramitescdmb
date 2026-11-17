@@ -1,19 +1,22 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
   {
-    ignores: [".next/**", "node_modules/**", "next-env.d.ts"],
+    // Reglas nuevas de eslint-plugin-react-hooks 7 (llegan con eslint-config-next 16, pensadas para
+    // el React Compiler, que aquí NO se usa). Marcan patrones que ya existían y funcionan; se dejan
+    // como aviso para corregirlos con calma en un cambio aparte, no de golpe en la actualización.
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/immutability": "warn",
+    },
   },
-];
+  globalIgnores([".next/**", "node_modules/**", "next-env.d.ts", "src/generated/**"]),
+]);
 
 export default eslintConfig;

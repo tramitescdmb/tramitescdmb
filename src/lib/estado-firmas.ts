@@ -1,4 +1,4 @@
-import type { EstadoSolicitudFirma } from "@prisma/client";
+import type { EstadoSolicitudFirma } from "@/generated/prisma/client";
 
 export type SolicitudParaEstado = {
   estado: EstadoSolicitudFirma;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
 import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { randomInt } from "node:crypto";
-import type { TipoPQRSD, TipoSolicitante } from "@prisma/client";
+import type { TipoPQRSD, TipoSolicitante } from "@/generated/prisma/client";
 import { entradaTerceroDesdePersona, radicarRecibida, type EntradaDocumento } from "@/lib/correspondencia";
 import { leerDatosPersona } from "@/lib/datos-persona";
 import { validarLoteDocumentosSGDEA, MAX_ARCHIVOS_LOTE } from "@/lib/uploads-sgdea";

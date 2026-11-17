@@ -1,4 +1,4 @@
-import type { EstadoRequisitoMoreq } from "@prisma/client";
+import type { EstadoRequisitoMoreq } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import semilla from "../../data/sgdea/matriz-moreq.json";
 

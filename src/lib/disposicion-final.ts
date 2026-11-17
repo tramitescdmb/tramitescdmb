@@ -1,4 +1,4 @@
-import type { DisposicionFinal } from "@prisma/client";
+import type { DisposicionFinal } from "@/generated/prisma/client";
 
 export function sumarAnios(fecha: Date, anios: number): Date {
   const d = new Date(fecha);

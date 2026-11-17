@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { EstadoExpediente } from "@prisma/client";
+import { EstadoExpediente } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeGestionarPaso } from "@/lib/cargos";

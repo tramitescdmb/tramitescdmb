@@ -1,4 +1,4 @@
-import type { NivelAccesoInformacion } from "@prisma/client";
+import type { NivelAccesoInformacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { cancelarFlujosDeObjeto } from "@/lib/flujos";

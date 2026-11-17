@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ModuloAplicativo, NivelAccesoTramite, SeccionSoloLectura } from "@prisma/client";
+import type { ModuloAplicativo, NivelAccesoTramite, SeccionSoloLectura } from "@/generated/prisma/client";
 import * as P from "@/lib/permisos";
 import { PERFILES_SEMILLA, matrizSemilla, permisosDeReferencia, type PerfilSemilla } from "@/lib/perfiles-equivalencia";
 

@@ -7,7 +7,7 @@ import { expedienteEnEjecucion, fechaHoraColombia } from "@/lib/planeador";
 import { rangoTexto } from "@/lib/planeador-db";
 import { codigoProcedimiento, normalizarNombreTema } from "@/lib/temas-visita";
 import { resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { errorRespuestas, sanearRespuestas, type Respuestas } from "@/lib/formato-visita";
 import { estructuraDesdeJson, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";

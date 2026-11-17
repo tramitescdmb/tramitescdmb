@@ -1,4 +1,4 @@
-import type { ModuloAplicativo, NivelAccesoTramite, RolContratacion, RolCorrespondencia, SeccionSoloLectura } from "@prisma/client";
+import type { ModuloAplicativo, NivelAccesoTramite, RolContratacion, RolCorrespondencia, SeccionSoloLectura } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { sincronizarContratistaDeUsuario, vincularSupervisionesDeUsuario } from "@/lib/contratacion";
 import { asegurarPerfilesIniciales, matrizDePerfil } from "@/lib/perfiles";

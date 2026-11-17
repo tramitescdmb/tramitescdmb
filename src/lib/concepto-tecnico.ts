@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { fechaLarga } from "@/lib/formato-visita";
 import { partesColombia } from "@/lib/planeador";

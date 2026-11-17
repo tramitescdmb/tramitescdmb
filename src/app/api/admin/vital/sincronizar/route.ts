@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         resultados[idTramite] = { error: err instanceof Error ? err.message : String(err) };
       }
     }
-    if (!probe) revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
+    if (!probe) revalidateTag(ETIQUETA_CACHE_VISOR_VITAL, { expire: 0 });
     return { ok, ventana: { desde, hasta }, descubiertos, resultados };
   });
   return NextResponse.json(cuerpo, { status: cuerpo.ok ? 200 : 500 });
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       total += resultado.total;
       errores.push(...resultado.errores);
     }
-    revalidateTag(ETIQUETA_CACHE_VISOR_VITAL);
+    revalidateTag(ETIQUETA_CACHE_VISOR_VITAL, { expire: 0 });
     await registrarAuditoria({
       tipo: "CONFIGURACION_ACTUALIZADA",
       descripcion: `${session.nombre} sincronizó VITAL (${todos ? `todos los trámites (${tramites.length})` : `trámite ${idTramiteRaw}`}, ${fechaInicio}–${fechaFin}): ${total} solicitudes${errores.length ? `, ${errores.length} con error` : ""}.`,

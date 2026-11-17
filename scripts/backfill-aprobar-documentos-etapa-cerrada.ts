@@ -1,3 +1,4 @@
+import "../src/lib/cargar-env";
 import { db } from "../src/lib/db";
 
 async function main() {

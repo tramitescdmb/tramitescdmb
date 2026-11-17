@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ModuloAplicativo, RolContratacion } from "@prisma/client";
+import type { ModuloAplicativo, RolContratacion } from "@/generated/prisma/client";
 import { puedeAccederFirmasTramite, puedeEditarTramite, puedeVerExpedienteTramite, type PermisosUsuario } from "./permisos";
 import { construirWhereExpedientes } from "./expedientes";
 

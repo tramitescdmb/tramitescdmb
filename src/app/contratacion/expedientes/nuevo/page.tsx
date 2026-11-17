@@ -11,7 +11,7 @@ import { TituloSeccion } from "@/components/sgdea/ui";
 import { FilePlus2 } from "lucide-react";
 import { NuevoExpedienteContractualForm } from "@/components/NuevoExpedienteContractualForm";
 import { listarTopesCuantia } from "@/lib/contratacion";
-import type { RolContratacion } from "@prisma/client";
+import type { RolContratacion } from "@/generated/prisma/client";
 
 async function personasConRol(rol: RolContratacion) {
   return db.usuario.findMany({

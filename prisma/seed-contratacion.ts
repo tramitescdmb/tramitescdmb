@@ -1,4 +1,5 @@
-import { type ModalidadSeleccion, type EtapaContratacion, type Prisma } from "@prisma/client";
+import "../src/lib/cargar-env";
+import { type ModalidadSeleccion, type EtapaContratacion, type Prisma } from "@/generated/prisma/client";
 import { crearPrismaClient } from "../src/lib/db";
 import requisitosJson from "../data/contratacion/requisitos.json";
 

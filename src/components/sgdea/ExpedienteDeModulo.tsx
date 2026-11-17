@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, ChevronDown, Download, ExternalLink, FileText, History, Inbox, Lock, Printer, RotateCcw, ShieldCheck } from "lucide-react";
-import type { EstadoExpedienteDocumental, NivelAccesoInformacion, OrigenExpedienteDocumental } from "@prisma/client";
+import type { EstadoExpedienteDocumental, NivelAccesoInformacion, OrigenExpedienteDocumental } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";

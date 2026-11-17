@@ -1,4 +1,4 @@
-import type { NivelAccesoInformacion, OrigenExpedienteDocumental } from "@prisma/client";
+import type { NivelAccesoInformacion, OrigenExpedienteDocumental } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export const ETIQUETA_ORIGEN_EXPEDIENTE: Record<OrigenExpedienteDocumental, string> = {

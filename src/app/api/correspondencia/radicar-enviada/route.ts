@@ -7,7 +7,7 @@ import { entradaTerceroDesdePersona, radicarEnviada, type EntradaDocumento } fro
 import { leerDatosPersona } from "@/lib/datos-persona";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import type { MedioComunicacion } from "@prisma/client";
+import type { MedioComunicacion } from "@/generated/prisma/client";
 
 const MEDIOS: MedioComunicacion[] = ["FISICO", "CORREO_ELECTRONICO", "WEB", "FAX", "PRESENCIAL", "TELEFONICO", "OTRO"];
 

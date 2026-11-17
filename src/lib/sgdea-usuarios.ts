@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { obtenerModulosPorPerfil } from "@/lib/permisos";
 
 export async function whereAccesoSgdea(): Promise<Prisma.UsuarioWhereInput> {

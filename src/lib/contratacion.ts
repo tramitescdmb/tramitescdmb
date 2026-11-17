@@ -23,7 +23,7 @@ import { dataUsuarioDesdePersona, personaDesdeUsuario, SELECT_PERSONA_USUARIO } 
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { cancelarFlujosDeObjeto, iniciarFlujoAutomaticoEnObjeto } from "@/lib/flujos";
 import type { PermisosUsuario } from "@/lib/permisos";
-import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolFirmante, EstadoSolicitudFirma, CalidadFirma, Prisma, TipoContratoEstatal, CausalContratacionDirecta } from "@/generated/prisma/client";
 import { errorCombinacionContrato } from "@/lib/compatibilidad-modalidad";
 import { errorCuantia, type TopeCuantia } from "@/lib/cuantias";
 import {

@@ -5,7 +5,7 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { construirWhereBitacora, ETIQUETA_ACCION_BITACORA, ACCIONES_BITACORA } from "@/lib/correspondencia-bitacora";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { interpretarUserAgent } from "@/lib/user-agent";
-import type { AccionAuditoriaDoc } from "@prisma/client";
+import type { AccionAuditoriaDoc } from "@/generated/prisma/client";
 
 const LIMITE_MAXIMO = 5000;
 

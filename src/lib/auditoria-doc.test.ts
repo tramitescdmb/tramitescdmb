@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calcularHashAuditoria, verificarCadenaFilas, type FilaHasheable } from "./auditoria-doc";
-import type { AccionAuditoriaDoc } from "@prisma/client";
+import type { AccionAuditoriaDoc } from "@/generated/prisma/client";
 
 type Fila = {
   secuencia: number;

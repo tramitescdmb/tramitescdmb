@@ -1,5 +1,5 @@
 import { anioColombia } from "@/lib/fecha";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatearRadicado, generarConsecutivo } from "@/lib/radicado";
 import { claveConcepto, SERIE_CONCEPTO } from "@/lib/concepto-tecnico";

@@ -2,7 +2,7 @@ import { errorCombinacionContrato, esCausalContratacionDirecta } from "@/lib/com
 import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { NextRequest, NextResponse } from "next/server";
 import { esTipoContrato } from "@/lib/tipo-contrato";
-import type { ModalidadSeleccion } from "@prisma/client";
+import type { ModalidadSeleccion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, esPersonalContratacion } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeCrearExpedienteContractual, puedeAsignarPersonalContrato } from "@/lib/permisos";

@@ -1,4 +1,4 @@
-import type { Prisma, RolContratacion } from "@prisma/client";
+import type { Prisma, RolContratacion } from "@/generated/prisma/client";
 import { obtenerModulosPorPerfil } from "@/lib/permisos";
 
 export async function whereDesignacionGecon(rol: RolContratacion): Promise<Prisma.UsuarioWhereInput> {

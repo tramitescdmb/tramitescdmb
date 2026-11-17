@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import type { EtapaContratacion, ModalidadSeleccion } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion } from "@/generated/prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarCatalogoContratacion } from "@/lib/permisos";
 import { listarCatalogoRequisitos, crearRequisitoCatalogo, ETAPAS_ORDEN, TAG_CATALOGO_REQUISITOS } from "@/lib/contratacion";
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       fuente: typeof body.fuente === "string" ? body.fuente : null,
       obligatorio: Boolean(body.obligatorio),
     });
-    revalidateTag(TAG_CATALOGO_REQUISITOS);
+    revalidateTag(TAG_CATALOGO_REQUISITOS, { expire: 0 });
     return NextResponse.json({ id: requisito.id }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo crear el requisito." }, { status: 400 });

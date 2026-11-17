@@ -4,7 +4,7 @@ import { ETIQUETA_APLICA_TIPO, type AplicaTipoContrato } from "@/lib/tipo-contra
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowDown, Pencil, Trash2, Plus, X } from "lucide-react";
-import type { EtapaContratacion, ModalidadSeleccion } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion } from "@/generated/prisma/browser";
 import { ETAPAS_ORDEN, ETIQUETA_ETAPA, ETIQUETA_MODALIDAD, ORDEN_MODALIDADES } from "@/lib/contratacion-etiquetas";
 
 export type RequisitoCatalogo = {

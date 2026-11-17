@@ -1,4 +1,4 @@
-import type { TipoActividadPaso, TipoNotificacion } from "@prisma/client";
+import type { TipoActividadPaso, TipoNotificacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { CARGOS_PLANEADOR } from "@/lib/permisos";
 import { expedienteEnEjecucion } from "@/lib/planeador";

@@ -1,3 +1,4 @@
+import "../src/lib/cargar-env";
 import { enriquecerResoluciones } from "../src/lib/sinca-sync";
 
 async function main() {

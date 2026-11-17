@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LogIn, ShieldAlert, UserPlus, CheckCircle2, UserX, Palette, Circle, Lock, UserCog, Trash2, Download, Upload, type LucideIcon, ShieldCheck } from "lucide-react";
-import { TipoAuditoria } from "@prisma/client";
+import { TipoAuditoria } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { SectionHelp } from "@/components/Field";
 import { formatearFechaHora } from "@/lib/fecha";

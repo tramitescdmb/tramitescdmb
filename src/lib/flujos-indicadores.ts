@@ -1,4 +1,4 @@
-import type { EstadoInstanciaFlujo } from "@prisma/client";
+import type { EstadoInstanciaFlujo } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 import { estadoTerminoPaso, objetivoDeInstancia, SELECT_OBJETIVO_FLUJO } from "@/lib/flujos";

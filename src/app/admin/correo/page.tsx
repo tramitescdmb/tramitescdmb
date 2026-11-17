@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { EstadoCorreo, Prisma } from "@prisma/client";
+import type { EstadoCorreo, Prisma } from "@/generated/prisma/client";
 import { Mail, KeyRound, Plus, BellRing, History, Wrench, CheckCircle2, AlertTriangle, Play, RotateCcw, Trash2, LayoutTemplate, PencilLine } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";

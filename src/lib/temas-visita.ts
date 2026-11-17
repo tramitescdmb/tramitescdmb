@@ -1,4 +1,4 @@
-import type { TipoActividadPaso } from "@prisma/client";
+import type { TipoActividadPaso } from "@/generated/prisma/client";
 
 export const TEMAS_VISITA_BASE: { nombre: string; codigos: string[] }[] = [
   { nombre: "Inspección ocular del predio o sitio del proyecto", codigos: [] },

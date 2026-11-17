@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { after } from "next/server";
-import type { EstadoCorreo } from "@prisma/client";
+import type { EstadoCorreo } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { correoConfigurado, prepararEnvio, type ResultadoEnvio } from "@/lib/correo-microsoft";
 import type { ClavePlantilla, Valores } from "@/lib/plantillas-correo-base";

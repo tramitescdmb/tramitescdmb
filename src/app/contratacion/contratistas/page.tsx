@@ -2,7 +2,7 @@ import { ConfirmarVinculaciones } from "@/components/VinculacionContratista";
 import { listarSolicitudesVinculacion } from "@/lib/contratacion";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import { Users, Download } from "lucide-react";
 import { db } from "@/lib/db";

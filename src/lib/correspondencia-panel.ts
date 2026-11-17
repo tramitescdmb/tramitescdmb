@@ -1,4 +1,4 @@
-import type { EstadoComunicacion, TipoComunicacion } from "@prisma/client";
+import type { EstadoComunicacion, TipoComunicacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { puedeDistribuir, puedeAdministrarArchivo, puedeDespachar } from "@/lib/permisos";

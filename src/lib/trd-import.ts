@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { db } from "@/lib/db";
-import type { DisposicionFinal } from "@prisma/client";
+import type { DisposicionFinal } from "@/generated/prisma/client";
 
 export type FilaTrdCsv = {
   dependencia_codigo: string;

@@ -1,6 +1,7 @@
+import "../src/lib/cargar-env";
 import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
-import type { EtapaContratacion } from "@prisma/client";
+import type { EtapaContratacion } from "@/generated/prisma/client";
 import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
 import { calcularPeriodosInforme, etiquetaRangoPeriodo, esRequisitoPorPeriodos } from "../src/lib/periodos-informe";

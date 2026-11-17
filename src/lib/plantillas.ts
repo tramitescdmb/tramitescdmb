@@ -1,4 +1,4 @@
-import type { AmbitoPlantilla } from "@prisma/client";
+import type { AmbitoPlantilla } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export { MARCADORES, contextoBase, aplicarMarcadores, marcadoresPendientes } from "@/lib/plantillas-marcadores";

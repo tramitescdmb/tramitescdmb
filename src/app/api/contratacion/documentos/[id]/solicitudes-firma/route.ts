@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoContrato } from "@/lib/permisos";
 import { asignarFirmantes, quitarFirmantePendiente } from "@/lib/solicitudes-firma";
-import type { RolFirmante, CalidadFirma } from "@prisma/client";
+import type { RolFirmante, CalidadFirma } from "@/generated/prisma/client";
 import { esCalidadFirma } from "@/lib/calidad-firma";
 
 const ROLES_VALIDOS: RolFirmante[] = ["FIRMA", "VISTO_BUENO", "LECTURA"];

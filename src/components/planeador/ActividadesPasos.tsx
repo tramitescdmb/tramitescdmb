@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search, Check, Loader2 } from "lucide-react";
-import type { TipoActividadPaso } from "@prisma/client";
+import type { TipoActividadPaso } from "@/generated/prisma/browser";
 import { ETIQUETA_TIPO_ACTIVIDAD } from "@/lib/temas-visita";
 
 type Paso = { id: string; numero: number; titulo: string; tipoActividad: TipoActividadPaso | null; detectado: TipoActividadPaso; formatoVisitaId: string | null };

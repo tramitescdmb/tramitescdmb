@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import type { AccionVencimientoPaso, AsignacionPaso, TipoPasoFlujo } from "@prisma/client";
+import type { AccionVencimientoPaso, AsignacionPaso, TipoPasoFlujo } from "@/generated/prisma/client";
 
 const ACCIONES_VENCIMIENTO: AccionVencimientoPaso[] = ["NINGUNA", "AVISAR", "AVANZAR"];
 const PESTANA_DE_ACCION: Record<string, string> = {

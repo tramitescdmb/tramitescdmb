@@ -1,13 +1,12 @@
 generator client {
-  provider        = "prisma-client-js"
-  engineType      = "client"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
   previewFeatures = ["relationJoins"]
 }
 
+// La conexión (DATABASE_URL / DIRECT_URL) se configura en prisma.config.ts desde Prisma 7.
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model ConfiguracionSitio {

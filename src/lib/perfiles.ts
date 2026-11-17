@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { MODULOS_PERFIL, normalizarMatriz, matricesIguales, type Matriz, type ModuloPerfil } from "@/lib/perfiles-catalogo";
 import { PERFILES_SEMILLA, matrizSemilla, type PerfilSemilla } from "@/lib/perfiles-equivalencia";

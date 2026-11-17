@@ -5,7 +5,7 @@ import { obtenerPermisosUsuario, puedeSubirDocumentoContrato, puedeSubirEnCualqu
 import { buildStoragePath, crearUrlSubidaFirmada } from "@/lib/storage";
 import { extensionPermitidaEn, mensajeTipoNoPermitidoEn } from "@/lib/uploads-config";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
-import type { EtapaContratacion } from "@prisma/client";
+import type { EtapaContratacion } from "@/generated/prisma/client";
 import { ETAPAS_ORDEN, etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

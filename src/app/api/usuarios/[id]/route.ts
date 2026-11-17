@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta, ModuloAplicativo } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EstadoCuenta, ModuloAplicativo } from "@/generated/prisma/client";
 import { IDS_MODULOS_USUARIO } from "@/lib/modulos-usuario";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";

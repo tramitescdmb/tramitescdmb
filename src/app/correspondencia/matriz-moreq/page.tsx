@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, CircleAlert, CircleDashed, Gauge, History, ListChecks, Search, type LucideIcon } from "lucide-react";
-import type { EstadoRequisitoMoreq } from "@prisma/client";
+import type { EstadoRequisitoMoreq } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import {

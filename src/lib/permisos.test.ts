@@ -26,7 +26,7 @@ import {
   puedeAsignarFirmantesDocumentoContrato,
   type PermisosUsuario,
 } from "./permisos";
-import type { ModuloAplicativo, RolContratacion } from "@prisma/client";
+import type { ModuloAplicativo, RolContratacion } from "@/generated/prisma/client";
 
 const BASE_CONTRATACION = {
   rolesContratacion: new Set<RolContratacion>(),

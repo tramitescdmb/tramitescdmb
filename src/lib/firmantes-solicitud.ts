@@ -1,4 +1,4 @@
-import type { CalidadFirma, RolFirmante } from "@prisma/client";
+import type { CalidadFirma, RolFirmante } from "@/generated/prisma/client";
 import { esCalidadFirma } from "@/lib/calidad-firma";
 
 const ROLES_VALIDOS: RolFirmante[] = ["FIRMA", "VISTO_BUENO", "LECTURA"];

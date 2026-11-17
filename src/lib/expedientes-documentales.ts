@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { generarConsecutivo, formatearRadicado } from "@/lib/radicado";
 import { parsePorPagina } from "@/lib/vista-lista";
 import { puedeGestionarArchivo, type PermisosUsuario } from "@/lib/permisos";
-import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@prisma/client";
+import type { CriterioOrdenExpediente, NivelAccesoInformacion, Prisma } from "@/generated/prisma/client";
 import { descargarDocumento } from "@/lib/storage";
 import { extraerTextoPdf } from "@/lib/texto-pdf";
 import { cancelarFlujosDeObjeto } from "@/lib/flujos";

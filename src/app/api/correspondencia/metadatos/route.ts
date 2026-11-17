@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import type { AmbitoCampoMetadato, TipoCampoMetadato } from "@prisma/client";
+import type { AmbitoCampoMetadato, TipoCampoMetadato } from "@/generated/prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { crearCampoMetadato } from "@/lib/metadatos";

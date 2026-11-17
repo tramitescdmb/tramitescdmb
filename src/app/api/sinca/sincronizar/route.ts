@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   const resultado = await sincronizarResoluciones(`manual:${session.email}`);
-  if (resultado.ok) revalidateTag("sinca-analitica");
+  if (resultado.ok) revalidateTag("sinca-analitica", { expire: 0 });
 
   await registrarAuditoria({
     tipo: "CONFIGURACION_ACTUALIZADA",

@@ -8,7 +8,7 @@ import { leerDatosPersona, TIPOS_IDENTIFICACION_REMITENTE } from "@/lib/datos-pe
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { TERMINO_DIAS_HABILES } from "@/lib/pqrsd";
-import type { MedioComunicacion, TipoPQRSD } from "@prisma/client";
+import type { MedioComunicacion, TipoPQRSD } from "@/generated/prisma/client";
 
 const MEDIOS: MedioComunicacion[] = ["FISICO", "CORREO_ELECTRONICO", "WEB", "FAX", "PRESENCIAL", "TELEFONICO", "OTRO"];
 const TIPOS_PQRSD = Object.keys(TERMINO_DIAS_HABILES) as TipoPQRSD[];

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FolderOpen, FolderCheck, Lock, FileText, Files, Mail } from "lucide-react";
-import type { OrigenExpedienteDocumental } from "@prisma/client";
+import type { OrigenExpedienteDocumental } from "@/generated/prisma/client";
 import { ETIQUETA_NIVEL_ACCESO, CLASE_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import { ETIQUETA_CORTA_ORIGEN, ETIQUETA_ORIGEN_EXPEDIENTE, CLASE_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
 

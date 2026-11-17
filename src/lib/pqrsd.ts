@@ -1,4 +1,4 @@
-import type { TipoPQRSD } from "@prisma/client";
+import type { TipoPQRSD } from "@/generated/prisma/client";
 import { sumarDiasHabiles, diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
 
 export const TERMINO_DIAS_HABILES: Record<TipoPQRSD, number> = {
