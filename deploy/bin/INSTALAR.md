@@ -32,3 +32,19 @@ Qué cambian respecto a la versión anterior:
 - **Avisos:** un despliegue automático que falla sale con error y, con los avisos de
   `deploy/systemd/INSTALAR.md`, llega un correo. Si GitHub no responde por más de 1 hora, avisa una vez.
 - **Copias previas** (`/var/backups/tramites/antes-desplegar-*.dump`): permiso 600 y se borran las de más de 60 días.
+
+## Otros scripts de esta carpeta (se ejecutan como root desde `/opt/tramites/app/deploy/bin/`)
+
+- **`probar-restauracion.sh`**: restaura el último respaldo en una base temporal, compara tablas y filas con
+  producción y la borra. No toca la base real. Conviene correrlo una vez al mes.
+- **`endurecer-vm.sh <red-de-TI>`**: firewall (`ufw`), `fail2ban`, permisos 600 de los respaldos y SSH solo con
+  llave. Sin `--aplicar` solo muestra lo que haría; no apaga las contraseñas si hay menos de 2 llaves registradas.
+- **`limpiar-datos-prueba.sh tramites|gecon|tramites,gecon`**: vista previa de lo que se borraría (por tabla) y,
+  con `--ejecutar`, borrado con copia previa y frase de confirmación. Nunca toca usuarios, catálogos, SINCA,
+  VITAL, SECOP, contratistas, auditoría ni configuración. Se usa una sola vez, antes del lanzamiento.
+
+## Vigilancia externa
+
+`GET /api/salud` responde 200 si la base de datos y el NAS responden, y 503 si falla alguno. Debe consultarla
+desde otro equipo de la CDMB (por ejemplo el monitoreo de TI) cada pocos minutos y avisar si no devuelve 200:
+la alerta por correo la envía la propia plataforma y no avisa si la plataforma o la VM están caídas.

@@ -15,6 +15,7 @@ set -euo pipefail
 APP=/opt/tramites/app
 ESTADO=/opt/tramites
 RESPALDOS=/var/backups/tramites
+REGISTROS=/var/log/tramites
 cd "$APP"
 
 exec 9>/var/lock/tramites-desplegar.lock
@@ -71,7 +72,7 @@ git_app checkout -q -B "$RAMA" "$DESPUES"
 echo "Código: ${ANTES:0:8} -> ${DESPUES:0:8} ($RAMA)"
 
 F=$(date -u +%Y%m%d-%H%M)
-mkdir -p "$RESPALDOS"
+mkdir -p "$RESPALDOS" "$REGISTROS"
 sudo -u postgres pg_dump -Fc -d tramites > "$RESPALDOS/antes-desplegar-$F.dump" || volver_atras "ERROR al copiar la base de datos. Se vuelve a la versión anterior."
 chmod 600 "$RESPALDOS/antes-desplegar-$F.dump"
 
@@ -84,7 +85,7 @@ fi
 
 rm -rf "$ESTADO/.next-anterior"
 if [ -d .next ]; then cp -a .next "$ESTADO/.next-anterior"; COPIA_NEXT=1; fi
-if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && npm run build" > "/tmp/desplegar-$F.log" 2>&1; then
+if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && npm run build" > "$REGISTROS/desplegar-$F.log" 2>&1; then
   systemctl restart tramites
   sleep 5
   CODIGO=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/login || true)
@@ -93,8 +94,9 @@ if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && npm r
   echo "$DESPUES" > "$ESTADO/.desplegado"
   rm -f "$ESTADO/.despliegue-fallido"
 else
-  volver_atras "ERROR en la compilación (ver /tmp/desplegar-$F.log). Se vuelve a la versión anterior."
+  volver_atras "ERROR en la compilación (ver $REGISTROS/desplegar-$F.log). Se vuelve a la versión anterior."
 fi
 
 # Copias previas a un despliegue: se conservan 60 días.
 find "$RESPALDOS" -name 'antes-desplegar-*.dump' -mtime +60 -delete || true
+find "$REGISTROS" -name 'desplegar-*.log' -mtime +60 -delete || true
