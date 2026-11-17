@@ -2,7 +2,7 @@
 
 Espejo de **solo consulta y solo metadatos** de los sistemas de gestión documental
 anteriores de la CDMB. El Oracle origen (`192.168.7.40`, esquema `C`) está en la
-intranet y no es alcanzable desde Vercel, así que la extracción **corre dentro de
+intranet, así que la extracción **corre dentro de
 la red CDMB** y empuja los datos a la app por HTTPS.
 
 Nunca copia imágenes escaneadas (1,4 TB). Nunca escribe en Oracle.
@@ -16,9 +16,9 @@ Nunca copia imágenes escaneadas (1,4 TB). Nunca escribe en Oracle.
 
 ## Requisitos comunes
 
-- Salida HTTPS hacia `https://tramitescdmb.vercel.app` desde donde corra el extractor.
+- Salida HTTPS hacia `https://<URL_PLATAFORMA>` desde donde corra el extractor.
 - Acceso de lectura al Oracle (`psidea1/psidea1`, solo `SELECT`).
-- `FONDO_INGEST_TOKEN` definido en Vercel (Production + Preview) y la app redeployada.
+- `FONDO_INGEST_TOKEN` definido en el `.env` de la VM y el servicio reiniciado.
 
 ## Opción sqlplus (`extraer-psdocuments.sh`) — en `martin`
 
@@ -31,7 +31,7 @@ pscp scripts\fondo-historico\extraer-psdocuments.sh root@192.168.7.40:/root/
 Y en `martin` (por PuTTY, como root):
 
 ```bash
-export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
+export FONDO_INGEST_URL="https://<URL_PLATAFORMA>/api/fondo-historico/ingest"
 export FONDO_INGEST_TOKEN="…"
 export FONDO_SERIES="262,264"     # piloto; quitar para las 24 series
 bash /root/extraer-psdocuments.sh
@@ -45,7 +45,7 @@ por cada serie una consulta que emite un JSON por documento, y sube en lotes de
 
 ## Configuración
 
-En la app (Vercel → Settings → Environment Variables) definir:
+En el `.env` de la VM definir:
 
 | Variable | Valor |
 |---|---|
@@ -57,8 +57,8 @@ un build ya hecho).
 ## Correr la extracción de psdocuments
 
 ```bash
-export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
-export FONDO_INGEST_TOKEN="…el mismo valor que en Vercel…"
+export FONDO_INGEST_URL="https://<URL_PLATAFORMA>/api/fondo-historico/ingest"
+export FONDO_INGEST_TOKEN="…el mismo valor que en el .env de la VM…"
 
 # opcional — piloto con dos series antes de traerlo todo:
 # export FONDO_SERIES="262,264"

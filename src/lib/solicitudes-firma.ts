@@ -1,12 +1,13 @@
 import { db } from "@/lib/db";
+import { huellaVerificada } from "@/lib/hash-archivo";
 import { resolverFirma } from "@/lib/firma-proveedor";
 import type { RolFirmante, EstadoSolicitudFirma, CalidadFirma } from "@prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
-import { cargoDelFirmante, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
+import { cargoDelFirmante, esContratista, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
-import { hashFirmaComunicacion, validarComunicacionFirmable, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
+import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdjuntos, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 import { claveMatriz, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
 import { componerMensaje, plantillaDeEvento } from "@/lib/plantillas-correo-base";
@@ -136,7 +137,8 @@ async function validarObjetivoAbierto(objetivo: ObjetivoSolicitud) {
     const d = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { archivado: true } } } });
     if (d?.expediente.archivado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
   } else if (objetivo.tipo === "documentoContrato") {
-    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { cerrado: true } } } });
+    const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { cerrado: true, eliminado: true } } } });
+    if (d?.expediente.eliminado) throw new Error("El expediente fue eliminado: sus documentos ya no se pueden firmar.");
     if (d?.expediente.cerrado) throw new Error(MENSAJE_FIRMA_EXPEDIENTE_CERRADO);
   } else if (objetivo.tipo === "documentoArchivo") {
     const d = await db.documentoArchivo.findUnique({ where: { id: objetivo.id }, select: { expediente: { select: { estado: true } } } });
@@ -260,7 +262,18 @@ export async function asignarFirmantes(
     estado: (f.rol === "LECTURA" ? "COMPLETADA" : "PENDIENTE") as EstadoSolicitudFirma,
     completadoEn: f.rol === "LECTURA" ? new Date() : null,
   }));
-  await db.solicitudFirma.createMany({ data });
+  // Dos asignaciones simultáneas sobre el mismo documento (doble clic, dos personas) se serializan y se
+  // vuelve a comprobar dentro de la transacción, para que nadie quede asignado dos veces.
+  await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `asignar:${objetivo.tipo}:${objetivo.id}`);
+    if (conAccion.length > 0) {
+      const repetidas = await tx.solicitudFirma.count({
+        where: { ...whereObjetivo(objetivo), usuarioAsignadoId: { in: conAccion.map((f) => f.usuarioId) }, rol: { not: "LECTURA" }, estado: { not: "RECHAZADA" } },
+      });
+      if (repetidas > 0) throw new Error("Otra persona acaba de asignar a alguno de estos firmantes en este documento. Recargue la página.");
+    }
+    await tx.solicitudFirma.createMany({ data });
+  });
 
   if (firmantes.some((f) => f.rol === "FIRMA")) {
     if (objetivo.tipo === "documentoContrato") {
@@ -377,7 +390,45 @@ function hashContenidoFirmaDocumento(datos: { documentoId: string; nombre: strin
   return crypto.createHash("sha256").update(base, "utf8").digest("hex");
 }
 
+/**
+ * Firma o da visto bueno a una solicitud. Primero la "reserva" (marca completadoEn solo si sigue
+ * pendiente y sin marca) para que un doble clic o dos pestañas no generen dos firmas del mismo
+ * firmante sobre el mismo documento; si algo falla, la reserva se libera.
+ */
 export async function completarSolicitudFirma(
+  solicitudId: string,
+  usuarioId: string,
+  ip: string | null,
+  userAgent: string | null
+) {
+  const reservada = await db.solicitudFirma.updateMany({
+    where: {
+      id: solicitudId,
+      usuarioAsignadoId: usuarioId,
+      estado: "PENDIENTE",
+      // Una reserva de más de 2 minutos se da por perdida (p. ej. el servicio se reinició a mitad de la firma).
+      OR: [{ completadoEn: null }, { completadoEn: { lt: new Date(Date.now() - 2 * 60_000) } }],
+    },
+    data: { completadoEn: new Date() },
+  });
+  if (reservada.count === 0) {
+    const actual = await db.solicitudFirma.findUnique({ where: { id: solicitudId }, select: { estado: true, usuarioAsignadoId: true } });
+    if (!actual) throw new Error("La solicitud no existe.");
+    if (actual.usuarioAsignadoId !== usuarioId) throw new Error("Esta solicitud no está asignada a usted.");
+    if (actual.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
+    throw new Error("Esta firma ya se está procesando; espere unos segundos y recargue la página.");
+  }
+  try {
+    await completarSolicitudFirmaReservada(solicitudId, usuarioId, ip, userAgent);
+  } catch (e) {
+    await db.solicitudFirma
+      .updateMany({ where: { id: solicitudId, estado: "PENDIENTE" }, data: { completadoEn: null } })
+      .catch((err) => console.error("No se pudo liberar la reserva de la solicitud de firma:", err));
+    throw e;
+  }
+}
+
+async function completarSolicitudFirmaReservada(
   solicitudId: string,
   usuarioId: string,
   ip: string | null,
@@ -392,6 +443,13 @@ export async function completarSolicitudFirma(
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   if (solicitud.rol === "LECTURA") throw new Error("Un acceso de solo lectura no requiere ninguna acción.");
   await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
+  // Regla de GECON, aplicada aquí para que valga por cualquier ruta (no solo la de contratación).
+  if (solicitud.documentoContrato?.etapa === "PRECONTRACTUAL") {
+    const firmante = await db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, rolesContratacion: true } });
+    if (firmante && esContratista(firmante)) {
+      throw new Error("El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos.");
+    }
+  }
 
   const hermanas = await db.solicitudFirma.findMany({
     where: solicitud.comunicacionId
@@ -450,30 +508,33 @@ export async function completarSolicitudFirma(
       return;
     }
 
+    const huella = await huellaVerificada(doc, await db.firmaDocumentoContrato.count({ where: { documentoId: doc.id } }), (h) =>
+      db.documentoContrato.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
+    );
     const fechaIso = new Date().toISOString();
-    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
+    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const supervisaDocContrato = (await supervisoresDelExpediente(doc.expedienteId)).has(usuarioId);
     const cargo = await cargoActualDelFirmante(usuarioId, "GECON", supervisaDocContrato);
-    const firma = await db.firmaDocumentoContrato.create({
-      data: {
-        documentoId: doc.id,
-        usuarioId,
-        hashContenido,
-        calidad: solicitud.calidad,
-        ...cargo,
-        ip,
-        userAgent,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    });
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaDocContratoId: firma.id, ip, userAgent },
+    await db.$transaction(async (tx) => {
+      await exigirMismoArchivo(() => tx.documentoContrato.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: huella } }));
+      const f = await tx.firmaDocumentoContrato.create({
+        data: {
+          documentoId: doc.id,
+          usuarioId,
+          hashContenido,
+          calidad: solicitud.calidad,
+          ...cargo,
+          ip,
+          userAgent,
+          proveedor: resuelto.proveedor,
+          formato: resuelto.formato,
+          selloTiempoEn: resuelto.selloTiempoEn,
+          selloTiempoFuente: resuelto.selloTiempoFuente,
+          selloTiempoToken: resuelto.selloTiempoToken,
+        },
+      });
+      await cerrarSolicitudReservada(tx, solicitudId, { firmaDocContratoId: f.id, ip, userAgent });
     });
     await reevaluarEstadoDocumentoContrato(doc.id, usuarioId);
     await db.eventoContratacion.create({
@@ -488,29 +549,32 @@ export async function completarSolicitudFirma(
       return;
     }
 
+    const huella = await huellaVerificada(doc, await db.firmaExpedienteDocumento.count({ where: { documentoId: doc.id } }), (h) =>
+      db.expedienteDocumento.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
+    );
     const fechaIso = new Date().toISOString();
-    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso });
+    const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso });
     const resuelto = await resolverFirma(hashContenido);
     const cargo = await cargoActualDelFirmante(usuarioId, "TRAMITES");
-    const firma = await db.firmaExpedienteDocumento.create({
-      data: {
-        documentoId: doc.id,
-        usuarioId,
-        hashContenido,
-        calidad: solicitud.calidad,
-        ...cargo,
-        ip,
-        userAgent,
-        proveedor: resuelto.proveedor,
-        formato: resuelto.formato,
-        selloTiempoEn: resuelto.selloTiempoEn,
-        selloTiempoFuente: resuelto.selloTiempoFuente,
-        selloTiempoToken: resuelto.selloTiempoToken,
-      },
-    });
-    await db.solicitudFirma.update({
-      where: { id: solicitudId },
-      data: { estado: "COMPLETADA", completadoEn: new Date(), firmaExpedienteId: firma.id, ip, userAgent },
+    await db.$transaction(async (tx) => {
+      await exigirMismoArchivo(() => tx.expedienteDocumento.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: huella } }));
+      const f = await tx.firmaExpedienteDocumento.create({
+        data: {
+          documentoId: doc.id,
+          usuarioId,
+          hashContenido,
+          calidad: solicitud.calidad,
+          ...cargo,
+          ip,
+          userAgent,
+          proveedor: resuelto.proveedor,
+          formato: resuelto.formato,
+          selloTiempoEn: resuelto.selloTiempoEn,
+          selloTiempoFuente: resuelto.selloTiempoFuente,
+          selloTiempoToken: resuelto.selloTiempoToken,
+        },
+      });
+      await cerrarSolicitudReservada(tx, solicitudId, { firmaExpedienteId: f.id, ip, userAgent });
     });
     await reevaluarEstadoDocumentoExpediente(doc.id, usuarioId);
     await db.expedienteEvento.create({
@@ -530,6 +594,7 @@ export async function completarSolicitudFirma(
     if (previa) {
       firmaId = previa.id;
     } else {
+      await verificarHuellasAdjuntos(c);
       const fechaHora = new Date();
       const hashContenido = await hashFirmaComunicacion(c, fechaHora);
       const resuelto = await resolverFirma(hashContenido);
@@ -595,18 +660,44 @@ export async function completarSolicitudFirma(
   }
 }
 
+/**
+ * Dentro de la transacción de la firma: bloquea la fila del documento y comprueba que siga siendo el
+ * mismo archivo cuya huella se calculó. Si lo reemplazaron mientras se firmaba, no se firma.
+ */
+async function exigirMismoArchivo(actualizar: () => Promise<{ count: number }>) {
+  const { count } = await actualizar();
+  if (count === 0) throw new Error("El documento se reemplazó o eliminó mientras firmaba: recargue la página y revise la versión nueva.");
+}
+
+/** Marca la solicitud como completada solo si sigue pendiente (no la anularon ni la borraron al reemplazar el archivo). */
+async function cerrarSolicitudReservada(
+  tx: Pick<typeof db, "solicitudFirma">,
+  solicitudId: string,
+  data: { firmaDocContratoId?: string; firmaExpedienteId?: string; ip: string | null; userAgent: string | null }
+) {
+  const { count } = await tx.solicitudFirma.updateMany({
+    where: { id: solicitudId, estado: "PENDIENTE" },
+    data: { estado: "COMPLETADA", completadoEn: new Date(), ...data },
+  });
+  if (count === 0) throw new Error("La solicitud de firma ya no está vigente (se resolvió, anuló o se reemplazó el documento): recargue la página.");
+}
+
 async function crearFirmaDocumentoArchivo(
-  doc: { id: string; nombre: string; hashSha256: string | null },
+  doc: { id: string; nombre: string; hashSha256: string | null; storagePath: string },
   usuarioId: string,
   calidad: CalidadFirma | null,
   cargo: { cargoAlFirmar: string; actoAdministrativoAlFirmar: string | null },
   ip: string | null,
   userAgent: string | null,
+  cliente: Pick<typeof db, "firma"> = db,
 ) {
+  const huella = await huellaVerificada(doc, await db.firma.count({ where: { documentoArchivoId: doc.id } }), (h) =>
+    db.documentoArchivo.updateMany({ where: { id: doc.id, storagePath: doc.storagePath }, data: { hashSha256: h } })
+  );
   const fechaHora = new Date();
-  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: doc.hashSha256, fechaIso: fechaHora.toISOString() });
+  const hashContenido = hashContenidoFirmaDocumento({ documentoId: doc.id, nombre: doc.nombre, hashSha256: huella, fechaIso: fechaHora.toISOString() });
   const resuelto = await resolverFirma(hashContenido);
-  return db.firma.create({
+  return cliente.firma.create({
     data: {
       usuarioId,
       documentoArchivoId: doc.id,
@@ -626,9 +717,14 @@ async function crearFirmaDocumentoArchivo(
   });
 }
 
+/** Bloqueo de PostgreSQL que dura lo que la transacción: serializa dos firmas simultáneas de la misma persona. */
+export async function bloquearFirma(tx: Pick<typeof db, "$queryRaw">, clave: string) {
+  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${clave}))::text AS ok`;
+}
+
 export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, usuarioId: string, ip: string | null, userAgent: string | null) {
   await validarDocumentoArchivoFirmable(documentoArchivoId);
-  const doc = await db.documentoArchivo.findUnique({ where: { id: documentoArchivoId }, select: { id: true, nombre: true, hashSha256: true } });
+  const doc = await db.documentoArchivo.findUnique({ where: { id: documentoArchivoId }, select: { id: true, nombre: true, hashSha256: true, storagePath: true } });
   if (!doc) throw new Error("El documento no existe.");
   if (await db.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) {
     throw new Error("Usted ya firmó este documento.");
@@ -647,14 +743,20 @@ export async function firmarDocumentoArchivoDirecto(documentoArchivoId: string, 
   if (!puedeActuarSolicitud(solicitudes, { rol: "FIRMA", orden: nivelFirma(usuario) })) {
     throw new Error("Hay firmas pendientes de un cargo superior: deben firmar primero.");
   }
-  await crearFirmaDocumentoArchivo(
-    doc,
-    usuarioId,
-    puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
-    { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
-    ip,
-    userAgent,
-  );
+  // Bloqueo por documento y firmante: un doble clic no crea dos firmas.
+  await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `archivo:${documentoArchivoId}:${usuarioId}`);
+    if (await tx.firma.findFirst({ where: { documentoArchivoId, usuarioId }, select: { id: true } })) throw new Error("Usted ya firmó este documento.");
+    await crearFirmaDocumentoArchivo(
+      doc,
+      usuarioId,
+      puedeSerFirmantePrincipal(usuario, "SGDEA") ? "PRINCIPAL" : "PROYECTO",
+      { cargoAlFirmar: cargoDelFirmante(usuario, "SGDEA"), actoAdministrativoAlFirmar: usuario.actoAdministrativoCargo?.trim() || null },
+      ip,
+      userAgent,
+      tx,
+    );
+  });
 }
 
 export async function rechazarSolicitudFirma(
@@ -679,10 +781,16 @@ export async function rechazarSolicitudFirma(
   if (solicitud.estado !== "PENDIENTE") throw new Error("Esta solicitud ya fue resuelta.");
   await validarObjetivoAbierto(objetivoDeSolicitud(solicitud));
 
-  await db.solicitudFirma.update({
-    where: { id: solicitudId },
+  // Condicional: si la misma persona ya está firmando (reserva en curso) o la resolvió en otra pestaña, no se rechaza.
+  const rechazada = await db.solicitudFirma.updateMany({
+    where: {
+      id: solicitudId,
+      estado: "PENDIENTE",
+      OR: [{ completadoEn: null }, { completadoEn: { lt: new Date(Date.now() - 2 * 60_000) } }],
+    },
     data: { estado: "RECHAZADA", comentario: comentario.trim(), completadoEn: new Date() },
   });
+  if (rechazada.count === 0) throw new Error("Esta solicitud ya fue resuelta o se está firmando en este momento. Recargue la página.");
 
   if (solicitud.documentoContrato) {
     await reevaluarEstadoDocumentoContrato(solicitud.documentoContrato.id, usuarioId);
@@ -1016,4 +1124,48 @@ export async function recordarFirmantesAnteriores(solicitudId: string, usuarioId
     avisados: porAvisar.map((a) => a.usuarioAsignado.nombre),
     yaAvisados: anteriores.filter((a) => !porAvisar.includes(a)).map((a) => a.usuarioAsignado.nombre),
   };
+}
+
+/**
+ * Quita a un firmante (o visto bueno) que aún no ha actuado: p. ej. se retiró de la entidad, se asignó
+ * por error o su usuario se desactivó, y su turno pendiente bloquea a los demás. Solo GECON y trámites.
+ * No toca firmas ya hechas. Queda constancia en el historial del expediente.
+ */
+export async function quitarFirmantePendiente(
+  objetivo: { tipo: "documentoContrato" | "documentoExpediente"; id: string },
+  solicitudId: string,
+  usuarioId: string,
+  motivo: string
+) {
+  const texto = motivo.trim();
+  if (!texto) throw new Error("Indique por qué se quita a esta persona.");
+  await validarObjetivoAbierto(objetivo);
+  const quitada = await db.$transaction(async (tx) => {
+    await bloquearFirma(tx, `asignar:${objetivo.tipo}:${objetivo.id}`);
+    const s = await tx.solicitudFirma.findFirst({
+      where: { id: solicitudId, ...whereObjetivo(objetivo) },
+      select: { id: true, estado: true, rol: true, completadoEn: true, usuarioAsignado: { select: { nombre: true } } },
+    });
+    if (!s) throw new Error("La solicitud no existe en este documento.");
+    if (s.estado !== "PENDIENTE" || s.rol === "LECTURA") throw new Error("Solo se puede quitar a quien todavía no ha firmado ni dado visto bueno.");
+    // Una firma en curso (reservada hace menos de 2 minutos) no se interrumpe.
+    if (s.completadoEn && s.completadoEn > new Date(Date.now() - 2 * 60_000)) {
+      throw new Error("Esta persona está firmando en este momento. Espere un minuto y recargue la página.");
+    }
+    await tx.solicitudFirma.delete({ where: { id: s.id } });
+    return s;
+  });
+  const que = quitada.rol === "FIRMA" ? "la firma" : "el visto bueno";
+  const detalle = `Quitó a ${quitada.usuarioAsignado.nombre} (${que} pendiente): ${texto}`;
+  if (objetivo.tipo === "documentoContrato") {
+    await reevaluarEstadoDocumentoContrato(objetivo.id, usuarioId);
+    const doc = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true } });
+    if (doc) await db.eventoContratacion.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMAS_ANULADAS", detalle, usuarioId } });
+  } else {
+    await reevaluarEstadoDocumentoExpediente(objetivo.id, usuarioId);
+    const doc = await db.expedienteDocumento.findUnique({ where: { id: objetivo.id }, select: { expedienteId: true, pasoNumero: true } });
+    if (doc) {
+      await db.expedienteEvento.create({ data: { expedienteId: doc.expedienteId, tipo: "FIRMA_SOLICITADA", descripcion: detalle, pasoNumero: doc.pasoNumero, usuarioId } });
+    }
+  }
 }

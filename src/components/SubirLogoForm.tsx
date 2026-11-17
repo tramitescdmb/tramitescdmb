@@ -32,7 +32,7 @@ export function SubirLogoForm({
       const signData = await signRes.json();
       if (!signRes.ok) throw new Error(signData.error || "No se pudo preparar la subida.");
 
-      const { subirAUrlFirmada } = await import("@/lib/supabase-browser");
+      const { subirAUrlFirmada } = await import("@/lib/almacen-cliente");
       const { error: uploadError } = await subirAUrlFirmada("branding", signData.path, signData.token, file);
       if (uploadError) throw new Error(uploadError.message);
 

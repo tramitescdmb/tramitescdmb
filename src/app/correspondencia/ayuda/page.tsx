@@ -854,7 +854,7 @@ export default async function CorrespondenciaAyudaPage() {
           </tr>
           <tr>
             <td className="px-2.5 py-1.5">Adjuntos del SGDEA: <strong>máximo 10 archivos por radicado, 2 MB cada uno</strong>. No se aceptan comprimidos (.zip, .rar).</td>
-            <td className="px-2.5 py-1.5">Un radicado debe ser liviano y consultable. Trámites Ambientales 2.0 (planos, estudios) tiene su propio límite de 25 MB, aparte.</td>
+            <td className="px-2.5 py-1.5">Un radicado debe ser liviano y consultable. Trámites Ambientales 2.0 tiene el mismo límite de 2 MB por archivo.</td>
           </tr>
           <tr>
             <td className="px-2.5 py-1.5">La verificación pública de un radicado (<span className="font-mono text-[11px]">/verificar</span>) muestra existencia, tipo, fecha y estado — <strong>nunca el contenido</strong>.</td>
@@ -870,7 +870,7 @@ export default async function CorrespondenciaAyudaPage() {
           <li><strong>Sin integración con hardware de escaneo/OCR/ICR/OMR</strong> ni con la API de una empresa de mensajería — el código de barras y el registro del despacho sí están.</li>
           <li><strong>Sin país geolocalizado</strong> en la auditoría (requeriría un servicio de GeoIP externo); sí quedan usuario, fecha/hora, IP y navegador/dispositivo.</li>
           <li><strong>Cuatro roles de correspondencia de fábrica</strong>, no roles arbitrarios nuevos.</li>
-          <li><strong>Copias de seguridad a nivel de infraestructura</strong> (Supabase), no como función propia de la aplicación.</li>
+          <li><strong>Copias de seguridad a nivel de infraestructura</strong> (copia diaria de la base y respaldo del NAS), no como función propia de la aplicación.</li>
           <li><strong>Firma digital con CA acreditada, formatos PAdES/CAdES/XAdES y estampado con TSA acreditada:</strong> requieren un contrato de la CDMB con una entidad de certificación — el punto de conexión ya está listo en el modelo.</li>
         </ul>
       </Seccion>

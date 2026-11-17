@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -19,6 +20,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     select: { storagePath: true, nombre: true, comunicacionId: true },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  if (!(await puedeVerComunicacion(permisos, session.userId, doc.comunicacionId))) {
+    return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  }
 
   const { ip, userAgent } = datosPeticion(req.headers);
   await registrarAuditoriaDoc({

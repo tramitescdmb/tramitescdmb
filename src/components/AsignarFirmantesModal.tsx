@@ -49,10 +49,13 @@ export function AsignarFirmantesModal({
   firmantesActuales,
   conCalidad = false,
   contratistaPrincipal = false,
+  permiteQuitar = false,
 }: {
   endpointAsignar: string;
   conCalidad?: boolean;
   contratistaPrincipal?: boolean;
+  /** El endpoint acepta DELETE ?solicitudId= para quitar un firmante pendiente. */
+  permiteQuitar?: boolean;
   usuarios?: UsuarioFirmaOpcion[];
   firmantesActuales: FirmanteAsignado[];
 }) {
@@ -107,6 +110,27 @@ export function AsignarFirmantesModal({
     }
   }
 
+  async function quitar(solicitudId: string, nombre: string) {
+    const motivo = window.prompt(`Motivo para quitar a ${nombre} de los firmantes (por ejemplo: se retiró de la entidad):`)?.trim();
+    if (!motivo) return;
+    setCargando(true);
+    setError(null);
+    try {
+      const res = await fetch(`${endpointAsignar}?solicitudId=${encodeURIComponent(solicitudId)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ motivo }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "No se pudo quitar.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setCargando(false);
+    }
+  }
+
   return (
     <>
       <button
@@ -146,7 +170,20 @@ export function AsignarFirmantesModal({
                           {f.rol === "FIRMA" && rotuloCalidadFirma(f.calidad) ? ` · ${rotuloCalidadFirma(f.calidad)}` : ""}
                         </span>
                       </span>
-                      <span className={`flex-none rounded-sm px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
+                      <span className="flex flex-none items-center gap-1">
+                        <span className={`rounded-sm px-2 py-0.5 font-medium ${CLASE_ESTADO[f.estado]}`}>{ETIQUETA_ESTADO[f.estado]}</span>
+                        {permiteQuitar && f.estado === "PENDIENTE" && f.rol !== "LECTURA" && (
+                          <button
+                            type="button"
+                            disabled={cargando}
+                            onClick={() => quitar(f.id, f.usuarioAsignadoNombre)}
+                            title="Quitar este firmante pendiente (pide un motivo)"
+                            className="rounded-sm border border-red-200 px-1.5 py-0.5 text-[11px] text-red-700 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </span>
                     </div>
                     <span className="text-[11px] text-stone-400">
                       Turno: {etiquetaTurno(f.orden)}

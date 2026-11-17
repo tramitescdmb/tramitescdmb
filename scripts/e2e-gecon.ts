@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { PDFDocument } from "pdf-lib";
 import { createHash } from "node:crypto";
 import type { EtapaContratacion } from "@prisma/client";
@@ -85,14 +84,14 @@ async function pdfPrueba(titulo: string): Promise<Uint8Array> {
   return pdf.save();
 }
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
-
 async function subirDocumento(c: Cliente, expedienteId: string, etapa: string, nombre: string, extra: Record<string, unknown> = {}) {
   const bytes = await pdfPrueba(nombre);
   const firma = await c.json(`/api/contratacion/expedientes/${expedienteId}/upload-sign`, "POST", { fileName: `${nombre}.pdf`, etapa });
   if (firma.status !== 200) return { status: firma.status, data: firma.data };
-  const { error } = await supabase.storage.from("documentos").uploadToSignedUrl(firma.data.path, firma.data.token, new Blob([bytes as BlobPart], { type: "application/pdf" }));
-  esperar(!error, `Storage rechazó la subida: ${error?.message}`);
+  const cuerpo = new FormData();
+  cuerpo.append("archivo", new Blob([bytes as BlobPart], { type: "application/pdf" }));
+  const subida = await fetch(`${BASE}/api/almacen/documentos/${String(firma.data.path).split("/").map(encodeURIComponent).join("/")}?token=${encodeURIComponent(firma.data.token)}`, { method: "PUT", body: cuerpo });
+  esperar(subida.ok, `El almacén rechazó la subida: HTTP ${subida.status}`);
   return c.json(`/api/contratacion/expedientes/${expedienteId}/documentos`, "POST", {
     etapa,
     nombre,

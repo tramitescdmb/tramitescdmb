@@ -3,7 +3,7 @@ import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAsignarFirmantesDocumentoContrato } from "@/lib/permisos";
-import { asignarFirmantes } from "@/lib/solicitudes-firma";
+import { asignarFirmantes, quitarFirmantePendiente } from "@/lib/solicitudes-firma";
 import type { RolFirmante, CalidadFirma } from "@prisma/client";
 import { esCalidadFirma } from "@/lib/calidad-firma";
 
@@ -47,7 +47,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (doc.etapa === "PRECONTRACTUAL") {
     const contratistas = await db.usuario.count({
-      where: { id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) }, AND: [await whereDesignacionGecon("CONTRATISTA")] },
+      where: {
+        id: { in: firmantes.filter((f) => f.rol !== "LECTURA").map((f) => f.usuarioId) },
+        // Mismo criterio que la jerarquía de firma: por rol de GECON o por denominación de empleo.
+        OR: [await whereDesignacionGecon("CONTRATISTA"), { denominacionEmpleo: "CONTRATISTA" }],
+      },
     });
     if (contratistas > 0) return NextResponse.json({ error: "El contratista no firma ni da visto bueno a documentos de la etapa Precontractual: solo puede consultarlos." }, { status: 400 });
   }
@@ -57,5 +61,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo asignar." }, { status: 400 });
+  }
+}
+
+/** Quita a un firmante pendiente (?solicitudId=…), con motivo en el cuerpo: { "motivo": "…" }. */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  const doc = await db.documentoContrato.findUnique({
+    where: { id },
+    select: { expedienteId: true, expediente: { select: { dependenciaSolicitanteId: true } } },
+  });
+  if (!doc) return NextResponse.json({ error: "El documento no existe." }, { status: 404 });
+  if (!puedeAsignarFirmantesDocumentoContrato(permisos, { id: doc.expedienteId, dependenciaSolicitanteId: doc.expediente.dependenciaSolicitanteId })) {
+    return NextResponse.json({ error: "No tiene permiso para gestionar firmantes en este expediente." }, { status: 403 });
+  }
+  const solicitudId = req.nextUrl.searchParams.get("solicitudId") ?? "";
+  const body = await req.json().catch(() => null);
+  const motivo = typeof body?.motivo === "string" ? body.motivo.slice(0, 500) : "";
+  try {
+    await quitarFirmantePendiente({ tipo: "documentoContrato", id }, solicitudId, session.userId, motivo);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo quitar al firmante." }, { status: 400 });
   }
 }

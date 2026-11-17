@@ -53,7 +53,7 @@ export async function accesoCorreccionConcepto(
       expedienteId: true,
       expediente: { select: { archivado: true } },
       participantes: { where: { usuarioId, rol: "ELABORA" }, select: { id: true } },
-      visitaTecnica: { select: { id: true, pasoNumero: true, formatoVersionId: true, finalizadaEn: true, estadoRevision: true } },
+      visitaTecnica: { select: { id: true, pasoNumero: true, formatoVersionId: true, finalizadaEn: true, estadoRevision: true, conceptoDescartadoEn: true } },
     },
   });
   const vt = visita?.visitaTecnica;
@@ -63,6 +63,7 @@ export async function accesoCorreccionConcepto(
   }
   if (visita.expediente.archivado) return { error: "El expediente está cerrado y archivado.", status: 409 };
   if (vt.finalizadaEn) return { error: "El concepto ya se dio por terminado y está en firma; para corregirlo debe reabrirse.", status: 409 };
+  if (vt.conceptoDescartadoEn) return { error: "Este concepto técnico se descartó: ya no admite cambios.", status: 409 };
   if (vt.estadoRevision === "EN_REVISION" && !planificador) {
     return { error: "El concepto está en revisión; se podrá corregir si quien revisa lo devuelve con observaciones.", status: 409 };
   }

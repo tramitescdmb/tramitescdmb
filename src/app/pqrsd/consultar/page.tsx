@@ -3,6 +3,8 @@ import { PqrsdConsultarForm } from "@/components/PqrsdConsultarForm";
 import { Search } from "lucide-react";
 import { CabeceraTablero } from "@/components/tablero";
 
+export const dynamic = "force-dynamic";
+
 export default function PqrsdConsultarPage() {
   return (
     <div className="mx-auto max-w-lg space-y-4">

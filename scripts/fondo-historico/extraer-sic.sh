@@ -18,7 +18,7 @@
 # El servidor (/api/fondo-historico/ingest, modo "dump") arma el JSON.
 #
 # Uso (como root — el script fija ORACLE_HOME solo):
-#   export FONDO_INGEST_URL="https://tramitescdmb.vercel.app/api/fondo-historico/ingest"
+#   export FONDO_INGEST_URL="https://<URL_PLATAFORMA>/api/fondo-historico/ingest"
 #   export FONDO_INGEST_TOKEN="…"
 #   bash extraer-sic.sh
 #

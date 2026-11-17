@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
@@ -39,6 +40,7 @@ export default async function ConstanciaPage({ params }: { params: Promise<{ id:
     getConfiguracionSitio(),
   ]);
   if (!c) notFound();
+  if (!(await puedeVerComunicacion(permisos, session.userId, c.id))) notFound();
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">

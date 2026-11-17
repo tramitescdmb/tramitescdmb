@@ -208,7 +208,8 @@ async function alertasInformes(bandeja: Bandeja) {
       fechaFinEstimada: true,
       contratista: { select: { usuarioId: true, nombreORazonSocial: true } },
       supervisores: { select: { usuarioId: true } },
-      documentos: { where: { periodoMes: { not: null }, requisito: { codigoFormato: { in: CODIGOS_FORMATO_POR_PERIODOS } } }, select: { periodoMes: true } },
+      // Un informe devuelto o rechazado sigue pendiente: hay que reemplazarlo.
+      documentos: { where: { periodoMes: { not: null }, estadoValidacion: { not: "RECHAZADO" }, requisito: { codigoFormato: { in: CODIGOS_FORMATO_POR_PERIODOS } } }, select: { periodoMes: true } },
     },
   });
   for (const e of contratos) {

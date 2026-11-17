@@ -269,7 +269,7 @@ export function urlBasePlataforma(configurada: string | null): string | null {
   const base =
     configurada?.trim() ||
     process.env.URL_PLATAFORMA?.trim() ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+    "";
   return base ? base.replace(/\/+$/, "") : null;
 }
 

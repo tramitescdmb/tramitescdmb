@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { filtroNivelAccesoComunicacion } from "@/lib/correspondencia-acceso";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederCorrespondencia } from "@/lib/permisos";
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
   const limiteParam = sp.get("limite");
   const take = limiteParam === "todos" || !limiteParam ? LIMITE_MAXIMO : Math.min(Number(limiteParam) || 50, LIMITE_MAXIMO);
 
-  const where = construirWhereCorrespondencia(filtros, rango);
+  const where = construirWhereCorrespondencia(filtros, rango, filtroNivelAccesoComunicacion(permisos, session.userId));
   const filas = await db.comunicacion.findMany({
     where,
     orderBy: [{ fechaRadicacion: "desc" }, { radicado: "desc" }],

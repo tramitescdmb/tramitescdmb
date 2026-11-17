@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { filtroNivelAccesoComunicacion } from "@/lib/correspondencia-acceso";
 import { redirect } from "next/navigation";
 import { Search, PlusCircle, Send, FileEdit, ChevronDown, Inbox, Layers } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -68,15 +69,16 @@ export default async function CorrespondenciaBandejaPage({
   const sp = await searchParams;
   const filtros = { ...sp, usuarioId: sp.asignadas === "mi" ? session.userId : undefined };
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
+  const acceso = filtroNivelAccesoComunicacion(permisos, session.userId);
   const [{ filas, total, page, totalPaginas, porPagina, vista, orden }, opciones, vencidas, sinDespachar, calendario, firmables, listasParaRadicar, porEstado] = await Promise.all([
-    getCorrespondenciaListado(filtros, rango),
+    getCorrespondenciaListado(filtros, rango, acceso),
     getCorrespondenciaOpcionesFiltro(sp.serieId || undefined),
     contarComunicacionesVencidas(),
     puedeDespacharUsuario ? contarOficiosSinDespachar() : Promise.resolve(0),
     getCalendarioLaboral(),
     puedeFirmarUsuario ? comunicacionesFirmablesPor(session.userId) : Promise.resolve([]),
     puedeRadicarUsuario ? respuestasListasParaRadicar() : Promise.resolve([]),
-    db.comunicacion.groupBy({ by: ["estado"], where: construirWhereCorrespondencia({ ...filtros, estado: undefined }, rango), _count: { _all: true } }),
+    db.comunicacion.groupBy({ by: ["estado"], where: construirWhereCorrespondencia({ ...filtros, estado: undefined }, rango, acceso), _count: { _all: true } }),
   ]);
   const hrefEstado = (estado?: string) => {
     const params = new URLSearchParams(Object.entries({ ...sp, estado: undefined, page: undefined }).filter((par): par is [string, string] => typeof par[1] === "string" && par[1] !== ""));

@@ -166,7 +166,7 @@ async function VerificarExpedienteContractual({ numero }: { numero: string }) {
           <XCircle className="mx-auto h-10 w-10 text-red-500" aria-hidden />
           <h1 className="mt-3 text-lg font-semibold text-stone-900">Expediente no encontrado</h1>
           <p className="mt-1 text-sm text-stone-600">
-            No existe ningún expediente contractual <span className="font-mono">{numero}</span> en Trámites CDMB.
+            No existe ningún expediente contractual <span className="font-mono">{numero}</span> en SIC CDMB.
           </p>
         </div>
       </div>

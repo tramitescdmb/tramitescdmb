@@ -18,7 +18,7 @@ describe("csvExpedientes", () => {
   it("incluye el encabezado de fuente, la fecha de generación, los filtros y el total antes de las columnas", () => {
     const csv = csvExpedientes([fila], "estado \"EN TRAMITE\"; municipio Bucaramanga");
     const lineas = csv.trim().split("\n");
-    expect(lineas[0]).toContain("Trámites CDMB");
+    expect(lineas[0]).toContain("SIC CDMB");
     expect(lineas[1]).toContain("Generado el");
     expect(lineas[2]).toContain('Filtros: estado ""EN TRAMITE""; municipio Bucaramanga');
     expect(lineas[3]).toBe("Total de registros: 1");
@@ -52,5 +52,12 @@ describe("xlsxExpedientes", () => {
     expect(buffer[0]).toBe(0x50);
     expect(buffer[1]).toBe(0x4b);
     expect(buffer.length).toBeGreaterThan(0);
+  });
+});
+
+describe("csvExpedientes: inyección de fórmulas", () => {
+  it("antepone un apóstrofo a los textos que Excel tomaría como fórmula", () => {
+    const filaDatos = csvExpedientes([{ ...fila, solicitanteNombre: '=HYPERLINK("http://x","clic")' }], "").trim().split("\n")[6];
+    expect(filaDatos).toContain(`"'=HYPERLINK(""http://x"",""clic"")"`);
   });
 });

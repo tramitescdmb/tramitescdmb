@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
+import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { whereAccesoSgdea } from "@/lib/sgdea-usuarios";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
 
   const errLote = validarLoteDocumentosSGDEA(documentos);
   if (errLote) return NextResponse.json({ error: errLote }, { status: 400 });
+  if (!(await rutasDeCarpetaNueva(documentos))) return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
 
   const usuarioDestinoIdRaw = body.usuarioDestinoId ? String(body.usuarioDestinoId) : null;
   if (usuarioDestinoIdRaw) {

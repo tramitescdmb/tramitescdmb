@@ -12,9 +12,8 @@ env:
   DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
   DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
   SESSION_SECRET: "ci-solo-para-build-no-es-un-secreto-real"
-  NEXT_PUBLIC_SUPABASE_URL: "https://ci.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci"
-  SUPABASE_SERVICE_ROLE_KEY: "ci"
+  ALMACEN_LOCAL_DIR: "/tmp/almacen-ci"
+  URL_PLATAFORMA: "http://localhost:3000"
 
 jobs:
   build:

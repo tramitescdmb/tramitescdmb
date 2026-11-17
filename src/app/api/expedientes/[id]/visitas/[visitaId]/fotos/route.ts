@@ -5,6 +5,7 @@ import { obtenerPermisosUsuario, puedeEditarExpediente, puedePlanearVisitas } fr
 import { accesoCorreccionConcepto } from "@/lib/concepto-visita-db";
 import { MAX_FOTOS_VISITA, TAMANO_MAXIMO_FOTO_VISITA_BYTES, mensajeFotoGrande, mensajeDemasiadasFotos } from "@/lib/visita-tecnica-fotos";
 import { MENSAJE_EXPEDIENTE_CERRADO, tramiteCerrado } from "@/lib/archivo-central";
+import { MENSAJE_RUTA_AJENA, rutaDeExpediente } from "@/lib/storage";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!storagePath || !mimeType || !Number.isFinite(tamanoBytes)) {
     return NextResponse.json({ error: "Faltan datos del archivo subido." }, { status: 400 });
+  }
+  if (!rutaDeExpediente(storagePath, id)) {
+    return NextResponse.json({ error: MENSAJE_RUTA_AJENA }, { status: 400 });
   }
   if (tamanoBytes > TAMANO_MAXIMO_FOTO_VISITA_BYTES) {
     return NextResponse.json({ error: mensajeFotoGrande(nombre) }, { status: 400 });

@@ -42,13 +42,15 @@ function valorColumna(f: FilaExportExpediente, key: keyof FilaExportExpediente):
   return String(f[key] ?? "");
 }
 
-function csvCampo(v: string): string {
+function csvCampo(valor: string): string {
+  // Un texto que empieza por = + - @ lo ejecuta Excel como fórmula (inyección en CSV): se antepone un apóstrofo.
+  const v = /^[=+\-@\t\r]/.test(valor) ? `'${valor}` : valor;
   return /[,"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
 export function csvExpedientes(filas: FilaExportExpediente[], filtrosTexto: string): string {
   const lineas = [
-    csvCampo("Trámites CDMB — Expedientes exportados"),
+    csvCampo("SIC CDMB — Expedientes exportados"),
     csvCampo(`Generado el ${formatearGeneradoEl(new Date())}`),
     csvCampo(`Filtros: ${filtrosTexto || "ninguno (histórico completo)"}`),
     csvCampo(`Total de registros: ${filas.length}`),
@@ -61,12 +63,12 @@ export function csvExpedientes(filas: FilaExportExpediente[], filtrosTexto: stri
 
 export async function xlsxExpedientes(filas: FilaExportExpediente[], filtrosTexto: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Trámites CDMB";
+  wb.creator = "SIC CDMB";
   wb.created = new Date();
   const ws = wb.addWorksheet("Expedientes");
 
   ws.mergeCells("A1:D1");
-  ws.getCell("A1").value = "Trámites CDMB — Expedientes exportados";
+  ws.getCell("A1").value = "SIC CDMB — Expedientes exportados";
   ws.getCell("A1").font = { bold: true, size: 13 };
   ws.getCell("A2").value = `Generado el ${formatearGeneradoEl(new Date())}`;
   ws.getCell("A3").value = `Filtros: ${filtrosTexto || "ninguno (histórico completo)"}`;
