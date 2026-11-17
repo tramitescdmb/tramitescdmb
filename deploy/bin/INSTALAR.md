@@ -39,6 +39,8 @@ Qué cambian respecto a la versión anterior:
   producción y la borra. No toca la base real. Conviene correrlo una vez al mes.
 - **`endurecer-vm.sh <red-de-TI>`**: firewall (`ufw`), `fail2ban`, permisos 600 de los respaldos y SSH solo con
   llave. Sin `--aplicar` solo muestra lo que haría; no apaga las contraseñas si hay menos de 2 llaves registradas.
+- **`indice-firmas-unicas.sh`**: revisa que no haya firmas duplicadas (misma persona y documento) y, con
+  `--aplicar`, crea los índices únicos que lo impiden en la base. No borra ni cambia filas.
 - **`limpiar-datos-prueba.sh tramites|gecon|tramites,gecon`**: vista previa de lo que se borraría (por tabla) y,
   con `--ejecutar`, borrado con copia previa y frase de confirmación. Nunca toca usuarios, catálogos, SINCA,
   VITAL, SECOP, contratistas, auditoría ni configuración. Se usa una sola vez, antes del lanzamiento.
