@@ -1,0 +1,10 @@
+# Aviso por correo a TI cuando falla una unidad de systemd de la plataforma.
+# Instalar en /etc/systemd/system/ (ver INSTALAR.md). %i es el nombre de la unidad que falló.
+[Unit]
+Description=Aviso de falla de %i
+After=tramites.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/tramites/app/.env
+ExecStart=/usr/bin/curl -fsS -m 60 -X POST -H "Authorization: Bearer ${CRON_SECRET}" "http://127.0.0.1:3000/api/sistema/aviso-falla?unidad=%i"
