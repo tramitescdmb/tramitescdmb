@@ -758,6 +758,9 @@ model Expediente {
 
   avisosRechazo AvisoRechazoDocumento[]
 
+  /** Solicitud de VITAL desde la que se radicó (si vino de VITAL). */
+  solicitudVital SolicitudVital?
+
   @@index([tramiteTipoId])
   @@index([estado])
   @@index([municipio])
@@ -1109,6 +1112,7 @@ enum TipoNotificacion {
   CONCEPTO_EN_REVISION
   CONCEPTO_DEVUELTO
   CONCEPTO_POR_ELABORAR
+  VITAL_NUEVA
 }
 
 model Notificacion {
@@ -1167,11 +1171,30 @@ model SolicitudVital {
 
   documentosReportados Int?
 
+  /**
+   * Gestión en SIC. `null` = solicitud anterior a la integración (no cuenta como
+   * nueva). La sincronización pone NUEVA a las que llegan recientes; al radicar el
+   * expediente desde la solicitud pasa a CONVERTIDA con `expedienteId`.
+   */
+  gestion         EstadoGestionVital?
+  expedienteId    String?             @unique
+  gestionadaEn    DateTime?
+  gestionadaPorId String?
+  motivoDescarte  String?             @db.Text
+
+  expediente           Expediente?               @relation(fields: [expedienteId], references: [id], onDelete: SetNull)
   documentos           SolicitudVitalDocumento[]
   ultimaSincronizacion DateTime                  @default(now()) @updatedAt
   createdAt            DateTime                  @default(now())
 
   @@index([idTramiteVital])
+  @@index([gestion])
+}
+
+enum EstadoGestionVital {
+  NUEVA
+  CONVERTIDA
+  DESCARTADA
 }
 
 /**

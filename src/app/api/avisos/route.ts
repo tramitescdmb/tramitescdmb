@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarNoLeidas } from "@/lib/notificaciones";
@@ -76,7 +77,7 @@ export async function GET() {
 
   if (permisos.modulos.has("TRAMITES")) {
     const firmasTramite = puedeAccederFirmasTramite(permisos);
-    const [firmas, rechazos, buzon, visitas, porRevisar, devueltos, pasosFlujo] = await Promise.all([
+    const [firmas, rechazos, buzon, visitas, porRevisar, devueltos, pasosFlujo, vitalNuevas] = await Promise.all([
       firmasTramite ? contarPendientesBuzonTramite(session.userId) : null,
       firmasTramite ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : 0,
       contarNoLeidas(session.userId),
@@ -84,6 +85,7 @@ export async function GET() {
       puedePlanearVisitas(permisos) ? conceptosPorRevisar(permisos).then((l) => l.length) : 0,
       conceptosDevueltosA(session.userId).then((l) => l.length),
       pasosDeFlujo("TRAMITES"),
+      db.notificacion.count({ where: { usuarioId: session.userId, tipo: "VITAL_NUEVA", resueltaEn: null } }),
     ]);
     avisarPasos(pasosFlujo, "flujos-tramites", "/tramites-ambientales#pasos-flujo", "TRAMITES");
     if (porRevisar > 0) {
@@ -104,6 +106,17 @@ export async function GET() {
     }
     if (visitas > 0) {
       avisos.push({ clave: "visitas-propias", titulo: `${visitas} visita(s) técnica(s) por realizar o registrar`, href: "/planeador", alerta: true, cantidad: visitas, modulo: "TRAMITES" });
+    }
+    if (vitalNuevas > 0) {
+      avisos.push({
+        clave: "vital-nuevas",
+        titulo: vitalNuevas === 1 ? "Tiene una nueva solicitud de VITAL" : `Tiene ${vitalNuevas} nuevas solicitudes de VITAL`,
+        detalle: "Por convertir en trámite",
+        href: "/vital?gestion=nuevas",
+        alerta: true,
+        cantidad: vitalNuevas,
+        modulo: "TRAMITES",
+      });
     }
     if (buzon > 0) {
       avisos.push({ clave: "buzon-planeador", titulo: `${buzon} aviso(s) del planeador sin leer`, href: "/planeador/buzon", alerta: false, cantidad: buzon, modulo: "TRAMITES" });

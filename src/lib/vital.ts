@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { esSolicitudVitalReciente } from "@/lib/vital-conversion";
 import { urlDescargaVital } from "@/lib/vital-links";
 
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
@@ -538,6 +539,11 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
   ]);
 
   const principal = solicitantes?.[0] ?? null;
+  const fechaRadicacion = resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null;
+  // Solo las que llegan por primera vez y son recientes cuentan como «nuevas»: una
+  // sincronización del histórico no debe avisar por cada solicitud vieja.
+  const yaExistia = (await db.solicitudVital.count({ where: { idVital: resumen.idVital } })) > 0;
+  const esNueva = !yaExistia && esSolicitudVitalReciente(fechaRadicacion);
 
   const solicitud = await db.solicitudVital.upsert({
     where: { idVital: resumen.idVital },
@@ -553,6 +559,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
       documentosReportados: documentos ? documentos.length : null,
+      gestion: esNueva ? "NUEVA" : null,
     },
     update: {
       idTramiteAutoridad: resumen.idTramiteAutoridad ?? undefined,
@@ -572,6 +579,15 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       await guardarMetadatosAnexos(solicitud.id, documentos);
     } catch (err) {
       console.error(`[VITAL] ${resumen.idVital}: no se pudo guardar la lista de anexos:`, err instanceof Error ? err.message : err);
+    }
+  }
+
+  if (esNueva) {
+    try {
+      const { avisarSolicitudVitalNueva } = await import("@/lib/vital-gestion");
+      await avisarSolicitudVitalNueva(solicitud);
+    } catch (err) {
+      console.error(`[VITAL] ${resumen.idVital}: no se pudo avisar la solicitud nueva:`, err instanceof Error ? err.message : err);
     }
   }
 

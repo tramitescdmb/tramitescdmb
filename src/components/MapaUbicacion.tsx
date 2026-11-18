@@ -19,8 +19,8 @@ export type MapaUbicacionHandle = {
   buscarDireccion: (direccion: string) => void;
 };
 
-export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string; prefijo?: string }>(
-  function MapaUbicacion({ municipio, prefijo = "ubicacion" }, ref) {
+export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string; prefijo?: string; inicial?: Punto | null }>(
+  function MapaUbicacion({ municipio, prefijo = "ubicacion", inicial = null }, ref) {
     const contenedorRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<import("leaflet").Map | null>(null);
     const markerRef = useRef<import("leaflet").Marker | null>(null);
@@ -56,6 +56,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
           colocarPunto(e.latlng.lat, e.latlng.lng);
         });
         mapRef.current = map;
+        if (inicial && esLatLonValido(inicial.lat, inicial.lon)) colocarPunto(inicial.lat, inicial.lon);
       });
       return () => {
         cancelado = true;

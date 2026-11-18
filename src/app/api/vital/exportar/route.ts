@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
   const filtros: FiltrosVital = {
     q: sp.get("q") ?? undefined,
     tramite: sp.get("tramite") ?? undefined,
+    gestion: sp.get("gestion") ?? undefined,
   };
   const filtrosPeriodo: FiltrosPeriodo = { desde: sp.get("desde") ?? undefined, hasta: sp.get("hasta") ?? undefined };
   const { rango } = resolverPeriodo(filtrosPeriodo);

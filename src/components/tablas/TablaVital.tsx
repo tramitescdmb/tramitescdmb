@@ -6,8 +6,8 @@ import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 import { urlVitalPublico } from "@/lib/vital-links";
 
-const ENCABEZADOS = ["#", "ID VITAL", "Trámite", "Solicitante", "Identificación", "Radicación", "Actividad", "Docs."];
-const ANCHOS_DEFECTO = [36, 170, 170, 130, 120, 120, 120, 56];
+const ENCABEZADOS = ["#", "ID VITAL", "Trámite", "Solicitante", "Identificación", "Radicación", "Actividad", "Docs.", "Gestión"];
+const ANCHOS_DEFECTO = [36, 170, 170, 130, 120, 120, 120, 56, 120];
 
 export type FilaVital = {
   id: string;
@@ -21,10 +21,12 @@ export type FilaVital = {
   docs: number;
   /** Cuántos de `docs` siguen en VITAL sin traer al NAS. */
   docsEnVital?: number;
+  gestion?: "NUEVA" | "CONVERTIDA" | "DESCARTADA" | null;
+  expediente?: { id: string; numero: string } | null;
 };
 
 export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; sinResultadosTexto: string }) {
-  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("vital-solicitudes-v2", ANCHOS_DEFECTO);
+  const { anchos, cambiarAncho, restablecer } = useAnchosColumna("vital-solicitudes-v3", ANCHOS_DEFECTO);
 
   return (
     <table className="tabla-listado w-full table-fixed text-sm">
@@ -83,6 +85,19 @@ export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; 
               >
                 {f.docs || "—"}
                 {f.docsEnVital ? "*" : ""}
+              </td>
+              <td className="truncate px-2.5 py-2 text-xs">
+                {f.expediente ? (
+                  <Link prefetch={false} href={`/expedientes/${f.expediente.id}`} className="font-medium text-emerald-700 hover:underline" title="Convertida en trámite">
+                    {f.expediente.numero}
+                  </Link>
+                ) : f.gestion === "NUEVA" ? (
+                  <span className="rounded-sm bg-amber-50 px-1.5 py-0.5 font-medium text-amber-800">Nueva</span>
+                ) : f.gestion === "DESCARTADA" ? (
+                  <span className="text-stone-400">No convertida</span>
+                ) : (
+                  <span className="text-stone-300">—</span>
+                )}
               </td>
             </tr>
           ))

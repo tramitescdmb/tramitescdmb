@@ -19,9 +19,12 @@ import { db } from "@/lib/db";
 import { completarAnexosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeConsultarVital, puedeConvertirSolicitudVital } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 import { BandaTablero } from "@/components/tablero";
+import { GestionSolicitudVital } from "@/components/vital/GestionSolicitudVital";
+import { codigoTramiteSugerido } from "@/lib/vital-conversion";
+import { ArrowRightCircle } from "lucide-react";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
 const txt = (v: unknown): string | null => {
@@ -324,14 +327,15 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   const { id } = await params;
 
   const session = await getSession();
-  if (session) {
-    const permisos = await obtenerPermisosUsuario(session.userId);
-    if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
-  }
+  const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
+  if (permisos && !puedeConsultarVital(permisos)) redirect("/");
 
   const solicitud = await db.solicitudVital.findUnique({
     where: { id },
-    include: { documentos: { orderBy: { createdAt: "desc" } } },
+    include: {
+      documentos: { orderBy: { createdAt: "desc" } },
+      expediente: { select: { id: true, numero: true } },
+    },
   });
   if (!solicitud) notFound();
   const punto = puntoDesdeCampos(solicitud.camposTramite);
@@ -345,6 +349,24 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   );
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
+
+  // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA, entre los trámites con flujo definido.
+  const tramitesRadicables =
+    permisos && puedeConvertirSolicitudVital(permisos)
+      ? await db.tramiteTipo.findMany({
+          where: { activo: true, flujos: { some: {} } },
+          select: { id: true, slug: true, nombre: true, codigo: true },
+          orderBy: { nombre: "asc" },
+        })
+      : [];
+  const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
+  const slugSugerido = tramitesRadicables.find((t) => t.codigo === codigoSugerido)?.slug ?? null;
+  const gestorNombre = solicitud.gestionadaPorId
+    ? (await db.usuario.findUnique({ where: { id: solicitud.gestionadaPorId }, select: { nombre: true } }))?.nombre ?? null
+    : null;
+  const gestionadaTexto = solicitud.gestionadaEn
+    ? `${formatearFechaHora(solicitud.gestionadaEn)}${gestorNombre ? ` · ${gestorNombre}` : ""}`
+    : null;
 
 
   return (
@@ -394,6 +416,18 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           </p>
         )}
       </BandaTablero>
+
+      <Tarjeta icon={ArrowRightCircle} titulo="Gestión en SIC">
+        <GestionSolicitudVital
+          solicitudId={solicitud.id}
+          gestion={solicitud.gestion}
+          expediente={solicitud.expediente}
+          motivoDescarte={solicitud.motivoDescarte}
+          gestionadaTexto={gestionadaTexto}
+          tramites={tramitesRadicables.map(({ slug, nombre, codigo }) => ({ slug, nombre, codigo }))}
+          slugSugerido={slugSugerido}
+        />
+      </Tarjeta>
 
       <Tarjeta
         icon={interesados.length > 0 && esPersonaJuridica(interesados[0]) ? Building2 : User}

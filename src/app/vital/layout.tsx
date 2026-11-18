@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { Link2, Lock } from "lucide-react";
 import { VitalTabs } from "@/components/VitalTabs";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederSeccion, puedeConsultarVital } from "@/lib/permisos";
 
 export default async function VitalLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const permisos = await obtenerPermisosUsuario(session.userId);
   const permitido = {
-    base: puedeAccederSeccion(permisos, "VITAL_BASE"),
+    base: puedeConsultarVital(permisos),
     dashboard: puedeAccederSeccion(permisos, "VITAL_DASHBOARD"),
   };
   if (!permitido.base && !permitido.dashboard) redirect("/");

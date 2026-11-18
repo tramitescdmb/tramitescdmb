@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeConsultarVital } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
 import { abrirDocumentoVital, urlActualAnexoVital, urlArchivoDeRuta } from "@/lib/vital";
 
@@ -14,11 +14,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeAccederSeccion(permisos, "VITAL_BASE")) {
+  const documento = await db.solicitudVitalDocumento.findUnique({
+    where: { id },
+    include: { solicitud: { select: { idVital: true, expediente: { select: { tramiteTipoId: true } } } } },
+  });
+  // Quien consulta VITAL, o quien tiene acceso al trámite en el que se convirtió la solicitud.
+  const tramiteDelExpediente = documento?.solicitud.expediente?.tramiteTipoId;
+  const accesoPorExpediente = Boolean(tramiteDelExpediente && (permisos.esAdmin || permisos.tramites.has(tramiteDelExpediente)));
+  if (!puedeConsultarVital(permisos) && !accesoPorExpediente) {
     return NextResponse.json({ error: "No tiene acceso a VITAL." }, { status: 403 });
   }
-
-  const documento = await db.solicitudVitalDocumento.findUnique({ where: { id }, include: { solicitud: { select: { idVital: true } } } });
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const urlArchivo = urlArchivoDeRuta(documento.storagePath);
