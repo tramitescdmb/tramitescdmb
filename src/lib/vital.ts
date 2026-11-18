@@ -487,14 +487,27 @@ export async function urlActualAnexoVital(idVital: string, nombre: string): Prom
  * Para solicitudes cuyo listado de anexos aún no está guardado (se sincronizaron
  * antes): consulta VITAL en vivo y guarda los metadatos.
  */
-export async function completarAnexosVital(solicitudId: string): Promise<void> {
+export async function completarAnexosVital(solicitudId: string): Promise<{ ok: true; total: number } | { ok: false; motivo: string }> {
   const solicitud = await db.solicitudVital.findUnique({ where: { id: solicitudId } });
-  if (!solicitud) return;
-  const lista = await consultarDocumentos(solicitud.idVital);
+  if (!solicitud) return { ok: false, motivo: "Solicitud no encontrada." };
+  let lista: DocumentoVital[];
+  try {
+    lista = await consultarDocumentos(solicitud.idVital);
+  } catch (err) {
+    const motivo = err instanceof Error ? err.message : String(err);
+    // VITAL responde con error cuando la solicitud no tiene anexos.
+    if (SIN_DATOS_VITAL.test(motivo)) {
+      lista = [];
+    } else {
+      console.error(`[VITAL] ${solicitud.idVital}: no se pudo consultar la lista de anexos: ${motivo}`);
+      return { ok: false, motivo };
+    }
+  }
   await guardarMetadatosAnexos(solicitud.id, lista);
   if (solicitud.documentosReportados !== lista.length) {
     await db.solicitudVital.update({ where: { id: solicitud.id }, data: { documentosReportados: lista.length } });
   }
+  return { ok: true, total: lista.length };
 }
 
 function nombreDe(info: Record<string, unknown>): string | null {
