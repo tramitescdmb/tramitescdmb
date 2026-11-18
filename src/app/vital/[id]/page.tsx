@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import {
   ArrowLeft,
   User,
@@ -16,7 +16,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { documentosPendientesVital, nombreTramiteVital, urlVitalPublico, type DocumentoVital } from "@/lib/vital";
+import { completarAnexosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
@@ -233,6 +233,67 @@ function CamposFormulario({ datos }: { datos: unknown }) {
   );
 }
 
+type AnexoGuardado = { id: string; nombre: string };
+
+/**
+ * Lista de anexos. Va aparte (en <Suspense>) porque, si la solicitud aún no tiene
+ * la lista guardada, se consulta VITAL en vivo y eso puede tardar: el resto de la
+ * ficha se muestra de una vez.
+ */
+async function AnexosVital({ solicitudId, reportados, guardados }: { solicitudId: string; reportados: number | null; guardados: AnexoGuardado[] }) {
+  let documentos = guardados;
+  let sinRespuesta = false;
+  if ((reportados ?? 0) > documentos.length || reportados == null) {
+    try {
+      await Promise.race([
+        completarAnexosVital(solicitudId),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("tiempo")), 12_000)),
+      ]);
+      documentos = await db.solicitudVitalDocumento.findMany({ where: { solicitudId }, orderBy: { createdAt: "desc" }, select: { id: true, nombre: true } });
+    } catch {
+      sinRespuesta = (reportados ?? 0) > documentos.length;
+    }
+  }
+  const faltan = Math.max(0, (reportados ?? 0) - documentos.length);
+
+  return (
+    <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}>
+      {documentos.length === 0 && faltan === 0 ? (
+        <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
+      ) : (
+        <ul className="space-y-2">
+          {documentos.map((doc) => (
+            <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
+              <span className="flex min-w-0 items-center gap-2">
+                <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+                <span className="truncate text-sm text-stone-800" title={doc.nombre}>
+                  {doc.nombre}
+                </span>
+              </span>
+              <a
+                href={`/api/vital-documentos/${doc.id}`}
+                target="_blank"
+                rel="noreferrer"
+                title="Se abre directamente desde VITAL"
+                className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden />
+                Abrir
+              </a>
+            </li>
+          ))}
+          {sinRespuesta && faltan > 0 ? (
+            <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
+              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} que aún no se pueden listar: VITAL no respondió a tiempo. Recargue la página en unos minutos.
+            </li>
+          ) : null}
+        </ul>
+      )}
+      <p className="mt-3 text-xs text-stone-400">Los anexos se consultan en VITAL al abrirlos; no se guardan copias en el almacén de la CDMB.</p>
+    </Tarjeta>
+  );
+}
+
 export default async function VitalDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -259,21 +320,6 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
-  // Si VITAL reportó más anexos de los que quedaron en el NAS (la descarga falló al
-  // sincronizar), se consultan en vivo para ofrecer traerlos. Sin bloquear la página.
-  let pendientes: DocumentoVital[] = [];
-  let pendientesError = false;
-  if ((solicitud.documentosReportados ?? 0) > solicitud.documentos.length) {
-    try {
-      pendientes = await Promise.race([
-        documentosPendientesVital(solicitud.id),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("tiempo")), 12_000)),
-      ]);
-    } catch {
-      pendientesError = true;
-    }
-  }
-  const faltan = Math.max(0, (solicitud.documentosReportados ?? 0) - solicitud.documentos.length);
 
   return (
     <div className="space-y-4">
@@ -348,65 +394,15 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         <CamposFormulario datos={solicitud.camposTramite} />
       </Tarjeta>
 
-      <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(solicitud.documentos.length + pendientes.length, solicitud.documentosReportados ?? 0)})`}>
-        {solicitud.documentos.length === 0 && pendientes.length === 0 && faltan === 0 ? (
-          <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
-        ) : (
-          <ul className="space-y-2">
-            {solicitud.documentos.map((doc) => (
-              <li
-                key={doc.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
-                  <span className="truncate text-sm text-stone-800" title={doc.nombre}>
-                    {doc.nombre}
-                  </span>
-                </span>
-                <a
-                  href={`/api/vital-documentos/${doc.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden />
-                  Abrir
-                </a>
-              </li>
-            ))}
-            {pendientes.map((doc) => (
-              <li
-                key={`p-${doc.nombre_archivo}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-amber-300 bg-amber-50/40 px-3 py-2"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 flex-none text-amber-600" aria-hidden />
-                  <span className="truncate text-sm text-stone-800" title={doc.nombre_archivo}>
-                    {doc.nombre_archivo}
-                  </span>
-                  <span className="flex-none text-xs text-amber-700">aún en VITAL</span>
-                </span>
-                <a
-                  href={`/api/vital-documentos/traer?solicitud=${encodeURIComponent(solicitud.id)}&nombre=${encodeURIComponent(doc.nombre_archivo)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Lo descarga de VITAL, lo guarda en el NAS y lo abre"
-                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden />
-                  Traer y abrir
-                </a>
-              </li>
-            ))}
-            {pendientesError && faltan > 0 ? (
-              <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-                VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se han podido traer. VITAL no respondió a tiempo; recargue la página en unos minutos.
-              </li>
-            ) : null}
-          </ul>
-        )}
-      </Tarjeta>
+      <Suspense
+        fallback={
+          <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(solicitud.documentos.length, solicitud.documentosReportados ?? 0)})`}>
+            <p className="text-sm text-stone-400">Consultando la lista de anexos en VITAL…</p>
+          </Tarjeta>
+        }
+      >
+        <AnexosVital solicitudId={solicitud.id} reportados={solicitud.documentosReportados} guardados={solicitud.documentos} />
+      </Suspense>
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">
         <CalendarClock className="h-3.5 w-3.5" aria-hidden />

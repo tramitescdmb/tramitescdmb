@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { abrirDocumentoVital, urlActualAnexoVital, urlArchivoDeRuta } from "@/lib/vital";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * Abre un anexo de una solicitud de VITAL. Los anexos no se guardan en el NAS:
+ * se piden a VITAL en el momento y se entregan directo al navegador.
+ */
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -14,9 +18,40 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "No tiene acceso a VITAL." }, { status: 403 });
   }
 
-  const documento = await db.solicitudVitalDocumento.findUnique({ where: { id } });
+  const documento = await db.solicitudVitalDocumento.findUnique({ where: { id }, include: { solicitud: { select: { idVital: true } } } });
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
-  const url = await getSignedDownloadUrl(documento.storagePath);
-  return NextResponse.redirect(url);
+  const urlArchivo = urlArchivoDeRuta(documento.storagePath);
+  if (!urlArchivo) {
+    // Registro antiguo con archivo en el almacén (antes de dejar de guardarlos).
+    return NextResponse.redirect(await getSignedDownloadUrl(documento.storagePath));
+  }
+
+  let r = await abrirDocumentoVital(urlArchivo);
+  if (!r.ok) {
+    // La dirección pudo cambiar en VITAL: se busca la actual por el nombre.
+    const actual = await urlActualAnexoVital(documento.solicitud.idVital, documento.nombre).catch(() => null);
+    if (actual && actual !== urlArchivo) {
+      r = await abrirDocumentoVital(actual);
+      if (r.ok) await db.solicitudVitalDocumento.update({ where: { id }, data: { storagePath: `vital:${actual}` } }).catch(() => {});
+    }
+  }
+  if (!r.ok) return pagina(`No se pudo traer el anexo «${documento.nombre}» desde VITAL. ${r.motivo}`);
+
+  const headers = new Headers({
+    "Content-Type": r.mimeType,
+    "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(documento.nombre)}`,
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+  });
+  if (r.tamano) headers.set("Content-Length", r.tamano);
+  return new NextResponse(r.cuerpo, { status: 200, headers });
+}
+
+function pagina(mensaje: string) {
+  const esc = mensaje.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  return new NextResponse(
+    `<!doctype html><meta charset="utf-8"><title>Anexo de VITAL</title><body style="font-family:sans-serif;padding:2rem;max-width:40rem"><p>${esc}</p><p>Intente de nuevo en unos minutos. Si persiste, avise a tecnologia@cdmb.gov.co.</p></body>`,
+    { status: 502, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
 }

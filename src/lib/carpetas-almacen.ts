@@ -7,7 +7,7 @@
  *   Tramites/2026/concesion-de-aguas-superficiales/M-DA-PR39-2026-0012/radicacion/Plano.pdf
  *   Correspondencia/2026/recibidas/CDMB-R-2026-000123/Peticion.pdf
  *   SGDEA/2026/110-Oficina-Juridica/CDMB-X-2026-000004/Acta.pdf
- *   Vital/2026/3500000000123/Solicitud.pdf
+ *   (Vital: sin archivos en el NAS; los anexos de VITAL solo guardan metadatos y se piden a VITAL)
  *
  * Los archivos se suben primero a `_subidas/<identificador>/` (la carpeta que valida el servidor al
  * registrarlos) y, ya registrado el documento, se mueven a su carpeta definitiva. Aquí solo se arman
