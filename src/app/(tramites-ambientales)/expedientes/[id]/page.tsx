@@ -117,6 +117,9 @@ export default async function ExpedienteDetallePage({
       include: {
         tramiteTipo: true,
         flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
+        solicitudVital: {
+          select: { id: true, idVital: true, documentosReportados: true, documentos: { orderBy: { createdAt: "asc" }, select: { id: true, nombre: true } } },
+        },
         documentos: {
           orderBy: { createdAt: "desc" },
           include: {
@@ -396,6 +399,34 @@ export default async function ExpedienteDetallePage({
           </Link>{" "}
           · Flujo: {expediente.flujo.nombre}
         </p>
+        {expediente.solicitudVital && (
+          <details className="mt-2 text-sm">
+            <summary className="cursor-pointer text-cdmb-800">
+              Radicado desde la solicitud{" "}
+              <Link href={`/vital/${expediente.solicitudVital.id}`} className="font-medium text-cdmb-700 hover:underline">
+                VITAL {expediente.solicitudVital.idVital}
+              </Link>{" "}
+              · Anexos en VITAL ({Math.max(expediente.solicitudVital.documentos.length, expediente.solicitudVital.documentosReportados ?? 0)})
+            </summary>
+            {expediente.solicitudVital.documentos.length === 0 ? (
+              <p className="mt-1 text-xs text-stone-500">
+                La lista de anexos se consulta en la{" "}
+                <Link href={`/vital/${expediente.solicitudVital.id}`} className="text-cdmb-700 hover:underline">ficha de la solicitud</Link>.
+              </p>
+            ) : (
+              <ul className="mt-1 space-y-0.5">
+                {expediente.solicitudVital.documentos.map((a) => (
+                  <li key={a.id} className="flex items-center gap-1.5 text-xs">
+                    <FileText className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
+                    <a href={`/api/vital-documentos/${a.id}`} target="_blank" rel="noreferrer" className="truncate text-cdmb-700 hover:underline">
+                      {a.nombre}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
         <div className="mt-3 max-w-md">
           <ProgresoExpediente
             pasoActualNumero={expediente.pasoActualNumero}

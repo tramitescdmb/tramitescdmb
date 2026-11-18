@@ -16,6 +16,14 @@ import { TablaVital } from "@/components/tablas/TablaVital";
 import { conteoDocsVital } from "@/lib/vital-links";
 import { formatearFecha as fecha, fechaArchivoColombia } from "@/lib/fecha";
 import { CabeceraTablero } from "@/components/tablero";
+import { contarSolicitudesVitalNuevas } from "@/lib/vital-gestion";
+
+const ETIQUETA_GESTION: Record<string, string> = {
+  nuevas: "nuevas",
+  "sin-convertir": "sin convertir en trámite",
+  convertidas: "convertidas en trámite",
+  descartadas: "que no se convirtieron en trámite",
+};
 
 const AYER = fechaArchivoColombia(new Date(Date.now() - 86_400_000));
 
@@ -45,19 +53,21 @@ export default async function VitalSolicitudesPage({
   }
 
   const { rango, etiqueta: etiquetaPeriodo } = resolverPeriodo(sp);
-  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones] = await Promise.all([
+  const [{ filas, total, page, totalPaginas, porPagina, vista }, opciones, nuevas] = await Promise.all([
     getVitalListado(sp, rango),
     getVitalOpcionesFiltro(),
+    contarSolicitudesVitalNuevas(),
   ]);
 
-  const hayFiltros = Boolean(sp.q || sp.tramite || rango);
-  const CAMPOS_FILTRO = ["q", "tramite", "desde", "hasta"] as const;
+  const hayFiltros = Boolean(sp.q || sp.tramite || sp.gestion || rango);
+  const CAMPOS_FILTRO = ["q", "tramite", "gestion", "desde", "hasta"] as const;
 
   const clausulasFiltro: string[] = [];
   if (sp.tramite) {
     const tramite = opciones.tramites.find((t) => String(t.id) === sp.tramite);
     clausulasFiltro.push(`de ${tramite ? `(${tramite.id}) ${tramite.nombre}` : nombreTramiteVital(Number(sp.tramite))}`);
   }
+  if (sp.gestion) clausulasFiltro.push(ETIQUETA_GESTION[sp.gestion] ?? "");
   if (rango) clausulasFiltro.push(`entre ${etiquetaPeriodo}`);
   if (sp.q) clausulasFiltro.push(`que coinciden con "${sp.q}"`);
   const detalleFiltro = clausulasFiltro.join(" ");
@@ -85,6 +95,15 @@ export default async function VitalSolicitudesPage({
         </div>
       )}
       {sp.error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{sp.error}</div>}
+
+      {nuevas > 0 && sp.gestion !== "nuevas" && (
+        <Link
+          href="/vital?gestion=nuevas"
+          className="block rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100"
+        >
+          {nuevas === 1 ? "Tiene 1 nueva solicitud de VITAL" : `Tiene ${nuevas} nuevas solicitudes de VITAL`} por convertir en trámite. <span className="font-medium underline">Verlas</span>
+        </Link>
+      )}
 
       <CabeceraTablero
         icon={Inbox}
@@ -119,6 +138,17 @@ export default async function VitalSolicitudesPage({
             </select>
           </label>
 
+          <label>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Gestión en SIC</span>
+            <select name="gestion" defaultValue={sp.gestion ?? ""} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm">
+              <option value="">Todas</option>
+              <option value="nuevas">Nuevas ({nuevas})</option>
+              <option value="sin-convertir">Sin convertir</option>
+              <option value="convertidas">Convertidas en trámite</option>
+              <option value="descartadas">No convertidas</option>
+            </select>
+          </label>
+
           <div className="flex items-end gap-2">
             <button type="submit" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600">Filtrar</button>
             {hayFiltros && (
@@ -144,6 +174,8 @@ export default async function VitalSolicitudesPage({
               actividad: s.nombreActividad,
               docs: conteoDocsVital(s._count.documentos, s.documentosReportados).total,
               docsEnVital: conteoDocsVital(s._count.documentos, s.documentosReportados).enVital,
+              gestion: s.gestion,
+              expediente: s.expediente,
             }))}
             sinResultadosTexto={hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
           />

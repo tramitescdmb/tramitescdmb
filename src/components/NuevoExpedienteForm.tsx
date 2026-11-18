@@ -27,6 +27,16 @@ import {
   IconBuilding,
 } from "@/components/icons";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
+import type { PrellenadoVital } from "@/lib/vital-conversion";
+
+export type DesdeVital = {
+  solicitudId: string;
+  idVital: string;
+  tramiteVital: string;
+  anexos: { id: string; nombre: string }[];
+  anexosReportados: number | null;
+  datos: PrellenadoVital;
+};
 
 function numeroONulo(valor: string): number | null {
   const limpio = valor.trim();
@@ -60,6 +70,7 @@ export function NuevoExpedienteForm({
   flujos,
   flujoInicialId,
   mostrarDatosPredio,
+  desdeVital,
 }: {
   tramiteId: string;
   tramiteSlug: string;
@@ -67,28 +78,31 @@ export function NuevoExpedienteForm({
   flujos: FlujoOpcion[];
   flujoInicialId: string;
   mostrarDatosPredio: boolean;
+  /** Radicación a partir de una solicitud de VITAL: datos prellenados y anexos enlazados. */
+  desdeVital?: DesdeVital;
 }) {
+  const v = desdeVital?.datos;
   const router = useRouter();
   const expedienteIdRef = useRef<string>(crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [municipio, setMunicipio] = useState("");
-  const [municipioSolicitante, setMunicipioSolicitante] = useState("");
-  const [solicitanteDireccion, setSolicitanteDireccion] = useState("");
-  const [predioDireccion, setPredioDireccion] = useState("");
+  const [municipio, setMunicipio] = useState(v?.municipio ?? "");
+  const [municipioSolicitante, setMunicipioSolicitante] = useState(v?.municipioSolicitante ?? "");
+  const [solicitanteDireccion, setSolicitanteDireccion] = useState(v?.direccion ?? "");
+  const [predioDireccion, setPredioDireccion] = useState(v?.predioDireccion ?? "");
   const mapaSolicitanteRef = useRef<MapaUbicacionHandle>(null);
   const mapaPredioRef = useRef<MapaUbicacionHandle>(null);
-  const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">("NATURAL");
+  const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">(v?.tipo ?? "NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
-  const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState("");
-  const [solicitanteNombres, setSolicitanteNombres] = useState("");
-  const [solicitanteApellidos, setSolicitanteApellidos] = useState("");
-  const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState("");
-  const [representanteLegal, setRepresentanteLegal] = useState("");
+  const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState(v?.identificacion ?? "");
+  const [solicitanteNombres, setSolicitanteNombres] = useState(v?.nombres ?? "");
+  const [solicitanteApellidos, setSolicitanteApellidos] = useState(v?.apellidos ?? "");
+  const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState(v?.razonSocial ?? "");
+  const [representanteLegal, setRepresentanteLegal] = useState(v?.representanteLegal ?? "");
   const [representanteIdentificacion, setRepresentanteIdentificacion] = useState("");
-  const [solicitanteEmail, setSolicitanteEmail] = useState("");
-  const [solicitanteTelefono, setSolicitanteTelefono] = useState("");
+  const [solicitanteEmail, setSolicitanteEmail] = useState(v?.email ?? "");
+  const [solicitanteTelefono, setSolicitanteTelefono] = useState(v?.telefono ?? "");
   const [regimenTributario, setRegimenTributario] = useState("");
   const [granContribuyente, setGranContribuyente] = useState(false);
   const [buscandoSolicitante, setBuscandoSolicitante] = useState(false);
@@ -176,7 +190,7 @@ export function NuevoExpedienteForm({
   }
 
   function documentoRequerido(doc: DocumentoRequerido) {
-    return doc.obligatorio && aplicaAlTipoSolicitante(doc);
+    return !desdeVital && doc.obligatorio && aplicaAlTipoSolicitante(doc);
   }
 
   const documentosAplicables = documentosRequeridos.filter(aplicaAlTipoSolicitante);
@@ -293,6 +307,7 @@ export function NuevoExpedienteForm({
             lon: fd.get("solicitanteUbicacionLon") ? Number(fd.get("solicitanteUbicacionLon")) : null,
           },
           documentos,
+          solicitudVitalId: desdeVital?.solicitudId ?? null,
         }),
       });
 
@@ -312,6 +327,12 @@ export function NuevoExpedienteForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {desdeVital && (
+        <div className="rounded-xl border border-cdmb-200 bg-cdmb-50 px-4 py-3 text-sm text-cdmb-900">
+          Se radica a partir de la solicitud <strong>VITAL {desdeVital.idVital}</strong> ({desdeVital.tramiteVital}). Los datos se
+          tomaron de VITAL: verifíquelos y complete lo que falte. Al radicar, la solicitud queda marcada como convertida en trámite.
+        </div>
+      )}
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <EncabezadoPaso numero={1} icono={<IconUser className="h-4 w-4" />} titulo="Datos del solicitante" />
 
@@ -627,7 +648,7 @@ export function NuevoExpedienteForm({
           help="El botón anterior ubica la dirección en el mapa. También puede seleccionarse el punto directamente en el mapa, o registrarse coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se almacena en latitud/longitud y se calcula automáticamente en coordenadas planas, el sistema oficial de Colombia."
         >
           {municipio ? (
-            <MapaUbicacion ref={mapaPredioRef} municipio={municipio} prefijo="ubicacion" />
+            <MapaUbicacion ref={mapaPredioRef} municipio={municipio} prefijo="ubicacion" inicial={v?.ubicacion ?? null} />
           ) : (
             <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-400">
               Debe seleccionarse primero el municipio para poder ubicar el punto en el mapa.
@@ -736,6 +757,30 @@ export function NuevoExpedienteForm({
           </p>
         </div>
 
+        {desdeVital && (
+          <div className="rounded-md border border-cdmb-200 bg-cdmb-50/60 px-3 py-2 text-sm text-cdmb-900">
+            <p className="font-medium">
+              Anexos de la solicitud en VITAL ({Math.max(desdeVital.anexos.length, desdeVital.anexosReportados ?? 0)})
+            </p>
+            <p className="mt-0.5 text-xs text-cdmb-800">
+              Quedan enlazados al expediente y se abren desde VITAL (no se copian al NAS). Por eso los requisitos no son
+              obligatorios aquí: suba solo lo que el solicitante haya entregado por fuera de VITAL.
+            </p>
+            {desdeVital.anexos.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {desdeVital.anexos.map((a) => (
+                  <li key={a.id} className="flex items-center gap-2 text-xs">
+                    <IconDocument className="h-3.5 w-3.5 flex-none text-cdmb-600" />
+                    <a href={`/api/vital-documentos/${a.id}`} target="_blank" rel="noreferrer" className="truncate text-cdmb-700 hover:underline">
+                      {a.nombre}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {documentosAplicables.length === 0 && (
           <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
             Sin lista fija de documentos para este tipo de solicitante: use «Otros documentos».
@@ -838,7 +883,7 @@ export function NuevoExpedienteForm({
       )}
 
       <div className="flex items-center justify-end gap-3">
-        <Link href={`/tramites/${tramiteSlug}`} className="text-sm text-stone-500 hover:text-stone-700">
+        <Link href={desdeVital ? `/vital/${desdeVital.solicitudId}` : `/tramites/${tramiteSlug}`} className="text-sm text-stone-500 hover:text-stone-700">
           Cancelar
         </Link>
         <button

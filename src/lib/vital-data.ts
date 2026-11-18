@@ -8,7 +8,7 @@ const num = (v: unknown) => (typeof v === "bigint" ? Number(v) : Number(v ?? 0))
 const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MAX_MESES_SERIE = 120;
 
-export type FiltrosVital = { q?: string; tramite?: string; documentos?: string; page?: string; vista?: string };
+export type FiltrosVital = { q?: string; tramite?: string; documentos?: string; gestion?: string; page?: string; vista?: string };
 
 export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null): Prisma.SolicitudVitalWhereInput {
   const and: Prisma.SolicitudVitalWhereInput[] = [];
@@ -26,6 +26,10 @@ export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null)
   const tramites = (f.tramite ?? "").split(",").filter((t) => /^\d+$/.test(t)).map((t) => parseInt(t, 10));
   if (tramites.length > 0) and.push({ idTramiteVital: { in: tramites } });
   if (f.documentos === "con") and.push({ OR: [{ documentos: { some: {} } }, { documentosReportados: { gt: 0 } }] });
+  if (f.gestion === "nuevas") and.push({ gestion: "NUEVA" });
+  if (f.gestion === "convertidas") and.push({ gestion: "CONVERTIDA" });
+  if (f.gestion === "descartadas") and.push({ gestion: "DESCARTADA" });
+  if (f.gestion === "sin-convertir") and.push({ expedienteId: null, OR: [{ gestion: null }, { gestion: "NUEVA" }] });
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
@@ -42,7 +46,7 @@ export async function getVitalListado(filtros: FiltrosVital, rango: RangoPeriodo
       orderBy: [{ fechaRadicacion: { sort: "desc", nulls: "last" } }, { ultimaSincronizacion: "desc" }],
       skip: (page - 1) * porPagina,
       take: porPagina,
-      include: { _count: { select: { documentos: true } } },
+      include: { _count: { select: { documentos: true } }, expediente: { select: { id: true, numero: true } } },
     }),
   ]);
 

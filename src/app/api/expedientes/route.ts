@@ -12,6 +12,7 @@ import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
 import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
 import { MENSAJE_RUTA_AJENA, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { organizarTrasRegistro } from "@/lib/organizar-archivos";
+import { resolverAvisoSolicitudVital } from "@/lib/vital-gestion";
 
 type DocumentoInput = {
   path: string;
@@ -42,8 +43,10 @@ export async function POST(req: NextRequest) {
     ubicacion,
     solicitanteUbicacion,
     documentos,
+    solicitudVitalId,
   }: {
     id: string;
+    solicitudVitalId?: string | null;
     tramiteTipoId: string;
     flujoId: string;
     solicitante: {
@@ -119,6 +122,18 @@ export async function POST(req: NextRequest) {
   const flujo = tramite.flujos.find((f) => f.id === flujoId);
   if (!flujo) return NextResponse.json({ error: "Flujo no encontrado." }, { status: 404 });
 
+  // Radicación desde una solicitud de VITAL: sus anexos quedan enlazados desde VITAL
+  // (no se copian al NAS), así que no se exige volver a subir los requisitos.
+  const solicitudVital = solicitudVitalId
+    ? await db.solicitudVital.findUnique({ where: { id: String(solicitudVitalId) }, select: { id: true, idVital: true, expedienteId: true } })
+    : null;
+  if (solicitudVitalId && !solicitudVital) {
+    return NextResponse.json({ error: "No se encontró la solicitud de VITAL." }, { status: 404 });
+  }
+  if (solicitudVital?.expedienteId) {
+    return NextResponse.json({ error: "Esta solicitud de VITAL ya se convirtió en trámite." }, { status: 409 });
+  }
+
   // Solo cuentan los documentos con archivo: un requisito "aportado" sin archivo no cumple.
   const documentosValidos = (Array.isArray(documentos) ? documentos : []).filter(
     (d) => d && typeof d.path === "string" && d.path && typeof d.nombre === "string" && d.nombre.trim()
@@ -129,7 +144,7 @@ export async function POST(req: NextRequest) {
   const documentosFaltantes = tramite.documentosRequeridos.filter(
     (d) => d.obligatorio && (d.aplicaA === null || d.aplicaA === solicitante.tipo) && !idsDocumentosAportados.has(d.id)
   );
-  if (documentosFaltantes.length > 0) {
+  if (documentosFaltantes.length > 0 && !solicitudVital) {
     return NextResponse.json(
       { error: `Faltan documentos obligatorios para radicar: ${documentosFaltantes.map((d) => d.nombre).join(", ")}.` },
       { status: 400 }
@@ -249,7 +264,10 @@ export async function POST(req: NextRequest) {
 
   const tipoDocumentalPorRequisito = new Map(tramite.documentosRequeridos.map((r) => [r.id, r.tipoDocumentalId]));
   // Expediente, evento y documentos en una sola transacción: si algo falla no queda un trámite radicado sin sus documentos.
-  const expediente = await db.$transaction(async (tx) => {
+  const VITAL_YA_CONVERTIDA = "VITAL_YA_CONVERTIDA";
+  let expediente;
+  try {
+  expediente = await db.$transaction(async (tx) => {
     const creado = await tx.expediente.create({
       data: {
         id: expedienteId,
@@ -286,7 +304,7 @@ export async function POST(req: NextRequest) {
     data: {
       expedienteId: creado.id,
       tipo: "CREACION",
-      descripcion: `Expediente radicado por ${session.nombre} para el trámite "${tramite.nombre}" (flujo: ${flujo.nombre}).`,
+      descripcion: `Expediente radicado por ${session.nombre} para el trámite "${tramite.nombre}" (flujo: ${flujo.nombre})${solicitudVital ? `, desde la solicitud VITAL n.º ${solicitudVital.idVital}` : ""}.`,
       estadoNuevo: "RADICADO",
       usuarioId: session.userId,
     },
@@ -310,8 +328,22 @@ export async function POST(req: NextRequest) {
         })),
     });
   }
+  if (solicitudVital) {
+    const marcada = await tx.solicitudVital.updateMany({
+      where: { id: solicitudVital.id, expedienteId: null },
+      data: { gestion: "CONVERTIDA", expedienteId: creado.id, gestionadaEn: new Date(), gestionadaPorId: session.userId, motivoDescarte: null },
+    });
+    if (marcada.count !== 1) throw new Error(VITAL_YA_CONVERTIDA);
+  }
   return creado;
   });
+  } catch (err) {
+    if (err instanceof Error && err.message === VITAL_YA_CONVERTIDA) {
+      return NextResponse.json({ error: "Esta solicitud de VITAL ya se convirtió en trámite." }, { status: 409 });
+    }
+    throw err;
+  }
+  if (solicitudVital) await resolverAvisoSolicitudVital(solicitudVital.id).catch(() => {});
   await organizarTrasRegistro({ tipo: "tramite", id: expediente.id });
   await sincronizarAvisoVisita(expediente.id);
   await iniciarFlujoAutomaticoEnObjeto("TRAMITE", expediente.id, session.userId).catch((e) => console.error("iniciarFlujoAutomaticoEnObjeto falló:", e));
