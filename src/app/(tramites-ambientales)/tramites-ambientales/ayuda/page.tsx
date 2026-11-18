@@ -118,7 +118,7 @@ export default async function TramitesAyudaPage() {
         </p>
         <p>
           Cada trámite del catálogo sigue el procedimiento documentado (código <Chip tono="cdmb">M-DA-PRxx</Chip>): sus pasos, responsables,
-          requisitos documentales y tiempos. Cuando la sincronización trae una solicitud nueva de VITAL, quien puede radicar ese trámite
+          requisitos documentales y tiempos. Cuando la sincronización trae una solicitud nueva de VITAL, el administrador y el Subdirector(a) de Evaluación y Control Ambiental
           recibe el aviso «Tiene una nueva solicitud de VITAL»; desde la ficha de la solicitud, «Convertir en trámite» abre la radicación
           con los datos de VITAL y el expediente queda enlazado a ella (sus anexos se abren desde VITAL). SINCA 1.0 es de solo lectura.
         </p>

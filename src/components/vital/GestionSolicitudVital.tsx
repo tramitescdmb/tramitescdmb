@@ -95,7 +95,7 @@ export function GestionSolicitudVital({
   }
 
   if (!puede) {
-    return <p className="text-sm text-stone-500">Aún no se ha convertido en trámite. Puede hacerlo quien tenga permiso para radicar trámites ambientales.</p>;
+    return <p className="text-sm text-stone-500">Aún no se ha convertido en trámite. Lo hacen el administrador o el Subdirector(a) de Evaluación y Control Ambiental.</p>;
   }
 
   return (

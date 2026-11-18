@@ -8,7 +8,7 @@ import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeConvertirSolicitudVital, puedeEditarTramite } from "@/lib/permisos";
 import { BandaTablero } from "@/components/tablero";
 
 export default async function NuevoExpedientePage({
@@ -28,7 +28,7 @@ export default async function NuevoExpedientePage({
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
-    if (!puedeEditarTramite(permisos, tramite.id)) notFound();
+    if (solicitudVitalId ? !puedeConvertirSolicitudVital(permisos) : !puedeEditarTramite(permisos, tramite.id)) notFound();
   }
 
   const flujoEnfocado = flujoCodigoFoco ? tramite.flujos.find((f) => f.codigo === flujoCodigoFoco) : undefined;

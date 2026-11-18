@@ -19,7 +19,7 @@ import { db } from "@/lib/db";
 import { completarAnexosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeConsultarVital, puedeConvertirSolicitudVital } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 import { BandaTablero } from "@/components/tablero";
 import { GestionSolicitudVital } from "@/components/vital/GestionSolicitudVital";
@@ -328,7 +328,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
   const session = await getSession();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
-  if (permisos && !puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
+  if (permisos && !puedeConsultarVital(permisos)) redirect("/");
 
   const solicitud = await db.solicitudVital.findUnique({
     where: { id },
@@ -350,16 +350,15 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
-  // Trámites que este usuario puede radicar (con flujo definido) para «Convertir en trámite».
-  const tramitesRadicables = permisos
-    ? (
-        await db.tramiteTipo.findMany({
+  // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA, entre los trámites con flujo definido.
+  const tramitesRadicables =
+    permisos && puedeConvertirSolicitudVital(permisos)
+      ? await db.tramiteTipo.findMany({
           where: { activo: true, flujos: { some: {} } },
           select: { id: true, slug: true, nombre: true, codigo: true },
           orderBy: { nombre: "asc" },
         })
-      ).filter((t) => permisos.esAdmin || permisos.tramites.get(t.id) === "EDITAR")
-    : [];
+      : [];
   const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
   const slugSugerido = tramitesRadicables.find((t) => t.codigo === codigoSugerido)?.slug ?? null;
   const gestorNombre = solicitud.gestionadaPorId

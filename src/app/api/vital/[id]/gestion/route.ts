@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeConvertirSolicitudVital } from "@/lib/permisos";
 import { resolverAvisoSolicitudVital } from "@/lib/vital-gestion";
 
 /**
@@ -11,9 +11,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
-  const puedeGestionar =
-    puedeAccederSeccion(permisos, "VITAL_BASE") && (permisos.esAdmin || [...permisos.tramites.values()].includes("EDITAR"));
-  if (!puedeGestionar) return NextResponse.json({ error: "No tiene permiso para gestionar solicitudes de VITAL." }, { status: 403 });
+  if (!puedeConvertirSolicitudVital(permisos)) {
+    return NextResponse.json({ error: "Solo el administrador y el Subdirector(a) de Evaluación y Control Ambiental gestionan las solicitudes de VITAL." }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = (await req.json().catch(() => null)) as { accion?: string; motivo?: string } | null;

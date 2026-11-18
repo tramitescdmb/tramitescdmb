@@ -9,7 +9,7 @@ import { esMunicipioValido } from "@/lib/municipios";
 import { desdeLatLon, esLatLonValido } from "@/lib/coordenadas";
 import { nombreCompletoSolicitante } from "@/lib/solicitante";
 import { buscarSolicitantePorDocumento } from "@/lib/solicitante-db";
-import { obtenerPermisosUsuario, puedeEditarTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeConvertirSolicitudVital, puedeEditarTramite } from "@/lib/permisos";
 import { MENSAJE_RUTA_AJENA, problemaArchivoSubido, rutaDeExpediente } from "@/lib/storage";
 import { organizarTrasRegistro } from "@/lib/organizar-archivos";
 import { resolverAvisoSolicitudVital } from "@/lib/vital-gestion";
@@ -115,7 +115,10 @@ export async function POST(req: NextRequest) {
   if (!tramite) return NextResponse.json({ error: "Trámite no encontrado." }, { status: 404 });
 
   const permisos = await obtenerPermisosUsuario(session.userId);
-  if (!puedeEditarTramite(permisos, tramite.id)) {
+  if (solicitudVitalId && !puedeConvertirSolicitudVital(permisos)) {
+    return NextResponse.json({ error: "Solo el administrador y el Subdirector(a) de Evaluación y Control Ambiental convierten solicitudes de VITAL en trámite." }, { status: 403 });
+  }
+  if (!solicitudVitalId && !puedeEditarTramite(permisos, tramite.id)) {
     return NextResponse.json({ error: "No tiene permiso de edición sobre este trámite." }, { status: 403 });
   }
 

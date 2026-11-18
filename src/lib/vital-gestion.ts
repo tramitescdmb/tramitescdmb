@@ -1,27 +1,19 @@
 import { db } from "@/lib/db";
 import { notificar, resolverNotificaciones } from "@/lib/notificaciones";
 import { nombreTramiteVital } from "@/lib/vital";
-import { codigoTramiteSugerido } from "@/lib/vital-conversion";
+import { CARGO_SUBDIRECTOR_SEYCA } from "@/lib/permisos";
 
 export const claveAvisoVital = (solicitudId: string) => `vital-nueva:${solicitudId}`;
 
 /**
- * Quién recibe «Tiene una nueva solicitud de VITAL»: los administradores y quien
- * puede radicar (nivel EDITAR) el trámite de SIC que corresponde. Si el tipo de
- * VITAL no tiene trámite sugerido, quien puede radicar algún trámite y consulta VITAL.
+ * Quién recibe «Tiene una nueva solicitud de VITAL»: los mismos que pueden convertirla
+ * en trámite — administradores y Subdirector(a) de Evaluación y Control Ambiental.
  */
-export async function destinatariosSolicitudVital(idTramiteVital: number): Promise<string[]> {
-  const codigo = codigoTramiteSugerido(idTramiteVital);
-  const tramite = codigo ? await db.tramiteTipo.findUnique({ where: { codigo }, select: { id: true } }) : null;
+export async function destinatariosSolicitudVital(): Promise<string[]> {
   const usuarios = await db.usuario.findMany({
     where: {
       activo: true,
-      OR: [
-        { rol: "ADMIN" },
-        tramite
-          ? { tramitesAcceso: { some: { tramiteTipoId: tramite.id, nivel: "EDITAR" } } }
-          : { tramitesAcceso: { some: { nivel: "EDITAR" } }, seccionesAcceso: { some: { seccion: "VITAL_BASE" } } },
-      ],
+      OR: [{ rol: "ADMIN" }, { cargoAsignaciones: { some: { cargo: { nombre: CARGO_SUBDIRECTOR_SEYCA } } } }],
     },
     select: { id: true },
   });
@@ -34,7 +26,7 @@ export async function avisarSolicitudVitalNueva(s: {
   idTramiteVital: number;
   solicitanteNombre: string | null;
 }): Promise<void> {
-  const usuarios = await destinatariosSolicitudVital(s.idTramiteVital);
+  const usuarios = await destinatariosSolicitudVital();
   await notificar(usuarios, {
     tipo: "VITAL_NUEVA",
     clave: claveAvisoVital(s.id),

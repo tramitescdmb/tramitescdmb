@@ -766,6 +766,19 @@ export function puedeEditarFormatosVisita(permisos: PermisosUsuario): boolean {
   return permisos.esAdmin || permisos.cargos.has(CARGO_SUBDIRECTOR_SEYCA);
 }
 
+/**
+ * Convertir una solicitud de VITAL en trámite (o marcar que no da lugar a uno): solo el
+ * administrador y el Subdirector(a) de Evaluación y Control Ambiental (decisión del usuario).
+ */
+export function puedeConvertirSolicitudVital(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.cargos.has(CARGO_SUBDIRECTOR_SEYCA);
+}
+
+/** Consultar las solicitudes de VITAL: quien tiene la sección o quien las convierte en trámite. */
+export function puedeConsultarVital(permisos: PermisosUsuario): boolean {
+  return puedeAccederSeccion(permisos, "VITAL_BASE") || puedeConvertirSolicitudVital(permisos);
+}
+
 export function filtroContratistasVisibles(permisos: PermisosUsuario): Prisma.ContratistaWhereInput {
   if (puedeGestionarContratistas(permisos)) return {};
   const propios = [...permisos.asignadoExpedientes, ...permisos.supervisaExpedientes];

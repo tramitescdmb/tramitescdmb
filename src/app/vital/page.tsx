@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search, RefreshCw, Inbox } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeConsultarVital } from "@/lib/permisos";
 import { vitalConfigurado, nombreTramiteVital, NOMBRE_TRAMITE_VITAL, tramitesVital } from "@/lib/vital";
 import { getVitalListado, getVitalOpcionesFiltro, type FiltrosVital } from "@/lib/vital-data";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
@@ -36,7 +36,7 @@ export default async function VitalSolicitudesPage({
   const session = await getSession();
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
-    if (!puedeAccederSeccion(permisos, "VITAL_BASE")) redirect("/");
+    if (!puedeConsultarVital(permisos)) redirect("/");
   }
   const esAdmin = session?.rol === "ADMIN";
   const configurado = vitalConfigurado();
