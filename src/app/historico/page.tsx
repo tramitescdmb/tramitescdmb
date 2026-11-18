@@ -53,6 +53,10 @@ export default async function HistoricoPanelPage({
   const tipos = sp.tipo?.split(",").filter(Boolean);
   const [d, opciones] = await Promise.all([getHistoricoDashboard(rango, tipos), getHistoricoOpcionesFiltro()]);
   const sinDatos = d.total === 0;
+  // SINCA repite algunas resoluciones idénticas en su listado (y su dashboard las cuenta);
+  // SIC guarda una por solicitud. Se explica la diferencia solo sin filtros.
+  const filasRepetidasSinca =
+    !rango && !tipos?.length && d.ultimaSync?.ok && d.ultimaSync.totalApi != null ? Math.max(0, d.ultimaSync.totalApi - d.total) : 0;
   const hrefSinca = (extra: Record<string, string> = {}) => hrefLista("/historico/solicitudes", { tipo: sp.tipo, desde: sp.desde, hasta: sp.hasta, ...extra });
   const filtros = (
     <>
@@ -92,7 +96,14 @@ export default async function HistoricoPanelPage({
       ) : (
         <>
           <RejillaIndicadores>
-            <Indicador icon={FileCheck2} valor={num(d.total)} etiqueta="Solicitudes" tono="cdmb" href={hrefSinca()} />
+            <Indicador
+              icon={FileCheck2}
+              valor={num(d.total)}
+              etiqueta="Solicitudes"
+              detalle={filasRepetidasSinca > 0 ? `SINCA lista ${num(d.ultimaSync?.totalApi ?? 0)}: ${num(filasRepetidasSinca)} filas repetidas` : undefined}
+              tono="cdmb"
+              href={hrefSinca()}
+            />
             <Indicador icon={Scale} valor={num(d.aprobadas)} etiqueta="Trámites aprobados" tono="verde" href={hrefSinca({ estado: "Aprobada" })} />
             <Indicador icon={Stamp} valor={`${(d.tasaAprobacion * 100).toFixed(1)} %`} etiqueta="Tasa de aprobación" tono="cielo" />
             <Indicador
