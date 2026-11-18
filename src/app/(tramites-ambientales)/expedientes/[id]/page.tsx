@@ -117,7 +117,8 @@ export default async function ExpedienteDetallePage({
       include: {
         tramiteTipo: true,
         flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
-        solicitudVital: {
+        solicitudesVital: {
+          take: 1,
           select: { id: true, idVital: true, documentosReportados: true, documentos: { orderBy: { createdAt: "asc" }, select: { id: true, nombre: true } } },
         },
         documentos: {
@@ -361,6 +362,8 @@ export default async function ExpedienteDetallePage({
     );
   };
 
+  const solicitudVital = expediente.solicitudesVital[0] ?? null;
+
   return (
     <div className="space-y-4">
       <RegistrarReciente href={`/expedientes/${expediente.id}`} titulo={expediente.numero} detalle={[expediente.tramiteTipo.nombre, expediente.solicitanteNombre].filter(Boolean).join(" · ")} modulo="Trámites 2.0" />
@@ -399,23 +402,23 @@ export default async function ExpedienteDetallePage({
           </Link>{" "}
           · Flujo: {expediente.flujo.nombre}
         </p>
-        {expediente.solicitudVital && (
+        {solicitudVital && (
           <details className="mt-2 text-sm">
             <summary className="cursor-pointer text-cdmb-800">
               Radicado desde la solicitud{" "}
-              <Link href={`/vital/${expediente.solicitudVital.id}`} className="font-medium text-cdmb-700 hover:underline">
-                VITAL {expediente.solicitudVital.idVital}
+              <Link href={`/vital/${solicitudVital.id}`} className="font-medium text-cdmb-700 hover:underline">
+                VITAL {solicitudVital.idVital}
               </Link>{" "}
-              · Anexos en VITAL ({Math.max(expediente.solicitudVital.documentos.length, expediente.solicitudVital.documentosReportados ?? 0)})
+              · Anexos en VITAL ({Math.max(solicitudVital.documentos.length, solicitudVital.documentosReportados ?? 0)})
             </summary>
-            {expediente.solicitudVital.documentos.length === 0 ? (
+            {solicitudVital.documentos.length === 0 ? (
               <p className="mt-1 text-xs text-stone-500">
                 La lista de anexos se consulta en la{" "}
-                <Link href={`/vital/${expediente.solicitudVital.id}`} className="text-cdmb-700 hover:underline">ficha de la solicitud</Link>.
+                <Link href={`/vital/${solicitudVital.id}`} className="text-cdmb-700 hover:underline">ficha de la solicitud</Link>.
               </p>
             ) : (
               <ul className="mt-1 space-y-0.5">
-                {expediente.solicitudVital.documentos.map((a) => (
+                {solicitudVital.documentos.map((a) => (
                   <li key={a.id} className="flex items-center gap-1.5 text-xs">
                     <FileText className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
                     <a href={`/api/vital-documentos/${a.id}`} target="_blank" rel="noreferrer" className="truncate text-cdmb-700 hover:underline">
