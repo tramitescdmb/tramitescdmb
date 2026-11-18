@@ -36,7 +36,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       if (r.ok) await db.solicitudVitalDocumento.update({ where: { id }, data: { storagePath: `vital:${actual}` } }).catch(() => {});
     }
   }
-  if (!r.ok) return pagina(`No se pudo traer el anexo «${documento.nombre}» desde VITAL. ${r.motivo}`);
+  if (!r.ok) {
+    console.error(`[VITAL] ${documento.solicitud.idVital}: no se pudo abrir «${documento.nombre}»: ${r.motivo}`);
+    return pagina(`No se pudo mostrar el anexo «${documento.nombre}».`);
+  }
 
   const headers = new Headers({
     "Content-Type": r.mimeType,
@@ -51,7 +54,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 function pagina(mensaje: string) {
   const esc = mensaje.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
   return new NextResponse(
-    `<!doctype html><meta charset="utf-8"><title>Anexo de VITAL</title><body style="font-family:sans-serif;padding:2rem;max-width:40rem"><p>${esc}</p><p>Intente de nuevo en unos minutos. Si persiste, avise a tecnologia@cdmb.gov.co.</p></body>`,
+    `<!doctype html><meta charset="utf-8"><title>Anexo de VITAL</title><body style="font-family:sans-serif;padding:2rem;max-width:40rem"><p>${esc}</p><p>Intente de nuevo en unos minutos.</p></body>`,
     { status: 502, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }

@@ -240,7 +240,7 @@ type AnexoGuardado = { id: string; nombre: string };
  * la lista guardada, se consulta VITAL en vivo y eso puede tardar: el resto de la
  * ficha se muestra de una vez.
  */
-async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guardados }: { solicitudId: string; reportados: number | null; guardados: AnexoGuardado[] }) {
+async function AnexosVital({ solicitudId, idVital, reportados: reportadosGuardados, guardados }: { solicitudId: string; idVital: string; reportados: number | null; guardados: AnexoGuardado[] }) {
   let reportados = reportadosGuardados;
   let documentos = guardados;
   let fallo: string | null = null;
@@ -266,10 +266,15 @@ async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guard
     <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}>
       {fallo && documentos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-          <p>No se pudo consultar la lista de anexos en VITAL. {fallo}</p>
-          <a href={`/vital/${solicitudId}`} className="mt-1 inline-block font-medium text-cdmb-700 hover:underline">
-            Volver a intentar
-          </a>
+          <p>No se pudo mostrar la lista de anexos.</p>
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            <a href={`/vital/${solicitudId}`} className="font-medium text-cdmb-700 hover:underline">
+              Volver a intentar
+            </a>
+            <a href={urlVitalPublico(idVital)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline">
+              Ver la solicitud en VITAL <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          </p>
         </div>
       ) : documentos.length === 0 && faltan === 0 ? (
         <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
@@ -279,15 +284,21 @@ async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guard
             <li key={doc.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
               <span className="flex min-w-0 items-center gap-2">
                 <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
-                <span className="truncate text-sm text-stone-800" title={doc.nombre}>
+                <a
+                  href={`/api/vital-documentos/${doc.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate text-sm text-stone-800 hover:text-cdmb-700 hover:underline"
+                  title={doc.nombre}
+                >
                   {doc.nombre}
-                </span>
+                </a>
               </span>
               <a
                 href={`/api/vital-documentos/${doc.id}`}
                 target="_blank"
                 rel="noreferrer"
-                title="Se abre directamente desde VITAL"
+                title={`Abrir ${doc.nombre}`}
                 className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
               >
                 <Download className="h-3.5 w-3.5" aria-hidden />
@@ -297,13 +308,14 @@ async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guard
           ))}
           {fallo && faltan > 0 ? (
             <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se pudieron listar. {fallo}{" "}
+              {faltan === 1 ? "No se pudo mostrar 1 anexo más." : `No se pudieron mostrar ${faltan} anexos más.`}{" "}
               <a href={`/vital/${solicitudId}`} className="font-medium text-cdmb-700 hover:underline">Volver a intentar</a>
+              {" · "}
+              <a href={urlVitalPublico(idVital)} target="_blank" rel="noreferrer" className="font-medium text-cdmb-700 hover:underline">Ver la solicitud en VITAL</a>
             </li>
           ) : null}
         </ul>
       )}
-      <p className="mt-3 text-xs text-stone-400">Los anexos se consultan en VITAL al abrirlos; no se guardan copias en el almacén de la CDMB.</p>
     </Tarjeta>
   );
 }
@@ -415,7 +427,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           </Tarjeta>
         }
       >
-        <AnexosVital solicitudId={solicitud.id} reportados={solicitud.documentosReportados} guardados={solicitud.documentos} />
+        <AnexosVital solicitudId={solicitud.id} idVital={solicitud.idVital} reportados={solicitud.documentosReportados} guardados={solicitud.documentos} />
       </Suspense>
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">
