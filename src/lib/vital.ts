@@ -508,7 +508,11 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
   const [campos, solicitantes, documentos] = await Promise.all([
     consultarCamposSolicitud(resumen.idVital).catch(() => null),
     consultarSolicitante(resumen.idVital).catch(() => null),
-    consultarDocumentos(resumen.idVital).catch(() => [] as DocumentoVital[]),
+    // Si wsDocumentos falla, `null`: no se pisa el conteo que ya se tenía con un 0 falso.
+    consultarDocumentos(resumen.idVital).catch((err) => {
+      console.error(`[VITAL] ${resumen.idVital}: no se pudo consultar la lista de anexos:`, err instanceof Error ? err.message : err);
+      return null;
+    }),
   ]);
 
   const principal = solicitantes?.[0] ?? null;
@@ -526,7 +530,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       solicitanteCorreo: principal ? correoDe(principal) : null,
       solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
-      documentosReportados: documentos.length,
+      documentosReportados: documentos ? documentos.length : null,
     },
     update: {
       idTramiteAutoridad: resumen.idTramiteAutoridad ?? undefined,
@@ -537,14 +541,14 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       solicitanteCorreo: principal ? correoDe(principal) : undefined,
       solicitanteRaw: (solicitantes as unknown as object) ?? undefined,
       camposTramite: (campos as object | null) ?? undefined,
-      documentosReportados: documentos.length,
+      documentosReportados: documentos ? documentos.length : undefined,
     },
   });
 
   const existentes = await db.solicitudVitalDocumento.findMany({ where: { solicitudId: solicitud.id }, select: { nombre: true } });
   const yaTengo = new Set(existentes.map((d) => d.nombre));
 
-  for (const doc of documentos) {
+  for (const doc of documentos ?? []) {
     if (yaTengo.has(doc.nombre_archivo)) continue;
     try {
       const r = await guardarDocumentoVital(solicitud, doc);
