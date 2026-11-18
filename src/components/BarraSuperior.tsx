@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { IconLogout, IconUserCircle, type Icon as TablerIcon } from "@tabler/icons-react";
 import { BuscadorGlobal } from "@/components/BuscadorGlobal";
 import { CampanaAvisos } from "@/components/CampanaAvisos";
+import { esRutaDashboard } from "@/lib/menu";
 import {
-  ITEM_INICIO,
   ITEM_DASHBOARD,
   ITEM_TRAMITES,
   ITEM_VITAL,
@@ -18,7 +18,7 @@ import {
 } from "@/components/SidebarNav";
 
 const ITEM_MI_CUENTA: Item = { href: "/mi-cuenta", label: "Mi cuenta", icon: IconUserCircle };
-const ITEMS: Item[] = [ITEM_DASHBOARD, ITEM_TRAMITES, ITEM_VITAL, ITEM_HISTORICO, ITEM_CORRESPONDENCIA, ITEM_CONTRATACION, ...ITEMS_ADMIN, ITEM_MI_CUENTA];
+const ITEMS: Item[] = [ITEM_TRAMITES, ITEM_VITAL, ITEM_HISTORICO, ITEM_CORRESPONDENCIA, ITEM_CONTRATACION, ...ITEMS_ADMIN, ITEM_MI_CUENTA];
 
 function coincide(item: Item, pathname: string) {
   const prefijos = item.prefijo ? (Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo]) : [item.href];
@@ -48,12 +48,12 @@ function Miga({ icon: Icon, label, href, actual }: { icon: TablerIcon; label: st
 
 export function BarraSuperior({ nombre, subtitulo, iniciales }: { nombre: string; subtitulo: string; iniciales: string }) {
   const pathname = usePathname() ?? "/";
-  const seccion = pathname === "/" ? null : ITEMS.find((item) => coincide(item, pathname));
+  const seccion = esRutaDashboard(pathname) ? null : ITEMS.find((item) => coincide(item, pathname));
 
   return (
     <header className="sticky top-0 z-30 hidden h-14 flex-none items-center justify-between gap-4 border-b border-stone-200 bg-white px-6 lg:flex print:hidden">
       <nav aria-label="Ruta" className="flex min-w-0 flex-none items-center gap-2 text-[15px]">
-        <Miga icon={ITEM_INICIO.icon} label={ITEM_INICIO.label} href="/" actual={!seccion} />
+        <Miga icon={ITEM_DASHBOARD.icon} label={ITEM_DASHBOARD.label} href={ITEM_DASHBOARD.href} actual={!seccion} />
         {seccion && (
           <>
             <span className="text-stone-400" aria-hidden>

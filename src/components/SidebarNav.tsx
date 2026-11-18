@@ -7,8 +7,8 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { useMenuModulo } from "@/components/MenuModulo";
 import { SubmenuModulo } from "@/components/SubmenuModulo";
 import { EVENTO_AVISOS, ultimosAvisos } from "@/components/CampanaAvisos";
+import { RUTAS_DASHBOARD, itemActivo } from "@/lib/menu";
 import {
-  IconHome,
   IconFileCertificate,
   IconPlugConnected,
   IconArchive,
@@ -29,8 +29,8 @@ import {
 
 export type Item = { href: string; label: string; icon: TablerIcon; exacto?: boolean; prefijo?: string | string[] };
 
-export const ITEM_INICIO: Item = { href: "/", label: "Inicio", icon: IconHome, exacto: true };
-export const ITEM_DASHBOARD: Item = { href: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard, prefijo: "/dashboard" };
+// Entrada única de inicio: abre «Mi trabajo» y, desde su selector, el Dashboard general y los de cada módulo.
+export const ITEM_DASHBOARD: Item = { href: "/", label: "Dashboard", icon: IconLayoutDashboard, prefijo: RUTAS_DASHBOARD };
 
 export const ITEM_TRAMITES: Item = {
   href: "/tramites-ambientales",
@@ -91,17 +91,9 @@ export function SidebarNav({
     window.addEventListener(EVENTO_AVISOS, recibir);
     return () => window.removeEventListener(EVENTO_AVISOS, recibir);
   }, []);
-  const activo = (item: Item) => {
-    if (item.prefijo) {
-      const prefijos = Array.isArray(item.prefijo) ? item.prefijo : [item.prefijo];
-      return prefijos.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(p + "/")));
-    }
-    if (item.exacto) return pathname === item.href;
-    return pathname === item.href || pathname.startsWith(item.href + "/");
-  };
+  const activo = (item: Item) => itemActivo(item, pathname ?? "/");
 
   const principal = [
-    ITEM_INICIO,
     ITEM_DASHBOARD,
     ...(mostrarTramites ? [ITEM_TRAMITES] : []),
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
@@ -146,10 +138,10 @@ function Grupo({
               item={item}
               activo={activo(item)}
               colapsado={colapsado}
-              conSubmenu={Boolean(submenu) && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD}
+              conSubmenu={Boolean(submenu) && activo(item) && item !== ITEM_DASHBOARD}
               pendiente={MODULO_DE_ITEM[item.href] ? pendientes[MODULO_DE_ITEM[item.href]!] : undefined}
             />
-            {submenu && activo(item) && item !== ITEM_INICIO && item !== ITEM_DASHBOARD && (
+            {submenu && activo(item) && item !== ITEM_DASHBOARD && (
               <>
                 <button
                   type="button"
