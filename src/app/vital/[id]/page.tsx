@@ -16,7 +16,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { documentosPendientesVital, nombreTramiteVital, urlVitalPublico, type DocumentoVital } from "@/lib/vital";
+import { completarAnexosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
@@ -259,21 +259,22 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
-  // Si VITAL reportó más anexos de los que quedaron en el NAS (la descarga falló al
-  // sincronizar), se consultan en vivo para ofrecer traerlos. Sin bloquear la página.
-  let pendientes: DocumentoVital[] = [];
-  let pendientesError = false;
-  if ((solicitud.documentosReportados ?? 0) > solicitud.documentos.length) {
+  // Solicitudes sincronizadas antes de guardar la lista de anexos: se completa en
+  // vivo desde VITAL (solo metadatos; los archivos nunca se guardan en el NAS).
+  let documentos = solicitud.documentos;
+  let sinRespuesta = false;
+  if ((solicitud.documentosReportados ?? 0) > documentos.length || solicitud.documentosReportados == null) {
     try {
-      pendientes = await Promise.race([
-        documentosPendientesVital(solicitud.id),
+      await Promise.race([
+        completarAnexosVital(solicitud.id),
         new Promise<never>((_, rej) => setTimeout(() => rej(new Error("tiempo")), 12_000)),
       ]);
+      documentos = await db.solicitudVitalDocumento.findMany({ where: { solicitudId: solicitud.id }, orderBy: { createdAt: "desc" } });
     } catch {
-      pendientesError = true;
+      sinRespuesta = (solicitud.documentosReportados ?? 0) > documentos.length;
     }
   }
-  const faltan = Math.max(0, (solicitud.documentosReportados ?? 0) - solicitud.documentos.length);
+  const faltan = Math.max(0, (solicitud.documentosReportados ?? 0) - documentos.length);
 
   return (
     <div className="space-y-4">
@@ -348,12 +349,12 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         <CamposFormulario datos={solicitud.camposTramite} />
       </Tarjeta>
 
-      <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(solicitud.documentos.length + pendientes.length, solicitud.documentosReportados ?? 0)})`}>
-        {solicitud.documentos.length === 0 && pendientes.length === 0 && faltan === 0 ? (
+      <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, solicitud.documentosReportados ?? 0)})`}>
+        {documentos.length === 0 && faltan === 0 ? (
           <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
         ) : (
           <ul className="space-y-2">
-            {solicitud.documentos.map((doc) => (
+            {documentos.map((doc) => (
               <li
                 key={doc.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2"
@@ -368,6 +369,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
                   href={`/api/vital-documentos/${doc.id}`}
                   target="_blank"
                   rel="noreferrer"
+                  title="Se abre directamente desde VITAL"
                   className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden />
@@ -375,37 +377,14 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
                 </a>
               </li>
             ))}
-            {pendientes.map((doc) => (
-              <li
-                key={`p-${doc.nombre_archivo}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-amber-300 bg-amber-50/40 px-3 py-2"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 flex-none text-amber-600" aria-hidden />
-                  <span className="truncate text-sm text-stone-800" title={doc.nombre_archivo}>
-                    {doc.nombre_archivo}
-                  </span>
-                  <span className="flex-none text-xs text-amber-700">aún en VITAL</span>
-                </span>
-                <a
-                  href={`/api/vital-documentos/traer?solicitud=${encodeURIComponent(solicitud.id)}&nombre=${encodeURIComponent(doc.nombre_archivo)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Lo descarga de VITAL, lo guarda en el NAS y lo abre"
-                  className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-2.5 py-1 text-xs font-medium text-cdmb-700 hover:bg-cdmb-50"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden />
-                  Traer y abrir
-                </a>
-              </li>
-            ))}
-            {pendientesError && faltan > 0 ? (
+            {sinRespuesta && faltan > 0 ? (
               <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-                VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se han podido traer. VITAL no respondió a tiempo; recargue la página en unos minutos.
+                VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} que aún no se pueden listar: VITAL no respondió a tiempo. Recargue la página en unos minutos.
               </li>
             ) : null}
           </ul>
         )}
+        <p className="mt-3 text-xs text-stone-400">Los anexos se consultan en VITAL al abrirlos; no se guardan copias en el almacén de la CDMB.</p>
       </Tarjeta>
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">

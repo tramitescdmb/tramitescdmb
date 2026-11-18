@@ -1,7 +1,4 @@
 import { db } from "@/lib/db";
-import { uploadDocumentoNuevo } from "@/lib/storage";
-import { carpetaVital, rutaDestino } from "@/lib/carpetas-almacen";
-import { anioColombia } from "@/lib/fecha";
 import { urlDescargaVital } from "@/lib/vital-links";
 
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
@@ -398,11 +395,27 @@ export async function consultarDocumentos(idVital: string): Promise<DocumentoVit
   return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
 }
 
-export type ResultadoDescargaVital =
-  | { ok: true; buffer: Buffer; mimeType: string }
+/**
+ * Los anexos de VITAL NO se guardan en el NAS: solo se guardan sus metadatos
+ * (nombre y dirección en VITAL) en `SolicitudVitalDocumento`, con `storagePath`
+ * = `vital:<url_archivo>`, `mimeType` vacío y `tamanoBytes` 0. Al abrirlos se
+ * piden a VITAL en ese momento y se entregan directo al navegador.
+ */
+export const PREFIJO_ANEXO_VITAL = "vital:";
+
+export function urlArchivoDeRuta(storagePath: string): string | null {
+  return storagePath.startsWith(PREFIJO_ANEXO_VITAL) ? storagePath.slice(PREFIJO_ANEXO_VITAL.length) : null;
+}
+
+export type AperturaVital =
+  | { ok: true; cuerpo: ReadableStream<Uint8Array>; mimeType: string; tamano: string | null }
   | { ok: false; motivo: string };
 
-export async function descargarDocumentoVital(urlArchivo: string, intentos = 3): Promise<ResultadoDescargaVital> {
+/**
+ * Pide un anexo a VITAL igual que SINCA (POST /descargar del puente, con la url
+ * del archivo en X-Road-Url) y devuelve el flujo sin leerlo ni escribirlo en disco.
+ */
+export async function abrirDocumentoVital(urlArchivo: string, intentos = 2): Promise<AperturaVital> {
   if (!API_URL) return { ok: false, motivo: "VITAL_API_URL no está configurado." };
   let motivo = "error desconocido";
   for (let i = 0; i < intentos; i++) {
@@ -420,7 +433,7 @@ export async function descargarDocumentoVital(urlArchivo: string, intentos = 3):
           },
           body: "{}",
           cache: "no-store",
-          signal: AbortSignal.timeout(90_000),
+          signal: AbortSignal.timeout(120_000),
         });
       let res = await pedir(await obtenerProxyToken(), await obtenerToken());
       if (res.status === 401) {
@@ -432,60 +445,56 @@ export async function descargarDocumentoVital(urlArchivo: string, intentos = 3):
       if (res.status === 403) {
         return { ok: false, motivo: "VITAL negó el permiso de descarga (403): falta habilitar en X-Road el servicio de descarga de archivos para la CDMB." };
       }
-      if (!res.ok || ct.includes("application/json")) {
+      if (!res.ok || ct.includes("application/json") || !res.body) {
         const cuerpo = ct.includes("application/json") ? await res.json().catch(() => null) : null;
         throw new Error(`HTTP ${res.status}${cuerpo ? `: ${mensajeError(cuerpo)}` : ""}`);
       }
-      const buffer = Buffer.from(await res.arrayBuffer());
-      if (buffer.length === 0) throw new Error("VITAL devolvió un archivo vacío");
-      return { ok: true, buffer, mimeType: ct.split(";")[0].trim() || "application/octet-stream" };
+      return { ok: true, cuerpo: res.body, mimeType: ct.split(";")[0].trim() || "application/octet-stream", tamano: res.headers.get("content-length") };
     } catch (err) {
       motivo = err instanceof Error ? err.message : String(err);
-      if (i < intentos - 1) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+      if (i < intentos - 1) await new Promise((r) => setTimeout(r, 1500));
     }
   }
-  console.error(`[VITAL] no se pudo descargar un documento tras ${intentos} intentos: ${motivo}`);
+  console.error(`[VITAL] no se pudo abrir un anexo: ${motivo}`);
   return { ok: false, motivo };
 }
 
-/** Descarga un anexo de VITAL y lo guarda en el NAS (Vital/<año>/<idVital>/). */
-async function guardarDocumentoVital(
-  solicitud: { id: string; idVital: string; fechaRadicacion: Date | null; createdAt: Date },
-  doc: DocumentoVital,
-) {
-  const archivo = await descargarDocumentoVital(doc.url_archivo);
-  if (!archivo.ok) return archivo;
-  const anio = anioColombia(solicitud.fechaRadicacion ?? solicitud.createdAt);
-  const base = rutaDestino(carpetaVital({ anio, idVital: String(solicitud.idVital) }), doc.nombre_archivo);
-  const path = await uploadDocumentoNuevo(base, archivo.buffer, archivo.mimeType);
-  const registro = await db.solicitudVitalDocumento.create({
-    data: { solicitudId: solicitud.id, nombre: doc.nombre_archivo, storagePath: path, mimeType: archivo.mimeType, tamanoBytes: archivo.buffer.length },
-  });
-  return { ok: true as const, registro };
+/** Guarda (o actualiza) los metadatos de los anexos que VITAL reporta. Sin archivos. */
+async function guardarMetadatosAnexos(solicitudId: string, documentos: DocumentoVital[]) {
+  const existentes = await db.solicitudVitalDocumento.findMany({ where: { solicitudId }, select: { id: true, nombre: true, storagePath: true } });
+  const porNombre = new Map(existentes.map((d) => [d.nombre, d]));
+  for (const doc of documentos) {
+    const ruta = `${PREFIJO_ANEXO_VITAL}${doc.url_archivo}`;
+    const previo = porNombre.get(doc.nombre_archivo);
+    if (!previo) {
+      await db.solicitudVitalDocumento.create({
+        data: { solicitudId, nombre: doc.nombre_archivo, storagePath: ruta, mimeType: "", tamanoBytes: 0 },
+      });
+      porNombre.set(doc.nombre_archivo, { id: "", nombre: doc.nombre_archivo, storagePath: ruta });
+    } else if (previo.storagePath !== ruta && previo.storagePath.startsWith(PREFIJO_ANEXO_VITAL)) {
+      await db.solicitudVitalDocumento.update({ where: { id: previo.id }, data: { storagePath: ruta } });
+    }
+  }
+}
+
+/** Busca en VITAL, en vivo, la url actual de un anexo por su nombre. */
+export async function urlActualAnexoVital(idVital: string, nombre: string): Promise<string | null> {
+  const lista = await consultarDocumentos(idVital);
+  return lista.find((d) => d.nombre_archivo === nombre)?.url_archivo ?? null;
 }
 
 /**
- * Anexos que VITAL reporta para la solicitud y que aún no están en el NAS (la
- * descarga falló al sincronizar). Se consultan en vivo para poder ofrecerlos.
+ * Para solicitudes cuyo listado de anexos aún no está guardado (se sincronizaron
+ * antes): consulta VITAL en vivo y guarda los metadatos.
  */
-export async function documentosPendientesVital(solicitudId: string): Promise<DocumentoVital[]> {
-  const solicitud = await db.solicitudVital.findUnique({ where: { id: solicitudId }, include: { documentos: { select: { nombre: true } } } });
-  if (!solicitud) return [];
-  const yaTengo = new Set(solicitud.documentos.map((d) => d.nombre));
-  const lista = await consultarDocumentos(solicitud.idVital);
-  return lista.filter((d) => !yaTengo.has(d.nombre_archivo));
-}
-
-/** Trae ahora un anexo puntual (por nombre) desde VITAL y lo deja en el NAS. */
-export async function traerDocumentoVital(solicitudId: string, nombre: string) {
+export async function completarAnexosVital(solicitudId: string): Promise<void> {
   const solicitud = await db.solicitudVital.findUnique({ where: { id: solicitudId } });
-  if (!solicitud) return { ok: false as const, motivo: "Solicitud no encontrada." };
-  const existente = await db.solicitudVitalDocumento.findFirst({ where: { solicitudId, nombre } });
-  if (existente) return { ok: true as const, registro: existente };
+  if (!solicitud) return;
   const lista = await consultarDocumentos(solicitud.idVital);
-  const doc = lista.find((d) => d.nombre_archivo === nombre);
-  if (!doc) return { ok: false as const, motivo: "VITAL ya no reporta ese anexo para la solicitud." };
-  return guardarDocumentoVital(solicitud, doc);
+  await guardarMetadatosAnexos(solicitud.id, lista);
+  if (solicitud.documentosReportados !== lista.length) {
+    await db.solicitudVital.update({ where: { id: solicitud.id }, data: { documentosReportados: lista.length } });
+  }
 }
 
 function nombreDe(info: Record<string, unknown>): string | null {
@@ -545,16 +554,11 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
     },
   });
 
-  const existentes = await db.solicitudVitalDocumento.findMany({ where: { solicitudId: solicitud.id }, select: { nombre: true } });
-  const yaTengo = new Set(existentes.map((d) => d.nombre));
-
-  for (const doc of documentos ?? []) {
-    if (yaTengo.has(doc.nombre_archivo)) continue;
+  if (documentos) {
     try {
-      const r = await guardarDocumentoVital(solicitud, doc);
-      if (!r.ok) console.error(`[VITAL] ${resumen.idVital}: anexo «${doc.nombre_archivo}» sin descargar: ${r.motivo}`);
+      await guardarMetadatosAnexos(solicitud.id, documentos);
     } catch (err) {
-      console.error(`[VITAL] ${resumen.idVital}: anexo «${doc.nombre_archivo}» no se pudo guardar en el NAS:`, err instanceof Error ? err.message : err);
+      console.error(`[VITAL] ${resumen.idVital}: no se pudo guardar la lista de anexos:`, err instanceof Error ? err.message : err);
     }
   }
 

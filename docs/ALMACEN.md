@@ -12,7 +12,7 @@ Los archivos de los usuarios viven en el NAS (`ALMACEN_LOCAL_DIR`, en la VM mont
 | `Tramites/<año de radicación>/<tipo de trámite>/<número del expediente>/` | Trámites ambientales. Dentro: `radicacion/` (lo aportado al radicar), `paso-03/` (documentos de cada paso), `conceptos/` (PDF del concepto técnico), `visitas/<fecha>/` (fotos de la visita). |
 | `Correspondencia/<año>/<recibidas\|enviadas\|internas>/<radicado>/` | Radicados de ventanilla, PQRSD, oficios de salida y memorandos. La respuesta del funcionario va en `respuesta/`. |
 | `SGDEA/<año de apertura>/<código-dependencia>/<número del expediente>/` | Documentos de los expedientes documentales del SGDEA. |
-| `Vital/<año>/<id VITAL>/` | Documentos descargados de VITAL. |
+| `Vital/<año>/<id VITAL>/` | Sin uso: los anexos de VITAL **no** se guardan en el NAS. SIC guarda solo sus metadatos (nombre y dirección en VITAL) y los pide a VITAL al abrirlos. |
 | `_subidas/<identificador>/` | Llegada temporal: el navegador sube aquí y, al registrar el documento, el sistema lo mueve a su carpeta. Si queda algo, es una subida que no se terminó de registrar. |
 | `derivados/` | Caché de PDF con el sello de firma/rótulo. Se regenera solo; se puede borrar. |
 

@@ -119,7 +119,8 @@ async function planear(ambito: AmbitoArchivos): Promise<Pendiente[]> {
       });
       if (!s) return [];
       const base = carpetaVital({ anio: anioColombia(s.fechaRadicacion ?? s.createdAt), idVital: s.idVital });
-      return s.documentos.map((d) => ({ ruta: d.storagePath, carpeta: base }));
+      // Los anexos de VITAL solo guardan metadatos («vital:<url>»): no hay archivo que mover.
+      return s.documentos.filter((d) => !d.storagePath.startsWith("vital:")).map((d) => ({ ruta: d.storagePath, carpeta: base }));
     }
   }
 }
