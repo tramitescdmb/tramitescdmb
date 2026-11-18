@@ -240,25 +240,38 @@ type AnexoGuardado = { id: string; nombre: string };
  * la lista guardada, se consulta VITAL en vivo y eso puede tardar: el resto de la
  * ficha se muestra de una vez.
  */
-async function AnexosVital({ solicitudId, reportados, guardados }: { solicitudId: string; reportados: number | null; guardados: AnexoGuardado[] }) {
+async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guardados }: { solicitudId: string; reportados: number | null; guardados: AnexoGuardado[] }) {
+  let reportados = reportadosGuardados;
   let documentos = guardados;
-  let sinRespuesta = false;
+  let fallo: string | null = null;
   if ((reportados ?? 0) > documentos.length || reportados == null) {
-    try {
-      await Promise.race([
-        completarAnexosVital(solicitudId),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("tiempo")), 12_000)),
-      ]);
+    // VITAL pasa por el puente y X-Road: obtener los tokens y la lista puede tardar.
+    // La consulta sigue aunque se agote la espera y deja la lista guardada.
+    const r = await Promise.race([
+      completarAnexosVital(solicitudId),
+      new Promise<{ ok: false; motivo: string }>((res) =>
+        setTimeout(() => res({ ok: false, motivo: "VITAL no respondió a tiempo; la consulta sigue en segundo plano." }), 45_000),
+      ),
+    ]).catch((err) => ({ ok: false as const, motivo: err instanceof Error ? err.message : String(err) }));
+    if (r.ok) {
       documentos = await db.solicitudVitalDocumento.findMany({ where: { solicitudId }, orderBy: { createdAt: "desc" }, select: { id: true, nombre: true } });
-    } catch {
-      sinRespuesta = (reportados ?? 0) > documentos.length;
+      reportados = r.total;
+    } else {
+      fallo = r.motivo;
     }
   }
   const faltan = Math.max(0, (reportados ?? 0) - documentos.length);
 
   return (
     <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}>
-      {documentos.length === 0 && faltan === 0 ? (
+      {fallo && documentos.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
+          <p>No se pudo consultar la lista de anexos en VITAL. {fallo}</p>
+          <a href={`/vital/${solicitudId}`} className="mt-1 inline-block font-medium text-cdmb-700 hover:underline">
+            Volver a intentar
+          </a>
+        </div>
+      ) : documentos.length === 0 && faltan === 0 ? (
         <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
       ) : (
         <ul className="space-y-2">
@@ -282,9 +295,10 @@ async function AnexosVital({ solicitudId, reportados, guardados }: { solicitudId
               </a>
             </li>
           ))}
-          {sinRespuesta && faltan > 0 ? (
+          {fallo && faltan > 0 ? (
             <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} que aún no se pueden listar: VITAL no respondió a tiempo. Recargue la página en unos minutos.
+              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se pudieron listar. {fallo}{" "}
+              <a href={`/vital/${solicitudId}`} className="font-medium text-cdmb-700 hover:underline">Volver a intentar</a>
             </li>
           ) : null}
         </ul>
