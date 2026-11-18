@@ -25,7 +25,7 @@ export function construirWhereVital(f: FiltrosVital, rango: RangoPeriodo = null)
   }
   const tramites = (f.tramite ?? "").split(",").filter((t) => /^\d+$/.test(t)).map((t) => parseInt(t, 10));
   if (tramites.length > 0) and.push({ idTramiteVital: { in: tramites } });
-  if (f.documentos === "con") and.push({ documentos: { some: {} } });
+  if (f.documentos === "con") and.push({ OR: [{ documentos: { some: {} } }, { documentosReportados: { gt: 0 } }] });
   if (rango) and.push({ fechaRadicacion: { gte: rango.desde, lt: rango.hasta } });
   return and.length ? { AND: and } : {};
 }
@@ -73,6 +73,7 @@ export async function getVitalUltimasRadicadas(n = 10) {
       solicitanteIdentificacion: true,
       fechaRadicacion: true,
       ultimaSincronizacion: true,
+      documentosReportados: true,
       _count: { select: { documentos: true } },
     },
   });
@@ -91,7 +92,7 @@ export async function getVitalDashboard(periodo: RangoPeriodo = null, tramites?:
   const [total, conDocs, porTramiteRaw, porActividadRaw, mensualRaw, anualRaw, recurrentesRaw, ultimaSyncRaw] =
     await Promise.all([
       db.solicitudVital.count({ where: filtroFecha }),
-      db.solicitudVital.count({ where: { ...filtroFecha, documentos: { some: {} } } }),
+      db.solicitudVital.count({ where: { AND: [filtroFecha, { OR: [{ documentos: { some: {} } }, { documentosReportados: { gt: 0 } }] }] } }),
       db.solicitudVital.groupBy({ by: ["idTramiteVital"], where: filtroFecha, _count: { _all: true }, orderBy: { _count: { idTramiteVital: "desc" } } }),
       db.solicitudVital.groupBy({
         by: ["nombreActividad"],

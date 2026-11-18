@@ -9,6 +9,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { formatearFechaLarga as fecha } from "@/lib/fecha";
 import { CabeceraTablero } from "@/components/tablero";
+import { conteoDocsVital } from "@/lib/vital-links";
 const cuandoLlego = (d: Date | null) => {
   if (!d) return "sin fecha";
   const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
@@ -51,7 +52,7 @@ export default async function VitalRecientesPage() {
                 <p className="mt-0.5 truncate text-xs text-stone-500">
                   {s.solicitanteNombre ?? s.solicitanteIdentificacion ?? "Solicitante sin identificar"}
                   {s.nombreActividad ? ` · ${s.nombreActividad}` : ""}
-                  {s._count.documentos ? ` · ${s._count.documentos} doc.` : ""}
+                  {(() => { const n = conteoDocsVital(s._count.documentos, s.documentosReportados).total; return n ? ` · ${n} doc.` : ""; })()}
                 </p>
               </Link>
               <a

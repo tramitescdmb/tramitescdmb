@@ -10,3 +10,12 @@ export function urlVitalPublico(idVital: string): string {
 export function urlDescargaVital(urlArchivo: string, ahora = Date.now()): string {
   return `${urlArchivo}${urlArchivo.includes("?") ? "&" : "?"}_t=${ahora}`;
 }
+
+/**
+ * Conteo de anexos de una solicitud: los guardados en el NAS y los que VITAL
+ * reporta pero aún no se han traído (la descarga falló al sincronizar).
+ */
+export function conteoDocsVital(guardados: number, reportados: number | null | undefined): { total: number; enVital: number } {
+  const total = Math.max(guardados, reportados ?? 0);
+  return { total, enVital: total - guardados };
+}

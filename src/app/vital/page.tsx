@@ -13,6 +13,7 @@ import { SelectorVista } from "@/components/SelectorVista";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { ResumenResultados } from "@/components/ResumenResultados";
 import { TablaVital } from "@/components/tablas/TablaVital";
+import { conteoDocsVital } from "@/lib/vital-links";
 import { formatearFecha as fecha, fechaArchivoColombia } from "@/lib/fecha";
 import { CabeceraTablero } from "@/components/tablero";
 
@@ -141,7 +142,8 @@ export default async function VitalSolicitudesPage({
               identificacion: s.solicitanteIdentificacion,
               radicacion: fecha(s.fechaRadicacion),
               actividad: s.nombreActividad,
-              docs: s._count.documentos,
+              docs: conteoDocsVital(s._count.documentos, s.documentosReportados).total,
+              docsEnVital: conteoDocsVital(s._count.documentos, s.documentosReportados).enVital,
             }))}
             sinResultadosTexto={hayFiltros ? "No hay solicitudes que coincidan." : "Todavía no se ha traído ninguna solicitud de VITAL."}
           />

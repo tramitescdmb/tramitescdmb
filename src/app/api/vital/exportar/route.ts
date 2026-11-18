@@ -4,7 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederSeccion } from "@/lib/permisos";
 import { construirWhereVital, type FiltrosVital } from "@/lib/vital-data";
 import { nombreTramiteVital } from "@/lib/vital";
-import { urlVitalPublico } from "@/lib/vital-links";
+import { conteoDocsVital, urlVitalPublico } from "@/lib/vital-links";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 
 const LIMITE_MAXIMO = 5000;
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       s.solicitanteCorreo,
       s.fechaRadicacion?.toISOString().slice(0, 10),
       s.nombreActividad,
-      s._count.documentos,
+      conteoDocsVital(s._count.documentos, s.documentosReportados).total,
       s.createdAt.toISOString().slice(0, 10),
       s.ultimaSincronizacion.toISOString().slice(0, 10),
       `/vital/${s.id}`,

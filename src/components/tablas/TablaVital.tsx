@@ -19,6 +19,8 @@ export type FilaVital = {
   radicacion: string;
   actividad: string | null;
   docs: number;
+  /** Cuántos de `docs` siguen en VITAL sin traer al NAS. */
+  docsEnVital?: number;
 };
 
 export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; sinResultadosTexto: string }) {
@@ -75,7 +77,13 @@ export function TablaVital({ filas, sinResultadosTexto }: { filas: FilaVital[]; 
               <td className="truncate px-2.5 py-2 text-stone-600" title={f.actividad ?? undefined}>
                 {f.actividad ?? "—"}
               </td>
-              <td className="truncate px-2.5 py-2 text-center text-stone-500">{f.docs || "—"}</td>
+              <td
+                className={`truncate px-2.5 py-2 text-center ${f.docsEnVital ? "font-medium text-amber-700" : "text-stone-500"}`}
+                title={f.docsEnVital ? `${f.docs} anexos; ${f.docsEnVital} aún en VITAL (se traen al abrir la solicitud)` : undefined}
+              >
+                {f.docs || "—"}
+                {f.docsEnVital ? "*" : ""}
+              </td>
             </tr>
           ))
         )}
