@@ -233,6 +233,14 @@ function CamposFormulario({ datos }: { datos: unknown }) {
   );
 }
 
+/** Traduce a lenguaje claro los errores conocidos del servicio de VITAL. */
+function explicarFalloVital(motivo: string): string {
+  if (/time-?stamp/i.test(motivo)) {
+    return "El servicio de VITAL (MinAmbiente) está fallando al sellar los mensajes de X-Road; es una falla de su lado. Mientras lo corrigen, puede ver la solicitud en el portal público de VITAL.";
+  }
+  return motivo;
+}
+
 type AnexoGuardado = { id: string; nombre: string };
 
 /**
@@ -240,7 +248,7 @@ type AnexoGuardado = { id: string; nombre: string };
  * la lista guardada, se consulta VITAL en vivo y eso puede tardar: el resto de la
  * ficha se muestra de una vez.
  */
-async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guardados }: { solicitudId: string; reportados: number | null; guardados: AnexoGuardado[] }) {
+async function AnexosVital({ solicitudId, idVital, reportados: reportadosGuardados, guardados }: { solicitudId: string; idVital: string; reportados: number | null; guardados: AnexoGuardado[] }) {
   let reportados = reportadosGuardados;
   let documentos = guardados;
   let fallo: string | null = null;
@@ -266,10 +274,15 @@ async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guard
     <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}>
       {fallo && documentos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-          <p>No se pudo consultar la lista de anexos en VITAL. {fallo}</p>
-          <a href={`/vital/${solicitudId}`} className="mt-1 inline-block font-medium text-cdmb-700 hover:underline">
-            Volver a intentar
-          </a>
+          <p>No se pudo consultar la lista de anexos en VITAL. {explicarFalloVital(fallo)}</p>
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            <a href={`/vital/${solicitudId}`} className="font-medium text-cdmb-700 hover:underline">
+              Volver a intentar
+            </a>
+            <a href={urlVitalPublico(idVital)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline">
+              Ver la solicitud en VITAL <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          </p>
         </div>
       ) : documentos.length === 0 && faltan === 0 ? (
         <p className="text-sm text-stone-400">La solicitud no trae documentos adjuntos.</p>
@@ -297,8 +310,10 @@ async function AnexosVital({ solicitudId, reportados: reportadosGuardados, guard
           ))}
           {fallo && faltan > 0 ? (
             <li className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
-              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se pudieron listar. {fallo}{" "}
+              VITAL reporta {faltan} anexo{faltan === 1 ? "" : "s"} más que no se pudieron listar. {explicarFalloVital(fallo)}{" "}
               <a href={`/vital/${solicitudId}`} className="font-medium text-cdmb-700 hover:underline">Volver a intentar</a>
+              {" · "}
+              <a href={urlVitalPublico(idVital)} target="_blank" rel="noreferrer" className="font-medium text-cdmb-700 hover:underline">Ver la solicitud en VITAL</a>
             </li>
           ) : null}
         </ul>
@@ -415,7 +430,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           </Tarjeta>
         }
       >
-        <AnexosVital solicitudId={solicitud.id} reportados={solicitud.documentosReportados} guardados={solicitud.documentos} />
+        <AnexosVital solicitudId={solicitud.id} idVital={solicitud.idVital} reportados={solicitud.documentosReportados} guardados={solicitud.documentos} />
       </Suspense>
 
       <p className="flex items-center gap-1.5 text-xs text-stone-400">
