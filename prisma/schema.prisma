@@ -758,8 +758,8 @@ model Expediente {
 
   avisosRechazo AvisoRechazoDocumento[]
 
-  /** Solicitud de VITAL desde la que se radicó (si vino de VITAL). */
-  solicitudVital SolicitudVital?
+  /** Solicitud de VITAL desde la que se radicó (si vino de VITAL; en la práctica, una sola). */
+  solicitudesVital SolicitudVital[]
 
   @@index([tramiteTipoId])
   @@index([estado])
@@ -1177,7 +1177,9 @@ model SolicitudVital {
    * expediente desde la solicitud pasa a CONVERTIDA con `expedienteId`.
    */
   gestion         EstadoGestionVital?
-  expedienteId    String?             @unique
+  // Sin @unique a propósito: `prisma db push` no agrega un índice único sin --accept-data-loss
+  // (y el despliegue no lo usa). Que una solicitud dé un solo expediente lo garantiza la radicación.
+  expedienteId    String?
   gestionadaEn    DateTime?
   gestionadaPorId String?
   motivoDescarte  String?             @db.Text
@@ -1189,6 +1191,7 @@ model SolicitudVital {
 
   @@index([idTramiteVital])
   @@index([gestion])
+  @@index([expedienteId])
 }
 
 enum EstadoGestionVital {
