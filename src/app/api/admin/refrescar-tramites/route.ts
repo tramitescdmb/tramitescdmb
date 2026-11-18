@@ -8,7 +8,7 @@ export async function POST() {
     return NextResponse.json({ error: "Solo un administrador puede refrescar la caché." }, { status: 403 });
   }
 
-  revalidateTag("tramites");
+  revalidateTag("tramites", { expire: 0 });
 
   return NextResponse.json({ ok: true });
 }

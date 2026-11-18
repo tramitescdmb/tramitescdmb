@@ -3,7 +3,7 @@ import { sincronizarFlujoPorFirmas } from "@/lib/flujos";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeFirmar, puedeFirmarComunicacionDirecto } from "@/lib/permisos";
-import type { CalidadFirma } from "@prisma/client";
+import type { CalidadFirma } from "@/generated/prisma/client";
 
 function leerCalidad(valor: unknown): CalidadFirma | null {
   return valor === "PRINCIPAL" || valor === "PROYECTO" || valor === "REVISO" ? valor : null;

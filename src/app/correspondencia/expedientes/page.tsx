@@ -15,7 +15,7 @@ import { BotonImprimir } from "@/components/BotonImprimir";
 import { CarpetaExpediente, CajonDependencia } from "@/components/sgdea/CarpetaExpediente";
 import { formatearFecha as fecha, formatearFechaHora } from "@/lib/fecha";
 import { ETIQUETA_ORIGEN_EXPEDIENTE, ETIQUETA_CORTA_ORIGEN, CLASE_ORIGEN_EXPEDIENTE } from "@/lib/archivo-central";
-import type { OrigenExpedienteDocumental } from "@prisma/client";
+import type { OrigenExpedienteDocumental } from "@/generated/prisma/client";
 import { CabeceraTablero, Indicador } from "@/components/tablero";
 const ORIGENES = Object.keys(ETIQUETA_ORIGEN_EXPEDIENTE) as OrigenExpedienteDocumental[];
 const ETIQUETA_ESTADO: Record<string, string> = { ABIERTO: "Abiertos", CERRADO: "Cerrados" };

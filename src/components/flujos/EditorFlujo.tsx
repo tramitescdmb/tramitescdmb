@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { AmbitoFlujo } from "@prisma/client";
+import type { AmbitoFlujo } from "@/generated/prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, AlertTriangle, ArrowRight, PlayCircle, Flag, XCircle, Timer, Info } from "lucide-react";

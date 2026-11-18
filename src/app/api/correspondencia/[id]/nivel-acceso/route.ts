@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import type { NivelAccesoInformacion } from "@prisma/client";
+import type { NivelAccesoInformacion } from "@/generated/prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { cambiarNivelAccesoComunicacion } from "@/lib/correspondencia";

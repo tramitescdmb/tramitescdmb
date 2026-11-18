@@ -1,4 +1,4 @@
-import type { EtapaContratacion, ModalidadSeleccion, RolContratacion } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion, RolContratacion } from "@/generated/prisma/client";
 
 export const ETAPAS_ORDEN: EtapaContratacion[] = ["PRECONTRACTUAL", "CONTRACTUAL", "POSTCONTRACTUAL"];
 

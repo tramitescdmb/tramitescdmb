@@ -1,4 +1,4 @@
-import type { AccionRevisionConcepto, EstadoRevisionConcepto } from "@prisma/client";
+import type { AccionRevisionConcepto, EstadoRevisionConcepto } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { notificar, planificadoresConAcceso, resolverNotificaciones } from "@/lib/notificaciones";
 import type { PermisosUsuario } from "@/lib/permisos";

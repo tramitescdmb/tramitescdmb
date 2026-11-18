@@ -1,4 +1,4 @@
-import { Prisma, type EstadoComunicacion, type TipoComunicacion } from "@prisma/client";
+import { Prisma, type EstadoComunicacion, type TipoComunicacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { parsePorPagina } from "@/lib/vista-lista";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";

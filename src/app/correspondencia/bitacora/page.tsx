@@ -11,7 +11,7 @@ import { formatearFechaHora as fecha } from "@/lib/fecha";
 import { interpretarUserAgent } from "@/lib/user-agent";
 import { registrarAccesoDenegadoSeccion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
-import type { AccionAuditoriaDoc } from "@prisma/client";
+import type { AccionAuditoriaDoc } from "@/generated/prisma/client";
 
 const inputCls = "w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500";
 

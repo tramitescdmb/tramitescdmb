@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { ModuloManual } from "@prisma/client";
+import type { ModuloManual } from "@/generated/prisma/client";
 import semillaSgdea from "../../data/sgdea/manual-demostracion.json";
 import semillaGecon from "../../data/gecon/manual-demostracion.json";
 import semillaTramites from "../../data/tramites-ambientales/manual-demostracion.json";

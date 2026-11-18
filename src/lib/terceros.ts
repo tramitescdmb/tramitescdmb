@@ -1,4 +1,4 @@
-import type { Prisma, Tercero } from "@prisma/client";
+import type { Prisma, Tercero } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { nombreCompletoPersona, nulo, personaVacia, type DatosPersona } from "@/lib/datos-persona";
 

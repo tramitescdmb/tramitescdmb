@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Inbox, Users, CalendarPlus, CalendarClock, CalendarX, RotateCcw, ClipboardCheck, CheckCircle2 } from "lucide-react";
-import type { TipoNotificacion } from "@prisma/client";
+import type { TipoNotificacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { formatearFechaHora } from "@/lib/fecha";

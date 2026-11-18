@@ -1,6 +1,6 @@
 import { anioColombia } from "@/lib/fecha";
-import { Prisma } from "@prisma/client";
-import type { TipoComunicacion } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import type { TipoComunicacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 type ClientePrisma = typeof db | Prisma.TransactionClient;

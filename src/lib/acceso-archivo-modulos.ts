@@ -1,4 +1,4 @@
-import type { OrigenExpedienteDocumental } from "@prisma/client";
+import type { OrigenExpedienteDocumental } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { puedeAccederCorrespondencia, puedeVerNivelAccesoExpediente, type PermisosUsuario } from "@/lib/permisos";
 import { datosPeticion, registrarAuditoriaDoc } from "@/lib/auditoria-doc";

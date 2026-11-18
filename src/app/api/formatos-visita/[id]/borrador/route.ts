@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { sesionEditorFormatos, textoLimpio } from "@/lib/formatos-visita-api";
 import { validarEstructura } from "@/lib/formato-visita";

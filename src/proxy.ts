@@ -16,7 +16,7 @@ const PUBLIC_PATHS = [
 ];
 const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico", "/api/almacen"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const requestHeaders = new Headers(req.headers);

@@ -1,4 +1,4 @@
-import type { TipoActividadPaso } from "@prisma/client";
+import type { TipoActividadPaso } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { finEfectivo, horaCorta, partesColombia, sumarDias } from "@/lib/planeador";

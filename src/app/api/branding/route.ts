@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     usuarioId: session.userId,
   });
 
-  revalidateTag("configuracion-sitio");
+  revalidateTag("configuracion-sitio", { expire: 0 });
 
   return NextResponse.json({ ok: true, url });
 }
@@ -82,7 +82,7 @@ export async function DELETE(req: NextRequest) {
     usuarioId: session.userId,
   });
 
-  revalidateTag("configuracion-sitio");
+  revalidateTag("configuracion-sitio", { expire: 0 });
 
   return NextResponse.json({ ok: true });
 }

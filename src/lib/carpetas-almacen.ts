@@ -13,7 +13,7 @@
  * registrarlos) y, ya registrado el documento, se mueven a su carpeta definitiva. Aquí solo se arman
  * los nombres; mover y actualizar la base es de organizar-archivos.ts.
  */
-import type { EtapaContratacion, TipoComunicacion, TipoContratoEstatal } from "@prisma/client";
+import type { EtapaContratacion, TipoComunicacion, TipoContratoEstatal } from "@/generated/prisma/client";
 
 /** Carpeta de llegada de lo que sube el navegador, antes de registrar el documento. */
 export const CARPETA_SUBIDAS = "_subidas";

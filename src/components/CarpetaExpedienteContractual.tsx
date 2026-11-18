@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FolderOpen, Lock, Files, User } from "lucide-react";
 import { ETIQUETA_ETAPA, ETIQUETA_MODALIDAD } from "@/lib/contratacion";
-import type { EtapaContratacion, ModalidadSeleccion } from "@prisma/client";
+import type { EtapaContratacion, ModalidadSeleccion } from "@/generated/prisma/client";
 
 export type CarpetaContractualData = {
   id: string;

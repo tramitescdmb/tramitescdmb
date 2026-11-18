@@ -132,13 +132,13 @@ export function urlPublica(bucket: string, ruta: string): string {
 }
 
 export async function descargar(bucket: string, ruta: string): Promise<Buffer> {
-  return fs.readFile(rutaFisica(bucket, ruta));
+  return fs.readFile(/*turbopackIgnore: true*/ rutaFisica(bucket, ruta));
 }
 
 /** true si el archivo está guardado en el NAS. */
 export async function existe(bucket: string, ruta: string): Promise<boolean> {
   try {
-    return (await fs.stat(rutaFisica(bucket, ruta))).isFile();
+    return (await fs.stat(/*turbopackIgnore: true*/ rutaFisica(bucket, ruta))).isFile();
   } catch {
     return false;
   }
@@ -170,7 +170,7 @@ export async function mover(bucket: string, origen: string, destino: string, var
       if (code === "ENOENT") {
         // Puede faltar el origen, o la carpeta destino recién creada la borró otra petición
         // (limpiarCarpetasVacias): en ese caso se crea de nuevo y se reintenta el mismo nombre.
-        const origenExiste = await fs.stat(src).then(() => true, () => false);
+        const origenExiste = await fs.stat(/*turbopackIgnore: true*/ src).then(() => true, () => false);
         if (!origenExiste || ++reintentos > 5) throw e;
         n--;
         continue;
@@ -181,13 +181,13 @@ export async function mover(bucket: string, origen: string, destino: string, var
       } catch (e2) {
         const code2 = (e2 as NodeJS.ErrnoException).code;
         if (code2 === "EEXIST") continue;
-        if (code2 === "ENOENT" && ++reintentos <= 5 && (await fs.stat(src).then(() => true, () => false))) {
+        if (code2 === "ENOENT" && ++reintentos <= 5 && (await fs.stat(/*turbopackIgnore: true*/ src).then(() => true, () => false))) {
           n--;
           continue;
         }
         throw e2;
       }
-      const [a, b] = await Promise.all([fs.stat(src), fs.stat(dst)]);
+      const [a, b] = await Promise.all([fs.stat(/*turbopackIgnore: true*/ src), fs.stat(/*turbopackIgnore: true*/ dst)]);
       if (a.size !== b.size) {
         await fs.rm(dst, { force: true });
         throw new Error(`La copia de ${origen} quedó incompleta`);
@@ -214,7 +214,7 @@ export async function limpiarCarpetasVacias(bucket: string, carpeta: string) {
 
 export async function listar(bucket: string, carpeta: string): Promise<string[]> {
   try {
-    const items = await fs.readdir(rutaFisica(bucket, carpeta), { withFileTypes: true });
+    const items = await fs.readdir(/*turbopackIgnore: true*/ rutaFisica(bucket, carpeta), { withFileTypes: true });
     return items.filter((i) => i.isFile()).map((i) => i.name);
   } catch {
     return [];

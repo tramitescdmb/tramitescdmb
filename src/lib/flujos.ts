@@ -1,4 +1,4 @@
-import type { AccionVencimientoPaso, AmbitoFlujo, AsignacionPaso, Prisma, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
+import type { AccionVencimientoPaso, AmbitoFlujo, AsignacionPaso, Prisma, TipoComunicacion, TipoPasoFlujo } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { PLANTILLAS_FLUJO, posicionesPlantilla, validarEstructuraFlujo } from "@/lib/flujos-plantillas";

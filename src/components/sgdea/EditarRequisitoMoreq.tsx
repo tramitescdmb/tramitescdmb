@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Pencil } from "lucide-react";
-import type { EstadoRequisitoMoreq } from "@prisma/client";
+import type { EstadoRequisitoMoreq } from "@/generated/prisma/browser";
 
 const ESTADOS: { valor: EstadoRequisitoMoreq; etiqueta: string }[] = [
   { valor: "COMPLETO", etiqueta: "Completo" },

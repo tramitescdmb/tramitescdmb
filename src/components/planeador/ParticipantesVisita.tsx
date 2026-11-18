@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Users } from "lucide-react";
-import type { RolParticipanteVisita } from "@prisma/client";
+import type { RolParticipanteVisita } from "@/generated/prisma/browser";
 import { Spinner } from "@/components/Spinner";
 import { ETIQUETA_ROL_PARTICIPANTE, ROLES_PARTICIPANTE } from "@/lib/participantes-visita";
 

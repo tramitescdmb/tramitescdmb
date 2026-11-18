@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     usuarioId: session.userId,
   });
 
-  revalidateTag("configuracion-sitio");
+  revalidateTag("configuracion-sitio", { expire: 0 });
 
   volver.searchParams.set("ok", "Configuración de seguridad actualizada.");
   return NextResponse.redirect(volver, { status: 303 });

@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Prisma, TipoNotificacion } from "@prisma/client";
+import type { Prisma, TipoNotificacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { prepararEnvio } from "@/lib/correo-microsoft";
 import {

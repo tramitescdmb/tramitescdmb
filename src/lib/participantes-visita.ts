@@ -1,4 +1,4 @@
-import type { CalidadFirma, RolFirmante, RolParticipanteVisita } from "@prisma/client";
+import type { CalidadFirma, RolFirmante, RolParticipanteVisita } from "@/generated/prisma/client";
 
 export const ROLES_PARTICIPANTE: RolParticipanteVisita[] = ["ELABORA", "REVISA_TECNICO", "REVISA_JURIDICO", "VISTO_BUENO", "APRUEBA"];
 

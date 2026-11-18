@@ -17,7 +17,7 @@ import { obtenerAgendaUsuario } from "@/lib/agenda-landing";
 import { MiniPlaneador } from "@/components/inicio/MiniPlaneador";
 import { MODULOS_USUARIO, type ModuloUsuario } from "@/lib/modulos-usuario";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import type { EstadoCuenta } from "@prisma/client";
+import type { EstadoCuenta } from "@/generated/prisma/client";
 
 const ESTADOS: Record<EstadoCuenta, { etiqueta: string; punto: string; clase: string }> = {
   HABILITADA: { etiqueta: "Habilitada", punto: "bg-emerald-500", clase: "bg-emerald-50 text-emerald-700" },

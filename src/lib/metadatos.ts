@@ -1,4 +1,4 @@
-import type { AmbitoCampoMetadato, TipoCampoMetadato } from "@prisma/client";
+import type { AmbitoCampoMetadato, TipoCampoMetadato } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export const ETIQUETA_TIPO_CAMPO: Record<TipoCampoMetadato, string> = {

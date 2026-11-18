@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ESTADOS_ACTIVOS } from "@/lib/correspondencia-panel";
 import { puedeAccederCorrespondencia, puedeEnviarMemorandoPorPerfil, puedeRadicar, type PermisosUsuario } from "@/lib/permisos";

@@ -1,5 +1,5 @@
 import { Workflow, CheckCircle2, XCircle, ArrowRight, CircleDot, Clock, AlertTriangle, User } from "lucide-react";
-import type { TipoComunicacion } from "@prisma/client";
+import type { TipoComunicacion } from "@/generated/prisma/client";
 import {
   flujosAplicables,
   obtenerInstanciasDeComunicacion,

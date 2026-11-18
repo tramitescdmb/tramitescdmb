@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { ETAPAS_CONCEPTO, ETIQUETA_ACCION_REVISION, type EtapaConcepto } from "@/lib/revision-concepto";
 import { formatearFechaHora } from "@/lib/fecha";
-import type { AccionRevisionConcepto } from "@prisma/client";
+import type { AccionRevisionConcepto } from "@/generated/prisma/client";
 
 const ORDEN: Record<EtapaConcepto, number> = { REGISTRADO: 0, DEVUELTO: 0, EN_REVISION: 1, EN_FIRMA: 2, FIRMADO: 3 };
 

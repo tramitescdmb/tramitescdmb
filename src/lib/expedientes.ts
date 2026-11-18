@@ -1,4 +1,4 @@
-import type { Prisma, EstadoExpediente } from "@prisma/client";
+import type { Prisma, EstadoExpediente } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { generarNumeroTramite } from "@/lib/consecutivos";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";

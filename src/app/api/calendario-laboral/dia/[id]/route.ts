@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     volver.searchParams.set("error", err instanceof Error ? err.message : "No se pudo actualizar.");
     return NextResponse.redirect(volver, { status: 303 });
   }
-  revalidateTag(CALENDARIO_LABORAL_TAG);
+  revalidateTag(CALENDARIO_LABORAL_TAG, { expire: 0 });
   volver.searchParams.set("ok", accion === "eliminar" ? "Día eliminado." : "Día actualizado.");
   return NextResponse.redirect(volver, { status: 303 });
 }

@@ -1,4 +1,4 @@
-import type { RolContratacion, RolCorrespondencia, SeccionSoloLectura } from "@prisma/client";
+import type { RolContratacion, RolCorrespondencia, SeccionSoloLectura } from "@/generated/prisma/client";
 import {
   puedeAccederContratacion,
   puedeAccederCorrespondencia,

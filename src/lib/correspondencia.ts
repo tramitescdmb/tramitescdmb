@@ -1,6 +1,6 @@
 import { anioColombia } from "@/lib/fecha";
 import { db } from "@/lib/db";
-import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion, CalidadFirma } from "@prisma/client";
+import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion, CalidadFirma } from "@/generated/prisma/client";
 import { generarRadicado } from "@/lib/radicado";
 import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";

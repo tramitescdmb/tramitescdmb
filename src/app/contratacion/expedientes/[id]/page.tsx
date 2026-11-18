@@ -3,7 +3,7 @@ import { etiquetaModalidadConCodigo } from "@/lib/codigo-proceso";
 import { whereDesignacionGecon } from "@/lib/gecon-designaciones";
 import Link from "next/link";
 import { RegistrarReciente } from "@/components/RegistrarReciente";
-import type { EtapaContratacion } from "@prisma/client";
+import type { EtapaContratacion } from "@/generated/prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Briefcase, QrCode, Wallet, CalendarDays, Building2, UserCog, UserCheck, User, IdCard, ShieldCheck, AlertTriangle, Lock, FileCheck2, Printer, Hash, ChevronDown, Info, ArrowRight, FolderTree, ClipboardList, FileSignature, FolderCheck, History, Settings2, Paperclip, PenLine, Workflow } from "lucide-react";

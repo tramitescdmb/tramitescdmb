@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { listarResoluciones, listarSolicitudes, obtenerResolucionDetalle, type SincaResolucionApi, type SincaSolicitudApi } from "@/lib/sinca";
 import { dentroDeZonaCdmb, puntoDesdeNorteEste, puntoDesdeTexto } from "@/lib/coordenadas-texto";

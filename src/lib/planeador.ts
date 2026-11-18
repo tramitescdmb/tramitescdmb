@@ -1,4 +1,4 @@
-import type { EstadoExpediente } from "@prisma/client";
+import type { EstadoExpediente } from "@/generated/prisma/client";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 
 const ZONA_HORARIA = "America/Bogota";

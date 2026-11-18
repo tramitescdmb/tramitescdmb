@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import {
   dentroDeVentana,
@@ -101,7 +101,7 @@ async function manejar(req: NextRequest) {
         totalOrigen: cuerpo.totalOrigen ?? sync.totalOrigen,
       },
     });
-    revalidateTag("fondo-historico");
+    revalidateTag("fondo-historico", { expire: 0 });
     return NextResponse.json({
       ok: true,
       creados: cerrada.creados,

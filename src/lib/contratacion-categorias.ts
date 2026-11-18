@@ -1,4 +1,4 @@
-import type { EtapaContratacion } from "@prisma/client";
+import type { EtapaContratacion } from "@/generated/prisma/client";
 
 export const CATEGORIAS_SUGERIDAS: Record<EtapaContratacion, string[]> = {
   PRECONTRACTUAL: [

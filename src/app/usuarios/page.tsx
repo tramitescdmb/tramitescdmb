@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AccesoRestringido } from "@/components/AccesoRestringido";
 import Link from "next/link";
-import type { EstadoCuenta, Prisma } from "@prisma/client";
+import type { EstadoCuenta, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { NuevoUsuarioForm } from "@/components/NuevoUsuarioForm";

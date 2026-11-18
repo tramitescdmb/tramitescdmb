@@ -4,7 +4,7 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
 import { COLUMNAS_TRD_CSV, formatearXmlTrd } from "@/lib/trd-import";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
-import type { DisposicionFinal } from "@prisma/client";
+import type { DisposicionFinal } from "@/generated/prisma/client";
 
 function celda(valor: string | number | null | undefined): string {
   const texto = valor == null ? "" : String(valor);

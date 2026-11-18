@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { ModalidadSeleccion } from "@prisma/client";
+import { ModalidadSeleccion } from "@/generated/prisma/client";
 import { verificarSesion as getSession } from "@/lib/permisos";
 
 const TIPOS_VALIDOS = ["tramiteTipo", "documentoRequerido", "requisitoContratacion", "configuracion", "modalidad"] as const;

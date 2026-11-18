@@ -83,6 +83,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     volver.searchParams.set("error", err instanceof Error ? `No se pudo importar: ${err.message}` : "No se pudo importar la TRD.");
   }
-  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD, { expire: 0 });
   return NextResponse.redirect(volver, { status: 303 });
 }

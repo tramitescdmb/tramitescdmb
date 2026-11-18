@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { huellaVerificada } from "@/lib/hash-archivo";
 import { resolverFirma } from "@/lib/firma-proveedor";
-import { Prisma, type RolFirmante, type EstadoSolicitudFirma, type CalidadFirma } from "@prisma/client";
+import { Prisma, type RolFirmante, type EstadoSolicitudFirma, type CalidadFirma } from "@/generated/prisma/client";
 import crypto from "crypto";
 import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";

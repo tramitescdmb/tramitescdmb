@@ -1,7 +1,7 @@
 import { CODIGO_ACTA_LIQUIDACION, estadoLiquidacion } from "@/lib/liquidacion";
 import { veTodosLosContratos, rigePorPerfil, esPersonalContratacion, veContratosDeSuDependencia, tienePermiso, esContratistaGecon } from "@/lib/permisos";
 import { resumirPendientesFirma } from "@/lib/calidad-firma";
-import type { EtapaContratacion, Prisma } from "@prisma/client";
+import type { EtapaContratacion, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import type { PermisosUsuario } from "@/lib/permisos";
 import { construirWhereExpedienteContractual, obtenerRequisitosDeEtapa } from "@/lib/contratacion";

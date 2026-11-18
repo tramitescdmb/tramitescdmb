@@ -7,7 +7,7 @@ import { obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos"
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { headers } from "next/headers";
-import type { DisposicionFinal } from "@prisma/client";
+import type { DisposicionFinal } from "@/generated/prisma/client";
 
 const DISPOSICIONES: DisposicionFinal[] = ["CONSERVACION_TOTAL", "ELIMINACION", "SELECCION", "MICROFILMACION_DIGITALIZACION"];
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   }).catch((err) => console.error("registrarAuditoriaDoc (crear subserie) falló:", err));
 
   volver.searchParams.set("ok", `Subserie ${codigo} creada.`);
-  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD, { expire: 0 });
   return NextResponse.redirect(volver, { status: 303 });
 }
 
@@ -138,6 +138,6 @@ export async function PATCH(req: NextRequest) {
     )
   );
 
-  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD, { expire: 0 });
   return NextResponse.json({ ok: true, actualizadas: resultado.count });
 }

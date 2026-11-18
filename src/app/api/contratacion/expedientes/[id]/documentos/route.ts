@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { EtapaContratacion } from "@prisma/client";
+import type { EtapaContratacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { etapaHabilitada, mensajeEtapaNoHabilitada } from "@/lib/contratacion-etiquetas";

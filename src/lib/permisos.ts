@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion, ModuloAplicativo, Prisma } from "@prisma/client";
+import type { NivelAccesoTramite, SeccionSoloLectura, RolCorrespondencia, RolContratacion, EtapaContratacion, ModuloAplicativo, Prisma } from "@/generated/prisma/client";
 import { getSession, type SessionPayload } from "@/lib/auth";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 

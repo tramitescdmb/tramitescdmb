@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
-import type { TipoActividadPaso } from "@prisma/client";
+import type { TipoActividadPaso } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { sesionEditorFormatos } from "@/lib/formatos-visita-api";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   await db.pasoDefinicion.update({ where: { id }, data: { tipoActividad, formatoVisitaId } });
-  revalidateTag("tramites");
+  revalidateTag("tramites", { expire: 0 });
 
   const formato = formatoVisitaId ? await db.formatoVisita.findUnique({ where: { id: formatoVisitaId }, select: { nombre: true } }) : null;
   const { ip, userAgent } = datosPeticion(await headers());

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { TipoAuditoria } from "@prisma/client";
+import type { TipoAuditoria } from "@/generated/prisma/client";
 
 export async function registrarAuditoria(datos: {
   tipo: TipoAuditoria;

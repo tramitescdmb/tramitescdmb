@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { AccionAuditoriaDoc } from "@prisma/client";
+import type { AccionAuditoriaDoc } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export type DatosEslabon = {

@@ -1,4 +1,4 @@
-import type { TipoPQRSD } from "@prisma/client";
+import type { TipoPQRSD } from "@/generated/prisma/client";
 import { ETIQUETA_TIPO_PQRSD } from "@/lib/pqrsd";
 import { avisarEnSegundoPlano, type Mensaje } from "@/lib/avisos-correo";
 import { componerMensaje, fechaEnLetras } from "@/lib/plantillas-correo-base";

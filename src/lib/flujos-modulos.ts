@@ -1,4 +1,4 @@
-import type { AmbitoFlujo, AsignacionPaso, ModuloAplicativo, TipoComunicacion, TipoPasoFlujo } from "@prisma/client";
+import type { AmbitoFlujo, AsignacionPaso, ModuloAplicativo, TipoComunicacion, TipoPasoFlujo } from "@/generated/prisma/client";
 import {
   esJefeDeReparto,
   puedeAdministrarArchivo,

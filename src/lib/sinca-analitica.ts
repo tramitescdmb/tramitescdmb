@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
 

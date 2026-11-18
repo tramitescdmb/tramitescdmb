@@ -1,4 +1,4 @@
-import type { RolFirmante } from "@prisma/client";
+import type { RolFirmante } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";

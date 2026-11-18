@@ -78,6 +78,6 @@ export async function POST(req: NextRequest) {
   }).catch((err) => console.error("registrarAuditoriaDoc (crear serie) falló:", err));
 
   volver.searchParams.set("ok", `Serie ${codigo} creada.`);
-  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD);
+  revalidateTag(ETIQUETA_CACHE_CATALOGO_TRD, { expire: 0 });
   return NextResponse.redirect(volver, { status: 303 });
 }

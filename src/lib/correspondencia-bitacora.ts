@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { AccionAuditoriaDoc } from "@prisma/client";
+import type { AccionAuditoriaDoc } from "@/generated/prisma/client";
 import { parsearFechaLocal } from "@/lib/periodo-dashboard";
 
 export const ACCIONES_BITACORA: AccionAuditoriaDoc[] = [

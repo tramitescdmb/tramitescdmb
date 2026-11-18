@@ -16,6 +16,11 @@ const inter = localFont({
   display: "swap",
 });
 
+// Todas las páginas dependen de la sesión y de la base (ya eran dinámicas en Next 15). Next 16 intenta
+// prerenderizarlas en el build y, si la base no responde (como en el CI), el build falla; así se declara
+// de una vez que nada se genera en el build y que nada consulta la base al compilar.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "SIC CDMB",
   description: "Gestión de trámites ambientales de la CDMB",

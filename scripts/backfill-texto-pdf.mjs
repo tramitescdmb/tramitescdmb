@@ -1,6 +1,7 @@
 // Extrae el texto de los PDF que ya existían antes de esta función (los subidos después ya lo
 // hacen solos al radicar/agregar). Se puede volver a correr en cualquier momento: solo toca las
 // filas con contenidoTexto todavía en null, así que es seguro repetirlo si algo quedó a medias.
+import "../src/lib/cargar-env.ts";
 import { db } from "../src/lib/db.ts";
 import { descargarDocumento } from "../src/lib/storage.ts";
 import { extraerTextoPdf } from "../src/lib/texto-pdf.ts";

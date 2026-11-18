@@ -1,3 +1,4 @@
+import "../src/lib/cargar-env";
 import { crearPrismaClient } from "../src/lib/db";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";

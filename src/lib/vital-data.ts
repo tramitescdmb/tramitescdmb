@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { NOMBRE_TRAMITE_VITAL, nombreTramiteVital } from "@/lib/vital";
 import { parsePorPagina } from "@/lib/vista-lista";
