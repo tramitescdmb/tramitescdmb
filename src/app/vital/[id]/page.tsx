@@ -24,6 +24,7 @@ import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 import { BandaTablero } from "@/components/tablero";
 import { GestionSolicitudVital } from "@/components/vital/GestionSolicitudVital";
 import { codigoTramiteSugerido } from "@/lib/vital-conversion";
+import { todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { ArrowRightCircle } from "lucide-react";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
@@ -354,15 +355,17 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   const tramitesRadicables =
     permisos && puedeConvertirSolicitudVital(permisos)
       ? (
+          // Los mismos trámites del catálogo (activos) y la misma regla de SUIT que su filtro
+          // «Sin registro en el SUIT». Los que no tienen procedimiento en SIC salen sin poder elegirse.
           await db.tramiteTipo.findMany({
-            where: { activo: true, flujos: { some: {} } },
+            where: { activo: true },
             select: { id: true, slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { suitNumero: true } } },
             orderBy: { nombre: "asc" },
           })
-        ).map((t) => ({ ...t, enSuit: t.suitNumeros.length > 0 || t.flujos.some((f) => Boolean(f.suitNumero)) }))
+        ).map((t) => ({ ...t, enSuit: todosLosSuitNumeros(t).length > 0, radicable: t.flujos.length > 0 }))
       : [];
   const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
-  const slugSugerido = tramitesRadicables.find((t) => t.codigo === codigoSugerido)?.slug ?? null;
+  const slugSugerido = tramitesRadicables.find((t) => t.radicable && t.codigo === codigoSugerido)?.slug ?? null;
   const gestorNombre = solicitud.gestionadaPorId
     ? (await db.usuario.findUnique({ where: { id: solicitud.gestionadaPorId }, select: { nombre: true } }))?.nombre ?? null
     : null;
@@ -426,7 +429,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           expediente={solicitud.expediente}
           motivoDescarte={solicitud.motivoDescarte}
           gestionadaTexto={gestionadaTexto}
-          tramites={tramitesRadicables.map(({ slug, nombre, codigo, enSuit }) => ({ slug, nombre, codigo, enSuit }))}
+          tramites={tramitesRadicables.map(({ slug, nombre, codigo, enSuit, radicable }) => ({ slug, nombre, codigo, enSuit, radicable }))}
           slugSugerido={slugSugerido}
         />
       </Tarjeta>
