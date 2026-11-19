@@ -5,7 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
-type TramiteOpcion = { slug: string; nombre: string; codigo: string; enSuit: boolean };
+type TramiteOpcion = { slug: string; nombre: string; codigo: string; enSuit: boolean; radicable: boolean };
+
+/** Igual que el catálogo de trámites: SUIT, instrumentos económicos (IE-) y sin registro en el SUIT. */
+function gruposTramites(tramites: TramiteOpcion[]) {
+  const economico = (t: TramiteOpcion) => t.codigo.startsWith("IE-");
+  return [
+    { titulo: "Trámites inscritos en el SUIT", lista: tramites.filter((t) => t.enSuit && !economico(t)) },
+    { titulo: "Sin registro en el SUIT", lista: tramites.filter((t) => !t.enSuit && !economico(t)) },
+    { titulo: "Instrumentos económicos", lista: tramites.filter(economico) },
+  ];
+}
 
 export function GestionSolicitudVital({
   solicitudId,
@@ -112,16 +122,14 @@ export function GestionSolicitudVital({
             className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm"
           >
             <option value="">Seleccione el trámite…</option>
-            {[
-              { titulo: "Trámites inscritos en el SUIT", lista: tramites.filter((t) => t.enSuit) },
-              { titulo: "Otros trámites de la CDMB", lista: tramites.filter((t) => !t.enSuit) },
-            ]
+            {gruposTramites(tramites)
               .filter((g) => g.lista.length > 0)
               .map((g) => (
-                <optgroup key={g.titulo} label={g.titulo}>
+                <optgroup key={g.titulo} label={`${g.titulo} (${g.lista.length})`}>
                   {g.lista.map((t) => (
-                    <option key={t.slug} value={t.slug}>
+                    <option key={t.slug} value={t.slug} disabled={!t.radicable}>
                       {t.nombre} ({t.codigo}){t.slug === slugSugerido ? " — sugerido" : ""}
+                      {!t.radicable ? " — sin procedimiento en SIC, se gestiona en VITAL" : ""}
                     </option>
                   ))}
                 </optgroup>
