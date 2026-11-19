@@ -3,7 +3,7 @@ import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
 import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
-import { memorandoPendienteDe, contextoMemorandos, oficinaOrigenMemorando, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
+import { memorandoPendienteDe, contextoMemorandos, oficinaOrigenMemorando, puedeRecibirMemorando, TEXTO_QUIEN_RECIBE, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
 import { CIUDAD_MEMORANDO, siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { sumarDiasHabiles } from "@/lib/dias-habiles";
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
   ]);
   if (!origen || !remitente) return NextResponse.json({ error: "No se encontró la oficina de origen." }, { status: 400 });
   if (!destinatario || !destinatario.activo) return NextResponse.json({ error: "El destinatario elegido no existe o está inactivo." }, { status: 400 });
+  if (!puedeRecibirMemorando(destinatario)) return NextResponse.json({ error: TEXTO_QUIEN_RECIBE }, { status: 400 });
   if (destinatario.dependenciaId !== dependenciaDestinoId) {
     return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
   }

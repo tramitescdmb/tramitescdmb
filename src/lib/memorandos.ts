@@ -32,6 +32,19 @@ export const DENOMINACIONES_QUE_ENVIAN_MEMORANDOS: ReadonlySet<string> = new Set
   "COORDINADOR_GRUPO",
 ]);
 
+/**
+ * Destinatario (PARA) de un memorando: solo quien tiene uno de los mismos cargos que envían. Un
+ * contratista o un funcionario sin esos cargos no recibe memorandos directamente (le llegan por
+ * asignación de su jefe).
+ */
+export function puedeRecibirMemorando(u: { denominacionEmpleo: string | null | undefined; rolesContratacion?: readonly string[] | null }): boolean {
+  if (u.rolesContratacion?.includes("CONTRATISTA")) return false;
+  return DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(u.denominacionEmpleo ?? "");
+}
+
+export const TEXTO_QUIEN_RECIBE =
+  "El destinatario debe ser Director(a) General, Secretario(a) General, Subdirector(a), Jefe(a) de Oficina o Coordinador(a) de Grupo, según el cargo de su ficha.";
+
 export const TEXTO_QUIEN_ENVIA = "Los memorandos solo los envían la Dirección General, la Secretaría General, las subdirecciones, las jefaturas de oficina y las coordinaciones de grupo, según el cargo registrado en la ficha del usuario.";
 
 /** Entra al módulo: administradores siempre; los demás, si el módulo está visible y tienen dependencia asignada. */

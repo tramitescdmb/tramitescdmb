@@ -10,7 +10,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { db } from "@/lib/db";
 import { anioColombia } from "@/lib/fecha";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
-import { contextoMemorandos, memorandoPendienteDe, DENOMINACIONES_QUE_ENVIAN_MEMORANDOS, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
+import { contextoMemorandos, memorandoPendienteDe, puedeRecibirMemorando, DENOMINACIONES_QUE_ENVIAN_MEMORANDOS, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
 import { CIUDAD_MEMORANDO, fechaLargaMemorando } from "@/lib/memorandos-formato";
 import { MemorandoForm, type PersonaOpcion, type RespuestaA } from "@/components/memorandos/MemorandoForm";
 import { CabeceraTablero } from "@/components/tablero";
@@ -64,6 +64,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
     cargo: cargoDelFirmante(u, "SGDEA"),
     dependenciaId: u.dependenciaId,
     dirige: DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(u.denominacionEmpleo ?? "") || u.dependenciasResponsable.some((d) => d.id === u.dependenciaId),
+    recibe: puedeRecibirMemorando(u),
   }));
   let yo = personas.find((p) => p.id === session.userId);
   if (!yo && ctx.origenLibre) {
@@ -71,7 +72,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
       where: { id: session.userId },
       select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, denominacionEncargo: true, sexo: true, rolesContratacion: true },
     });
-    if (u) yo = { id: session.userId, nombre: u.nombre, cargo: cargoDelFirmante(u, "SGDEA"), dependenciaId: null, dirige: false };
+    if (u) yo = { id: session.userId, nombre: u.nombre, cargo: cargoDelFirmante(u, "SGDEA"), dependenciaId: null, dirige: false, recibe: false };
   }
   const origen = dependencias.find((d) => d.id === ctx.dependenciaId) ?? (ctx.origenLibre ? dependencias[0] : undefined);
   if (!yo || !origen) redirect("/memorandos");
@@ -84,7 +85,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
           asunto: original.asunto,
           contenido: original.respuestaTexto,
           dependenciaDestinoId: original.dependenciaOrigenId,
-          usuarioDestinoId: personas.find((u) => u.id === original.radicadoPorId && u.dependenciaId === original.dependenciaOrigenId)?.id ?? null,
+          usuarioDestinoId: personas.find((u) => u.id === original.radicadoPorId && u.dependenciaId === original.dependenciaOrigenId && u.recibe)?.id ?? null,
           proyectoId: original.respuestaPorId,
         }
       : null;
