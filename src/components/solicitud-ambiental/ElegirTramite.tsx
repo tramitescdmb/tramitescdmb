@@ -50,7 +50,7 @@ export function ElegirTramite({ tramites }: { tramites: Tramite[] }) {
 
         <div className="mt-4 flex min-w-0 flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1 basis-64">
-            <span className="mb-1 block text-xs font-medium text-stone-600">Solicitud ambiental</span>
+            <span className="mb-1 block text-xs font-medium text-stone-600">Tipo de solicitud ambiental</span>
             <SelectorTramite
               tramites={tramites}
               clave={clave}
@@ -134,7 +134,7 @@ export function ElegirTramite({ tramites }: { tramites: Tramite[] }) {
         </div>
 
         {grupoAbierto && (
-          <ul id="tramites-categoria" className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 xl:grid-cols-3">
+          <ul id="tramites-categoria" className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2 lg:grid-cols-3">
             {grupoAbierto.lista.map((t) => {
               const activo = t.clave === clave;
               return (
@@ -154,7 +154,7 @@ export function ElegirTramite({ tramites }: { tramites: Tramite[] }) {
                       descripcion={t.descripcion}
                       diasEstimados={t.diasEstimados}
                     />
-                    <span className="mt-3 flex items-center justify-end border-t border-stone-100 pt-3 text-sm font-semibold">
+                    <span className="mt-2.5 flex items-center justify-end border-t border-stone-100 pt-2.5 text-[13px] font-semibold">
                       {activo ? (
                         <span className="inline-flex items-center gap-1 text-cdmb-700">
                           <Check className="h-4 w-4" aria-hidden /> Elegido

@@ -150,7 +150,7 @@ export function CatalogoTramites({
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-400">{cat.etiqueta}</h2>
                 </div>
               )}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((entrada) => (
                   <TarjetaTramite key={entrada.key} entrada={entrada} categoria={cat} />
                 ))}
@@ -179,7 +179,7 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
         codigo={`${codigo} · v${version}`}
       />
 
-      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
+      <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-stone-100 pt-2.5">
         {!conteo && <span className="text-xs text-stone-400">Sin expedientes todavía</span>}
         {conteo && conteo.activos > 0 && <CountPill color="amber" value={conteo.activos} label="activo" />}
         {conteo && conteo.aprobados > 0 && <CountPill color="emerald" value={conteo.aprobados} label="aprobado" />}

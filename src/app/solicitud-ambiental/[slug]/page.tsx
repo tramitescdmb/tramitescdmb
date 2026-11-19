@@ -10,8 +10,8 @@ import { nombreFlujo } from "@/lib/flujo-nombre";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Solicitud ambiental — CDMB",
-  description: "Radique en línea su solicitud de trámite ambiental ante la CDMB.",
+  title: "Solicitudes ambientales — CDMB",
+  description: "Radique en línea su solicitud ambiental ante la CDMB.",
 };
 
 export default async function SolicitudAmbientalTramitePage({

@@ -2,12 +2,12 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Leaf } from "lucide-react";
 
-/** Encabezado (hero) de «Solicitud ambiental» y del catálogo de trámites. */
+/** Encabezado (hero) de «Solicitudes ambientales» y del catálogo de trámites. */
 export function EncabezadoSolicitud({
   titulo,
   children,
   acciones,
-  antetitulo = "CDMB · Trámites ambientales en línea",
+  antetitulo = "CDMB · Solicitudes ambientales en línea",
 }: {
   titulo: string;
   children: ReactNode;

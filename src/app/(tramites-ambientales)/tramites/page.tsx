@@ -81,8 +81,8 @@ export default async function CatalogoTramitesPage({ searchParams }: { searchPar
 
   return (
     <div className="space-y-6">
-      <EncabezadoSolicitud titulo="Catálogo de trámites" antetitulo="CDMB · Trámites ambientales">
-        {tramites.length} trámites ambientales de la CDMB, organizados por recurso natural. Abra uno para ver el detalle, sus requisitos y
+      <EncabezadoSolicitud titulo="Catálogo de trámites" antetitulo="CDMB · Solicitudes ambientales">
+        {tramites.length} tipos de solicitud ambiental ante la CDMB, organizados por recurso natural. Abra uno para ver el detalle, sus requisitos y
         el procedimiento, o para iniciar un expediente.
       </EncabezadoSolicitud>
 
