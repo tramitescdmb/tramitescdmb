@@ -727,7 +727,7 @@ export function NuevoExpedienteForm({
         <Field
           label="Ubicación exacta (opcional)"
           icon={<IconMapPin className={iconSm} />}
-          help="El botón anterior ubica la dirección en el mapa. También puede seleccionarse el punto directamente en el mapa, o registrarse coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Se almacena en latitud/longitud y se calcula automáticamente en coordenadas planas, el sistema oficial de Colombia."
+          help="El botón anterior ubica la dirección en el mapa. También puede seleccionarse el punto directamente en el mapa, o registrarse coordenadas de otra fuente (GPS, levantamiento topográfico, plano). Pueden registrarse coordenadas geográficas (grados, minutos y segundos o grados decimales), coordenadas planas o cartesianas; el sistema calcula las demás automáticamente."
         >
           {municipio ? (
             <MapaUbicacion ref={mapaPredioRef} municipio={municipio} prefijo="ubicacion" inicial={v?.ubicacion ?? null} />

@@ -26,6 +26,7 @@ import { GestionSolicitudVital, type TramiteOpcion } from "@/components/vital/Ge
 import { codigoFlujoSugerido, codigoTramiteSugerido, prellenadoDesdeVital } from "@/lib/vital-conversion";
 import { entradasCatalogo } from "@/lib/opciones-catalogo";
 import { ArrowRightCircle } from "lucide-react";
+import { aGms } from "@/lib/coordenadas-geograficas";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
 const txt = (v: unknown): string | null => {
@@ -411,7 +412,10 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           <p className="mt-3 text-xs text-stone-600">
             <span className="font-medium text-stone-500">Ubicación ({ETIQUETA_ORIGEN_COORDENADA[punto.origen]}): </span>
             <span className="font-mono">
-              {punto.lat.toFixed(6)}, {punto.lon.toFixed(6)}
+              {aGms(punto.lat, true)}, {aGms(punto.lon, false)}
+            </span>{" "}
+            <span className="text-stone-400">
+              ({punto.lat.toFixed(6)}, {punto.lon.toFixed(6)})
             </span>{" "}
             <Link href={`/visor-tramites?capa=vital&punto=${encodeURIComponent(solicitud.idVital)}`} className="font-medium text-cdmb-700 hover:underline">
               Ver en el visor de trámites →

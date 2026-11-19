@@ -9,6 +9,7 @@ import { sincaConfigurado, obtenerResolucionDetalle, type SincaResolucionDetalle
 import { unstable_cache } from "next/cache";
 import { after } from "next/server";
 import { BandaTablero } from "@/components/tablero";
+import { aGms } from "@/lib/coordenadas-geograficas";
 
 const obtenerResolucionDetalleCacheado = unstable_cache(
   (nroSolicitud: number) => obtenerResolucionDetalle(nroSolicitud),
@@ -168,7 +169,7 @@ export default async function HistoricoDetallePage({ params }: { params: Promise
           {base.lat != null && base.lon != null ? (
             <p className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-2 text-xs text-stone-600">
               <Crosshair className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden />
-              Latitud {base.lat.toFixed(6)} · Longitud {base.lon.toFixed(6)} (WGS84) ·
+              Coordenadas geográficas: {aGms(base.lat, true)} · {aGms(base.lon, false)} ({base.lat.toFixed(6)}, {base.lon.toFixed(6)}) ·
               <Link href={`/visor-tramites?capa=sinca&punto=${base.nroSolicitud}`} className="text-cdmb-700 underline">
                 ver en el visor de trámites
               </Link>
