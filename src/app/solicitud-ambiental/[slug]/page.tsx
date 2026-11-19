@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Leaf } from "lucide-react";
-import { CabeceraTablero } from "@/components/tablero";
+import { EncabezadoSolicitud, PasosSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
@@ -37,17 +36,11 @@ export default async function SolicitudAmbientalTramitePage({
       <Link href="/solicitud-ambiental" className="text-xs font-medium uppercase tracking-wide text-cdmb-700 hover:underline">
         ← Elegir otro trámite
       </Link>
-      <CabeceraTablero
-        icon={Leaf}
-        antetitulo="Solicitud ambiental"
-        titulo={nombre}
-        descripcion={
-          <>
-            Complete los datos y adjunte los documentos; los campos marcados con * son obligatorios. Al radicar
-            recibirá un número de solicitud para consultar el estado.
-          </>
-        }
-      />
+      <EncabezadoSolicitud titulo={nombre}>
+        Complete los datos y adjunte los documentos; los campos marcados con * son obligatorios. Al radicar recibirá un número de
+        solicitud para consultar el estado.
+      </EncabezadoSolicitud>
+      <PasosSolicitud actual={2} />
       <NuevoExpedienteForm
         tramiteId={tramite.id}
         tramiteSlug={tramite.slug}

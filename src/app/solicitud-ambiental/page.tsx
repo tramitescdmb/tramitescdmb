@@ -1,8 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { Leaf, ShieldCheck } from "lucide-react";
-import { CabeceraTablero } from "@/components/tablero";
+import { ArrowRight, Clock, FileCheck2, Mail, Search, ShieldCheck } from "lucide-react";
 import { ElegirTramite } from "@/components/solicitud-ambiental/ElegirTramite";
+import { BotonEncabezado, EncabezadoSolicitud, PasosSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { entradasCatalogo } from "@/lib/opciones-catalogo";
 
 export const dynamic = "force-dynamic";
@@ -15,39 +14,55 @@ export const metadata: Metadata = {
 export default async function SolicitudAmbientalPage() {
   const entradas = await entradasCatalogo((slug, flujo) => (flujo ? `/solicitud-ambiental/${slug}?flujo=${flujo}` : `/solicitud-ambiental/${slug}`));
   // Los instrumentos económicos no son trámites que radique el ciudadano.
-  const tramites = entradas.filter((e) => !e.codigo.startsWith("IE-")).map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion }));
+  const tramites = entradas
+    .filter((e) => !e.codigo.startsWith("IE-"))
+    .map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion }));
+  const radicables = tramites.filter((t) => t.radicable).length;
 
   return (
-    <div className="space-y-5">
-      <CabeceraTablero
-        icon={Leaf}
+    <div className="space-y-6">
+      <EncabezadoSolicitud
         titulo="Solicitud ambiental"
-        descripcion={
+        acciones={
           <>
-            Radique en línea su solicitud de trámite ambiental ante la CDMB, sin crear una cuenta. Al enviarla recibe un número de
-            solicitud con el que puede consultar el estado en{" "}
-            <Link href="/solicitud-ambiental/consultar" className="text-cdmb-700 underline hover:no-underline">
-              Consultar solicitud ambiental
-            </Link>
-            .
+            <BotonEncabezado href="#elegir" principal>
+              Comenzar <ArrowRight className="h-4 w-4" aria-hidden />
+            </BotonEncabezado>
+            <BotonEncabezado href="/solicitud-ambiental/consultar">
+              <Search className="h-4 w-4" aria-hidden /> Consultar mi solicitud
+            </BotonEncabezado>
           </>
         }
-      />
+      >
+        Radique en línea su trámite ambiental ante la CDMB, sin crear una cuenta. Hay {radicables} trámites disponibles; al enviar recibe un
+        número de solicitud para seguir su estado.
+      </EncabezadoSolicitud>
+
+      <PasosSolicitud actual={1} />
 
       <ElegirTramite tramites={tramites} />
 
-      <div className="rounded-2xl bg-white/80 p-4 text-xs leading-relaxed text-stone-500 ring-1 ring-stone-200/70">
-        <p className="flex items-center gap-1.5 font-medium text-stone-600">
-          <ShieldCheck className="h-3.5 w-3.5 flex-none text-cdmb-600" aria-hidden /> Antes de empezar
-        </p>
-        <ul className="mt-1 list-disc space-y-1 pl-4">
-          <li>Tenga a la mano su cédula o NIT, los datos del predio o lugar del trámite y los documentos que exige el trámite.</li>
-          <li>
-            Cada archivo puede pesar hasta <strong>2 MB</strong> (los planos, hasta 10 MB). Se aceptan PDF, Word, Excel e imágenes JPG o PNG.
+      <section aria-labelledby="titulo-antes" className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft">
+        <h2 id="titulo-antes" className="flex items-center gap-2 text-sm font-semibold text-stone-800">
+          <ShieldCheck className="h-4 w-4 text-cdmb-600" aria-hidden /> Antes de empezar
+        </h2>
+        <ul className="mt-3 grid gap-3 text-sm text-stone-600 sm:grid-cols-3">
+          <li className="flex gap-2">
+            <FileCheck2 className="mt-0.5 h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+            <span>Tenga a la mano su cédula o NIT, los datos del lugar del trámite y los documentos que exige.</span>
           </li>
-          <li>Indique un correo electrónico o un teléfono para que la CDMB pueda comunicarle las novedades de su solicitud.</li>
+          <li className="flex gap-2">
+            <Clock className="mt-0.5 h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+            <span>
+              Cada archivo puede pesar hasta <strong>2 MB</strong> (planos, 10 MB). PDF, Word, Excel, JPG o PNG.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <Mail className="mt-0.5 h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+            <span>Indique un correo o un teléfono para que la CDMB le comunique las novedades.</span>
+          </li>
         </ul>
-      </div>
+      </section>
     </div>
   );
 }
