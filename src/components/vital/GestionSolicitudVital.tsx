@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 
-type TramiteOpcion = { slug: string; nombre: string; codigo: string };
+type TramiteOpcion = { slug: string; nombre: string; codigo: string; enSuit: boolean };
 
 export function GestionSolicitudVital({
   solicitudId,
@@ -112,11 +112,20 @@ export function GestionSolicitudVital({
             className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm"
           >
             <option value="">Seleccione el trámite…</option>
-            {tramites.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.nombre} ({t.codigo}){t.slug === slugSugerido ? " — sugerido" : ""}
-              </option>
-            ))}
+            {[
+              { titulo: "Trámites inscritos en el SUIT", lista: tramites.filter((t) => t.enSuit) },
+              { titulo: "Otros trámites de la CDMB", lista: tramites.filter((t) => !t.enSuit) },
+            ]
+              .filter((g) => g.lista.length > 0)
+              .map((g) => (
+                <optgroup key={g.titulo} label={g.titulo}>
+                  {g.lista.map((t) => (
+                    <option key={t.slug} value={t.slug}>
+                      {t.nombre} ({t.codigo}){t.slug === slugSugerido ? " — sugerido" : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
           </select>
         </label>
         {slug ? (
