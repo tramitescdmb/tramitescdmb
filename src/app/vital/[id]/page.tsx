@@ -356,7 +356,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
     permisos && puedeConvertirSolicitudVital(permisos)
       ? (
           // Los mismos trámites del catálogo (activos) y la misma regla de SUIT que su filtro
-          // «Sin registro en el SUIT». El selector muestra solo los que tienen procedimiento en SIC.
+          // «Sin registro en el SUIT». Los que no tienen procedimiento en SIC salen sin poder elegirse.
           await db.tramiteTipo.findMany({
             where: { activo: true },
             select: { id: true, slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { suitNumero: true } } },
