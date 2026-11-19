@@ -1,3 +1,4 @@
+import { redirigirAlmacen } from "@/lib/almacen";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas, puedeVerExpedienteTramite } from "@/lib/permisos";
@@ -23,7 +24,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const bytes = await descargarDocumento(foto.storagePath);
     return new NextResponse(new Uint8Array(bytes), { headers: { "Content-Type": foto.mimeType, "Cache-Control": "private, max-age=300" } });
   }
-  return NextResponse.redirect(await getSignedDownloadUrl(foto.storagePath));
+  return redirigirAlmacen(await getSignedDownloadUrl(foto.storagePath));
 }
 
 async function fotoCorregible(id: string) {

@@ -401,7 +401,11 @@ export function GeovisorTramites({
     let cancelado = false;
     let observador: ResizeObserver | null = null;
     const cargarLeaflet = async () => {
-      const L = await import("leaflet");
+      // leaflet.markercluster se registra sobre window.L (L.MarkerClusterGroup = …). Con el
+      // compilador de Next 16 el espacio de nombres de import() no admite propiedades nuevas
+      // («object is not extensible») y el mapa no cargaba: se usa el objeto exportado de Leaflet.
+      const mod = await import("leaflet");
+      const L = (mod as unknown as { default?: typeof mod }).default ?? mod;
       (window as unknown as { L: typeof L }).L = L;
       await import("leaflet.markercluster");
       return L;

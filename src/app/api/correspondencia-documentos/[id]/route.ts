@@ -1,3 +1,4 @@
+import { redirigirAlmacen } from "@/lib/almacen";
 import { NextRequest, NextResponse } from "next/server";
 import { puedeVerComunicacion } from "@/lib/correspondencia-acceso";
 import { db } from "@/lib/db";
@@ -36,5 +37,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
 
   const url = await getSignedDownloadUrl(doc.storagePath);
-  return NextResponse.redirect(url);
+  return redirigirAlmacen(url);
 }

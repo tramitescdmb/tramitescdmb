@@ -1,3 +1,4 @@
+import { redirigirAlmacen } from "@/lib/almacen";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
@@ -27,5 +28,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ docI
     userAgent,
     detalle: `Abrió el adjunto "${doc.nombre}" del memorando ${doc.comunicacion.radicado}`,
   });
-  return NextResponse.redirect(await getSignedDownloadUrl(doc.storagePath));
+  return redirigirAlmacen(await getSignedDownloadUrl(doc.storagePath));
 }

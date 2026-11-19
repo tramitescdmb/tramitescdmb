@@ -1,3 +1,4 @@
+import { redirigirAlmacen } from "@/lib/almacen";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeConsultarVital } from "@/lib/permisos";
@@ -29,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const urlArchivo = urlArchivoDeRuta(documento.storagePath);
   if (!urlArchivo) {
     // Registro antiguo con archivo en el almacén (antes de dejar de guardarlos).
-    return NextResponse.redirect(await getSignedDownloadUrl(documento.storagePath));
+    return redirigirAlmacen(await getSignedDownloadUrl(documento.storagePath));
   }
 
   let r = await abrirDocumentoVital(urlArchivo);

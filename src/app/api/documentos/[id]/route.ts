@@ -1,3 +1,4 @@
+import { redirigirAlmacen } from "@/lib/almacen";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -34,5 +35,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const url = await getSignedDownloadUrl(documento.storagePath);
-  return NextResponse.redirect(url);
+  return redirigirAlmacen(url);
 }
