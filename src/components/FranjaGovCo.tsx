@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { LayoutGrid, FilePlus2, Search, ShieldCheck, Leaf } from "lucide-react";
+import { LayoutGrid, MessageSquareText, ShieldCheck, Leaf } from "lucide-react";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
+// Barra superior: un acceso por servicio; las opciones de cada uno (radicar o consultar) están en el menú principal.
 const ACCESOS = [
   { href: "/", label: "Aplicativos CDMB", icono: LayoutGrid },
-  { href: "/pqrsd", label: "Radicar PQRSD", icono: FilePlus2 },
-  { href: "/pqrsd/consultar", label: "Consultar PQRSD", icono: Search },
+  { href: "/pqrsd", label: "PQRSD", icono: MessageSquareText },
   { href: "/solicitud-ambiental", label: "Solicitud ambiental", icono: Leaf },
-  { href: "/solicitud-ambiental/consultar", label: "Consultar solicitud ambiental", icono: Search },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck },
 ];
 
