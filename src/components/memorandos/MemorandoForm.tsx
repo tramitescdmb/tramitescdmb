@@ -197,6 +197,13 @@ export function MemorandoForm({
                 </Field>
               </div>
             )}
+            {!origenLibre && (
+              <div className="sm:col-span-2">
+                <Field label="Oficina de origen (DE)" help="Es la oficina a la que usted pertenece; no se puede cambiar.">
+                  <input value={dependenciaOrigen.nombre} readOnly disabled className={`${inputCls} bg-stone-50 text-stone-700`} />
+                </Field>
+              </div>
+            )}
             <Field label="Dependencia de destino" required help="Al elegirla se propone a quien la dirige. También puede buscar directamente a la persona.">
               <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
                 <option value="">— Todas (buscar persona) —</option>

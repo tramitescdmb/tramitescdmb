@@ -48,6 +48,21 @@ export function puedeEnviarMemorando(permisos: PermisosUsuario, denominacionEmpl
 /** origenLibre: el administrador elige desde qué oficina firma (para pruebas); los demás, siempre desde la suya. */
 export type ContextoMemorandos = { id: string; dependenciaId: string | null; firmante: boolean; acceso: boolean; archivo: boolean; origenLibre?: boolean };
 
+/**
+ * Oficina desde la que se firma el memorando (DE): siempre la del funcionario con cargo autorizado.
+ * Solo el administrador elige otra (pruebas). Si alguien pide una oficina ajena, se rechaza.
+ */
+export function oficinaOrigenMemorando(ctx: Pick<ContextoMemorandos, "dependenciaId" | "origenLibre">, pedida: string | null | undefined): { id: string } | { error: string } {
+  const solicitada = pedida ? String(pedida) : "";
+  if (ctx.origenLibre) {
+    const id = solicitada || ctx.dependenciaId;
+    return id ? { id } : { error: "Indique la oficina desde la que firma el memorando." };
+  }
+  if (!ctx.dependenciaId) return { error: "Su usuario no tiene oficina asignada: no puede enviar memorandos." };
+  if (solicitada && solicitada !== ctx.dependenciaId) return { error: "Solo puede enviar memorandos desde la oficina a la que pertenece." };
+  return { id: ctx.dependenciaId };
+}
+
 export async function contextoMemorandos(usuarioId: string, permisos: PermisosUsuario): Promise<ContextoMemorandos> {
   const [u, config] = await Promise.all([
     db.usuario.findUnique({ where: { id: usuarioId }, select: { denominacionEmpleo: true, dependenciaId: true } }),

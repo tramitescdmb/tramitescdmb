@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/config-sitio", () => ({ getConfiguracionSitio: async () => ({}) }));
 
-const { accedeMemorandos, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
+const { accedeMemorandos, oficinaOrigenMemorando, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
 
 function permisos(extra: Record<string, unknown> = {}) {
   return { esAdmin: false, dependenciaId: "dep-1", correspondencia: null, porPerfil: new Set(), matriz: new Map(), ...extra } as never;
@@ -50,5 +50,19 @@ describe("acceso al módulo", () => {
     expect(w).toEqual({ tipo: "INTERNA", OR: [{ radicadoPorId: "u1" }, { respuestaPorId: "u1" }, { distribuciones: { some: { usuarioId: "u1" } } }, { solicitudesFirma: { some: { usuarioAsignadoId: "u1" } } }] });
     expect(whereVerMemorando({ id: "u1", dependenciaId: null, firmante: false, acceso: false, archivo: false })).toEqual({ id: "" });
     expect(whereVerMemorando({ id: "u1", dependenciaId: "d", firmante: true, acceso: true, archivo: true })).toEqual({ tipo: "INTERNA" });
+  });
+});
+
+describe("oficina de origen del memorando", () => {
+  it("el funcionario autorizado firma solo desde su oficina", () => {
+    expect(oficinaOrigenMemorando({ dependenciaId: "dep-1", origenLibre: false }, null)).toEqual({ id: "dep-1" });
+    expect(oficinaOrigenMemorando({ dependenciaId: "dep-1", origenLibre: false }, "dep-1")).toEqual({ id: "dep-1" });
+    expect(oficinaOrigenMemorando({ dependenciaId: "dep-1", origenLibre: false }, "dep-2")).toEqual({ error: "Solo puede enviar memorandos desde la oficina a la que pertenece." });
+    expect("error" in oficinaOrigenMemorando({ dependenciaId: null, origenLibre: false }, "dep-2")).toBe(true);
+  });
+  it("el administrador puede elegir cualquier oficina", () => {
+    expect(oficinaOrigenMemorando({ dependenciaId: null, origenLibre: true }, "dep-2")).toEqual({ id: "dep-2" });
+    expect(oficinaOrigenMemorando({ dependenciaId: "dep-1", origenLibre: true }, null)).toEqual({ id: "dep-1" });
+    expect("error" in oficinaOrigenMemorando({ dependenciaId: null, origenLibre: true }, null)).toBe(true);
   });
 });

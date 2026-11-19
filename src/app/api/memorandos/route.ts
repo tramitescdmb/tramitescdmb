@@ -3,7 +3,7 @@ import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
 import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
-import { memorandoPendienteDe, contextoMemorandos, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
+import { memorandoPendienteDe, contextoMemorandos, oficinaOrigenMemorando, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
 import { CIUDAD_MEMORANDO, siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { sumarDiasHabiles } from "@/lib/dias-habiles";
@@ -53,8 +53,9 @@ export async function POST(req: NextRequest) {
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
-  const dependenciaOrigenId = propio.origenLibre && body.dependenciaOrigenId ? String(body.dependenciaOrigenId) : propio.dependenciaId;
-  if (!dependenciaOrigenId) return NextResponse.json({ error: "Indique la oficina desde la que firma el memorando." }, { status: 400 });
+  const oficina = oficinaOrigenMemorando(propio, body.dependenciaOrigenId ? String(body.dependenciaOrigenId) : null);
+  if ("error" in oficina) return NextResponse.json({ error: oficina.error }, { status: 403 });
+  const dependenciaOrigenId = oficina.id;
   const dependenciaDestinoId = String(body.dependenciaDestinoId ?? "");
   const usuarioDestinoId = body.usuarioDestinoId ? String(body.usuarioDestinoId) : "";
 
