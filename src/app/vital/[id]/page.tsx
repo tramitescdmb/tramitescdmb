@@ -24,7 +24,7 @@ import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 import { BandaTablero } from "@/components/tablero";
 import { GestionSolicitudVital, type TramiteOpcion } from "@/components/vital/GestionSolicitudVital";
 import { codigoFlujoSugerido, codigoTramiteSugerido, prellenadoDesdeVital } from "@/lib/vital-conversion";
-import { todosLosSuitNumeros } from "@/lib/tramite-categoria";
+import { entradasCatalogo } from "@/lib/opciones-catalogo";
 import { ArrowRightCircle } from "lucide-react";
 
 const VACIOS = new Set(["", "null", "undefined", "n/a", "no se n", "no se", "-", "--"]);
@@ -354,30 +354,15 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA. Mismas entradas, grupos y
   // conteos que el catálogo de trámites (un trámite con varios procedimientos inscritos cada uno en
   // el SUIT sale una vez por procedimiento). Los que no tienen procedimiento en SIC no se pueden elegir.
-  const opcionesTramite: TramiteOpcion[] = [];
+  let opcionesTramite: TramiteOpcion[] = [];
   let claveSugerida: string | null = null;
   if (permisos && puedeConvertirSolicitudVital(permisos)) {
-    const tramites = await db.tramiteTipo.findMany({
-      where: { activo: true },
-      select: { slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { codigo: true, nombre: true, suitNumero: true } } },
-      orderBy: { nombre: "asc" },
-    });
+    const entradas = await entradasCatalogo((slug, flujo) => (flujo ? `/tramites/${slug}/nuevo?flujo=${flujo}` : `/tramites/${slug}/nuevo`));
     const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
     const flujoSugerido = codigoFlujoSugerido(solicitud.idTramiteVital, prellenadoDesdeVital(solicitud).claseSolicitud);
-    for (const t of tramites) {
-      const enSuit = todosLosSuitNumeros(t).length > 0;
-      const porFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
-      const entradas = porFlujo
-        ? t.flujos.map((f) => ({ clave: `${t.slug}:${f.codigo}`, href: `/tramites/${t.slug}/nuevo?flujo=${f.codigo}`, nombre: f.nombre, flujo: f.codigo as string | null, suits: f.suitNumero ? [f.suitNumero] : [] }))
-        : [{ clave: t.slug, href: `/tramites/${t.slug}/nuevo`, nombre: t.nombre, flujo: null as string | null, suits: todosLosSuitNumeros(t) }];
-      for (const e of entradas) {
-        opcionesTramite.push({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: t.codigo, suits: e.suits, enSuit, radicable: t.flujos.length > 0 });
-      }
-      if (t.flujos.length > 0 && t.codigo === codigoSugerido) {
-        claveSugerida = (entradas.find((e) => e.flujo && e.flujo === flujoSugerido) ?? entradas[0]).clave;
-      }
-    }
-    opcionesTramite.sort((x, y) => x.nombre.localeCompare(y.nombre, "es"));
+    const delSugerido = entradas.filter((e) => e.radicable && e.codigo === codigoSugerido);
+    claveSugerida = (delSugerido.find((e) => e.flujo && e.flujo === flujoSugerido) ?? delSugerido[0])?.clave ?? null;
+    opcionesTramite = entradas.map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable }));
   }
   const gestorNombre = solicitud.gestionadaPorId
     ? (await db.usuario.findUnique({ where: { id: solicitud.gestionadaPorId }, select: { nombre: true } }))?.nombre ?? null

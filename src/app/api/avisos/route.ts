@@ -77,7 +77,7 @@ export async function GET() {
 
   if (permisos.modulos.has("TRAMITES")) {
     const firmasTramite = puedeAccederFirmasTramite(permisos);
-    const [firmas, rechazos, buzon, visitas, porRevisar, devueltos, pasosFlujo, vitalNuevas] = await Promise.all([
+    const [firmas, rechazos, buzon, visitas, porRevisar, devueltos, pasosFlujo, vitalNuevas, solicitudesEnLinea] = await Promise.all([
       firmasTramite ? contarPendientesBuzonTramite(session.userId) : null,
       firmasTramite ? contarRechazosPorAtender(session.userId, false, "documentoExpediente") : 0,
       contarNoLeidas(session.userId),
@@ -86,6 +86,7 @@ export async function GET() {
       conceptosDevueltosA(session.userId).then((l) => l.length),
       pasosDeFlujo("TRAMITES"),
       db.notificacion.count({ where: { usuarioId: session.userId, tipo: "VITAL_NUEVA", resueltaEn: null } }),
+      db.notificacion.count({ where: { usuarioId: session.userId, tipo: "SOLICITUD_AMBIENTAL_NUEVA", resueltaEn: null, leidaEn: null } }),
     ]);
     avisarPasos(pasosFlujo, "flujos-tramites", "/tramites-ambientales#pasos-flujo", "TRAMITES");
     if (porRevisar > 0) {
@@ -115,6 +116,17 @@ export async function GET() {
         href: "/vital?gestion=nuevas",
         alerta: true,
         cantidad: vitalNuevas,
+        modulo: "TRAMITES",
+      });
+    }
+    if (solicitudesEnLinea > 0) {
+      avisos.push({
+        clave: "solicitudes-ambientales-en-linea",
+        titulo: solicitudesEnLinea === 1 ? "Tiene una nueva solicitud ambiental en línea" : `Tiene ${solicitudesEnLinea} nuevas solicitudes ambientales en línea`,
+        detalle: "Radicadas por los solicitantes desde la vista pública",
+        href: "/planeador/buzon",
+        alerta: true,
+        cantidad: solicitudesEnLinea,
         modulo: "TRAMITES",
       });
     }

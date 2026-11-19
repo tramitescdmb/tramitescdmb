@@ -58,10 +58,16 @@ export function avisarRespuestaPqrsd(datos: DatosRespuestaPqrsd & { oficioId: st
   });
 }
 
-export type DatosRadicadoTramite = { numero: string; tramite: string; solicitante: string; fecha: Date };
+export type DatosRadicadoTramite = { numero: string; tramite: string; solicitante: string; fecha: Date; numeroSolicitud?: string | null };
 
 export function mensajeRadicadoTramite(e: DatosRadicadoTramite): Mensaje {
-  return componerMensaje("TRAMITE_RADICADO", { EXPEDIENTE: e.numero, NOMBRE: e.solicitante, TRAMITE: e.tramite, FECHA_RADICACION: fechaEnLetras(e.fecha) });
+  return componerMensaje("TRAMITE_RADICADO", {
+    EXPEDIENTE: e.numero,
+    NOMBRE: e.solicitante,
+    TRAMITE: e.tramite,
+    FECHA_RADICACION: fechaEnLetras(e.fecha),
+    NUMERO_SOLICITUD: e.numeroSolicitud ?? "",
+  });
 }
 
 export function avisarRadicadoTramite(e: DatosRadicadoTramite & { id: string; correo: string | null }) {
