@@ -10,6 +10,7 @@ import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/l
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
@@ -204,17 +205,13 @@ export function MemorandoForm({
                 </Field>
               </div>
             )}
-            <Field label="Dependencia de destino" required help="Al elegirla se propone a quien la dirige. También puede buscar directamente a la persona.">
-              <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
-                <option value="">— Todas (buscar persona) —</option>
-                {dependencias
-                  .filter((d) => d.id !== dependenciaOrigen.id)
-                  .map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.nombre}
-                    </option>
-                  ))}
-              </select>
+            <Field label="Dependencia de destino" required help="Escriba parte del nombre (sin importar tildes ni mayúsculas). Al elegirla se propone a quien la dirige; también puede buscar directamente a la persona.">
+              <BuscadorDependencia
+                dependencias={dependencias.filter((d) => d.id !== dependenciaOrigen.id)}
+                value={dependenciaDestinoId}
+                onChange={cambiarDependenciaDestino}
+                placeholder="Escriba para buscar la dependencia o coordinación…"
+              />
             </Field>
             <Field label="Destinatario (PARA)" required help="Casi siempre quien dirige esa oficina; luego lo asigna a sus colaboradores.">
               <BuscadorPersonaMemorando
