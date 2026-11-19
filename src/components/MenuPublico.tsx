@@ -22,7 +22,7 @@ const OPCIONES: Opcion[] = [
     ],
   },
   {
-    label: "Solicitud ambiental",
+    label: "Solicitudes ambientales",
     icono: Leaf,
     opciones: [
       { href: "/solicitud-ambiental", label: "Radicar solicitud ambiental", icono: FilePlus2, activo: (p) => p.startsWith("/solicitud-ambiental") && !esConsultaAmbiental(p) },
@@ -35,7 +35,7 @@ const OPCIONES: Opcion[] = [
 const claseOpcion = (activo: boolean) =>
   `flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium text-stone-900 ${activo ? "bg-menu-500" : "hover:bg-menu-100"}`;
 
-/** Menú desplegable (PQRSD, Solicitud ambiental): abre con clic o teclado, cierra con Escape, clic fuera o al navegar. */
+/** Menú desplegable (PQRSD, Solicitudes ambientales): abre con clic o teclado, cierra con Escape, clic fuera o al navegar. */
 function MenuGrupo({ grupo, pathname }: { grupo: Grupo; pathname: string }) {
   const [abierto, setAbierto] = useState(false);
   const contenedor = useRef<HTMLDivElement>(null);

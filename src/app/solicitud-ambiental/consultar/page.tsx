@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Consultar solicitud ambiental — CDMB",
-  description: "Consulte el estado de su solicitud de trámite ambiental con su cédula o NIT y el número de solicitud.",
+  description: "Consulte el estado de su solicitud ambiental con su cédula o NIT y el número de solicitud.",
 };
 
 export default function ConsultarSolicitudAmbientalPage() {

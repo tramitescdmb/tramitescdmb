@@ -7,8 +7,8 @@ import { entradasCatalogo } from "@/lib/opciones-catalogo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Solicitud ambiental — CDMB",
-  description: "Radique en línea su solicitud de trámite ambiental ante la CDMB, sin crear una cuenta.",
+  title: "Solicitudes ambientales — CDMB",
+  description: "Radique en línea su solicitud ambiental ante la CDMB, sin crear una cuenta.",
 };
 
 export default async function SolicitudAmbientalPage() {
@@ -22,7 +22,7 @@ export default async function SolicitudAmbientalPage() {
   return (
     <div className="space-y-6">
       <EncabezadoSolicitud
-        titulo="Solicitud ambiental"
+        titulo="Solicitudes ambientales"
         acciones={
           <>
             <BotonEncabezado href="#elegir" principal>
@@ -34,7 +34,7 @@ export default async function SolicitudAmbientalPage() {
           </>
         }
       >
-        Radique en línea su trámite ambiental ante la CDMB, sin crear una cuenta. Hay {radicables} trámites disponibles; al enviar recibe un
+        Radique en línea su solicitud ambiental ante la CDMB, sin crear una cuenta. Hay {radicables} tipos de solicitud disponibles; al enviar recibe un
         número de solicitud para seguir su estado.
       </EncabezadoSolicitud>
 

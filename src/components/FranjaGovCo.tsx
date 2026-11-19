@@ -6,7 +6,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 const ACCESOS = [
   { href: "/", label: "Aplicativos CDMB", icono: LayoutGrid },
   { href: "/pqrsd", label: "PQRSD", icono: MessageSquareText },
-  { href: "/solicitud-ambiental", label: "Solicitud ambiental", icono: Leaf },
+  { href: "/solicitud-ambiental", label: "Solicitudes ambientales", icono: Leaf },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck },
 ];
 

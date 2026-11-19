@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "SIC CDMB",
-  description: "Gestión de trámites ambientales de la CDMB",
+  description: "Gestión de solicitudes ambientales de la CDMB",
 };
 
 export default async function RootLayout({
