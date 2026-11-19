@@ -38,9 +38,15 @@ function coincideBusqueda(entrada: EntradaCatalogo, termino: string) {
     .every((palabra) => texto.includes(palabra));
 }
 
-export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaParaCliente; items: EntradaCatalogo[] }[] }) {
+export function CatalogoTramites({
+  secciones,
+  busquedaInicial = "",
+}: {
+  secciones: { cat: CategoriaParaCliente; items: EntradaCatalogo[] }[];
+  busquedaInicial?: string;
+}) {
   const [filtro, setFiltro] = useState<string | null>(null);
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState(busquedaInicial);
   const totalTramites = secciones.reduce((acc, s) => acc + s.items.length, 0);
 
   const buscando = busqueda.trim().length > 0;

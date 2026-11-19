@@ -38,7 +38,8 @@ function entradasDe(t: Tramite, conteoPorTramite: Map<string, Conteo>, conteoPor
   return [entradaDe(t, t.id, t.nombre, todosLosSuitNumeros(t), flujoPrincipal, conteoPorTramite.get(t.id))];
 }
 
-export default async function CatalogoTramitesPage() {
+export default async function CatalogoTramitesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
   const [todosLosTramites, porEstado, session] = await Promise.all([
     getCatalogoTramites(),
     db.expediente.groupBy({ by: ["tramiteTipoId", "flujoId", "estado"], _count: { _all: true } }),
@@ -88,7 +89,7 @@ export default async function CatalogoTramitesPage() {
         descripcion="Trámites ambientales de la CDMB por recurso o tema. Abra uno para ver el detalle e iniciar un expediente."
       />
 
-      <CatalogoTramites secciones={secciones} />
+      <CatalogoTramites secciones={secciones} busquedaInicial={q?.slice(0, 100) ?? ""} />
     </div>
   );
 }

@@ -122,7 +122,7 @@ export function BuscadorGlobal() {
           }}
           onFocus={() => setAbierto(true)}
           onKeyDown={alTeclado}
-          placeholder="Buscar expediente, contrato, radicado o solicitante…"
+          placeholder="Buscar trámite, expediente, contrato, radicado o solicitante…"
           title="Atajo: Ctrl+K"
           aria-label="Búsqueda global"
           aria-expanded={mostrar}
