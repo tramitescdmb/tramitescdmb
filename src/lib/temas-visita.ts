@@ -17,7 +17,7 @@ export const TEMAS_VISITA_BASE: { nombre: string; codigos: string[] }[] = [
   { nombre: "Inventario forestal: especies y número de individuos", codigos: ["M-DA-PR41", "M-DA-PR69", "M-DA-PR70"] },
   { nombre: "Estado fitosanitario y riesgo de los árboles", codigos: ["M-DA-PR48"] },
   { nombre: "Especies y cantidades a movilizar", codigos: ["M-DA-PR16", "M-DA-PR58"] },
-  { nombre: "Fauna silvestre: área y especies objeto de la solicitud", codigos: ["M-DA-PR34", "M-DA-PR71"] },
+  { nombre: "Fauna silvestre: área y especies objeto de la solicitud", codigos: ["M-DA-PR34", "SUIT-21916", "M-DA-PR71"] },
   { nombre: "Programa de manejo ambiental de RCD", codigos: ["M-DA-PR60"] },
   { nombre: "Equipos, residuos o desechos con PCB", codigos: ["M-DA-PR35"] },
   { nombre: "Instalaciones de desintegración vehicular y manejo de residuos", codigos: ["M-DA-PR64"] },

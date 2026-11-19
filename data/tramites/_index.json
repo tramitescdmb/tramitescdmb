@@ -506,15 +506,17 @@
   },
   {
     "codigo": "SUIT-21916",
-    "version": "1",
-    "fecha": "2025-12-10",
-    "proceso": "TRÁMITE EN LÍNEA (SUIT/VITAL)",
-    "nombre": "Permiso de Estudio para la Recolección de Especímenes de Especies Silvestres con Fines de Elaboración de Estudios",
+    "version": "4",
+    "fecha": "2021-11-18",
+    "proceso": "EVALUACIÓN Y CONTROL A LA DEMANDA AMBIENTAL",
+    "nombre": "Permiso de Estudio para la Recolección de Especímenes de Especies Silvestres con Fines de Elaboración de Estudios Ambientales",
     "slug": "permiso-estudio-recoleccion-especimenes",
-    "archivoFuente": "cdmb.gov.co/tramites-y-servicios",
-    "numFlujos": 0,
-    "flujos": [],
-    "numPasos": 0,
-    "numDocumentosRequeridos": 0
+    "archivoFuente": "M-DA-PR34 version     4.pdf",
+    "numFlujos": 1,
+    "flujos": [
+      "inicio"
+    ],
+    "numPasos": 5,
+    "numDocumentosRequeridos": 5
   }
 ]
