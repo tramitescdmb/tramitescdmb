@@ -282,7 +282,7 @@ export const PLANTILLAS = {
     sinEnlace: true,
     variables: [
       { clave: "EXPEDIENTE", descripcion: "Número del expediente", ejemplo: "SCA-0123-2026", obligatoria: true },
-      { clave: "NUMERO_SOLICITUD", descripcion: "Número de solicitud para la consulta en línea (solo si se radicó desde «Solicitud ambiental»)", ejemplo: "SA-7KQ4-M9XD" },
+      { clave: "NUMERO_SOLICITUD", descripcion: "Número de solicitud para la consulta en línea (solo si se radicó desde «Solicitud ambiental»)", ejemplo: "SL-7KQ4-M9XD" },
       { clave: "NOMBRE", descripcion: "Nombre del solicitante", ejemplo: "Agropecuaria El Roble S.A.S." },
       { clave: "TRAMITE", descripcion: "Trámite ambiental solicitado", ejemplo: "Concesión de aguas superficiales" },
       { clave: "FECHA_RADICACION", descripcion: "Fecha de radicación en letras", ejemplo: "4 de noviembre de 2026" },

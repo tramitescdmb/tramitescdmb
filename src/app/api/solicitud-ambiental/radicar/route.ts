@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   // Campo trampa: invisible para las personas; si viene lleno, es un robot. Se le responde como si nada.
   if (typeof body.sitioWeb === "string" && body.sitioWeb.trim() !== "") {
-    return NextResponse.json({ numeroSolicitud: "SA-0000-0000", numero: "—" });
+    return NextResponse.json({ numeroSolicitud: "SL-0000-0000", numero: "—" });
   }
   if (typeof body.tsCarga !== "number" || Date.now() - body.tsCarga < MIN_MS_LLENADO) {
     return NextResponse.json({ error: "Por favor revise el formulario e intente de nuevo." }, { status: 400 });

@@ -481,6 +481,9 @@ model TramiteTipo {
   alcance                  String   @db.Text
   autoridadResponsabilidad String   @db.Text
   suitNumeros              String[] @default([])
+  // Sigla del número de expediente (CA, LA, AF…, como en SINCA). Vacía: se usa la tabla por defecto
+  // de src/lib/siglas-tramite.ts. Editable en /admin/consecutivos.
+  sigla                    String?
   activo                   Boolean  @default(true)
   // TRD: serie/subserie del expediente completo de este trámite (retención y disposición final se
   // cuentan por acá, no por documento individual — un expediente es un solo legajo archivístico).

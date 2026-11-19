@@ -8,10 +8,11 @@ import {
 } from "./solicitud-ambiental";
 
 describe("número de solicitud", () => {
-  it("se genera con el formato SA-XXXX-XXXX y sin caracteres confusos", () => {
+  it("se genera con el formato SL-XXXX-XXXX y sin caracteres confusos", () => {
     for (let i = 0; i < 200; i++) {
       const n = generarNumeroSolicitud();
       expect(n).toMatch(FORMATO_NUMERO_SOLICITUD);
+      expect(n.startsWith("SL-")).toBe(true);
       expect(n.slice(3)).not.toMatch(/[01OIL]/);
     }
   });
@@ -22,11 +23,17 @@ describe("número de solicitud", () => {
   });
 
   it("acepta minúsculas, espacios y sin guiones", () => {
-    expect(normalizarNumeroSolicitud("sa 7kq4 m9xd")).toBe("SA-7KQ4-M9XD");
-    expect(normalizarNumeroSolicitud("7KQ4M9XD")).toBe("SA-7KQ4-M9XD");
+    expect(normalizarNumeroSolicitud("sl 7kq4 m9xd")).toBe("SL-7KQ4-M9XD");
+    expect(normalizarNumeroSolicitud("7KQ4M9XD")).toBe("SL-7KQ4-M9XD");
+    expect(normalizarNumeroSolicitud("SL-7KQ4-M9X")).toBeNull();
     expect(normalizarNumeroSolicitud("SA-7KQ4-M9X")).toBeNull();
     expect(normalizarNumeroSolicitud("SA-7KQ4-M9X0")).toBeNull();
     expect(normalizarNumeroSolicitud("")).toBeNull();
+  });
+
+  it("sigue aceptando los números SA- entregados antes del cambio", () => {
+    expect(normalizarNumeroSolicitud("SA-7KQ4-M9XD")).toBe("SA-7KQ4-M9XD");
+    expect(normalizarNumeroSolicitud("sa7kq4m9xd")).toBe("SA-7KQ4-M9XD");
   });
 });
 

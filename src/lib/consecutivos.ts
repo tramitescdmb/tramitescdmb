@@ -5,11 +5,12 @@ import { formatearRadicado, generarConsecutivo } from "@/lib/radicado";
 import { claveConcepto, SERIE_CONCEPTO } from "@/lib/concepto-tecnico";
 import { formatearCodigoProceso } from "@/lib/codigo-proceso";
 import { formatearNumeroMemorando, leerDatosMemorando, serieConsecutivoMemorando, siglaDependencia } from "@/lib/memorandos-formato";
+import { formatearNumeroSigla, normalizarSigla, serieSigla, SIGLA_POR_PROCEDIMIENTO, siglaDeTramite } from "@/lib/siglas-tramite";
 
 export type ModuloConsecutivo = "TRAMITES" | "PLANEADOR" | "GECON" | "SGDEA" | "MEMORANDOS";
 
 export const ETIQUETA_MODULO_CONSECUTIVO: Record<ModuloConsecutivo, string> = {
-  TRAMITES: "Trámites ambientales 2.0 — número de expediente",
+  TRAMITES: "Trámites ambientales 2.0 — número de expediente (SIGLA-0000-año)",
   PLANEADOR: "Planeador — conceptos técnicos de visita",
   GECON: "GECON — contratación",
   SGDEA: "SGDEA — correspondencia y archivo",
@@ -68,18 +69,36 @@ function contar(valores: (string | null)[], prefijo: string, sufijo = ""): Usado
 type Definicion = { serie: string; modulo: ModuloConsecutivo; nombre: string; ejemplo: (n: number) => string; usados: () => Promise<Usados> };
 
 async function definiciones(anio: number, seriesExistentes: string[]): Promise<Definicion[]> {
-  const tipos = await db.tramiteTipo.findMany({ where: { activo: true }, select: { codigo: true, nombre: true }, orderBy: { codigo: "asc" } });
-  const defs: Definicion[] = tipos.map((t) => ({
-    serie: serieTramite(t.codigo),
-    modulo: "TRAMITES",
-    nombre: t.nombre,
-    ejemplo: (n) => formatearNumeroTramite(t.codigo, anio, n),
-    usados: async () => {
-      const prefijo = `${t.codigo}-${anio}-`;
-      const filas = await db.expediente.findMany({ where: { numero: { startsWith: prefijo } }, select: { numero: true } });
-      return contar(filas.map((f) => f.numero), prefijo);
-    },
-  }));
+  const tipos = await db.tramiteTipo.findMany({ where: { activo: true }, select: { codigo: true, nombre: true, sigla: true }, orderBy: { codigo: "asc" } });
+  const defs: Definicion[] = [];
+  const porSigla = new Map<string, string[]>();
+  for (const t of tipos) {
+    const sigla = siglaDeTramite(t);
+    if (sigla) {
+      porSigla.set(sigla, [...(porSigla.get(sigla) ?? []), t.nombre]);
+      continue;
+    }
+    defs.push({
+      serie: serieTramite(t.codigo),
+      modulo: "TRAMITES",
+      nombre: t.nombre,
+      ejemplo: (n) => formatearNumeroTramite(t.codigo, anio, n),
+      usados: async () => {
+        const prefijo = `${t.codigo}-${anio}-`;
+        const filas = await db.expediente.findMany({ where: { numero: { startsWith: prefijo } }, select: { numero: true } });
+        return contar(filas.map((f) => f.numero), prefijo);
+      },
+    });
+  }
+  for (const [sigla, nombres] of [...porSigla.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    defs.push({
+      serie: serieSigla(sigla),
+      modulo: "TRAMITES",
+      nombre: `${sigla} · ${nombres.join(" · ")}`,
+      ejemplo: (n) => formatearNumeroSigla(sigla, anio, n),
+      usados: () => usadosSigla(sigla, anio),
+    });
+  }
   defs.push({
     serie: SERIE_CONCEPTO,
     modulo: "PLANEADOR",
@@ -215,18 +234,62 @@ export async function fijarSiguienteConsecutivo(serie: string, anio: number, sig
   });
 }
 
-export async function generarNumeroTramite(codigo: string, anio: number = anioColombia()): Promise<string> {
-  const serie = serieTramite(codigo);
+/**
+ * Números con sigla ya usados en la vigencia: los expedientes de SIC y los que asignó SINCA
+ * (sincronizados en SincaResolucion), para que la serie siga después del último de SINCA.
+ */
+export async function usadosSigla(sigla: string, anio: number): Promise<Usados & { sinca: number }> {
+  const prefijo = `${sigla}-`;
+  const sufijo = `-${anio}`;
+  const filtro = { startsWith: prefijo, endsWith: sufijo };
+  const [sic, sinca] = await Promise.all([
+    db.expediente.findMany({ where: { numero: filtro }, select: { numero: true } }),
+    db.sincaResolucion.findMany({ where: { expediente: filtro }, select: { expediente: true }, distinct: ["expediente"] }),
+  ]);
+  const a = contar(sic.map((f) => f.numero), prefijo, sufijo);
+  const b = contar(sinca.map((f) => f.expediente), prefijo, sufijo);
+  return { maximo: Math.max(a.maximo, b.maximo), registros: a.registros + b.registros, sinca: b.maximo };
+}
+
+async function asegurarSerie(serie: string, anio: number, maximo: () => Promise<number>): Promise<void> {
   const existe = await db.consecutivoRadicado.findUnique({ where: { serie_anio: { serie, anio } }, select: { id: true } });
-  if (!existe) {
-    const prefijo = `${codigo}-${anio}-`;
-    const filas = await db.expediente.findMany({ where: { numero: { startsWith: prefijo } }, select: { numero: true } });
-    try {
-      await db.consecutivoRadicado.create({ data: { serie, anio, ultimoNumero: contar(filas.map((f) => f.numero), prefijo).maximo } });
-    } catch (e) {
-      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
-    }
+  if (existe) return;
+  try {
+    await db.consecutivoRadicado.create({ data: { serie, anio, ultimoNumero: await maximo() } });
+  } catch (e) {
+    if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
   }
+}
+
+/**
+ * Número de expediente para un trámite nuevo: SIGLA-0000-año cuando el trámite tiene sigla
+ * (consecutivo compartido por sigla y vigencia); si no la tiene, el formato anterior
+ * código-año-0000. Los expedientes ya radicados conservan su número.
+ */
+export async function generarNumeroTramite(codigo: string, anio: number = anioColombia()): Promise<string> {
+  const tipo = await db.tramiteTipo.findUnique({ where: { codigo }, select: { codigo: true, sigla: true } });
+  const sigla = siglaDeTramite(tipo ?? { codigo });
+  if (sigla) {
+    const serie = serieSigla(sigla);
+    await asegurarSerie(serie, anio, async () => (await usadosSigla(sigla, anio)).maximo);
+    for (let intento = 0; intento < 50; intento++) {
+      const { numero } = await generarConsecutivo(serie, anio);
+      const candidato = formatearNumeroSigla(sigla, anio, numero);
+      const [enSic, enSinca] = await Promise.all([
+        db.expediente.findUnique({ where: { numero: candidato }, select: { id: true } }),
+        db.sincaResolucion.findFirst({ where: { expediente: candidato }, select: { nroSolicitud: true } }),
+      ]);
+      if (!enSic && !enSinca) return candidato;
+    }
+    throw new Error("No se pudo asignar el número del expediente.");
+  }
+
+  const serie = serieTramite(codigo);
+  const prefijo = `${codigo}-${anio}-`;
+  await asegurarSerie(serie, anio, async () => {
+    const filas = await db.expediente.findMany({ where: { numero: { startsWith: prefijo } }, select: { numero: true } });
+    return contar(filas.map((f) => f.numero), prefijo).maximo;
+  });
   for (let intento = 0; intento < 20; intento++) {
     const { numero } = await generarConsecutivo(serie, anio);
     const candidato = formatearNumeroTramite(codigo, anio, numero);
@@ -245,4 +308,28 @@ export async function reiniciarSeriesSinRegistros(anio: number): Promise<number>
     });
   }
   return libres.length;
+}
+
+export type SiglaTramite = { codigo: string; nombre: string; sigla: string | null; siglaGuardada: string | null; siglaPorDefecto: string | null };
+
+export async function listarSiglasTramite(): Promise<SiglaTramite[]> {
+  const tipos = await db.tramiteTipo.findMany({ where: { activo: true }, select: { codigo: true, nombre: true, sigla: true }, orderBy: { codigo: "asc" } });
+  return tipos.map((t) => ({
+    codigo: t.codigo,
+    nombre: t.nombre,
+    sigla: siglaDeTramite(t),
+    siglaGuardada: normalizarSigla(t.sigla),
+    siglaPorDefecto: SIGLA_POR_PROCEDIMIENTO[t.codigo] ?? null,
+  }));
+}
+
+/** Guarda la sigla de un trámite; vacía vuelve a la sigla por defecto. Solo afecta a los expedientes nuevos. */
+export async function fijarSiglaTramite(codigo: string, texto: string): Promise<string | null> {
+  const limpio = texto.trim();
+  const sigla = limpio ? normalizarSigla(limpio) : null;
+  if (limpio && !sigla) throw new Error("La sigla debe tener de 2 a 4 letras, sin tildes ni números.");
+  const tipo = await db.tramiteTipo.findUnique({ where: { codigo }, select: { id: true } });
+  if (!tipo) throw new Error("El trámite indicado no existe.");
+  await db.tramiteTipo.update({ where: { id: tipo.id }, data: { sigla } });
+  return sigla ?? SIGLA_POR_PROCEDIMIENTO[codigo] ?? null;
 }

@@ -61,12 +61,12 @@ export function ConsultarSolicitudForm() {
           <Field label="Cédula o NIT del solicitante" required help="El documento con el que radicó la solicitud.">
             <input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} className={inputCls} inputMode="numeric" autoComplete="off" />
           </Field>
-          <Field label="Número de solicitud" required help="El número que recibió al radicar, por ejemplo SA-7KQ4-M9XD.">
+          <Field label="Número de solicitud" required help="El número que recibió al radicar, por ejemplo SL-7KQ4-M9XD.">
             <input
               value={numeroSolicitud}
               onChange={(e) => setNumeroSolicitud(e.target.value.toUpperCase())}
               className={`${inputCls} font-mono`}
-              placeholder="SA-XXXX-XXXX"
+              placeholder="SL-XXXX-XXXX"
               autoComplete="off"
             />
           </Field>
