@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { ArrowLeft, Paperclip, Reply, Send, UserCheck, Archive } from "lucide-react";
+import { ArrowLeft, Paperclip, Reply, Send, UserCheck, Archive, PenLine } from "lucide-react";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
 import { contextoMemorandos, marcarMemorandoLeido, numeroDeMemorando, whereVerMemorando } from "@/lib/memorandos";
@@ -17,6 +17,7 @@ import { DescargarPdfMemorando } from "@/components/memorandos/DescargarPdfMemor
 import { BotonImprimir } from "@/components/BotonImprimir";
 import { RespuestaFuncionarioForm } from "@/components/RespuestaFuncionarioForm";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
+import { BotonFirmarMemorando } from "@/components/memorandos/BotonFirmarMemorando";
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   RADICADA: "Enviado",
@@ -72,6 +73,11 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
       respuestas: { select: { id: true, radicado: true }, orderBy: { fechaRadicacion: "desc" } },
       documentos: { select: { id: true, nombre: true, esRespuesta: true }, orderBy: { createdAt: "asc" } },
       firmas: { select: { usuarioId: true, fechaHora: true, hashContenido: true, selloTiempoFuente: true, cargoAlFirmar: true }, orderBy: { fechaHora: "asc" } },
+      solicitudesFirma: {
+        where: { rol: "FIRMA", estado: { not: "RECHAZADA" } },
+        orderBy: { asignadoEn: "asc" },
+        select: { id: true, usuarioAsignadoId: true, calidad: true, estado: true, usuarioAsignado: { select: { nombre: true } } },
+      },
       distribuciones: {
         orderBy: { fechaAsignacion: "asc" },
         select: { activa: true, usuarioId: true, fechaAcuse: true, instrucciones: true, usuario: { select: SELECT_PERSONA } },
@@ -87,6 +93,15 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
     u ? { nombre: u.nombre, cargo: cargo || cargoDelFirmante(u, "SGDEA") } : null;
   const primerDestinatario = c.distribuciones.find((d) => d.usuario)?.usuario ?? null;
 
+  const firmaDe = (usuarioId: string) => c.firmas.find((f) => f.usuarioId === usuarioId) ?? null;
+  const estadoFirma = (calidad: "PROYECTO" | "REVISO"): string | null => {
+    const s = c.solicitudesFirma.find((x) => x.calidad === calidad);
+    if (!s) return null;
+    const f = firmaDe(s.usuarioAsignadoId);
+    return f ? `Firmó electrónicamente el ${formatearFechaHora(f.fechaHora)}` : "Pendiente de firma";
+  };
+  const miSolicitud = c.solicitudesFirma.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE") ?? null;
+
   const h = await headers();
   const config = await getConfiguracionSitio();
   const base = urlBasePlataforma(("urlPlataforma" in config ? config.urlPlataforma : null) ?? null) ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host") ?? ""}`;
@@ -101,6 +116,8 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
     cuerpo: c.contenido ?? "",
     proyecto: guardado?.proyecto ?? null,
     reviso: guardado?.reviso ?? null,
+    estadoProyecto: estadoFirma("PROYECTO"),
+    estadoReviso: estadoFirma("REVISO"),
     oficina: guardado?.oficina ?? c.dependenciaOrigen?.nombre ?? "",
     firma: firma ? { fecha: formatearFechaHora(firma.fechaHora), hash: firma.hashContenido, sello: firma.selloTiempoFuente } : null,
     verificacion: { radicado: c.radicado, url: urlVerificacion(base, c.radicado) },
@@ -184,6 +201,33 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
               </Link>
             )}
           </section>
+
+          {(c.solicitudesFirma.length > 0 || miSolicitud) && (
+            <section className="rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft">
+              <h2 className="mb-2 flex items-center gap-1.5 font-semibold text-stone-800">
+                <PenLine className="h-4 w-4" aria-hidden />
+                Firmas de proyectó y revisó
+              </h2>
+              <ul className="space-y-1">
+                {c.solicitudesFirma.map((s) => {
+                  const f = firmaDe(s.usuarioAsignadoId);
+                  return (
+                    <li key={s.id} className="flex justify-between gap-3">
+                      <span>
+                        {s.usuarioAsignado.nombre} <span className="text-xs text-stone-500">({s.calidad === "REVISO" ? "Revisó" : "Proyectó"})</span>
+                      </span>
+                      <span className={`text-xs ${f ? "text-emerald-700" : "text-amber-700"}`}>{f ? `Firmó ${formatearFechaHora(f.fechaHora)}` : "Pendiente"}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {miSolicitud && c.estado !== "ANULADA" && (
+                <div className="mt-3 border-t border-stone-100 pt-3">
+                  <BotonFirmarMemorando comunicacionId={c.id} solicitudId={miSolicitud.id} calidad={miSolicitud.calidad === "REVISO" ? "revisó" : "proyectó"} asunto={c.asunto} />
+                </div>
+              )}
+            </section>
+          )}
 
           {(vigentes.length > 0 || c.distribuciones.length > 0) && (
             <section className="rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft">

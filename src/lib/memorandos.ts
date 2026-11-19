@@ -8,9 +8,10 @@ import { formatearNumeroMemorando, leerDatosMemorando, siglaDependencia } from "
 
 export const PLAZOS_RESPUESTA_MEMORANDO = [3, 5, 10, 15] as const;
 
-export type VistaMemorandos = "por-responder" | "sin-leer" | "recibidos" | "esperando" | "enviados";
+export type VistaMemorandos = "por-firmar" | "por-responder" | "sin-leer" | "recibidos" | "esperando" | "enviados";
 
 export const VISTAS_MEMORANDOS: { id: VistaMemorandos; label: string }[] = [
+  { id: "por-firmar", label: "Por firmar" },
   { id: "por-responder", label: "Por responder" },
   { id: "sin-leer", label: "Sin leer" },
   { id: "recibidos", label: "Recibidos" },
@@ -77,10 +78,17 @@ function recibidosPor(ctx: ContextoMemorandos): Prisma.ComunicacionWhereInput {
 
 const NADA: Prisma.ComunicacionWhereInput = { id: "" };
 
+/** Firma pendiente de quien proyectó o revisó el memorando (se la pide quien lo envía). */
+function porFirmarDe(usuarioId: string): Prisma.SolicitudFirmaWhereInput {
+  return { usuarioAsignadoId: usuarioId, estado: "PENDIENTE", rol: "FIRMA" };
+}
+
 export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos): Prisma.ComunicacionWhereInput {
   if (!ctx.acceso) return NADA;
   const pendiente: Prisma.ComunicacionWhereInput = { fechaVencimiento: { not: null }, estado: { in: ESTADOS_ACTIVOS } };
   switch (vista) {
+    case "por-firmar":
+      return { tipo: "INTERNA", estado: { not: "ANULADA" }, solicitudesFirma: { some: porFirmarDe(ctx.id) } };
     case "por-responder":
       return {
         AND: [
@@ -102,7 +110,7 @@ export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos)
 
 /**
  * Quién ve un memorando: quien lo firmó, a quien se le asignó (aunque ya no esté vigente), quien
- * proyectó su respuesta, quien dirige la oficina de origen o de destino, y gestión documental o el
+ * proyectó su respuesta, a quien se le pidió firmarlo (proyectó / revisó), quien dirige la oficina de origen o de destino, y gestión documental o el
  * administrador.
  */
 export function whereVerMemorando(ctx: ContextoMemorandos): Prisma.ComunicacionWhereInput {
@@ -112,7 +120,13 @@ export function whereVerMemorando(ctx: ContextoMemorandos): Prisma.ComunicacionW
     ctx.firmante && ctx.dependenciaId ? [{ dependenciaDestinoId: ctx.dependenciaId }, { dependenciaOrigenId: ctx.dependenciaId }] : [];
   return {
     tipo: "INTERNA",
-    OR: [{ radicadoPorId: ctx.id }, { respuestaPorId: ctx.id }, { distribuciones: { some: { usuarioId: ctx.id } } }, ...directivo],
+    OR: [
+      { radicadoPorId: ctx.id },
+      { respuestaPorId: ctx.id },
+      { distribuciones: { some: { usuarioId: ctx.id } } },
+      { solicitudesFirma: { some: { usuarioAsignadoId: ctx.id } } },
+      ...directivo,
+    ],
   };
 }
 
@@ -121,15 +135,16 @@ export async function puedeVerMemorando(ctx: ContextoMemorandos, comunicacionId:
 }
 
 export async function contarMemorandos(ctx: ContextoMemorandos) {
-  if (!ctx.acceso) return { porResponder: 0, vencidos: 0, sinLeer: 0, esperando: 0 };
+  if (!ctx.acceso) return { porFirmar: 0, porResponder: 0, vencidos: 0, sinLeer: 0, esperando: 0 };
   const ahora = new Date();
-  const [porResponder, vencidos, sinLeer, esperando] = await Promise.all([
+  const [porFirmar, porResponder, vencidos, sinLeer, esperando] = await Promise.all([
+    db.comunicacion.count({ where: whereMemorandos(ctx, "por-firmar") }),
     db.comunicacion.count({ where: whereMemorandos(ctx, "por-responder") }),
     db.comunicacion.count({ where: { AND: [whereMemorandos(ctx, "por-responder"), { fechaVencimiento: { lt: ahora } }] } }),
     db.comunicacion.count({ where: whereMemorandos(ctx, "sin-leer") }),
     db.comunicacion.count({ where: whereMemorandos(ctx, "esperando") }),
   ]);
-  return { porResponder, vencidos, sinLeer, esperando };
+  return { porFirmar, porResponder, vencidos, sinLeer, esperando };
 }
 
 export async function listarMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos) {

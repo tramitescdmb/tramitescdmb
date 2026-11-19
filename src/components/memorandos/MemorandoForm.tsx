@@ -14,7 +14,8 @@ import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaS
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 import { DocumentoMemorando } from "@/components/memorandos/DocumentoMemorando";
-import { siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
+import { siglaDependencia, trdSugeridaMemorando, type PersonaMemorando } from "@/lib/memorandos-formato";
+import { BuscadorPersonaMemorando, type PersonaBuscable } from "@/components/memorandos/BuscadorPersonaMemorando";
 
 type Dependencia = { id: string; nombre: string; codigo?: string };
 type Subserie = { id: string; codigo: string; nombre: string };
@@ -65,18 +66,39 @@ export function MemorandoForm({
   const [proyectoId, setProyectoId] = useState(respondeA?.proyectoId ?? "");
   const [revisoId, setRevisoId] = useState("");
   const [folios, setFolios] = useState(1);
-  const [serieId, setSerieId] = useState("");
-  const [subserieId, setSubserieId] = useState("");
+  const sugerenciaInicial = trdSugeridaMemorando(series, origenInicial.id);
+  const [serieId, setSerieId] = useState(sugerenciaInicial?.serieId ?? "");
+  const [subserieId, setSubserieId] = useState(sugerenciaInicial?.subserieId ?? "");
+  const seriesOrigen = useMemo(() => series.filter((s) => s.dependenciaId === dependenciaOrigenId), [series, dependenciaOrigenId]);
+  const trdSugerida = useMemo(() => trdSugeridaMemorando(seriesOrigen, dependenciaOrigenId), [seriesOrigen, dependenciaOrigenId]);
   const [archivos, setArchivos] = useState<File[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState<{ pct: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const nombreDependencia = useMemo(() => new Map(dependencias.map((d) => [d.id, d.nombre])), [dependencias]);
+  const buscable = (u: PersonaOpcion, conOficina: boolean): PersonaBuscable => ({
+    id: u.id,
+    nombre: u.nombre,
+    cargo: u.cargo,
+    dirige: u.dirige,
+    dependenciaNombre: conOficina && u.dependenciaId ? nombreDependencia.get(u.dependenciaId) ?? null : null,
+  });
+  // Con dependencia elegida, solo su gente (quien dirige primero); sin ella, todos los de otras oficinas.
   const destinatarios = useMemo(
-    () => personas.filter((u) => u.dependenciaId === dependenciaDestinoId).sort((a, b) => Number(b.dirige) - Number(a.dirige) || a.nombre.localeCompare(b.nombre)),
-    [personas, dependenciaDestinoId]
+    () =>
+      personas
+        .filter((u) => u.id !== remitente.id && u.dependenciaId && u.dependenciaId !== dependenciaOrigen.id && (!dependenciaDestinoId || u.dependenciaId === dependenciaDestinoId))
+        .sort((a, b) => Number(b.dirige) - Number(a.dirige) || a.nombre.localeCompare(b.nombre))
+        .map((u) => buscable(u, !dependenciaDestinoId)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [personas, dependenciaDestinoId, dependenciaOrigen.id, remitente.id, nombreDependencia]
   );
-  const colaboradores = useMemo(() => personas.filter((u) => u.dependenciaId === dependenciaOrigen.id && u.id !== remitente.id), [personas, dependenciaOrigen.id, remitente.id]);
+  const colaboradores = useMemo(
+    () => personas.filter((u) => u.dependenciaId === dependenciaOrigen.id && u.id !== remitente.id).map((u) => buscable(u, false)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [personas, dependenciaOrigen.id, remitente.id]
+  );
   const porId = (id: string) => personas.find((p) => p.id === id) ?? null;
   const persona = (p: PersonaOpcion | null): PersonaMemorando | null => (p ? { nombre: p.nombre, cargo: p.cargo } : null);
 
@@ -126,7 +148,7 @@ export function MemorandoForm({
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudo enviar el memorando.");
       setProgreso({ pct: 100, texto: "Listo." });
-      router.push(`/memorandos/${data.id}`);
+      router.push(`/memorandos/${data.id}${data.avisoFirmas ? `?error=${encodeURIComponent(data.avisoFirmas)}` : ""}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo enviar el memorando.");
       setProgreso(null);
@@ -159,6 +181,9 @@ export function MemorandoForm({
                       setDependenciaOrigenId(e.target.value);
                       setProyectoId("");
                       setRevisoId("");
+                      const sugerida = trdSugeridaMemorando(series, e.target.value);
+                      setSerieId(sugerida?.serieId ?? "");
+                      setSubserieId(sugerida?.subserieId ?? "");
                       if (e.target.value === dependenciaDestinoId) cambiarDependenciaDestino("");
                     }}
                     className={inputCls}
@@ -172,9 +197,9 @@ export function MemorandoForm({
                 </Field>
               </div>
             )}
-            <Field label="Dependencia de destino" required>
+            <Field label="Dependencia de destino" required help="Al elegirla se propone a quien la dirige. También puede buscar directamente a la persona.">
               <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
-                <option value="">— Seleccione —</option>
+                <option value="">— Todas (buscar persona) —</option>
                 {dependencias
                   .filter((d) => d.id !== dependenciaOrigen.id)
                   .map((d) => (
@@ -184,15 +209,17 @@ export function MemorandoForm({
                   ))}
               </select>
             </Field>
-            <Field label="Destinatario (PARA)" required help="Casi siempre quien dirige esa oficina; él lo asigna a sus colaboradores.">
-              <select value={usuarioDestinoId} onChange={(e) => setUsuarioDestinoId(e.target.value)} className={inputCls} disabled={!dependenciaDestinoId}>
-                <option value="">— Seleccione —</option>
-                {destinatarios.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nombre} · {u.cargo}
-                  </option>
-                ))}
-              </select>
+            <Field label="Destinatario (PARA)" required help="Casi siempre quien dirige esa oficina; luego lo asigna a sus colaboradores.">
+              <BuscadorPersonaMemorando
+                personas={destinatarios}
+                valor={usuarioDestinoId}
+                onChange={(id) => {
+                  setUsuarioDestinoId(id);
+                  const dep = personas.find((p) => p.id === id)?.dependenciaId;
+                  if (id && dep) setDependenciaDestinoId(dep);
+                }}
+                placeholder="Buscar destinatario…"
+              />
             </Field>
             <div className="sm:col-span-2">
               <Field label="Respuesta" help="Si requiere respuesta, el destinatario lo verá como pendiente con su plazo y recibirá el aviso.">
@@ -237,36 +264,33 @@ export function MemorandoForm({
         </section>
 
         <section className={tarjeta}>
-          <EncabezadoPaso numero={3} icono={<Users className="h-4 w-4" aria-hidden />} titulo="Proyectó y revisó" descripcion="Opcional. Personas de su oficina que aparecen en el cuadro al pie." />
+          <EncabezadoPaso
+            numero={3}
+            icono={<Users className="h-4 w-4" aria-hidden />}
+            titulo="Proyectó y revisó"
+            descripcion="Opcional. Personas de su oficina que aparecen en el cuadro al pie. Al enviar, el memorando les llega a su bandeja «Por firmar» con aviso en la campana y por correo, para que firmen."
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Proyectó">
-              <select value={proyectoId} onChange={(e) => setProyectoId(e.target.value)} className={inputCls}>
-                <option value="">— Nadie más —</option>
-                {colaboradores.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nombre}
-                  </option>
-                ))}
-              </select>
+              <BuscadorPersonaMemorando personas={colaboradores.filter((u) => u.id !== revisoId)} valor={proyectoId} onChange={setProyectoId} placeholder="Buscar quién proyectó…" vacio="No hay más personas en su oficina." />
             </Field>
             <Field label="Revisó">
-              <select value={revisoId} onChange={(e) => setRevisoId(e.target.value)} className={inputCls}>
-                <option value="">— Nadie más —</option>
-                {colaboradores.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nombre}
-                  </option>
-                ))}
-              </select>
+              <BuscadorPersonaMemorando personas={colaboradores.filter((u) => u.id !== proyectoId)} valor={revisoId} onChange={setRevisoId} placeholder="Buscar quién revisó…" vacio="No hay más personas en su oficina." />
             </Field>
           </div>
         </section>
 
         <section className={tarjeta}>
-          <EncabezadoPaso numero={4} icono={<FolderTree className="h-4 w-4" aria-hidden />} titulo="Clasificación (TRD)" />
-          <SectionHelp>Opcional. Elija la serie y la subserie de su dependencia.</SectionHelp>
+          <EncabezadoPaso numero={4} icono={<FolderTree className="h-4 w-4" aria-hidden />} titulo={`TRD de ${dependenciaOrigen.nombre}`} />
+          <SectionHelp>
+            {seriesOrigen.length === 0
+              ? "Esta oficina no tiene TRD vigente cargada: el memorando se envía sin clasificar."
+              : trdSugerida
+                ? "Se preseleccionó la subserie de memorandos de la TRD de la oficina que envía. Solo se listan las series de esa TRD."
+                : "Solo se listan las series de la TRD de la oficina que envía. Elija la serie y la subserie (opcional)."}
+          </SectionHelp>
           <BuscadorSubserieTRD
-            series={series}
+            series={seriesOrigen}
             serieId={serieId}
             subserieId={subserieId}
             dependenciaId={dependenciaOrigen.id}

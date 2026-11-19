@@ -3,7 +3,7 @@ import Link from "next/link";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
-import { obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion, terminosAceptados } from "@/lib/permisos";
+import { enMenu, obtenerPermisosUsuario, puedeAccederSeccion, puedeAccederCorrespondencia, puedeAccederContratacion, terminosAceptados } from "@/lib/permisos";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { AvisoTratamientoDatos } from "@/components/AvisoTratamientoDatos";
@@ -41,16 +41,17 @@ export async function NavBar() {
     terminosAceptados(session.userId),
   ]);
   const esAdmin = session.rol === "ADMIN";
-  const mostrarTramites = permisos.modulos.has("TRAMITES");
-  const mostrarVital = puedeAccederSeccion(permisos, "VITAL_BASE") || puedeAccederSeccion(permisos, "VITAL_DASHBOARD");
+  const mostrarTramites = permisos.modulos.has("TRAMITES") && enMenu(permisos, "TRAMITES");
+  const mostrarVital = enMenu(permisos, "VITAL") && (puedeAccederSeccion(permisos, "VITAL_BASE") || puedeAccederSeccion(permisos, "VITAL_DASHBOARD"));
   const mostrarSinca =
     sincaConfigurado() &&
+    enMenu(permisos, "SINCA") &&
     (puedeAccederSeccion(permisos, "SINCA_BASE") ||
       puedeAccederSeccion(permisos, "SINCA_DASHBOARD") ||
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
-  const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
-  const mostrarContratacion = puedeAccederContratacion(permisos);
-  const mostrarMemorandos = accedeMemorandos(permisos, config.memorandosVisibleFuncionarios !== false);
+  const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos) && enMenu(permisos, "SGDEA");
+  const mostrarContratacion = puedeAccederContratacion(permisos) && enMenu(permisos, "GECON");
+  const mostrarMemorandos = accedeMemorandos(permisos, config.memorandosVisibleFuncionarios !== false) && enMenu(permisos, "MEMORANDOS");
   const subtitulo = await subtituloSesion(session);
 
   const marca = (

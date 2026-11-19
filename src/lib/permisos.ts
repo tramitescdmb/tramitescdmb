@@ -23,7 +23,19 @@ export type PermisosUsuario = {
   porPerfil: Set<string>;
   matriz: Map<string, Set<string>>;
   vigenciaVencida?: Set<string>;
+  /**
+   * Módulos desactivados en /admin/modulos. Para el administrador siguen abiertos por URL (pruebas),
+   * pero no salen en el menú, el Dashboard ni la campana de avisos.
+   */
+  ocultosEnMenu?: Set<ModuloMenu>;
 };
+
+export type ModuloMenu = ModuloAplicativo | "MEMORANDOS";
+
+/** El módulo se muestra en el menú, el Dashboard y los avisos (además del acceso propio de cada módulo). */
+export function enMenu(permisos: PermisosUsuario, modulo: ModuloMenu): boolean {
+  return !permisos.ocultosEnMenu?.has(modulo);
+}
 
 type UsuarioFresco = {
   activo: boolean;
@@ -231,6 +243,10 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     porPerfil,
     matriz,
     vigenciaVencida: new Set([...(rolVencido ? ["SGDEA"] : []), ...(rolContratacionVencido ? ["GECON"] : [])]),
+    ocultosEnMenu: new Set<ModuloMenu>([
+      ...(Object.keys(visiblesGlobal) as ModuloAplicativo[]).filter((m) => !visiblesGlobal[m]),
+      ...(config.memorandosVisibleFuncionarios === false ? (["MEMORANDOS"] as const) : []),
+    ]),
   };
 });
 

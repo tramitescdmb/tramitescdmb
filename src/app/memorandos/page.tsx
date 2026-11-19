@@ -21,6 +21,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 };
 
 const VACIO: Record<VistaMemorandos, string> = {
+  "por-firmar": "No tiene memorandos pendientes de su firma.",
   "por-responder": "No tiene memorandos pendientes de respuesta.",
   "sin-leer": "No tiene memorandos sin leer.",
   recibidos: "Aún no ha recibido memorandos.",
@@ -35,12 +36,13 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
   const permisos = await obtenerPermisosUsuario(session.userId);
   const ctx = await contextoMemorandos(session.userId, permisos);
   const [conteos, calendario] = await Promise.all([contarMemorandos(ctx), getCalendarioLaboral()]);
-  const vistaPorDefecto: VistaMemorandos = conteos.porResponder > 0 ? "por-responder" : conteos.sinLeer > 0 ? "sin-leer" : "recibidos";
+  const vistaPorDefecto: VistaMemorandos = conteos.porFirmar > 0 ? "por-firmar" : conteos.porResponder > 0 ? "por-responder" : conteos.sinLeer > 0 ? "sin-leer" : "recibidos";
   const vista = VISTAS_MEMORANDOS.some((v) => v.id === sp.vista) ? (sp.vista as VistaMemorandos) : vistaPorDefecto;
   const filas = await listarMemorandos(ctx, vista);
   const numeros = await numerosDeMemorandos(filas);
   const enviados = vista === "esperando" || vista === "enviados";
   const contador: Partial<Record<VistaMemorandos, number>> = {
+    "por-firmar": conteos.porFirmar,
     "por-responder": conteos.porResponder,
     "sin-leer": conteos.sinLeer,
     esperando: conteos.esperando,
@@ -83,7 +85,7 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
                 {n !== undefined && n > 0 && (
                   <span
                     className={`rounded-sm px-1.5 text-[11px] font-semibold tabular-nums ${
-                      v.id === "por-responder" && conteos.vencidos > 0 ? "bg-red-500 text-white" : "bg-sky-100 text-sky-800"
+                      (v.id === "por-responder" && conteos.vencidos > 0) || v.id === "por-firmar" ? "bg-red-500 text-white" : "bg-sky-100 text-sky-800"
                     }`}
                   >
                     {n}

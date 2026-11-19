@@ -99,7 +99,10 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
       <MemorandoForm
         dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre, codigo: d.codigo }))}
         origenLibre={Boolean(ctx.origenLibre)}
-        series={series.map((s) => ({
+        series={series
+          // Solo la TRD de la oficina que envía (el administrador, que elige la oficina, recibe todas y se filtran en pantalla).
+          .filter((s) => ctx.origenLibre || s.dependenciaId === origen.id)
+          .map((s) => ({
           id: s.id,
           codigo: s.codigo,
           nombre: s.nombre,

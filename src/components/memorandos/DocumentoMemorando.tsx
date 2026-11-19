@@ -12,6 +12,9 @@ export type DatosDocumentoMemorando = {
   cuerpo: string;
   proyecto: PersonaMemorando | null;
   reviso: PersonaMemorando | null;
+  /** Estado de la firma de quien proyectó / revisó (p. ej. «Firmó electrónicamente el …» o «Pendiente de firma»). */
+  estadoProyecto?: string | null;
+  estadoReviso?: string | null;
   oficina: string;
   firma?: FirmaMemorandoDoc | null;
   verificacion?: { radicado: string; url: string } | null;
@@ -138,14 +141,20 @@ export function DocumentoMemorando({ d, logoUrl, id }: { d: DatosDocumentoMemora
               <tr>
                 <td className={`${celda} w-[20%]`}>Proyectó:</td>
                 <td className={`${celda} w-[30%]`}>{d.proyecto.nombre}</td>
-                <td className={celda}>{d.proyecto.cargo}</td>
+                <td className={celda}>
+                  {d.proyecto.cargo}
+                  {d.estadoProyecto && <span className="block text-[9px] italic text-stone-500">{d.estadoProyecto}</span>}
+                </td>
               </tr>
             )}
             {d.reviso && (
               <tr>
                 <td className={`${celda} w-[20%]`}>Revisó:</td>
                 <td className={`${celda} w-[30%]`}>{d.reviso.nombre}</td>
-                <td className={celda}>{d.reviso.cargo}</td>
+                <td className={celda}>
+                  {d.reviso.cargo}
+                  {d.estadoReviso && <span className="block text-[9px] italic text-stone-500">{d.estadoReviso}</span>}
+                </td>
               </tr>
             )}
             <tr>

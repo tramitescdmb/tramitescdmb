@@ -3,11 +3,13 @@
 import { Inbox, FileEdit } from "lucide-react";
 import { BarraModulo, type GrupoMenu } from "@/components/BarraModulo";
 
-export type ConteoMemorandos = { porResponder: number; vencidos: number; sinLeer: number };
+export type ConteoMemorandos = { porFirmar: number; porResponder: number; vencidos: number; sinLeer: number };
 
 export function MemorandosTabs({ conteo, puedeEnviar }: { conteo: ConteoMemorandos; puedeEnviar: boolean }) {
   const insignia =
-    conteo.porResponder > 0
+    conteo.porFirmar > 0
+      ? { valor: conteo.porFirmar, alerta: true, titulo: `${conteo.porFirmar} memorando(s) por firmar` }
+      : conteo.porResponder > 0
       ? {
           valor: conteo.porResponder,
           alerta: conteo.vencidos > 0,
