@@ -33,7 +33,7 @@ export function BuscadorDependencia({
   const sugerencias = useMemo(() => {
     const q = normalizar(texto.trim());
     const lista = q ? dependencias.filter((d) => normalizar(d.nombre).includes(q)) : dependencias;
-    return lista.slice(0, 20);
+    return lista.slice(0, 50);
   }, [texto, dependencias]);
 
   return (

@@ -10,6 +10,7 @@ import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/l
 import { Field, SectionHelp } from "@/components/Field";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
 import { BuscadorSubserieTRD } from "@/components/BuscadorSubserieTRD";
+import { BuscadorDependencia } from "@/components/BuscadorDependencia";
 import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaSelector";
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
@@ -20,7 +21,7 @@ import { BuscadorPersonaMemorando, type PersonaBuscable } from "@/components/mem
 type Dependencia = { id: string; nombre: string; codigo?: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
-export type PersonaOpcion = { id: string; nombre: string; cargo: string; dependenciaId: string | null; dirige: boolean };
+export type PersonaOpcion = { id: string; nombre: string; cargo: string; dependenciaId: string | null; dirige: boolean; /** Puede ser destinatario (PARA): mismos cargos que envían. */ recibe: boolean };
 export type RespuestaA = { id: string; radicado: string; asunto: string; contenido: string | null; dependenciaDestinoId: string; usuarioDestinoId: string | null; proyectoId: string | null };
 
 const PLAZOS = [3, 5, 10, 15];
@@ -88,7 +89,7 @@ export function MemorandoForm({
   const destinatarios = useMemo(
     () =>
       personas
-        .filter((u) => u.id !== remitente.id && u.dependenciaId && u.dependenciaId !== dependenciaOrigen.id && (!dependenciaDestinoId || u.dependenciaId === dependenciaDestinoId))
+        .filter((u) => u.recibe && u.id !== remitente.id && u.dependenciaId && u.dependenciaId !== dependenciaOrigen.id && (!dependenciaDestinoId || u.dependenciaId === dependenciaDestinoId))
         .sort((a, b) => Number(b.dirige) - Number(a.dirige) || a.nombre.localeCompare(b.nombre))
         .map((u) => buscable(u, !dependenciaDestinoId)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,7 +105,7 @@ export function MemorandoForm({
 
   function cambiarDependenciaDestino(nuevoId: string) {
     setDependenciaDestinoId(nuevoId);
-    const jefe = personas.find((u) => u.dependenciaId === nuevoId && u.dirige);
+    const jefe = personas.find((u) => u.dependenciaId === nuevoId && u.recibe);
     setUsuarioDestinoId(jefe?.id ?? "");
   }
 
@@ -197,19 +198,22 @@ export function MemorandoForm({
                 </Field>
               </div>
             )}
-            <Field label="Dependencia de destino" required help="Al elegirla se propone a quien la dirige. También puede buscar directamente a la persona.">
-              <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
-                <option value="">— Todas (buscar persona) —</option>
-                {dependencias
-                  .filter((d) => d.id !== dependenciaOrigen.id)
-                  .map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.nombre}
-                    </option>
-                  ))}
-              </select>
+            {!origenLibre && (
+              <div className="sm:col-span-2">
+                <Field label="Oficina de origen (DE)" help="Es la oficina a la que usted pertenece; no se puede cambiar.">
+                  <input value={dependenciaOrigen.nombre} readOnly disabled className={`${inputCls} bg-stone-50 text-stone-700`} />
+                </Field>
+              </div>
+            )}
+            <Field label="Dependencia de destino" required help="Escriba parte del nombre (sin importar tildes ni mayúsculas). Al elegirla se propone a quien la dirige; también puede buscar directamente a la persona.">
+              <BuscadorDependencia
+                dependencias={dependencias.filter((d) => d.id !== dependenciaOrigen.id)}
+                value={dependenciaDestinoId}
+                onChange={cambiarDependenciaDestino}
+                placeholder="Escriba para buscar la dependencia o coordinación…"
+              />
             </Field>
-            <Field label="Destinatario (PARA)" required help="Casi siempre quien dirige esa oficina; luego lo asigna a sus colaboradores.">
+            <Field label="Destinatario (PARA)" required help="Solo Dirección General, Secretaría General, subdirecciones, jefaturas de oficina y coordinaciones de grupo. Luego lo asignan a sus colaboradores.">
               <BuscadorPersonaMemorando
                 personas={destinatarios}
                 valor={usuarioDestinoId}
@@ -219,6 +223,7 @@ export function MemorandoForm({
                   if (id && dep) setDependenciaDestinoId(dep);
                 }}
                 placeholder="Buscar destinatario…"
+                vacio="Esa dependencia no tiene a nadie con cargo directivo o de coordinación registrado en su ficha."
               />
             </Field>
             <div className="sm:col-span-2">

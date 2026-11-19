@@ -32,6 +32,19 @@ export const DENOMINACIONES_QUE_ENVIAN_MEMORANDOS: ReadonlySet<string> = new Set
   "COORDINADOR_GRUPO",
 ]);
 
+/**
+ * Destinatario (PARA) de un memorando: solo quien tiene uno de los mismos cargos que envían. Un
+ * contratista o un funcionario sin esos cargos no recibe memorandos directamente (le llegan por
+ * asignación de su jefe).
+ */
+export function puedeRecibirMemorando(u: { denominacionEmpleo: string | null | undefined; rolesContratacion?: readonly string[] | null }): boolean {
+  if (u.rolesContratacion?.includes("CONTRATISTA")) return false;
+  return DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(u.denominacionEmpleo ?? "");
+}
+
+export const TEXTO_QUIEN_RECIBE =
+  "El destinatario debe ser Director(a) General, Secretario(a) General, Subdirector(a), Jefe(a) de Oficina o Coordinador(a) de Grupo, según el cargo de su ficha.";
+
 export const TEXTO_QUIEN_ENVIA = "Los memorandos solo los envían la Dirección General, la Secretaría General, las subdirecciones, las jefaturas de oficina y las coordinaciones de grupo, según el cargo registrado en la ficha del usuario.";
 
 /** Entra al módulo: administradores siempre; los demás, si el módulo está visible y tienen dependencia asignada. */
@@ -47,6 +60,21 @@ export function puedeEnviarMemorando(permisos: PermisosUsuario, denominacionEmpl
 
 /** origenLibre: el administrador elige desde qué oficina firma (para pruebas); los demás, siempre desde la suya. */
 export type ContextoMemorandos = { id: string; dependenciaId: string | null; firmante: boolean; acceso: boolean; archivo: boolean; origenLibre?: boolean };
+
+/**
+ * Oficina desde la que se firma el memorando (DE): siempre la del funcionario con cargo autorizado.
+ * Solo el administrador elige otra (pruebas). Si alguien pide una oficina ajena, se rechaza.
+ */
+export function oficinaOrigenMemorando(ctx: Pick<ContextoMemorandos, "dependenciaId" | "origenLibre">, pedida: string | null | undefined): { id: string } | { error: string } {
+  const solicitada = pedida ? String(pedida) : "";
+  if (ctx.origenLibre) {
+    const id = solicitada || ctx.dependenciaId;
+    return id ? { id } : { error: "Indique la oficina desde la que firma el memorando." };
+  }
+  if (!ctx.dependenciaId) return { error: "Su usuario no tiene oficina asignada: no puede enviar memorandos." };
+  if (solicitada && solicitada !== ctx.dependenciaId) return { error: "Solo puede enviar memorandos desde la oficina a la que pertenece." };
+  return { id: ctx.dependenciaId };
+}
 
 export async function contextoMemorandos(usuarioId: string, permisos: PermisosUsuario): Promise<ContextoMemorandos> {
   const [u, config] = await Promise.all([
