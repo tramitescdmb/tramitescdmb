@@ -100,7 +100,7 @@ export function NuevoExpedienteForm({
   const [solicitanteApellidos, setSolicitanteApellidos] = useState(v?.apellidos ?? "");
   const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState(v?.razonSocial ?? "");
   const [representanteLegal, setRepresentanteLegal] = useState(v?.representanteLegal ?? "");
-  const [representanteIdentificacion, setRepresentanteIdentificacion] = useState("");
+  const [representanteIdentificacion, setRepresentanteIdentificacion] = useState(v?.representanteIdentificacion ?? "");
   const [solicitanteEmail, setSolicitanteEmail] = useState(v?.email ?? "");
   const [solicitanteTelefono, setSolicitanteTelefono] = useState(v?.telefono ?? "");
   const [regimenTributario, setRegimenTributario] = useState("");
@@ -108,10 +108,10 @@ export function NuevoExpedienteForm({
   const [buscandoSolicitante, setBuscandoSolicitante] = useState(false);
   const [mensajeBusqueda, setMensajeBusqueda] = useState<{ tipo: "ok" | "info" | "error"; texto: string } | null>(null);
 
-  const [claseSolicitud, setClaseSolicitud] = useState("");
-  const [predioNombre, setPredioNombre] = useState("");
-  const [predioCatastral, setPredioCatastral] = useState("");
-  const [predioMatricula, setPredioMatricula] = useState("");
+  const [claseSolicitud, setClaseSolicitud] = useState<string>(mostrarDatosPredio ? v?.claseSolicitud ?? "" : "");
+  const [predioNombre, setPredioNombre] = useState(mostrarDatosPredio ? v?.predioNombre ?? "" : "");
+  const [predioCatastral, setPredioCatastral] = useState(mostrarDatosPredio ? v?.predioCatastral ?? "" : "");
+  const [predioMatricula, setPredioMatricula] = useState(mostrarDatosPredio ? v?.predioMatricula ?? "" : "");
   const [predioAreaM2, setPredioAreaM2] = useState("");
   const [predioAreaCultivosM2, setPredioAreaCultivosM2] = useState("");
   const [predioAreaBosqueM2, setPredioAreaBosqueM2] = useState("");
