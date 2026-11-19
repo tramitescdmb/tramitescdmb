@@ -43,7 +43,7 @@ export default async function SolicitudAmbientalTramitePage({
         titulo={nombre}
         descripcion={
           <>
-            Código {tramite.codigo}. Complete los datos y adjunte los documentos; los campos marcados con * son obligatorios. Al radicar
+            Complete los datos y adjunte los documentos; los campos marcados con * son obligatorios. Al radicar
             recibirá un número de solicitud para consultar el estado.
           </>
         }

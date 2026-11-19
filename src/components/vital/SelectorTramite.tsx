@@ -16,6 +16,7 @@ export function SelectorTramite({
   onChange,
   textoNoRadicable = "se gestiona en VITAL",
   etiqueta = "Trámite ambiental en el que se gestiona",
+  publico = false,
 }: {
   tramites: TramiteOpcion[];
   clave: string;
@@ -24,6 +25,8 @@ export function SelectorTramite({
   /** Nota junto a los trámites que no se pueden elegir (sin procedimiento en SIC). */
   textoNoRadicable?: string;
   etiqueta?: string;
+  /** Vista pública: no muestra el código interno del procedimiento (M-DA-PR…), sino el número SUIT si lo tiene. */
+  publico?: boolean;
 }) {
   const idLista = useId();
   const contenedor = useRef<HTMLDivElement>(null);
@@ -86,7 +89,8 @@ export function SelectorTramite({
     }
   }
 
-  const textoElegido = elegido ? `${elegido.nombre} (${elegido.codigo})` : "";
+  const referencia = (t: TramiteOpcion) => (publico ? (t.suits.length ? `SUIT ${t.suits.join(", ")}` : "") : t.codigo);
+  const textoElegido = elegido ? (referencia(elegido) ? `${elegido.nombre} (${referencia(elegido)})` : elegido.nombre) : "";
 
   return (
     <div ref={contenedor} className="relative min-w-0">
@@ -103,7 +107,7 @@ export function SelectorTramite({
           aria-activedescendant={abierto && elegibles[activo] ? `${idLista}-${elegibles[activo].clave}` : undefined}
           value={abierto ? busqueda : textoElegido}
           title={textoElegido || undefined}
-          placeholder={abierto ? "Escriba parte del nombre, el código o el SUIT…" : "Seleccione o busque el trámite…"}
+          placeholder={abierto ? (publico ? "Escriba parte del nombre o el número SUIT…" : "Escriba parte del nombre, el código o el SUIT…") : "Seleccione o busque el trámite…"}
           onFocus={abrir}
           onClick={() => !abierto && abrir()}
           onChange={(e) => {
@@ -162,7 +166,7 @@ export function SelectorTramite({
                       } ${resaltado ? "bg-cdmb-50" : ""} ${t.clave === clave ? "font-medium" : ""}`}
                     >
                       <span className="break-words">{t.nombre}</span>{" "}
-                      <span className="text-xs text-stone-500">({t.codigo})</span>
+                      {referencia(t) && <span className="text-xs text-stone-500">({referencia(t)})</span>}
                       {t.clave === claveSugerida && (
                         <span className="ml-1.5 rounded-sm bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">sugerido</span>
                       )}

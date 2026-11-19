@@ -23,6 +23,7 @@ export function ElegirTramite({ tramites }: { tramites: (TramiteOpcion & { descr
             onChange={setClave}
             etiqueta="Solicitud ambiental"
             textoNoRadicable="se radica en VITAL"
+            publico
           />
         </div>
         {elegido ? (
@@ -43,7 +44,8 @@ export function ElegirTramite({ tramites }: { tramites: (TramiteOpcion & { descr
       {elegido?.descripcion && (
         <div className="mt-4 border-t border-stone-100 pt-3" aria-live="polite">
           <p className="text-sm font-semibold text-stone-800">
-            {elegido.nombre} <span className="text-xs font-normal text-stone-500">({elegido.codigo})</span>
+            {elegido.nombre}
+            {elegido.suits.length > 0 && <span className="text-xs font-normal text-stone-500"> (SUIT {elegido.suits.join(", ")})</span>}
           </p>
           <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-stone-600">{elegido.descripcion}</p>
         </div>
