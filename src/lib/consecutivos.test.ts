@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatearNumeroTramite, numeroFinal, validarSiguiente } from "@/lib/consecutivos";
+import { formatearNumeroTramite, maximoMemorandos, numeroFinal, validarSiguiente } from "@/lib/consecutivos";
 
 describe("consecutivos", () => {
   it("lee el número de cada formato", () => {
@@ -19,5 +19,14 @@ describe("consecutivos", () => {
     expect(validarSiguiente(5, 5)).toMatch(/debe ser 6 o mayor/);
     expect(validarSiguiente(0, 0)).toMatch(/entre 1 y/);
     expect(validarSiguiente(208, 207)).toBeNull();
+  });
+});
+
+describe("consecutivos de memorandos", () => {
+  it("toma el número guardado y, en los anteriores al módulo, su orden de radicación", () => {
+    const guardado = (consecutivo: number) => ({ datosMemorando: { version: 1, consecutivo, numero: `ADEI – ${consecutivo} /2026`, ciudad: "Bucaramanga", para: { nombre: "A", cargo: "B" }, de: { nombre: "C", cargo: "D" }, proyecto: null, reviso: null, oficina: "x" } });
+    expect(maximoMemorandos([])).toEqual({ maximo: 0, registros: 0 });
+    expect(maximoMemorandos([{ datosMemorando: null }, { datosMemorando: null }, guardado(3)])).toEqual({ maximo: 3, registros: 3 });
+    expect(maximoMemorandos([{ datosMemorando: null }, guardado(54)])).toEqual({ maximo: 54, registros: 2 });
   });
 });

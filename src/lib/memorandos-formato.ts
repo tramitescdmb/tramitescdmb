@@ -137,3 +137,32 @@ export function bloquesCuerpo(texto: string): BloqueCuerpo[] {
   cerrarTabla();
   return bloques;
 }
+
+type SerieTrd = { id: string; nombre: string; dependenciaId?: string | null; subseries: { id: string; nombre: string }[] };
+
+function sinTildes(t: string) {
+  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+/**
+ * Clasificación TRD sugerida para un memorando, siempre dentro de la TRD de la oficina que lo envía:
+ * primero una subserie «Memorandos»; si no hay, «Comunicaciones (oficiales) internas»; si no, una
+ * subserie interna de una serie de comunicaciones. Devuelve null si la oficina no tiene ninguna.
+ */
+export function trdSugeridaMemorando(series: SerieTrd[], dependenciaId: string | null | undefined): { serieId: string; subserieId: string } | null {
+  if (!dependenciaId) return null;
+  const propias = series.filter((s) => s.dependenciaId === dependenciaId);
+  const reglas: ((serie: string, subserie: string) => boolean)[] = [
+    (_s, ss) => /memorand/.test(ss),
+    (_s, ss) => /comunicacion(es)?\s+(oficiales\s+)?internas?/.test(ss),
+    (s) => /memorand/.test(s),
+    (s, ss) => /comunicacion/.test(s) && /intern/.test(ss),
+  ];
+  for (const regla of reglas) {
+    for (const s of propias) {
+      const ss = s.subseries.find((x) => regla(sinTildes(s.nombre), sinTildes(x.nombre)));
+      if (ss) return { serieId: s.id, subserieId: ss.id };
+    }
+  }
+  return null;
+}

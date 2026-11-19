@@ -76,8 +76,9 @@ export function rutaDeFirma(solicitudId: string, modulo: ModuloFirma, rutaDocume
 
 export async function describirObjetivo(objetivo: ObjetivoSolicitud): Promise<{ nombre: string; referencia: string; ruta: string }> {
   if (objetivo.tipo === "comunicacion") {
-    const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: { radicado: true, asunto: true } });
-    return { nombre: c?.asunto.slice(0, 120) ?? "Comunicación", referencia: c?.radicado ?? "SGDEA", ruta: `/correspondencia/${objetivo.id}` };
+    const c = await db.comunicacion.findUnique({ where: { id: objetivo.id }, select: { radicado: true, asunto: true, tipo: true } });
+    const ruta = c?.tipo === "INTERNA" ? `/memorandos/${objetivo.id}` : `/correspondencia/${objetivo.id}`;
+    return { nombre: c?.asunto.slice(0, 120) ?? "Comunicación", referencia: c?.radicado ?? "SGDEA", ruta };
   }
   if (objetivo.tipo === "documentoContrato") {
     const d = await db.documentoContrato.findUnique({ where: { id: objetivo.id }, select: { nombre: true, expedienteId: true, expediente: { select: { numero: true } } } });

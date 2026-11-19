@@ -7,7 +7,7 @@ import { CabeceraTablero } from "@/components/tablero";
 import { ETIQUETA_MODULO_CONSECUTIVO, listarConsecutivos, type ModuloConsecutivo } from "@/lib/consecutivos";
 import { partesColombia } from "@/lib/planeador";
 
-const MODULOS: ModuloConsecutivo[] = ["TRAMITES", "PLANEADOR", "GECON", "SGDEA"];
+const MODULOS: ModuloConsecutivo[] = ["TRAMITES", "PLANEADOR", "GECON", "SGDEA", "MEMORANDOS"];
 
 export default async function ConsecutivosPage({ searchParams }: { searchParams: Promise<{ anio?: string; ok?: string; error?: string }> }) {
   const session = await getSession();
@@ -22,7 +22,7 @@ export default async function ConsecutivosPage({ searchParams }: { searchParams:
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <CabeceraTablero icon={Hash} titulo="Consecutivos" descripcion="Siguiente número de cada serie por vigencia: expedientes de trámite, conceptos técnicos, GECON y SGDEA." />
+      <CabeceraTablero icon={Hash} titulo="Consecutivos" descripcion="Siguiente número de cada serie por vigencia: expedientes de trámite, conceptos técnicos, GECON, SGDEA y memorandos de cada oficina." />
 
       <div className="flex flex-wrap items-center gap-1.5">
         {[actual - 1, actual, actual + 1].map((a) => (

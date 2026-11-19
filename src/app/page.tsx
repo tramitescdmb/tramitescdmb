@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Archive, Briefcase, CalendarCheck, CalendarDays, CircleCheck, FileBadge, FolderOpen, Inbox, LayoutGrid, LibraryBig, Link2, Mail, MessageSquareWarning, PieChart, TrendingUp } from "lucide-react";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, enMenu, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
 import { tableroTramites, tableroContratos } from "@/lib/tablero-general";
 import { estiloEstado } from "@/lib/estados-expediente-estilo";
 import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
@@ -49,12 +49,12 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const [secciones, permisos] = await Promise.all([obtenerSeccionesAlertas(session), obtenerPermisosUsuario(session.userId)]);
   const conTramites = secciones.some((s) => s.modulo === "TRAMITES");
   const planificador = puedePlanearVisitas(permisos);
-  const conGecon = permisos.modulos.has("GECON");
+  const conGecon = permisos.modulos.has("GECON") && enMenu(permisos, "GECON");
   const [agenda, misContratos, seguimiento, tramites, contratosPorEtapa] = await Promise.all([
     conTramites ? obtenerAgendaUsuario(session.userId, planificador) : Promise.resolve(null),
     conGecon ? obtenerContratosLanding(session.userId, permisos) : Promise.resolve({ contratos: [], terminados: 0 }),
     conGecon && veSeguimientoContratos(permisos) ? obtenerSeguimientoContratos(permisos) : Promise.resolve(null),
-    general && permisos.modulos.has("TRAMITES") ? tableroTramites(permisos) : Promise.resolve(null),
+    general && permisos.modulos.has("TRAMITES") && enMenu(permisos, "TRAMITES") ? tableroTramites(permisos) : Promise.resolve(null),
     general && conGecon && veSeguimientoContratos(permisos) ? tableroContratos() : Promise.resolve(null),
   ]);
   const contratos = misContratos.contratos;

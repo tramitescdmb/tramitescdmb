@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, enMenu, obtenerPermisosUsuario, puedeAccederContratacion, puedeAccederCorrespondencia, puedeAccederFirmasTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { contarPendientesBuzonContratacion, contarPendientesBuzonTramite, contarRechazosPorAtender } from "@/lib/solicitudes-firma";
 import { contarNoLeidas } from "@/lib/notificaciones";
 import { contarAlertasVisitasPropias } from "@/lib/pendientes-visitas";
@@ -35,8 +35,18 @@ export async function GET() {
   };
 
   const ctxMemos = await contextoMemorandos(session.userId, permisos);
-  if (ctxMemos.acceso) {
+  if (ctxMemos.acceso && enMenu(permisos, "MEMORANDOS")) {
     const memos = await contarMemorandos(ctxMemos);
+    if (memos.porFirmar > 0) {
+      avisos.push({
+        clave: "memos-firmar",
+        titulo: `${memos.porFirmar} memorando(s) por firmar`,
+        detalle: "Usted aparece como quien proyectó o revisó",
+        href: "/memorandos?vista=por-firmar",
+        alerta: true,
+        cantidad: memos.porFirmar, modulo: "MEMORANDOS",
+      });
+    }
     if (memos.porResponder > 0) {
       avisos.push({
         clave: "memos-responder",
@@ -58,7 +68,7 @@ export async function GET() {
     }
   }
 
-  if (puedeAccederCorrespondencia(permisos)) {
+  if (puedeAccederCorrespondencia(permisos) && enMenu(permisos, "SGDEA")) {
     const [firmas, pasosFlujo] = await Promise.all([
       contarPendientesBuzonSgdea(session.userId),
       pasosDeFlujo("SGDEA"),
@@ -79,7 +89,7 @@ export async function GET() {
     }
   }
 
-  if (permisos.modulos.has("TRAMITES")) {
+  if (permisos.modulos.has("TRAMITES") && enMenu(permisos, "TRAMITES")) {
     const firmasTramite = puedeAccederFirmasTramite(permisos);
     const [firmas, rechazos, buzon, visitas, porRevisar, devueltos, pasosFlujo, vitalNuevas, solicitudesEnLinea] = await Promise.all([
       firmasTramite ? contarPendientesBuzonTramite(session.userId) : null,
@@ -139,7 +149,7 @@ export async function GET() {
     }
   }
 
-  if (permisos.modulos.has("GECON") && puedeAccederContratacion(permisos)) {
+  if (permisos.modulos.has("GECON") && enMenu(permisos, "GECON") && puedeAccederContratacion(permisos)) {
     const [firmas, rechazos, informes, porCargar, pasosFlujo] = await Promise.all([
       contarPendientesBuzonContratacion(session.userId),
       contarRechazosPorAtender(session.userId, false, "documentoContrato"),

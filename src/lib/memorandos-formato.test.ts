@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bloquesCuerpo, fechaLargaMemorando, formatearNumeroMemorando, leerDatosMemorando, siglaDependencia } from "@/lib/memorandos-formato";
+import { bloquesCuerpo, fechaLargaMemorando, formatearNumeroMemorando, leerDatosMemorando, siglaDependencia, trdSugeridaMemorando } from "@/lib/memorandos-formato";
 
 describe("número del memorando", () => {
   it("toma la sigla del nombre de la dependencia", () => {
@@ -60,5 +60,23 @@ describe("cuerpo del memorando", () => {
   it("un texto plano queda igual", () => {
     expect(bloquesCuerpo("Hola")).toEqual([{ tipo: "parrafo", lineas: [[{ texto: "Hola", negrilla: false }]] }]);
     expect(bloquesCuerpo("  \n ")).toEqual([]);
+  });
+});
+
+describe("TRD sugerida para memorandos", () => {
+  const series = [
+    { id: "s1", nombre: "COMUNICACIONES OFICIALES", dependenciaId: "A", subseries: [{ id: "a1", nombre: "Comunicaciones oficiales enviadas" }, { id: "a2", nombre: "Comunicaciones Oficiales Internas" }] },
+    { id: "s2", nombre: "INFORMES", dependenciaId: "A", subseries: [{ id: "a3", nombre: "Informes de gestión" }] },
+    { id: "s3", nombre: "COMUNICACIONES", dependenciaId: "B", subseries: [{ id: "b1", nombre: "Memorandos" }] },
+  ];
+  it("elige la subserie de memorandos de la propia oficina", () => {
+    expect(trdSugeridaMemorando(series, "B")).toEqual({ serieId: "s3", subserieId: "b1" });
+  });
+  it("si no hay memorandos, usa comunicaciones internas de esa oficina, nunca las de otra", () => {
+    expect(trdSugeridaMemorando(series, "A")).toEqual({ serieId: "s1", subserieId: "a2" });
+  });
+  it("sin TRD aplicable no sugiere nada", () => {
+    expect(trdSugeridaMemorando(series, "C")).toBeNull();
+    expect(trdSugeridaMemorando(series, null)).toBeNull();
   });
 });

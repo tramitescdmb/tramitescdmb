@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/config-sitio", () => ({ getConfiguracionSitio: async () => ({}) }));
 
-const { accedeMemorandos, puedeEnviarMemorando, whereVerMemorando } = await import("@/lib/memorandos");
+const { accedeMemorandos, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
 
 function permisos(extra: Record<string, unknown> = {}) {
   return { esAdmin: false, dependenciaId: "dep-1", correspondencia: null, porPerfil: new Set(), matriz: new Map(), ...extra } as never;
@@ -37,9 +37,17 @@ describe("acceso al módulo", () => {
     expect(accedeMemorandos(permisos({ esAdmin: true, dependenciaId: null }), false)).toBe(true);
   });
 
+  it("quien proyectó o revisó tiene su bandeja «Por firmar»", () => {
+    expect(whereMemorandos({ id: "u1", dependenciaId: "dep-1", firmante: false, acceso: true, archivo: false }, "por-firmar")).toEqual({
+      tipo: "INTERNA",
+      estado: { not: "ANULADA" },
+      solicitudesFirma: { some: { usuarioAsignadoId: "u1", estado: "PENDIENTE", rol: "FIRMA" } },
+    });
+  });
+
   it("cada quien ve solo los memorandos en que participa", () => {
     const w = whereVerMemorando({ id: "u1", dependenciaId: "dep-1", firmante: false, acceso: true, archivo: false });
-    expect(w).toEqual({ tipo: "INTERNA", OR: [{ radicadoPorId: "u1" }, { respuestaPorId: "u1" }, { distribuciones: { some: { usuarioId: "u1" } } }] });
+    expect(w).toEqual({ tipo: "INTERNA", OR: [{ radicadoPorId: "u1" }, { respuestaPorId: "u1" }, { distribuciones: { some: { usuarioId: "u1" } } }, { solicitudesFirma: { some: { usuarioAsignadoId: "u1" } } }] });
     expect(whereVerMemorando({ id: "u1", dependenciaId: null, firmante: false, acceso: false, archivo: false })).toEqual({ id: "" });
     expect(whereVerMemorando({ id: "u1", dependenciaId: "d", firmante: true, acceso: true, archivo: true })).toEqual({ tipo: "INTERNA" });
   });

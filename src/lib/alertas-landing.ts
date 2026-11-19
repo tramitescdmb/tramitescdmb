@@ -4,6 +4,7 @@ import { identificacionContrato } from "@/lib/codigo-proceso";
 import {
   obtenerPermisosUsuario,
   puedeAccederCorrespondencia,
+  enMenu,
   puedeAccederContratacion,
   puedeAccederFirmasTramite,
   puedeGestionarContratistas,
@@ -59,15 +60,15 @@ const MAX_ITEMS_POR_SECCION = 100;
 export async function obtenerSeccionesAlertas(session: SessionPayload): Promise<SeccionAlertasModulo[]> {
   const permisos = await obtenerPermisosUsuario(session.userId);
 
-  const mostrarTramites = permisos.modulos.has("TRAMITES");
-  const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
-  const mostrarContratacion = puedeAccederContratacion(permisos);
+  const mostrarTramites = permisos.modulos.has("TRAMITES") && enMenu(permisos, "TRAMITES");
+  const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos) && enMenu(permisos, "SGDEA");
+  const mostrarContratacion = puedeAccederContratacion(permisos) && enMenu(permisos, "GECON");
 
   const [tramites, contratacion, correspondencia, memorandos] = await Promise.all([
     mostrarTramites ? seccionTramites(session, permisos) : Promise.resolve(null),
     mostrarContratacion ? seccionContratacion(session, permisos) : Promise.resolve(null),
     mostrarCorrespondencia ? seccionCorrespondencia(session, permisos) : Promise.resolve(null),
-    seccionMemorandos(session, permisos),
+    enMenu(permisos, "MEMORANDOS") ? seccionMemorandos(session, permisos) : Promise.resolve(null),
   ]);
 
   return [contratacion, tramites, correspondencia, memorandos].filter((s): s is SeccionAlertasModulo => s !== null);
@@ -259,6 +260,9 @@ async function seccionMemorandos(session: SessionPayload, permisos: PermisosUsua
   if (!ctx.acceso) return null;
   const memorandos = await contarMemorandos(ctx);
   const items: ItemAlerta[] = [];
+  if (memorandos.porFirmar > 0) {
+    items.push({ titulo: `${memorandos.porFirmar} memorando(s) por firmar (proyectó / revisó)`, link: "/memorandos?vista=por-firmar", tipo: "correspondencia", cantidad: memorandos.porFirmar });
+  }
   if (memorandos.porResponder > 0) {
     items.push({
       titulo: `${memorandos.porResponder} memorando(s) por responder${memorandos.vencidos > 0 ? ` — ${memorandos.vencidos} con plazo vencido` : ""}`,
@@ -273,7 +277,7 @@ async function seccionMemorandos(session: SessionPayload, permisos: PermisosUsua
   return {
     modulo: "MEMORANDOS",
     nombre: "Memorandos",
-    total: memorandos.porResponder + memorandos.sinLeer,
+    total: memorandos.porFirmar + memorandos.porResponder + memorandos.sinLeer,
     items,
     masLink: "/memorandos",
     masTexto: "Ver bandeja de memorandos",

@@ -11,6 +11,7 @@ import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { radicarInterna, type EntradaDocumento } from "@/lib/correspondencia";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
+import { asignarFirmantes } from "@/lib/solicitudes-firma";
 
 const SELECT_PERSONA = {
   id: true,
@@ -74,16 +75,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
   }
 
-  async function colaborador(campo: "proyectoId" | "revisoId"): Promise<PersonaMemorando | null | "error"> {
+  async function colaborador(campo: "proyectoId" | "revisoId"): Promise<{ id: string; persona: PersonaMemorando } | null | "error"> {
     const id = body[campo] ? String(body[campo]) : "";
     if (!id || id === session!.userId) return null;
     const u = await db.usuario.findUnique({ where: { id }, select: SELECT_PERSONA });
     if (!u || !u.activo || u.dependenciaId !== dependenciaOrigenId) return "error";
-    return persona(u);
+    return { id, persona: persona(u) };
   }
   const [proyecto, reviso] = await Promise.all([colaborador("proyectoId"), colaborador("revisoId")]);
   if (proyecto === "error" || reviso === "error") {
     return NextResponse.json({ error: "Quien proyectó o revisó debe ser una persona activa de su dependencia." }, { status: 400 });
+  }
+  if (proyecto && reviso && proyecto.id === reviso.id) {
+    return NextResponse.json({ error: "Quien proyectó y quien revisó deben ser personas distintas." }, { status: 400 });
+  }
+
+  // La clasificación sale de la TRD de la oficina que envía: no se permite usar la serie de otra dependencia.
+  const serieId = body.serieId ? String(body.serieId) : null;
+  const subserieId = body.subserieId ? String(body.subserieId) : null;
+  if (serieId || subserieId) {
+    const sub = subserieId
+      ? await db.subserieDocumental.findFirst({ where: { id: subserieId, activo: true }, select: { serieId: true, serie: { select: { dependenciaId: true, activo: true } } } })
+      : null;
+    if (!serieId || !sub || sub.serieId !== serieId || !sub.serie.activo) {
+      return NextResponse.json({ error: "Elija la serie y la subserie de la TRD (las dos)." }, { status: 400 });
+    }
+    if (sub.serie.dependenciaId !== dependenciaOrigenId) {
+      return NextResponse.json({ error: "La serie elegida no pertenece a la TRD de la oficina que envía el memorando." }, { status: 400 });
+    }
   }
 
   const documentos: EntradaDocumento[] = Array.isArray(body.documentos)
@@ -123,8 +142,8 @@ export async function POST(req: NextRequest) {
       dependenciaOrigenId,
       dependenciaDestinoId,
       usuarioDestinoId,
-      serieId: body.serieId ? String(body.serieId) : null,
-      subserieId: body.subserieId ? String(body.subserieId) : null,
+      serieId,
+      subserieId,
       documentos,
       radicadoPorId: session.userId,
       memorando: {
@@ -134,14 +153,26 @@ export async function POST(req: NextRequest) {
           ciudad: CIUDAD_MEMORANDO,
           para: persona(destinatario),
           de: persona(remitente),
-          proyecto,
-          reviso,
+          proyecto: proyecto?.persona ?? null,
+          reviso: reviso?.persona ?? null,
           oficina: origen.nombre,
         },
       },
     });
 
     const { ip, userAgent } = datosPeticion(req.headers);
+    // Quien proyectó y quien revisó firman también: les llega a su bandeja «Por firmar» con aviso (campana y correo).
+    const cofirmantes = [
+      ...(proyecto ? [{ usuarioId: proyecto.id, rol: "FIRMA" as const, calidad: "PROYECTO" as const }] : []),
+      ...(reviso ? [{ usuarioId: reviso.id, rol: "FIRMA" as const, calidad: "REVISO" as const }] : []),
+    ];
+    let avisoFirmas: string | null = null;
+    if (cofirmantes.length > 0) {
+      await asignarFirmantes({ tipo: "comunicacion", id: comunicacion.id }, session.userId, cofirmantes, ip, userAgent).catch((e) => {
+        console.error("asignarFirmantes (memorando) falló:", e);
+        avisoFirmas = "El memorando se envió, pero no se pudo pedir la firma de quien proyectó o revisó: informe al administrador del sistema.";
+      });
+    }
     await registrarAuditoriaDoc({
       entidad: "Comunicacion",
       entidadId: comunicacion.id,
@@ -152,7 +183,7 @@ export async function POST(req: NextRequest) {
       detalle: `Firmó y envió el memorando ${comunicacion.radicado}${respondeAId ? " (respuesta a otro memorando)" : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""} — ${asunto.slice(0, 200)}`,
     });
 
-    return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado });
+    return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado, avisoFirmas });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo enviar el memorando." }, { status: 500 });
   }

@@ -4,14 +4,16 @@ import { db } from "@/lib/db";
 import { formatearRadicado, generarConsecutivo } from "@/lib/radicado";
 import { claveConcepto, SERIE_CONCEPTO } from "@/lib/concepto-tecnico";
 import { formatearCodigoProceso } from "@/lib/codigo-proceso";
+import { formatearNumeroMemorando, leerDatosMemorando, serieConsecutivoMemorando, siglaDependencia } from "@/lib/memorandos-formato";
 
-export type ModuloConsecutivo = "TRAMITES" | "PLANEADOR" | "GECON" | "SGDEA";
+export type ModuloConsecutivo = "TRAMITES" | "PLANEADOR" | "GECON" | "SGDEA" | "MEMORANDOS";
 
 export const ETIQUETA_MODULO_CONSECUTIVO: Record<ModuloConsecutivo, string> = {
   TRAMITES: "Trámites ambientales 2.0 — número de expediente",
   PLANEADOR: "Planeador — conceptos técnicos de visita",
   GECON: "GECON — contratación",
   SGDEA: "SGDEA — correspondencia y archivo",
+  MEMORANDOS: "Memorandos — número por oficina (SIGLA – 000 /año)",
 };
 
 export type SerieConsecutivo = {
@@ -141,7 +143,46 @@ async function definiciones(anio: number, seriesExistentes: string[]): Promise<D
       return contar(filas.map((f) => f.numero), prefijo);
     },
   });
+  defs.push(...(await definicionesMemorandos(anio)));
   return defs;
+}
+
+/**
+ * Número de memorando por oficina («ADEI – 054 /2026»), serie MEMO-<código de la dependencia>.
+ * Usado: el número guardado en los memorandos del módulo y, para los firmados antes en el SGDEA, su
+ * posición por orden de radicación (el mismo número que se les muestra).
+ */
+export function maximoMemorandos(filas: { datosMemorando: unknown }[]): Usados {
+  let maximo = 0;
+  filas.forEach((f, i) => {
+    const n = leerDatosMemorando(f.datosMemorando)?.consecutivo ?? i + 1;
+    if (n > maximo) maximo = n;
+  });
+  return { maximo, registros: filas.length };
+}
+
+async function definicionesMemorandos(anio: number): Promise<Definicion[]> {
+  const deps = await db.dependencia.findMany({ where: { activo: true }, select: { id: true, nombre: true, codigo: true }, orderBy: { nombre: "asc" } });
+  let porDependencia: Promise<Map<string, { datosMemorando: unknown }[]>> | null = null;
+  const memorandosDelAnio = () =>
+    (porDependencia ??= db.comunicacion
+      .findMany({
+        where: { tipo: "INTERNA", anio, dependenciaOrigenId: { not: null } },
+        orderBy: [{ fechaRadicacion: "asc" }, { id: "asc" }],
+        select: { dependenciaOrigenId: true, datosMemorando: true },
+      })
+      .then((filas) => {
+        const m = new Map<string, { datosMemorando: unknown }[]>();
+        for (const f of filas) m.set(f.dependenciaOrigenId!, [...(m.get(f.dependenciaOrigenId!) ?? []), f]);
+        return m;
+      }));
+  return deps.map((d) => ({
+    serie: serieConsecutivoMemorando(d.codigo),
+    modulo: "MEMORANDOS" as const,
+    nombre: d.nombre,
+    ejemplo: (n: number) => formatearNumeroMemorando(siglaDependencia(d.nombre, d.codigo), n, anio),
+    usados: async () => maximoMemorandos((await memorandosDelAnio()).get(d.id) ?? []),
+  }));
 }
 
 export async function listarConsecutivos(anio: number): Promise<SerieConsecutivo[]> {
