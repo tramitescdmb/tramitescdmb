@@ -353,11 +353,13 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
   // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA, entre los trámites con flujo definido.
   const tramitesRadicables =
     permisos && puedeConvertirSolicitudVital(permisos)
-      ? await db.tramiteTipo.findMany({
-          where: { activo: true, flujos: { some: {} } },
-          select: { id: true, slug: true, nombre: true, codigo: true },
-          orderBy: { nombre: "asc" },
-        })
+      ? (
+          await db.tramiteTipo.findMany({
+            where: { activo: true, flujos: { some: {} } },
+            select: { id: true, slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { suitNumero: true } } },
+            orderBy: { nombre: "asc" },
+          })
+        ).map((t) => ({ ...t, enSuit: t.suitNumeros.length > 0 || t.flujos.some((f) => Boolean(f.suitNumero)) }))
       : [];
   const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
   const slugSugerido = tramitesRadicables.find((t) => t.codigo === codigoSugerido)?.slug ?? null;
@@ -424,7 +426,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           expediente={solicitud.expediente}
           motivoDescarte={solicitud.motivoDescarte}
           gestionadaTexto={gestionadaTexto}
-          tramites={tramitesRadicables.map(({ slug, nombre, codigo }) => ({ slug, nombre, codigo }))}
+          tramites={tramitesRadicables.map(({ slug, nombre, codigo, enSuit }) => ({ slug, nombre, codigo, enSuit }))}
           slugSugerido={slugSugerido}
         />
       </Tarjeta>
