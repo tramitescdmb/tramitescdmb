@@ -8,20 +8,27 @@ import { extensionDe } from "@/lib/uploads-config";
 
 /** Sin 0/O, 1/I/L: se dicta y se copia sin confusiones. 31^8 ≈ 8,5 × 10^11 combinaciones. */
 const ALFABETO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export const FORMATO_NUMERO_SOLICITUD = /^SA-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
+/** SL = solicitud en línea («SA» es la sigla de Sancionatorio en SINCA). Se siguen aceptando los SA- ya entregados. */
+export const PREFIJO_NUMERO_SOLICITUD = "SL";
+export const FORMATO_NUMERO_SOLICITUD = /^(SL|SA)-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
 
 export function generarNumeroSolicitud(): string {
   let c = "";
   for (let i = 0; i < 8; i++) c += ALFABETO[randomInt(ALFABETO.length)];
-  return `SA-${c.slice(0, 4)}-${c.slice(4)}`;
+  return `${PREFIJO_NUMERO_SOLICITUD}-${c.slice(0, 4)}-${c.slice(4)}`;
 }
 
-/** Acepta el número escrito con espacios, minúsculas o sin guiones («sa 7kq4 m9xd» → «SA-7KQ4-M9XD»). */
+/**
+ * Acepta el número escrito con espacios, minúsculas o sin guiones («sl 7kq4 m9xd» → «SL-7KQ4-M9XD»).
+ * Sin prefijo se entiende SL; los números SA- entregados antes del cambio se conservan.
+ */
 export function normalizarNumeroSolicitud(texto: string): string | null {
   const limpio = texto.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const cuerpo = limpio.startsWith("SA") ? limpio.slice(2) : limpio;
+  const conPrefijo = limpio.length === 10 && (limpio.startsWith("SL") || limpio.startsWith("SA"));
+  const prefijo = conPrefijo ? limpio.slice(0, 2) : PREFIJO_NUMERO_SOLICITUD;
+  const cuerpo = conPrefijo ? limpio.slice(2) : limpio;
   if (cuerpo.length !== 8) return null;
-  const numero = `SA-${cuerpo.slice(0, 4)}-${cuerpo.slice(4)}`;
+  const numero = `${prefijo}-${cuerpo.slice(0, 4)}-${cuerpo.slice(4)}`;
   return FORMATO_NUMERO_SOLICITUD.test(numero) ? numero : null;
 }
 
