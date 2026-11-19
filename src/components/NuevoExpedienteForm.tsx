@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Field } from "@/components/Field";
 import { Spinner } from "@/components/Spinner";
-import { subirArchivoDirecto, sha256Hex } from "@/lib/uploads-client";
+import { subirArchivoDirecto, subirArchivoSolicitudAmbiental, sha256Hex } from "@/lib/uploads-client";
 import { esRequisitoPlano } from "@/lib/uploads-config";
-import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
+import { ACCEPT_DOCUMENTOS, TAMANO_MAXIMO_PLANO_MB } from "@/lib/uploads-config";
 import { MUNICIPIOS_JURISDICCION_CDMB, FUERA_DE_JURISDICCION } from "@/lib/municipios";
 import { REGIMENES_TRIBUTARIOS } from "@/lib/regimen-tributario";
 import { avisoCedula, avisoNit, avisoTelefono } from "@/lib/formato-visita";
@@ -71,6 +71,7 @@ export function NuevoExpedienteForm({
   flujoInicialId,
   mostrarDatosPredio,
   desdeVital,
+  publico = false,
 }: {
   tramiteId: string;
   tramiteSlug: string;
@@ -80,12 +81,22 @@ export function NuevoExpedienteForm({
   mostrarDatosPredio: boolean;
   /** Radicación a partir de una solicitud de VITAL: datos prellenados y anexos enlazados. */
   desdeVital?: DesdeVital;
+  /**
+   * Vista pública «Solicitud ambiental»: la radica el propio solicitante, sin sesión. Sin búsqueda
+   * de solicitantes registrados ni geocodificador (son internos), con campo trampa, declaración de
+   * datos personales y, al final, el número de solicitud para el seguimiento.
+   */
+  publico?: boolean;
 }) {
   const v = desdeVital?.datos;
   const router = useRouter();
   const expedienteIdRef = useRef<string>(crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [progreso, setProgreso] = useState<string | null>(null);
+  const [tsCarga] = useState(() => Date.now());
+  const [sitioWeb, setSitioWeb] = useState("");
+  const [aceptaTratamiento, setAceptaTratamiento] = useState(false);
+  const [radicada, setRadicada] = useState<{ numeroSolicitud: string; numero: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [municipio, setMunicipio] = useState(v?.municipio ?? "");
   const [municipioSolicitante, setMunicipioSolicitante] = useState(v?.municipioSolicitante ?? "");
@@ -226,11 +237,19 @@ export function NuevoExpedienteForm({
       setError("Debe seleccionarse el municipio donde se adelantará el trámite. La CDMB solo tiene competencia dentro de su jurisdicción.");
       return;
     }
+    if (publico && !solicitanteEmail.trim() && !solicitanteTelefono.trim()) {
+      setError("Indique al menos un medio de contacto (correo electrónico o teléfono) para poder comunicarle novedades de su solicitud.");
+      return;
+    }
     const documentosFaltantes = documentosAplicables.filter((doc) => documentoRequerido(doc) && !archivosPorDoc[doc.id]);
     if (documentosFaltantes.length > 0) {
       setError(
         `Faltan documentos obligatorios para radicar: ${documentosFaltantes.map((d) => d.nombre).join(", ")}.`
       );
+      return;
+    }
+    if (publico && !aceptaTratamiento) {
+      setError("Debe aceptar la declaración y la autorización de tratamiento de datos personales.");
       return;
     }
 
@@ -252,19 +271,23 @@ export function NuevoExpedienteForm({
         const file = archivosPorDoc[doc.id];
         if (file) {
           setProgreso(`Subiendo "${doc.nombre}"…`);
-          const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true, requisitoPlanoId: esRequisitoPlano(doc.nombre) ? doc.id : undefined });
+          const subido = publico
+            ? await subirArchivoSolicitudAmbiental(expedienteId, file, { tramiteId, requisitoId: doc.id, esPlano: esRequisitoPlano(doc.nombre) })
+            : await subirArchivoDirecto(expedienteId, file, { nuevo: true, requisitoPlanoId: esRequisitoPlano(doc.nombre) ? doc.id : undefined });
           documentos.push({ ...subido, hashSha256: await sha256Hex(file), descripcion: doc.notas ? `${doc.nombre} — ${doc.notas}` : doc.nombre, documentoRequeridoId: doc.id });
         }
       }
 
       for (const file of archivosExtra) {
         setProgreso(`Subiendo "${file.name}"…`);
-        const subido = await subirArchivoDirecto(expedienteId, file, { nuevo: true });
+        const subido = publico
+          ? await subirArchivoSolicitudAmbiental(expedienteId, file, { tramiteId })
+          : await subirArchivoDirecto(expedienteId, file, { nuevo: true });
         documentos.push({ ...subido, hashSha256: await sha256Hex(file), descripcion: "Documento adicional aportado por el solicitante." });
       }
 
-      setProgreso("Guardando expediente…");
-      const res = await fetch("/api/expedientes", {
+      setProgreso(publico ? "Radicando su solicitud…" : "Guardando expediente…");
+      const res = await fetch(publico ? "/api/solicitud-ambiental/radicar" : "/api/expedientes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -308,6 +331,7 @@ export function NuevoExpedienteForm({
           },
           documentos,
           solicitudVitalId: desdeVital?.solicitudId ?? null,
+          ...(publico ? { sitioWeb, tsCarga, aceptaTratamiento } : {}),
         }),
       });
 
@@ -316,8 +340,14 @@ export function NuevoExpedienteForm({
         throw new Error(errBody.error || "No se pudo crear el expediente.");
       }
 
-      const { id } = await res.json();
-      router.push(`/expedientes/${id}`);
+      const datos = await res.json();
+      if (publico) {
+        setRadicada({ numeroSolicitud: datos.numeroSolicitud, numero: datos.numero });
+        setProgreso(null);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      router.push(`/expedientes/${datos.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado. Intente nuevamente.");
       setSubmitting(false);
@@ -325,8 +355,52 @@ export function NuevoExpedienteForm({
     }
   }
 
+  if (radicada) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-cdmb-200 bg-white p-6 shadow-soft">
+        <h2 className="text-lg font-semibold text-stone-900">Su solicitud quedó radicada</h2>
+        <p className="text-sm text-stone-700">
+          Su número de solicitud es{" "}
+          <span className="font-mono text-base font-semibold text-cdmb-700">{radicada.numeroSolicitud}</span>. Consérvelo: con este
+          número y su {esJuridica ? "NIT" : "cédula"} puede consultar el estado en{" "}
+          <Link href="/solicitud-ambiental/consultar" className="text-cdmb-700 underline hover:no-underline">
+            Consultar solicitud ambiental
+          </Link>
+          .
+        </p>
+        <p className="text-sm text-stone-700">
+          Número de expediente: <span className="font-mono font-semibold">{radicada.numero}</span>. Cítelo en cualquier comunicación con la
+          CDMB sobre este trámite.
+        </p>
+        {solicitanteEmail.trim() && (
+          <p className="text-xs text-stone-500">También le enviamos estos datos al correo {solicitanteEmail.trim()}.</p>
+        )}
+        <div className="flex flex-wrap gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 print:hidden"
+          >
+            Imprimir constancia
+          </button>
+          <Link href="/solicitud-ambiental" className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 print:hidden">
+            Radicar otra solicitud
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {publico && (
+        <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+          <label>
+            Sitio web
+            <input tabIndex={-1} autoComplete="off" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
+          </label>
+        </div>
+      )}
       {desdeVital && (
         <div className="rounded-xl border border-cdmb-200 bg-cdmb-50 px-4 py-3 text-sm text-cdmb-900">
           Se radica a partir de la solicitud <strong>VITAL {desdeVital.idVital}</strong> ({desdeVital.tramiteVital}). Los datos se
@@ -383,7 +457,9 @@ export function NuevoExpedienteForm({
             (esJuridica
               ? "Número de Identificación Tributaria (NIT) de la empresa o entidad, con dígito de verificación si está disponible."
               : "Número de cédula de ciudadanía o cédula de extranjería de la persona natural.") +
-            " Si el solicitante ya cuenta con expedientes registrados, verifique su número antes de continuar para evitar duplicar la información."
+            (publico
+              ? " Con este número y el número de solicitud podrá consultar el estado de su trámite."
+              : " Si el solicitante ya cuenta con expedientes registrados, verifique su número antes de continuar para evitar duplicar la información.")
           }
         >
           <div className="flex flex-wrap gap-2">
@@ -395,6 +471,7 @@ export function NuevoExpedienteForm({
               className="min-w-[160px] flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
             />
+            {!publico && (
             <button
               type="button"
               onClick={buscarSolicitante}
@@ -404,6 +481,7 @@ export function NuevoExpedienteForm({
               {buscandoSolicitante ? <Spinner /> : <IconSearch className="h-3.5 w-3.5" />}
               {buscandoSolicitante ? "Buscando…" : "Buscar"}
             </button>
+            )}
           </div>
           {esJuridica && avisoNit(solicitanteIdentificacion) && <p className="mt-1 text-xs text-amber-700">{avisoNit(solicitanteIdentificacion)}</p>}
           {mensajeBusqueda && (
@@ -570,6 +648,7 @@ export function NuevoExpedienteForm({
                 onChange={(e) => setSolicitanteDireccion(e.target.value)}
                 className="min-w-[200px] flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               />
+              {!publico && (
               <button
                 type="button"
                 onClick={() => mapaSolicitanteRef.current?.buscarDireccion(solicitanteDireccion)}
@@ -577,6 +656,7 @@ export function NuevoExpedienteForm({
               >
                 Buscar en el mapa
               </button>
+              )}
             </div>
           </Field>
 
@@ -631,6 +711,7 @@ export function NuevoExpedienteForm({
               onChange={(e) => setPredioDireccion(e.target.value)}
               className="min-w-[200px] flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
             />
+            {!publico && (
             <button
               type="button"
               onClick={() => mapaPredioRef.current?.buscarDireccion(predioDireccion)}
@@ -639,6 +720,7 @@ export function NuevoExpedienteForm({
             >
               Buscar en el mapa
             </button>
+            )}
           </div>
         </Field>
 
@@ -749,12 +831,21 @@ export function NuevoExpedienteForm({
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white shadow-soft p-5">
         <div>
           <EncabezadoPaso numero={3} icono={<IconDocument className="h-4 w-4" />} titulo="Documentos" />
-          <p className="text-xs text-stone-500">
-            Cargue los documentos aportados por el solicitante — sin importar el tamaño del archivo, se
-            almacena directamente en el sistema. Los marcados como <strong>Obligatorio</strong> (por
-            ejemplo, el recibo o constancia de pago) deben adjuntarse para poder radicar el expediente;
-            los demás pueden completarse posteriormente.
-          </p>
+          {publico ? (
+            <p className="text-xs text-stone-500">
+              Adjunte los documentos que exige el trámite. Los marcados como <strong>obligatorios</strong> son necesarios para radicar;
+              los demás aplican solo en algunos casos. Formatos: PDF, Word, Excel o imagen (JPG/PNG). Tamaño máximo por archivo:{" "}
+              <strong>2 MB</strong> ({TAMANO_MAXIMO_PLANO_MB} MB para planos). Si un PDF pesa más, redúzcalo (por ejemplo, escaneando
+              en blanco y negro o a menor resolución).
+            </p>
+          ) : (
+            <p className="text-xs text-stone-500">
+              Cargue los documentos aportados por el solicitante — sin importar el tamaño del archivo, se
+              almacena directamente en el sistema. Los marcados como <strong>Obligatorio</strong> (por
+              ejemplo, el recibo o constancia de pago) deben adjuntarse para poder radicar el expediente;
+              los demás pueden completarse posteriormente.
+            </p>
+          )}
         </div>
 
         {desdeVital && (
@@ -874,6 +965,21 @@ export function NuevoExpedienteForm({
         </Field>
       </section>
 
+      {publico && (
+        <label className="flex items-start gap-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-700 shadow-soft">
+          <input
+            type="checkbox"
+            checked={aceptaTratamiento}
+            onChange={(e) => setAceptaTratamiento(e.target.checked)}
+            className="mt-0.5 h-4 w-4 flex-none rounded border-stone-300 text-cdmb-600 focus:ring-vivo-500"
+          />
+          <span>
+            Declaro que la información y los documentos aportados son verídicos, y autorizo a la CDMB a tratar mis datos personales
+            para adelantar este trámite y comunicarme sus novedades, conforme a la Ley 1581 de 2012.
+          </span>
+        </label>
+      )}
+
       {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {progreso && (
         <div className="flex items-center gap-2 rounded-md bg-cdmb-50 px-3 py-2 text-sm text-cdmb-800">
@@ -883,7 +989,10 @@ export function NuevoExpedienteForm({
       )}
 
       <div className="flex items-center justify-end gap-3">
-        <Link href={desdeVital ? `/vital/${desdeVital.solicitudId}` : `/tramites/${tramiteSlug}`} className="text-sm text-stone-500 hover:text-stone-700">
+        <Link
+          href={publico ? "/solicitud-ambiental" : desdeVital ? `/vital/${desdeVital.solicitudId}` : `/tramites/${tramiteSlug}`}
+          className="text-sm text-stone-500 hover:text-stone-700"
+        >
           Cancelar
         </Link>
         <button
@@ -892,7 +1001,7 @@ export function NuevoExpedienteForm({
           className="flex items-center gap-2 rounded-md bg-acento-500 px-5 py-2 text-sm font-medium text-white transition-transform hover:bg-acento-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           {submitting && <span className="h-3.5 w-3.5 flex-none animate-spin rounded-full border-2 border-white border-t-transparent" />}
-          {submitting ? "Radicando…" : "Radicar expediente"}
+          {submitting ? "Radicando…" : publico ? "Radicar solicitud" : "Radicar expediente"}
         </button>
       </div>
     </form>

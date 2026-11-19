@@ -5,7 +5,14 @@ import { usePathname } from "next/navigation";
 import { ProveedorMenuModulo } from "@/components/MenuModulo";
 
 function esRutaPublica(pathname: string) {
-  return pathname === "/pqrsd" || pathname.startsWith("/pqrsd/") || pathname.startsWith("/verificar/") || pathname === "/validar-firma";
+  return (
+    pathname === "/pqrsd" ||
+    pathname.startsWith("/pqrsd/") ||
+    pathname === "/solicitud-ambiental" ||
+    pathname.startsWith("/solicitud-ambiental/") ||
+    pathname.startsWith("/verificar/") ||
+    pathname === "/validar-firma"
+  );
 }
 
 export function Cascaron({

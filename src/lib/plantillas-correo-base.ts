@@ -273,12 +273,16 @@ export const PLANTILLAS = {
       P("Señor(a) <strong>[NOMBRE]</strong>:"),
       P("El [FECHA_RADICACION] se radicó su solicitud de <strong>[TRAMITE]</strong> con el número de expediente <strong>[EXPEDIENTE]</strong>."),
       P("Cite este número en cualquier comunicación relacionada con el trámite."),
+      "[SI:NUMERO_SOLICITUD]" +
+        P("Para consultar el estado en línea, use el número de solicitud <strong>[NUMERO_SOLICITUD]</strong> junto con su cédula o NIT en la opción «Consultar solicitud ambiental»; consérvelo.") +
+        "[/SI:NUMERO_SOLICITUD]",
       P(PIE_CIUDADANO),
     ].join("\n"),
     boton: "",
     sinEnlace: true,
     variables: [
       { clave: "EXPEDIENTE", descripcion: "Número del expediente", ejemplo: "SCA-0123-2026", obligatoria: true },
+      { clave: "NUMERO_SOLICITUD", descripcion: "Número de solicitud para la consulta en línea (solo si se radicó desde «Solicitud ambiental»)", ejemplo: "SA-7KQ4-M9XD" },
       { clave: "NOMBRE", descripcion: "Nombre del solicitante", ejemplo: "Agropecuaria El Roble S.A.S." },
       { clave: "TRAMITE", descripcion: "Trámite ambiental solicitado", ejemplo: "Concesión de aguas superficiales" },
       { clave: "FECHA_RADICACION", descripcion: "Fecha de radicación en letras", ejemplo: "4 de noviembre de 2026" },

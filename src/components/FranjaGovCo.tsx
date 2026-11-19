@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { LayoutGrid, FilePlus2, Search, ShieldCheck } from "lucide-react";
+import { LayoutGrid, FilePlus2, Search, ShieldCheck, Leaf } from "lucide-react";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 
 const ACCESOS = [
   { href: "/", label: "Aplicativos CDMB", icono: LayoutGrid },
   { href: "/pqrsd", label: "Radicar PQRSD", icono: FilePlus2 },
-  { href: "/pqrsd/consultar", label: "Consultar estado", icono: Search },
+  { href: "/pqrsd/consultar", label: "Consultar PQRSD", icono: Search },
+  { href: "/solicitud-ambiental", label: "Solicitud ambiental", icono: Leaf },
+  { href: "/solicitud-ambiental/consultar", label: "Consultar solicitud ambiental", icono: Search },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck },
 ];
 

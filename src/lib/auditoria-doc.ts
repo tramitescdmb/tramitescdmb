@@ -98,9 +98,16 @@ export async function verificarCadena(): Promise<{ ok: boolean; totalRevisadas: 
   return verificarCadenaFilas(filas);
 }
 
+/**
+ * IP del cliente. nginx fija X-Real-IP con la dirección real de la conexión ($remote_addr) y la
+ * AGREGA al final de X-Forwarded-For, cuyo primer valor puede escribirlo cualquiera: por eso se
+ * prefiere X-Real-IP y, si no viene, el último valor de X-Forwarded-For. Así no se puede evadir
+ * el límite de envíos de los formularios públicos cambiando una cabecera.
+ */
 export function datosPeticion(headers: Headers): { ip: string | null; userAgent: string | null } {
+  const real = headers.get("x-real-ip")?.trim();
   const xff = headers.get("x-forwarded-for");
-  const ip = xff ? xff.split(",")[0]!.trim() : headers.get("x-real-ip");
+  const ip = real || (xff ? xff.split(",").map((p) => p.trim()).filter(Boolean).pop() : null);
   return { ip: ip || null, userAgent: headers.get("user-agent") };
 }
 

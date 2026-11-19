@@ -14,11 +14,16 @@ export function SelectorTramite({
   clave,
   claveSugerida,
   onChange,
+  textoNoRadicable = "se gestiona en VITAL",
+  etiqueta = "Trámite ambiental en el que se gestiona",
 }: {
   tramites: TramiteOpcion[];
   clave: string;
   claveSugerida: string | null;
   onChange: (clave: string) => void;
+  /** Nota junto a los trámites que no se pueden elegir (sin procedimiento en SIC). */
+  textoNoRadicable?: string;
+  etiqueta?: string;
 }) {
   const idLista = useId();
   const contenedor = useRef<HTMLDivElement>(null);
@@ -91,7 +96,7 @@ export function SelectorTramite({
           ref={campo}
           type="text"
           role="combobox"
-          aria-label="Trámite ambiental en el que se gestiona"
+          aria-label={etiqueta}
           aria-expanded={abierto}
           aria-controls={idLista}
           aria-autocomplete="list"
@@ -161,7 +166,7 @@ export function SelectorTramite({
                       {t.clave === claveSugerida && (
                         <span className="ml-1.5 rounded-sm bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">sugerido</span>
                       )}
-                      {!t.radicable && <span className="ml-1.5 text-xs">— se gestiona en VITAL</span>}
+                      {!t.radicable && <span className="ml-1.5 text-xs">— {textoNoRadicable}</span>}
                     </div>
                   );
                 })}

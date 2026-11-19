@@ -761,7 +761,15 @@ model Expediente {
   /** Solicitud de VITAL desde la que se radicó (si vino de VITAL; en la práctica, una sola). */
   solicitudesVital SolicitudVital[]
 
+  /**
+   * Número de solicitud que recibe quien radica en línea desde la vista pública «Solicitud ambiental»
+   * (p. ej. SA-7KQ4-M9XD). Aleatorio, no consecutivo: junto con la cédula o el NIT permite consultar
+   * el estado. Null en los expedientes radicados por funcionarios o convertidos desde VITAL.
+   */
+  codigoSolicitudPublica String?
+
   @@index([tramiteTipoId])
+  @@index([codigoSolicitudPublica])
   @@index([estado])
   @@index([municipio])
   @@index([solicitanteId])
@@ -1113,6 +1121,7 @@ enum TipoNotificacion {
   CONCEPTO_DEVUELTO
   CONCEPTO_POR_ELABORAR
   VITAL_NUEVA
+  SOLICITUD_AMBIENTAL_NUEVA
 }
 
 model Notificacion {

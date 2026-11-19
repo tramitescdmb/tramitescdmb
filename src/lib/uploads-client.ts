@@ -142,6 +142,35 @@ export async function subirArchivoPublico(folder: string, file: File): Promise<A
   };
 }
 
+/** Subida desde la vista pública «Solicitud ambiental» (sin sesión). Planos hasta 10 MB; lo demás, 2 MB. */
+export async function subirArchivoSolicitudAmbiental(
+  folder: string,
+  file: File,
+  opciones: { tramiteId: string; requisitoId?: string; esPlano?: boolean }
+): Promise<ArchivoSubido> {
+  if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
+  if (opciones.esPlano) {
+    if (file.size > TAMANO_MAXIMO_PLANO_BYTES) throw new Error(`"${file.name}" pesa más de ${TAMANO_MAXIMO_PLANO_MB} MB, el máximo para planos.`);
+  } else if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
+  if (file.size === 0) throw new Error(`"${file.name}" está vacío.`);
+
+  const signRes = await fetch("/api/solicitud-ambiental/upload-sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder, fileName: file.name, tramiteId: opciones.tramiteId, requisitoId: opciones.requisitoId ?? null }),
+  });
+  if (!signRes.ok) {
+    const body = await signRes.json().catch(() => ({}));
+    throw new Error(body.error || `No se pudo preparar la subida de "${file.name}".`);
+  }
+  const { path, token } = await signRes.json();
+
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
+  if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
+
+  return { path, nombre: file.name, mimeType: file.type || "application/octet-stream", tamanoBytes: file.size };
+}
+
 export async function subirArchivoContrato(expedienteId: string, file: File): Promise<ArchivoSubido> {
   if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
   if (file.size > TAMANO_MAXIMO_CONTRATACION_BYTES) throw new Error(mensajeArchivoDemasiadoGrandeContratacion(file.name));
