@@ -120,11 +120,21 @@ export async function urlFirmada(bucket: string, ruta: string, segundos: number,
   rutaFisica(bucket, ruta); // valida el bucket y la ruta
   const r = limpiar(ruta);
   const exp = String(Math.floor(Date.now() / 1000) + segundos);
-  const u = new URL(`${urlBase()}/api/almacen/${bucket}/${codificar(r)}`);
-  u.searchParams.set("exp", exp);
-  if (descargar) u.searchParams.set("descargar", descargar);
-  u.searchParams.set("firma", firmar("leer", bucket, r, exp, descargar ?? ""));
-  return u.toString();
+  const q = new URLSearchParams({ exp });
+  if (descargar) q.set("descargar", descargar);
+  q.set("firma", firmar("leer", bucket, r, exp, descargar ?? ""));
+  // Ruta relativa a propósito: el navegador abre el archivo por la misma dirección por la que
+  // entró a la plataforma. Con URL_PLATAFORMA absoluta, quien entraba por otro nombre o protocolo
+  // recibía un enlace a otro origen y el visor (iframe) quedaba en blanco o con error de certificado.
+  return `/api/almacen/${bucket}/${codificar(r)}?${q.toString()}`;
+}
+
+/**
+ * Redirección a una URL firmada del almacén. Se envía la ruta relativa en Location (los
+ * navegadores la resuelven contra la página actual); NextResponse.redirect exige URL absoluta.
+ */
+export function redirigirAlmacen(url: string, status = 307): Response {
+  return new Response(null, { status, headers: { Location: url, "Cache-Control": "private, no-store" } });
 }
 
 export function urlPublica(bucket: string, ruta: string): string {

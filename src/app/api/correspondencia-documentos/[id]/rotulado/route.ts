@@ -114,7 +114,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }));
 
   const slug = c.radicado.replace(/[^A-Za-z0-9-]/g, "");
-  let respuesta: NextResponse;
+  let respuesta: Response;
   try {
     respuesta = await servirDerivado({
       carpeta: `sgdea/${id}`,
