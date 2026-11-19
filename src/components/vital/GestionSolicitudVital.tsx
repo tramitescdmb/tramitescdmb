@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRightCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { ArrowRightCircle, CheckCircle2, XCircle, RotateCcw, Search } from "lucide-react";
 
 /** Una entrada del catálogo: un trámite, o uno de sus procedimientos cuando el catálogo los muestra por separado. */
 export type TramiteOpcion = { clave: string; href: string; nombre: string; codigo: string; enSuit: boolean; radicable: boolean };
@@ -12,13 +12,24 @@ export type TramiteOpcion = { clave: string; href: string; nombre: string; codig
 const MAX_NOMBRE = 70;
 const acortar = (texto: string) => (texto.length > MAX_NOMBRE ? `${texto.slice(0, MAX_NOMBRE - 1).trimEnd()}…` : texto);
 
+/** Minúsculas y sin tildes, para que «mine» encuentre «Certificación Minera». */
+export const normalizarBusqueda = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+
+/** Coincide si cada palabra buscada aparece en cualquier parte del nombre o del código (no solo al inicio). */
+export function coincideBusqueda(t: Pick<TramiteOpcion, "nombre" | "codigo">, busqueda: string): boolean {
+  const q = normalizarBusqueda(busqueda);
+  if (!q) return true;
+  const texto = normalizarBusqueda(`${t.nombre} ${t.codigo}`);
+  return q.split(/\s+/).every((palabra) => texto.includes(palabra));
+}
+
 /**
  * Los mismos grupos y conteos del catálogo (sus mismas entradas): primero los inscritos en el SUIT y luego los demás,
  * en orden alfabético. Los instrumentos económicos (IE-) no se muestran. Los trámites sin
  * procedimiento en SIC aparecen, pero no se pueden elegir: se gestionan en VITAL.
  */
-function gruposTramites(tramites: TramiteOpcion[]) {
-  const lista = tramites.filter((t) => !t.codigo.startsWith("IE-"));
+function gruposTramites(tramites: TramiteOpcion[], busqueda = "", claveElegida = "") {
+  const lista = tramites.filter((t) => !t.codigo.startsWith("IE-") && (t.clave === claveElegida || coincideBusqueda(t, busqueda)));
   return [
     { titulo: "Trámites inscritos en el SUIT", lista: lista.filter((t) => t.enSuit) },
     { titulo: "Sin registro en el SUIT", lista: lista.filter((t) => !t.enSuit) },
@@ -46,6 +57,18 @@ export function GestionSolicitudVital({
   const router = useRouter();
   const [clave, setClave] = useState(claveSugerida ?? "");
   const elegido = tramites.find((t) => t.clave === clave && t.radicable) ?? null;
+  const [busqueda, setBusqueda] = useState("");
+  const grupos = gruposTramites(tramites, busqueda, clave);
+  const coincidencias = grupos.reduce((n, g) => n + g.lista.filter((t) => coincideBusqueda(t, busqueda)).length, 0);
+  const buscar = (texto: string) => {
+    setBusqueda(texto);
+    // Si lo elegido ya no coincide, se elige el primer trámite radicable que sí coincida.
+    const actual = tramites.find((t) => t.clave === clave);
+    if (texto.trim() && (!actual || !coincideBusqueda(actual, texto))) {
+      const primero = gruposTramites(tramites, texto).flatMap((g) => g.lista).find((t) => t.radicable);
+      setClave(primero?.clave ?? "");
+    }
+  };
   const [descartando, setDescartando] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -123,7 +146,28 @@ export function GestionSolicitudVital({
         <p className="inline-flex items-center rounded-sm bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">Nueva: pendiente de convertir en trámite</p>
       )}
       <div className="flex min-w-0 flex-wrap items-end gap-2">
-        <label className="min-w-0 flex-1 basis-64">
+        <div className="min-w-0 flex-1 basis-64 space-y-2">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Buscar trámite</span>
+            <span className="relative block">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => buscar(e.target.value)}
+                placeholder="Parte del nombre o el código, por ejemplo «mine»"
+                className="block w-full min-w-0 rounded-md border border-stone-200 bg-white py-2 pl-8 pr-3 text-sm"
+              />
+            </span>
+            {busqueda.trim() && (
+              <span className="mt-1 block text-xs text-stone-500">
+                {coincidencias === 0
+                  ? "Ningún trámite coincide con la búsqueda."
+                  : `${coincidencias} ${coincidencias === 1 ? "trámite coincide" : "trámites coinciden"}.`}
+              </span>
+            )}
+          </label>
+        <label className="block min-w-0">
           <span className="mb-1 block text-xs font-medium text-stone-600">Trámite ambiental en el que se gestiona</span>
           <select
             value={clave}
@@ -132,7 +176,7 @@ export function GestionSolicitudVital({
             className="block w-full min-w-0 max-w-full truncate rounded-md border border-stone-200 bg-white px-3 py-2 text-sm"
           >
             <option value="">Seleccione el trámite…</option>
-            {gruposTramites(tramites)
+            {grupos
               .filter((g) => g.lista.length > 0)
               .map((g) => (
                 <optgroup key={g.titulo} label={`${g.titulo} (${g.lista.length})`}>
@@ -146,6 +190,7 @@ export function GestionSolicitudVital({
               ))}
           </select>
         </label>
+        </div>
         {elegido ? (
           <Link
             href={`${elegido.href}${elegido.href.includes("?") ? "&" : "?"}vital=${solicitudId}`}
