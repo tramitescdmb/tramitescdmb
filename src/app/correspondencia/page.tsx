@@ -169,10 +169,6 @@ export default async function CorrespondenciaBandejaPage({
               <Send className="h-4 w-4" aria-hidden />
               Radicar enviada
             </Link>
-            <Link href="/correspondencia/nueva/interna" className="inline-flex flex-none items-center gap-1.5 rounded-md border border-menu-500 bg-white px-3 py-2 text-sm font-medium text-cdmb-700 hover:bg-cdmb-50">
-              <FileEdit className="h-4 w-4" aria-hidden />
-              Nuevo memorando
-            </Link>
           </div>
         )}
       </div>

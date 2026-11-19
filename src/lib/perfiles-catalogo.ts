@@ -101,7 +101,7 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
     nombre: "Memorandos",
     acciones: ["LEER", "CREAR"],
     etiquetas: { CREAR: "Firmar y enviar" },
-    porCargo: "Además se concede por cargo de firma: Dirección, Secretaría General, subdirecciones, jefaturas, asesoría y revisoría fiscal.",
+    porCargo: "Ya no habilita el envío: los memorandos están en su propio módulo y solo los envían quienes tienen cargo de Director(a) General, Secretario(a) General, Subdirector(a) o Jefe(a) de Oficina.",
   },
   {
     clave: "sgdea.expedientes",

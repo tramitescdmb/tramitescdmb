@@ -13,6 +13,7 @@ export function MobileNav({
   mostrarSinca,
   mostrarCorrespondencia,
   mostrarContratacion,
+  mostrarMemorandos = false,
   nombre,
   subtitulo,
   iniciales,
@@ -23,6 +24,7 @@ export function MobileNav({
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
+  mostrarMemorandos?: boolean;
   nombre: string;
   subtitulo: string;
   iniciales: string;
@@ -74,6 +76,7 @@ export function MobileNav({
               mostrarSinca={mostrarSinca}
               mostrarCorrespondencia={mostrarCorrespondencia}
               mostrarContratacion={mostrarContratacion}
+              mostrarMemorandos={mostrarMemorandos}
             />
 
             <div className="border-t border-white/10 p-3">

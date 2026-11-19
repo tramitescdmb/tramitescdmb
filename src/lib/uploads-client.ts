@@ -142,6 +142,27 @@ export async function subirArchivoPublico(folder: string, file: File): Promise<A
   };
 }
 
+export async function subirArchivoMemorando(folder: string, file: File): Promise<ArchivoSubido> {
+  if (!extensionPermitida(file.name)) throw new Error(mensajeTipoNoPermitido(file.name));
+  if (file.size > TAMANO_MAXIMO_BYTES) throw new Error(mensajeArchivoDemasiadoGrande(file.name));
+
+  const signRes = await fetch("/api/memorandos/upload-sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder, fileName: file.name }),
+  });
+  if (!signRes.ok) {
+    const body = await signRes.json().catch(() => ({}));
+    throw new Error(body.error || `No se pudo preparar la subida de "${file.name}".`);
+  }
+  const { path, token } = await signRes.json();
+
+  const { error } = await subirAUrlFirmada("documentos", path, token, file);
+  if (error) throw new Error(`Falló la subida de "${file.name}": ${error.message}`);
+
+  return { path, nombre: file.name, mimeType: file.type || "application/octet-stream", tamanoBytes: file.size };
+}
+
 /** Subida desde la vista pública «Solicitud ambiental» (sin sesión). Planos hasta 10 MB; lo demás, 2 MB. */
 export async function subirArchivoSolicitudAmbiental(
   folder: string,

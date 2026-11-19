@@ -29,7 +29,7 @@ const ICONO_MODULO: Record<string, typeof Inbox> = {
   "/historico": Archive,
 };
 
-const NOMBRE_CORTO: Record<SeccionAlertasModulo["modulo"], string> = { TRAMITES: "Trámites 2.0", GECON: "GECON", SGDEA: "SGDEA" };
+const NOMBRE_CORTO: Record<SeccionAlertasModulo["modulo"], string> = { TRAMITES: "Trámites 2.0", GECON: "GECON", SGDEA: "SGDEA", MEMORANDOS: "Memorandos" };
 
 const COLOR_ETAPA: Record<string, string> = { PRECONTRACTUAL: "#2a78d6", CONTRACTUAL: "#d16f00", POSTCONTRACTUAL: "#4a3aa7" };
 
@@ -38,7 +38,7 @@ const SERIES_EVOLUCION = [
   { nombre: "Cerrados", color: "#d16f00" },
 ];
 
-const TONO_SECCION: Record<SeccionAlertasModulo["modulo"], "cdmb" | "ambar" | "cielo"> = { TRAMITES: "cdmb", GECON: "ambar", SGDEA: "cielo" };
+const TONO_SECCION: Record<SeccionAlertasModulo["modulo"], "cdmb" | "ambar" | "cielo"> = { TRAMITES: "cdmb", GECON: "ambar", SGDEA: "cielo", MEMORANDOS: "cielo" };
 
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ vista?: string }> }) {
   const { vista } = await searchParams;

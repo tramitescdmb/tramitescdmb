@@ -1,7 +1,8 @@
 import { anioColombia } from "@/lib/fecha";
 import { db } from "@/lib/db";
 import type { MedioComunicacion, OrigenComunicacion, TipoPQRSD, TipoSolicitante, Prisma, NivelAccesoInformacion, EstadoComunicacion, CalidadFirma } from "@/generated/prisma/client";
-import { generarRadicado } from "@/lib/radicado";
+import { generarConsecutivo, generarRadicado } from "@/lib/radicado";
+import { formatearNumeroMemorando, serieConsecutivoMemorando, type DatosMemorando } from "@/lib/memorandos-formato";
 import { hashContenidoFirma } from "@/lib/firma";
 import { resolverFirma } from "@/lib/firma-proveedor";
 import { bloquearFirma, completarSolicitudFirma, esFirmaDuplicada, puedeActuarSolicitud } from "@/lib/solicitudes-firma";
@@ -505,12 +506,33 @@ export type EntradaRadicacionInterna = {
   radicadoPorId: string;
   fechaLimiteRespuesta?: Date | null;
   respondeAId?: string | null;
+  /** Formato del memorando: se le asigna el número de la oficina dentro de la misma transacción. */
+  memorando?: { codigoDependencia: string; sigla: string; datos: Omit<DatosMemorando, "version" | "consecutivo" | "numero"> } | null;
 };
+
+/**
+ * Siguiente número de memorando de una oficina en el año. Si la serie aún no existe, arranca después de
+ * los memorandos que esa oficina ya firmó ese año (los anteriores al módulo, numerados por orden).
+ */
+async function siguienteConsecutivoMemorando(tx: Prisma.TransactionClient, dependenciaId: string, codigo: string, anio: number): Promise<number> {
+  const serie = serieConsecutivoMemorando(codigo);
+  const existe = await tx.consecutivoRadicado.findUnique({ where: { serie_anio: { serie, anio } }, select: { id: true } });
+  if (!existe) {
+    const previos = await tx.comunicacion.count({ where: { tipo: "INTERNA", anio, dependenciaOrigenId: dependenciaId } });
+    await tx.consecutivoRadicado.upsert({ where: { serie_anio: { serie, anio } }, create: { serie, anio, ultimoNumero: previos }, update: {} });
+  }
+  return (await generarConsecutivo(serie, anio, tx)).numero;
+}
 
 export async function radicarInterna(entrada: EntradaRadicacionInterna) {
   validarClasificacionTrd(entrada.serieId, entrada.subserieId);
   return db.$transaction(async (tx) => {
     const { radicado, anio } = await generarRadicado("INTERNA", anioColombia(), tx);
+    let datosMemorando: DatosMemorando | null = null;
+    if (entrada.memorando) {
+      const consecutivo = await siguienteConsecutivoMemorando(tx, entrada.dependenciaOrigenId, entrada.memorando.codigoDependencia, anio);
+      datosMemorando = { version: 1, consecutivo, numero: formatearNumeroMemorando(entrada.memorando.sigla, consecutivo, anio), ...entrada.memorando.datos };
+    }
 
     const comunicacion = await tx.comunicacion.create({
       data: {
@@ -529,6 +551,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
         radicadoPorId: entrada.radicadoPorId,
         fechaVencimiento: entrada.fechaLimiteRespuesta ?? null,
         respondeAId: entrada.respondeAId ?? null,
+        ...(datosMemorando ? { datosMemorando } : {}),
       },
     });
 

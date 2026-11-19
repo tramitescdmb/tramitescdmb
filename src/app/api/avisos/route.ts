@@ -12,7 +12,7 @@ import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concept
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
 
-type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number; modulo: "TRAMITES" | "SGDEA" | "GECON" };
+type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number; modulo: "TRAMITES" | "SGDEA" | "GECON" | "MEMORANDOS" };
 
 export async function GET() {
   const session = await getSession();
@@ -34,32 +34,36 @@ export async function GET() {
     });
   };
 
-  if (puedeAccederCorrespondencia(permisos)) {
-    const [memos, firmas, pasosFlujo] = await Promise.all([
-      contextoMemorandos(session.userId, permisos).then(contarMemorandos),
-      contarPendientesBuzonSgdea(session.userId),
-      pasosDeFlujo("SGDEA"),
-    ]);
-    avisarPasos(pasosFlujo, "flujos-sgdea", "/correspondencia/flujos-a-cargo", "SGDEA");
+  const ctxMemos = await contextoMemorandos(session.userId, permisos);
+  if (ctxMemos.acceso) {
+    const memos = await contarMemorandos(ctxMemos);
     if (memos.porResponder > 0) {
       avisos.push({
         clave: "memos-responder",
         titulo: `${memos.porResponder} memorando(s) por responder`,
         detalle: memos.vencidos > 0 ? `${memos.vencidos} con plazo vencido` : "Dentro del plazo",
-        href: "/correspondencia/memorandos?vista=por-responder",
+        href: "/memorandos?vista=por-responder",
         alerta: memos.vencidos > 0,
-        cantidad: memos.porResponder, modulo: "SGDEA",
+        cantidad: memos.porResponder, modulo: "MEMORANDOS",
       });
     }
     if (memos.sinLeer > 0) {
       avisos.push({
         clave: "memos-sin-leer",
         titulo: `${memos.sinLeer} memorando(s) sin leer`,
-        href: "/correspondencia/memorandos?vista=sin-leer",
+        href: "/memorandos?vista=sin-leer",
         alerta: false,
-        cantidad: memos.sinLeer, modulo: "SGDEA",
+        cantidad: memos.sinLeer, modulo: "MEMORANDOS",
       });
     }
+  }
+
+  if (puedeAccederCorrespondencia(permisos)) {
+    const [firmas, pasosFlujo] = await Promise.all([
+      contarPendientesBuzonSgdea(session.userId),
+      pasosDeFlujo("SGDEA"),
+    ]);
+    avisarPasos(pasosFlujo, "flujos-sgdea", "/correspondencia/flujos-a-cargo", "SGDEA");
     if (firmas.total > firmas.listos) {
       const n = firmas.total - firmas.listos;
       avisos.push({ clave: "firmas-sgdea-espera", titulo: `${n} firma(s) del SGDEA en espera de otro firmante`, detalle: "Le llegará el aviso cuando sea su turno", href: "/correspondencia/buzon", alerta: false, cantidad: n, modulo: "SGDEA" });

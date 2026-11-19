@@ -38,7 +38,7 @@ export type TipoAlerta =
 export type ItemAlerta = { titulo: string; detalle?: string; link: string; tipo: TipoAlerta; cantidad?: number };
 
 export type SeccionAlertasModulo = {
-  modulo: "TRAMITES" | "GECON" | "SGDEA";
+  modulo: "TRAMITES" | "GECON" | "SGDEA" | "MEMORANDOS";
   nombre: string;
   /** Total real de pendientes del módulo — puede ser mayor que items.length. */
   total: number;
@@ -63,13 +63,14 @@ export async function obtenerSeccionesAlertas(session: SessionPayload): Promise<
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
 
-  const [tramites, contratacion, correspondencia] = await Promise.all([
+  const [tramites, contratacion, correspondencia, memorandos] = await Promise.all([
     mostrarTramites ? seccionTramites(session, permisos) : Promise.resolve(null),
     mostrarContratacion ? seccionContratacion(session, permisos) : Promise.resolve(null),
     mostrarCorrespondencia ? seccionCorrespondencia(session, permisos) : Promise.resolve(null),
+    seccionMemorandos(session, permisos),
   ]);
 
-  return [contratacion, tramites, correspondencia].filter((s): s is SeccionAlertasModulo => s !== null);
+  return [contratacion, tramites, correspondencia, memorandos].filter((s): s is SeccionAlertasModulo => s !== null);
 }
 
 async function seccionTramites(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {
@@ -216,28 +217,10 @@ function itemsDocumentosPorContrato(docs: DocumentoPorGestionar[], tipo: TipoAle
 }
 
 async function seccionCorrespondencia(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {
-  const [panel, buzon, memorandos] = await Promise.all([
-    obtenerPanelMiTrabajo(session.userId, permisos),
-    contarPendientesBuzonSgdea(session.userId),
-    contextoMemorandos(session.userId, permisos).then(contarMemorandos),
-  ]);
+  const [panel, buzon] = await Promise.all([obtenerPanelMiTrabajo(session.userId, permisos), contarPendientesBuzonSgdea(session.userId)]);
 
   const items: ItemAlerta[] = [];
   let total = 0;
-
-  if (memorandos.porResponder > 0) {
-    total += memorandos.porResponder;
-    items.push({
-      titulo: `${memorandos.porResponder} memorando(s) por responder${memorandos.vencidos > 0 ? ` — ${memorandos.vencidos} con plazo vencido` : ""}`,
-      link: "/correspondencia/memorandos?vista=por-responder",
-      tipo: "correspondencia",
-      cantidad: memorandos.porResponder,
-    });
-  }
-  if (memorandos.sinLeer > 0) {
-    total += memorandos.sinLeer;
-    items.push({ titulo: `${memorandos.sinLeer} memorando(s) sin leer`, link: "/correspondencia/memorandos?vista=sin-leer", tipo: "correspondencia", cantidad: memorandos.sinLeer });
-  }
 
   for (const c of panel.mis.lista) {
     if (c.tipo === "INTERNA") continue;
@@ -268,5 +251,31 @@ async function seccionCorrespondencia(session: SessionPayload, permisos: Permiso
     items: items.slice(0, MAX_ITEMS_POR_SECCION),
     masLink: "/correspondencia/panel",
     masTexto: "Ver pendientes en SGDEA",
+  };
+}
+
+async function seccionMemorandos(session: SessionPayload, permisos: PermisosUsuario): Promise<SeccionAlertasModulo | null> {
+  const ctx = await contextoMemorandos(session.userId, permisos);
+  if (!ctx.acceso) return null;
+  const memorandos = await contarMemorandos(ctx);
+  const items: ItemAlerta[] = [];
+  if (memorandos.porResponder > 0) {
+    items.push({
+      titulo: `${memorandos.porResponder} memorando(s) por responder${memorandos.vencidos > 0 ? ` — ${memorandos.vencidos} con plazo vencido` : ""}`,
+      link: "/memorandos?vista=por-responder",
+      tipo: "correspondencia",
+      cantidad: memorandos.porResponder,
+    });
+  }
+  if (memorandos.sinLeer > 0) {
+    items.push({ titulo: `${memorandos.sinLeer} memorando(s) sin leer`, link: "/memorandos?vista=sin-leer", tipo: "correspondencia", cantidad: memorandos.sinLeer });
+  }
+  return {
+    modulo: "MEMORANDOS",
+    nombre: "Memorandos",
+    total: memorandos.porResponder + memorandos.sinLeer,
+    items,
+    masLink: "/memorandos",
+    masTexto: "Ver bandeja de memorandos",
   };
 }

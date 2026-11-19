@@ -24,6 +24,7 @@ import {
   IconNumbers,
   IconCalendarTime,
   IconMail,
+  IconFileText,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -41,6 +42,7 @@ export const ITEM_TRAMITES: Item = {
 export const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: IconPlugConnected, prefijo: "/vital" };
 export const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: IconArchive, prefijo: "/historico" };
 export const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: IconInbox, prefijo: "/correspondencia" };
+export const ITEM_MEMORANDOS: Item = { href: "/memorandos", label: "Memorandos", icon: IconFileText, prefijo: "/memorandos" };
 export const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GECON", icon: IconBriefcase, prefijo: "/contratacion" };
 
 export const ITEMS_ADMIN: Item[] = [
@@ -62,6 +64,7 @@ export function SidebarNav({
   mostrarSinca = false,
   mostrarCorrespondencia = false,
   mostrarContratacion = false,
+  mostrarMemorandos = false,
   colapsado = false,
 }: {
   esAdmin: boolean;
@@ -70,6 +73,7 @@ export function SidebarNav({
   mostrarSinca?: boolean;
   mostrarCorrespondencia?: boolean;
   mostrarContratacion?: boolean;
+  mostrarMemorandos?: boolean;
   colapsado?: boolean;
 }) {
   const pathname = usePathname();
@@ -97,6 +101,7 @@ export function SidebarNav({
     ITEM_DASHBOARD,
     ...(mostrarTramites ? [ITEM_TRAMITES] : []),
     ...(mostrarCorrespondencia ? [ITEM_CORRESPONDENCIA] : []),
+    ...(mostrarMemorandos ? [ITEM_MEMORANDOS] : []),
     ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),
     ...(mostrarVital ? [ITEM_VITAL] : []),
     ...(mostrarSinca ? [ITEM_HISTORICO] : []),
@@ -165,6 +170,7 @@ function Grupo({
 const MODULO_DE_ITEM: Record<string, string> = {
   [ITEM_TRAMITES.href]: "TRAMITES",
   [ITEM_CORRESPONDENCIA.href]: "SGDEA",
+  [ITEM_MEMORANDOS.href]: "MEMORANDOS",
   [ITEM_CONTRATACION.href]: "GECON",
 };
 

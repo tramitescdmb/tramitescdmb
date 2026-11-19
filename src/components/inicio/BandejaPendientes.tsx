@@ -29,6 +29,7 @@ const MODULOS: Record<SeccionAlertasModulo["modulo"], { icon: LucideIcon; corto:
   TRAMITES: { icon: FileBadge, corto: "Trámites 2.0", barra: "bg-cdmb-500", burbuja: "bg-cdmb-100 text-cdmb-700" },
   GECON: { icon: Briefcase, corto: "GECON", barra: "bg-amber-400", burbuja: "bg-amber-100 text-amber-700" },
   SGDEA: { icon: Mail, corto: "SGDEA", barra: "bg-sky-400", burbuja: "bg-sky-100 text-sky-700" },
+  MEMORANDOS: { icon: FileText, corto: "Memorandos", barra: "bg-violet-400", burbuja: "bg-violet-100 text-violet-700" },
 };
 
 const VISIBLES_POR_TIPO = 5;

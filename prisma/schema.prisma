@@ -29,6 +29,7 @@ model ConfiguracionSitio {
   geconVisibleFuncionarios    Boolean @default(true)
   vitalVisibleFuncionarios    Boolean @default(true)
   sincaVisibleFuncionarios    Boolean @default(true)
+  memorandosVisibleFuncionarios Boolean @default(true)
 
   selloTiempoTsaUrl String?
 
@@ -1599,6 +1600,10 @@ model Comunicacion {
   despachoMedio       String?
   despachoDestino     String?
   despachoObservacion String?   @db.Text
+
+  // Datos del formato de memorando (número por oficina, PARA/DE con cargo, Proyectó/Revisó) tomados al
+  // firmar. No forman parte del hash de la firma: radicado, asunto y contenido siguen siendo lo firmado.
+  datosMemorando Json?
 
   tercero                    Tercero?              @relation(fields: [terceroId], references: [id])
   dependenciaOrigen          Dependencia?          @relation("ComunicacionDependenciaOrigen", fields: [dependenciaOrigenId], references: [id])
