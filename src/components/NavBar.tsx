@@ -1,3 +1,4 @@
+import { accedeMemorandos } from "@/lib/memorandos";
 import Link from "next/link";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -49,6 +50,7 @@ export async function NavBar() {
       puedeAccederSeccion(permisos, "SINCA_MINERIA"));
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos);
   const mostrarContratacion = puedeAccederContratacion(permisos);
+  const mostrarMemorandos = accedeMemorandos(permisos, config.memorandosVisibleFuncionarios !== false);
   const subtitulo = await subtituloSesion(session);
 
   const marca = (
@@ -77,6 +79,7 @@ export async function NavBar() {
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
         mostrarContratacion={mostrarContratacion}
+        mostrarMemorandos={mostrarMemorandos}
       />
 
       <header className="border-b border-black/20 bg-cdmb-800 lg:hidden">
@@ -89,6 +92,7 @@ export async function NavBar() {
             mostrarSinca={mostrarSinca}
             mostrarCorrespondencia={mostrarCorrespondencia}
             mostrarContratacion={mostrarContratacion}
+            mostrarMemorandos={mostrarMemorandos}
             nombre={session.nombre}
             subtitulo={subtitulo}
             iniciales={iniciales(session.nombre)}

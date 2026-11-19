@@ -21,6 +21,7 @@ import {
   puedeAsignarFirmantesComunicacion,
   puedeFirmarComunicacionDirecto,
   puedeSubdistribuirInternamente,
+  puedeGestionarArchivo,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
@@ -199,6 +200,8 @@ export default async function CorrespondenciaDetallePage({
     },
   });
   if (!c) notFound();
+  // Los memorandos se trabajan en su propio módulo; aquí solo queda el registro de archivo para gestión documental.
+  if (c.tipo === "INTERNA" && !permisos.esAdmin && !puedeGestionarArchivo(permisos)) redirect(`/memorandos/${c.id}`);
   if (!(await puedeVerComunicacion(permisos, session.userId, c.id))) notFound();
 
   const ctxMemo = c.tipo === "INTERNA" ? await contextoMemorandos(session.userId, permisos) : null;
@@ -319,7 +322,7 @@ export default async function CorrespondenciaDetallePage({
         texto: c.respuestaTexto
           ? `Respuesta proyectada por ${c.respuestaPor?.nombre ?? "un colaborador"}. Pendiente de firma${plazoMemo}.`
           : `Requiere respuesta${plazoMemo}.`,
-        accionHref: `/correspondencia/nueva/interna?respondeAId=${c.id}`,
+        accionHref: `/memorandos/nuevo?respondeAId=${c.id}`,
         accionTexto: "Firmar y enviar respuesta",
       }
     : proyectaMemorando
@@ -1190,7 +1193,7 @@ export default async function CorrespondenciaDetallePage({
             )}
             {memorandoPorResponder && firmaMemorandos && (
               <Link
-                href={`/correspondencia/nueva/interna?respondeAId=${id}`}
+                href={`/memorandos/nuevo?respondeAId=${id}`}
                 className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600"
               >
                 <MessageSquareReply className="h-4 w-4" aria-hidden />

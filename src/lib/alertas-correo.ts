@@ -141,7 +141,7 @@ async function alertasMemorandos(bandeja: Bandeja, { ahora, cal }: Contexto) {
         clave: `memorando-${vencido ? "vencido" : "por-vencer"}:${c.id}:${iso(vence)}`,
         grupo: "Memorandos por responder",
         texto: `${c.radicado} — plazo ${vencido ? "vencido" : "hasta"} el ${fecha(vence)} · ${c.asunto.slice(0, 90)}`,
-        ruta: `/correspondencia/${c.id}`,
+        ruta: `/memorandos/${c.id}`,
         urgente: vencido,
       }
     );

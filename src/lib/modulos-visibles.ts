@@ -3,7 +3,8 @@ export type CampoVisibilidadModulo =
   | "sgdeaVisibleFuncionarios"
   | "geconVisibleFuncionarios"
   | "vitalVisibleFuncionarios"
-  | "sincaVisibleFuncionarios";
+  | "sincaVisibleFuncionarios"
+  | "memorandosVisibleFuncionarios";
 
 export const MODULOS_CONFIGURABLES: { campo: CampoVisibilidadModulo; nombre: string; efecto: string }[] = [
   {
@@ -23,6 +24,12 @@ export const MODULOS_CONFIGURABLES: { campo: CampoVisibilidadModulo; nombre: str
     nombre: "GECON — Contratación",
     efecto:
       "Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores, incluidos quienes tienen rol de contratación, contratistas y supervisores.",
+  },
+  {
+    campo: "memorandosVisibleFuncionarios",
+    nombre: "Memorandos",
+    efecto:
+      "Desmarcado: el módulo desaparece del menú y se bloquea el envío y la consulta de memorandos para todos menos administradores. Los memorandos ya firmados se conservan.",
   },
   {
     campo: "vitalVisibleFuncionarios",

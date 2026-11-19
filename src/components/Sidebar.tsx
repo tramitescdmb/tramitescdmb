@@ -13,6 +13,7 @@ export function Sidebar({
   mostrarSinca,
   mostrarCorrespondencia,
   mostrarContratacion,
+  mostrarMemorandos = false,
 }: {
   logoUrl: string | null;
   esAdmin: boolean;
@@ -21,6 +22,7 @@ export function Sidebar({
   mostrarSinca: boolean;
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
+  mostrarMemorandos?: boolean;
 }) {
   const { expandido, setExpandido } = useMenuModulo();
   const colapsado = !expandido;
@@ -54,6 +56,7 @@ export function Sidebar({
         mostrarSinca={mostrarSinca}
         mostrarCorrespondencia={mostrarCorrespondencia}
         mostrarContratacion={mostrarContratacion}
+        mostrarMemorandos={mostrarMemorandos}
         colapsado={colapsado}
       />
 

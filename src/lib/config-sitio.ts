@@ -18,6 +18,7 @@ const VACIA = {
   geconVisibleFuncionarios: true,
   vitalVisibleFuncionarios: true,
   sincaVisibleFuncionarios: true,
+  memorandosVisibleFuncionarios: true,
   selloTiempoTsaUrl: null,
   passwordLongitudMinima: 8,
   passwordLongitudMaxima: 72,

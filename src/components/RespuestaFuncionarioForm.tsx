@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, MessageSquareText, Upload, X } from "lucide-react";
-import { subirArchivoDirecto, subirDocumentosConProgreso } from "@/lib/uploads-client";
+import { subirArchivoDirecto, subirArchivoMemorando, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
 import { filtrarLoteSGDEA, MAX_ARCHIVOS_LOTE, TAMANO_MAXIMO_SGDEA_MB } from "@/lib/uploads-sgdea";
 import { BarraProgresoEnvio } from "@/components/BarraProgresoEnvio";
@@ -15,7 +15,10 @@ export function RespuestaFuncionarioForm({
   textoInicial,
   plantillas = [],
   contexto = {},
+  memorando = false,
 }: {
+  /** En el módulo de memorandos: guarda en /api/memorandos/[id]/proyectar y sube los anexos por su propia ruta. */
+  memorando?: boolean;
   comunicacionId: string;
   textoInicial: string;
   plantillas?: PlantillaOpcion[];
@@ -44,12 +47,12 @@ export function RespuestaFuncionarioForm({
       const folder = crypto.randomUUID();
       const documentos = await subirDocumentosConProgreso(
         archivos,
-        (f, file) => subirArchivoDirecto(f, file, { nuevo: true }),
+        memorando ? subirArchivoMemorando : (f, file) => subirArchivoDirecto(f, file, { nuevo: true }),
         folder,
         (pct, t) => setProgreso({ pct, texto: t }),
         "Guardando la respuesta…"
       );
-      const resp = await fetch(`/api/correspondencia/${comunicacionId}/responder`, {
+      const resp = await fetch(memorando ? `/api/memorandos/${comunicacionId}/proyectar` : `/api/correspondencia/${comunicacionId}/responder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: texto.trim(), documentos }),

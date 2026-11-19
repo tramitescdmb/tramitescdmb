@@ -45,7 +45,7 @@ export async function reiniciarDatosPruebaSgdea(): Promise<ResultadoReinicioPrue
   }
 
   const { count: seriesConsecutivoReiniciadas } = await db.consecutivoRadicado.updateMany({
-    where: { serie: { in: [...SERIES_CORRESPONDENCIA] } },
+    where: { OR: [{ serie: { in: [...SERIES_CORRESPONDENCIA] } }, { serie: { startsWith: "MEMO-" } }] },
     data: { ultimoNumero: 0 },
   });
 
