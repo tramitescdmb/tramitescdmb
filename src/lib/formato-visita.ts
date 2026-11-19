@@ -1,3 +1,4 @@
+import { aGms } from "@/lib/coordenadas-geograficas";
 import { ZONAS, type ClaveZona, type ResultadoZonificacion } from "@/lib/zonificacion";
 
 export const TIPOS_CAMPO = {
@@ -931,11 +932,5 @@ export function resumenAgrupado(campo: Campo, valor: ValorCampo | undefined): { 
 }
 
 export function aDms(valor: number, esLat: boolean): string {
-  const abs = Math.abs(valor);
-  const g = Math.floor(abs);
-  const mFloat = (abs - g) * 60;
-  const m = Math.floor(mFloat);
-  const s = (mFloat - m) * 60;
-  const hemi = esLat ? (valor >= 0 ? "N" : "S") : valor >= 0 ? "E" : "O";
-  return `${g}° ${m}' ${s.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" ${hemi}`;
+  return aGms(valor, esLat);
 }

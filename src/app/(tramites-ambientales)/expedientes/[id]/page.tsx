@@ -49,6 +49,7 @@ import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { MENSAJE_EXPEDIENTE_CERRADO, fichaArchivoDe, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
 import { BandaTablero } from "@/components/tablero";
+import { aGms } from "@/lib/coordenadas-geograficas";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -685,7 +686,7 @@ export default async function ExpedienteDetallePage({
                           <li key={v.id} className="rounded-lg border border-stone-200 bg-stone-50/60 p-3">
                             <MapaSoloLectura lat={v.lat} lon={v.lon} />
                             <p className="mt-2 text-xs text-stone-600">
-                              Latitud/longitud: {v.lat.toFixed(6)}, {v.lon.toFixed(6)}
+                              Coordenadas geográficas: {aGms(v.lat, true)}, {aGms(v.lon, false)} ({v.lat.toFixed(6)}, {v.lon.toFixed(6)})
                               {v.precisionM != null && <> · Precisión reportada: ±{Math.round(v.precisionM)} m</>}
                             </p>
                             {v.nota && <p className="text-xs text-stone-600">Nota: {v.nota}</p>}
@@ -1574,13 +1575,16 @@ function BloqueUbicacion({
   return (
     <details className="mt-3 border-t border-stone-100 pt-3 text-sm">
       <summary className="cursor-pointer text-xs font-medium text-stone-500 [&::-webkit-details-marker]:hidden">
-        {titulo} — {lat.toFixed(6)}, {lon.toFixed(6)} <span className="text-cdmb-700">(ver mapa y coordenadas)</span>
+        {titulo} — {aGms(lat, true)}, {aGms(lon, false)} <span className="text-cdmb-700">(ver mapa y coordenadas)</span>
       </summary>
       <div className="mt-2 space-y-2">
         <MapaSoloLectura lat={lat} lon={lon} />
         <div className="space-y-0.5 text-stone-700">
           <p>
-            Elipsoidales (lat/lon, WGS84): {lat.toFixed(6)}, {lon.toFixed(6)}
+            Coordenadas geográficas: {aGms(lat, true)}, {aGms(lon, false)}{" "}
+            <span className="text-stone-500">
+              (decimales {lat.toFixed(6)}, {lon.toFixed(6)})
+            </span>
           </p>
           {planaX != null && planaY != null && (
             <p>

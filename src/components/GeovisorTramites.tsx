@@ -45,6 +45,7 @@ import {
   type PlataformaExterna,
   type PuntoExterno,
 } from "@/lib/geovisor-capas-externas";
+import { aGms } from "@/lib/coordenadas-geograficas";
 
 export type PuntoTramite = {
   id: string;
@@ -524,6 +525,7 @@ export function GeovisorTramites({
         <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
         <p class="text-stone-700">${escapeHtml(p.tramiteCodigo)} — ${escapeHtml(p.tramiteNombre)}</p>
         <p class="text-stone-500">${escapeHtml(p.municipio)}</p>
+        <p class="text-stone-500">${escapeHtml(aGms(p.lat, true))} · ${escapeHtml(aGms(p.lon, false))}</p>
         <p class="mt-0.5 flex items-center gap-1 font-medium" style="color:${estilo.color}">${svgIconoEstado(p.estado, 13)}${escapeHtml(estilo.etiqueta)}</p>
       `;
       const enlace = document.createElement("a");
@@ -598,7 +600,8 @@ export function GeovisorTramites({
             <p class="font-mono font-semibold text-stone-800">${escapeHtml(p.numero)}</p>
             <p class="flex items-start gap-1 text-stone-700"><span class="mt-0.5 flex-none">${svgMarcadorExterno(forma, grupo.color, 12)}</span>${escapeHtml(p.tipo)}</p>
             ${p.detalle ? `<p class="text-stone-600">${escapeHtml(p.detalle)}</p>` : ""}
-            <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>          `;
+            <p class="text-stone-500">${escapeHtml(p.municipio ?? "—")}${p.fecha ? ` · ${escapeHtml(p.fecha)}` : ""}${p.estado ? ` · ${escapeHtml(p.estado)}` : ""}</p>
+            <p class="text-stone-500">${escapeHtml(aGms(p.lat, true))} · ${escapeHtml(aGms(p.lon, false))}</p>`;
           const enlace = document.createElement("a");
           enlace.href = p.enlace;
           enlace.className = "mt-1 inline-block font-medium text-cdmb-700 hover:underline";
@@ -1762,11 +1765,11 @@ function PanelMedir({
 
           {medida.length > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Puntos (lat, lon)</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Puntos (coordenadas geográficas)</p>
               <ul className="max-h-28 space-y-0.5 overflow-y-auto text-[11px] text-stone-500">
                 {medida.map((p, i) => (
                   <li key={i}>
-                    {i + 1}. {p[0].toFixed(6)}, {p[1].toFixed(6)}
+                    {i + 1}. {aGms(p[0], true)}, {aGms(p[1], false)}
                   </li>
                 ))}
               </ul>

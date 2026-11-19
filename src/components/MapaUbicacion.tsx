@@ -12,6 +12,7 @@ import {
   esCartesianaValida,
   type CoordenadasCompletas,
 } from "@/lib/coordenadas";
+import { aGms, avisoFueraDeSantander, decimalAGms, gmsADecimal, type Hemisferio } from "@/lib/coordenadas-geograficas";
 
 type Punto = { lat: number; lon: number };
 
@@ -30,7 +31,16 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
     const [buscando, setBuscando] = useState(false);
     const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
 
-    const [modo, setModo] = useState<"elipsoidales" | "planas" | "cartesianas">("elipsoidales");
+    const [modo, setModo] = useState<"geograficas" | "planas" | "cartesianas">("geograficas");
+    const [formatoGeo, setFormatoGeo] = useState<"gms" | "decimales">("gms");
+    const [latG, setLatG] = useState("");
+    const [latM, setLatM] = useState("");
+    const [latS, setLatS] = useState("");
+    const [latH, setLatH] = useState<Hemisferio>("N");
+    const [lonG, setLonG] = useState("");
+    const [lonM, setLonM] = useState("");
+    const [lonS, setLonS] = useState("");
+    const [lonH, setLonH] = useState<Hemisferio>("O");
     const [latTexto, setLatTexto] = useState("");
     const [lonTexto, setLonTexto] = useState("");
     const [planaXTexto, setPlanaXTexto] = useState("");
@@ -76,6 +86,16 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
     function sincronizarCampos(c: CoordenadasCompletas) {
       setLatTexto(c.lat.toFixed(6));
       setLonTexto(c.lon.toFixed(6));
+      const la = decimalAGms(c.lat, true);
+      const lo = decimalAGms(c.lon, false);
+      setLatG(String(la.grados));
+      setLatM(String(la.minutos));
+      setLatS(la.segundos.toFixed(2));
+      setLatH(la.hemisferio);
+      setLonG(String(lo.grados));
+      setLonM(String(lo.minutos));
+      setLonS(lo.segundos.toFixed(2));
+      setLonH(lo.hemisferio);
       setPlanaXTexto(c.planaX.toFixed(2));
       setPlanaYTexto(c.planaY.toFixed(2));
       setCartXTexto(c.cartesianaX.toFixed(2));
@@ -111,6 +131,12 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
       setPunto(null);
       setLatTexto("");
       setLonTexto("");
+      setLatG("");
+      setLatM("");
+      setLatS("");
+      setLonG("");
+      setLonM("");
+      setLonS("");
       setPlanaXTexto("");
       setPlanaYTexto("");
       setCartXTexto("");
@@ -144,11 +170,22 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
 
     useImperativeHandle(ref, () => ({ buscarDireccion }));
 
-    function usarElipsoidales() {
-      const lat = parseFloat(latTexto.replace(",", "."));
-      const lon = parseFloat(lonTexto.replace(",", "."));
-      if (!esLatLonValido(lat, lon)) {
-        setErrorCoords("Debe indicarse una latitud y longitud válidas (ej. 7.119300 y -73.122700).");
+    function usarGeograficas() {
+      let lat: number | null;
+      let lon: number | null;
+      if (formatoGeo === "gms") {
+        lat = gmsADecimal(latG, latM, latS, latH);
+        lon = gmsADecimal(lonG, lonM, lonS, lonH);
+      } else {
+        lat = parseFloat(latTexto.replace(",", "."));
+        lon = parseFloat(lonTexto.replace(",", "."));
+      }
+      if (lat == null || lon == null || !esLatLonValido(lat, lon)) {
+        setErrorCoords(
+          formatoGeo === "gms"
+            ? "Deben indicarse grados, minutos (0 a 59) y segundos (0 a 59,99) válidos para la latitud y la longitud (ej. 7° 7' 9,66\" N y 73° 7' 21,87\" O)."
+            : "Debe indicarse una latitud y longitud válidas en grados decimales (ej. 7.119300 y -73.122700).",
+        );
         return;
       }
       setErrorCoords(null);
@@ -181,6 +218,7 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
     }
 
     const planas = punto ? desdeLatLon(punto.lat, punto.lon) : null;
+    const avisoRango = punto ? avisoFueraDeSantander(punto.lat, punto.lon) : null;
 
     const tabClase = (activa: boolean) =>
       `rounded-md px-2.5 py-1 text-xs font-medium ${activa ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`;
@@ -199,9 +237,9 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
           El botón &quot;Buscar en el mapa&quot; junto a la dirección anterior ubica el punto aquí.
         </p>
 
-        <div className="flex gap-1.5">
-          <button type="button" className={tabClase(modo === "elipsoidales")} onClick={() => setModo("elipsoidales")}>
-            Latitud/Longitud
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={tabClase(modo === "geograficas")} onClick={() => setModo("geograficas")}>
+            Coordenadas geográficas
           </button>
           <button type="button" className={tabClase(modo === "planas")} onClick={() => setModo("planas")}>
             Coordenadas planas
@@ -211,11 +249,58 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
           </button>
         </div>
 
-        {modo === "elipsoidales" && (
-          <div className="flex flex-wrap items-end gap-2">
-            <TextoCoord label="Latitud" placeholder="ej. 7.119300" value={latTexto} onChange={setLatTexto} />
-            <TextoCoord label="Longitud" placeholder="ej. -73.122700" value={lonTexto} onChange={setLonTexto} />
-            <BotonUsar onClick={usarElipsoidales} />
+        {modo === "geograficas" && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-stone-600">
+              <label className="inline-flex items-center gap-1">
+                <input type="radio" checked={formatoGeo === "gms"} onChange={() => setFormatoGeo("gms")} />
+                Grados, minutos y segundos
+              </label>
+              <label className="inline-flex items-center gap-1">
+                <input type="radio" checked={formatoGeo === "decimales"} onChange={() => setFormatoGeo("decimales")} />
+                Grados decimales
+              </label>
+            </div>
+            {formatoGeo === "gms" ? (
+              <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+                <FilaGms
+                  titulo="Latitud"
+                  g={latG}
+                  m={latM}
+                  s={latS}
+                  h={latH}
+                  opciones={["N", "S"]}
+                  onG={setLatG}
+                  onM={setLatM}
+                  onS={setLatS}
+                  onH={setLatH}
+                  ejemplo={["7", "7", "9.66"]}
+                />
+                <FilaGms
+                  titulo="Longitud"
+                  g={lonG}
+                  m={lonM}
+                  s={lonS}
+                  h={lonH}
+                  opciones={["O", "E"]}
+                  onG={setLonG}
+                  onM={setLonM}
+                  onS={setLonS}
+                  onH={setLonH}
+                  ejemplo={["73", "7", "21.87"]}
+                />
+                <BotonUsar onClick={usarGeograficas} />
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-end gap-2">
+                <TextoCoord label="Latitud" placeholder="ej. 7.119300" value={latTexto} onChange={setLatTexto} />
+                <TextoCoord label="Longitud" placeholder="ej. -73.122700" value={lonTexto} onChange={setLonTexto} />
+                <BotonUsar onClick={usarGeograficas} />
+              </div>
+            )}
+            <span className="block text-xs text-stone-400">
+              Datum MAGNA-SIRGAS / WGS84. En Santander la latitud es Norte y la longitud Oeste (negativa en decimales).
+            </span>
           </div>
         )}
         {modo === "planas" && (
@@ -241,14 +326,17 @@ export const MapaUbicacion = forwardRef<MapaUbicacionHandle, { municipio: string
           </button>
         )}
         {errorCoords && <p className="text-xs text-red-600">{errorCoords}</p>}
+        {avisoRango && <p className="rounded bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-800">{avisoRango}</p>}
 
         <div ref={contenedorRef} className="h-64 w-full overflow-hidden rounded-lg border border-stone-200" />
 
         {punto && planas && (
           <div className="space-y-0.5 rounded-md bg-stone-50 px-3 py-2 text-xs text-stone-600">
             <p>
-              <span className="font-medium">Elipsoidales (lat/lon, WGS84):</span> {planas.lat.toFixed(6)},{" "}
-              {planas.lon.toFixed(6)}
+              <span className="font-medium">Coordenadas geográficas:</span> {aGms(planas.lat, true)}, {aGms(planas.lon, false)}{" "}
+              <span className="text-stone-400">
+                (decimales {planas.lat.toFixed(6)}, {planas.lon.toFixed(6)})
+              </span>
             </p>
             <p>
               <span className="font-medium">Planas (MAGNA-SIRGAS Origen-Nacional):</span> X{" "}
@@ -297,5 +385,53 @@ function BotonUsar({ onClick }: { onClick: () => void }) {
     <button type="button" onClick={onClick} className="rounded-md border border-stone-200 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50">
       Usar
     </button>
+  );
+}
+
+function FilaGms({
+  titulo,
+  g,
+  m,
+  s,
+  h,
+  opciones,
+  onG,
+  onM,
+  onS,
+  onH,
+  ejemplo,
+}: {
+  titulo: string;
+  g: string;
+  m: string;
+  s: string;
+  h: Hemisferio;
+  opciones: [Hemisferio, Hemisferio];
+  onG: (v: string) => void;
+  onM: (v: string) => void;
+  onS: (v: string) => void;
+  onH: (v: Hemisferio) => void;
+  ejemplo: [string, string, string];
+}) {
+  const cls = "rounded-md border border-stone-200 px-2 py-1.5 text-sm";
+  return (
+    <fieldset>
+      <legend className="mb-1 block text-xs font-medium text-stone-600">{titulo}</legend>
+      <div className="flex items-center gap-1 text-sm text-stone-500">
+        <input aria-label={`${titulo}: grados`} value={g} onChange={(e) => onG(e.target.value)} placeholder={ejemplo[0]} inputMode="numeric" className={`w-12 ${cls}`} />
+        °
+        <input aria-label={`${titulo}: minutos`} value={m} onChange={(e) => onM(e.target.value)} placeholder={ejemplo[1]} inputMode="numeric" className={`w-12 ${cls}`} />
+        &apos;
+        <input aria-label={`${titulo}: segundos`} value={s} onChange={(e) => onS(e.target.value)} placeholder={ejemplo[2]} inputMode="decimal" className={`w-16 ${cls}`} />
+        &quot;
+        <select aria-label={`${titulo}: hemisferio`} value={h} onChange={(e) => onH(e.target.value as Hemisferio)} className={cls}>
+          {opciones.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </div>
+    </fieldset>
   );
 }

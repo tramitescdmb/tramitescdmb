@@ -16,6 +16,7 @@ import { BandaTablero } from "@/components/tablero";
 import { ParticipantesVisita } from "@/components/planeador/ParticipantesVisita";
 import { participantesEfectivos } from "@/lib/participantes-visita";
 import { personasParaEquipo } from "@/lib/planeador-db";
+import { aGms } from "@/lib/coordenadas-geograficas";
 
 export default async function HojaVisitaPage({ params }: { params: Promise<{ id: string; visitaId: string }> }) {
   const { id, visitaId } = await params;
@@ -186,7 +187,7 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
             </div>
             <MapaSoloLectura lat={vt.lat} lon={vt.lon} />
             <p className="mt-1.5 text-xs text-stone-500">
-              {vt.lat.toFixed(6)}, {vt.lon.toFixed(6)}
+              Coordenadas geográficas: {aGms(vt.lat, true)}, {aGms(vt.lon, false)} ({vt.lat.toFixed(6)}, {vt.lon.toFixed(6)})
               {vt.planaX != null && vt.planaY != null && ` · Planas MAGNA-SIRGAS: X ${vt.planaX.toLocaleString("es-CO")} m, Y ${vt.planaY.toLocaleString("es-CO")} m`}
               {vt.capturaManual ? " · Ingresado manualmente" : vt.precisionM != null && ` · Precisión ±${Math.round(vt.precisionM)} m`}
               {vt.fueraJurisdiccion && " · Fuera de la jurisdicción CDMB"}
