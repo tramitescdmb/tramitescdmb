@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Search } from "lucide-react";
-import { CabeceraTablero } from "@/components/tablero";
+import { EncabezadoSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { ConsultarSolicitudForm } from "@/components/solicitud-ambiental/ConsultarSolicitudForm";
 
 export const dynamic = "force-dynamic";
@@ -13,19 +12,13 @@ export const metadata: Metadata = {
 
 export default function ConsultarSolicitudAmbientalPage() {
   return (
-    <div className="mx-auto max-w-lg space-y-4">
-      <CabeceraTablero
-        icon={Search}
-        titulo="Consultar solicitud ambiental"
-        descripcion={
-          <>
-            Ingrese la cédula o el NIT con el que radicó y el número de solicitud que recibió.{" "}
-            <Link href="/solicitud-ambiental" className="text-cdmb-700 hover:underline">
-              ¿Necesita radicar una nueva solicitud?
-            </Link>
-          </>
-        }
-      />
+    <div className="mx-auto max-w-xl space-y-5">
+      <EncabezadoSolicitud titulo="Consultar solicitud ambiental">
+        Ingrese la cédula o el NIT con el que radicó y el número de solicitud que recibió.{" "}
+        <Link href="/solicitud-ambiental" className="font-semibold text-white underline underline-offset-2 hover:no-underline">
+          ¿Necesita radicar una nueva solicitud?
+        </Link>
+      </EncabezadoSolicitud>
       <ConsultarSolicitudForm />
     </div>
   );
