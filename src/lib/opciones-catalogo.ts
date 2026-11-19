@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
 import { todosLosSuitNumeros } from "@/lib/tramite-categoria";
+import { resumenSinPrefijo } from "@/lib/tramites-formato";
 import type { TramiteOpcion } from "@/components/vital/tramite-opciones";
 
-export type EntradaCatalogo = TramiteOpcion & { flujo: string | null };
+/** descripcion: la misma de las tarjetas del catálogo (resumen del procedimiento, del trámite o su objeto). */
+export type EntradaCatalogo = TramiteOpcion & { flujo: string | null; descripcion: string };
 
 /**
  * Entradas del catálogo de trámites para un selector, con los mismos grupos y conteos del catálogo:
@@ -12,7 +14,15 @@ export type EntradaCatalogo = TramiteOpcion & { flujo: string | null };
 export async function entradasCatalogo(href: (slug: string, flujo: string | null) => string): Promise<EntradaCatalogo[]> {
   const tramites = await db.tramiteTipo.findMany({
     where: { activo: true },
-    select: { slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { codigo: true, nombre: true, suitNumero: true } } },
+    select: {
+      slug: true,
+      nombre: true,
+      codigo: true,
+      suitNumeros: true,
+      resumen: true,
+      objeto: true,
+      flujos: { select: { codigo: true, nombre: true, suitNumero: true, resumen: true, esFlujoInicial: true }, orderBy: { orden: "asc" } },
+    },
     orderBy: { nombre: "asc" },
   });
   const opciones: EntradaCatalogo[] = [];
@@ -22,10 +32,31 @@ export async function entradasCatalogo(href: (slug: string, flujo: string | null
     const porFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
     if (porFlujo) {
       for (const f of t.flujos) {
-        opciones.push({ clave: `${t.slug}:${f.codigo}`, href: href(t.slug, f.codigo), nombre: f.nombre, codigo: t.codigo, suits: f.suitNumero ? [f.suitNumero] : [], enSuit, radicable, flujo: f.codigo });
+        opciones.push({
+          clave: `${t.slug}:${f.codigo}`,
+          href: href(t.slug, f.codigo),
+          nombre: f.nombre,
+          codigo: t.codigo,
+          suits: f.suitNumero ? [f.suitNumero] : [],
+          enSuit,
+          radicable,
+          flujo: f.codigo,
+          descripcion: resumenSinPrefijo(f.resumen ?? t.resumen ?? t.objeto),
+        });
       }
     } else {
-      opciones.push({ clave: t.slug, href: href(t.slug, null), nombre: t.nombre, codigo: t.codigo, suits: todosLosSuitNumeros(t), enSuit, radicable, flujo: null });
+      const principal = t.flujos.find((f) => f.esFlujoInicial) ?? t.flujos[0];
+      opciones.push({
+        clave: t.slug,
+        href: href(t.slug, null),
+        nombre: t.nombre,
+        codigo: t.codigo,
+        suits: todosLosSuitNumeros(t),
+        enSuit,
+        radicable,
+        flujo: null,
+        descripcion: resumenSinPrefijo(principal?.resumen ?? t.resumen ?? t.objeto),
+      });
     }
   }
   return opciones.sort((x, y) => x.nombre.localeCompare(y.nombre, "es"));

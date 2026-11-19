@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function SolicitudAmbientalPage() {
   const entradas = await entradasCatalogo((slug, flujo) => (flujo ? `/solicitud-ambiental/${slug}?flujo=${flujo}` : `/solicitud-ambiental/${slug}`));
   // Los instrumentos económicos no son trámites que radique el ciudadano.
-  const tramites = entradas.filter((e) => !e.codigo.startsWith("IE-")).map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable }));
+  const tramites = entradas.filter((e) => !e.codigo.startsWith("IE-")).map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion }));
 
   return (
     <div className="space-y-5">

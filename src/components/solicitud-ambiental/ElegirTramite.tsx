@@ -7,7 +7,7 @@ import { SelectorTramite } from "@/components/vital/SelectorTramite";
 import type { TramiteOpcion } from "@/components/vital/tramite-opciones";
 
 /** Paso 1 de «Solicitud ambiental»: elegir el trámite con el buscador del catálogo. */
-export function ElegirTramite({ tramites }: { tramites: TramiteOpcion[] }) {
+export function ElegirTramite({ tramites }: { tramites: (TramiteOpcion & { descripcion: string })[] }) {
   const [clave, setClave] = useState("");
   const elegido = tramites.find((t) => t.clave === clave && t.radicable) ?? null;
   // Mismo bloque que «Convertir en trámite» de VITAL: selector con buscador agrupado por SUIT y botón al lado.
@@ -40,6 +40,14 @@ export function ElegirTramite({ tramites }: { tramites: TramiteOpcion[] }) {
           </span>
         )}
       </div>
+      {elegido?.descripcion && (
+        <div className="mt-4 border-t border-stone-100 pt-3" aria-live="polite">
+          <p className="text-sm font-semibold text-stone-800">
+            {elegido.nombre} <span className="text-xs font-normal text-stone-500">({elegido.codigo})</span>
+          </p>
+          <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-stone-600">{elegido.descripcion}</p>
+        </div>
+      )}
     </div>
   );
 }
