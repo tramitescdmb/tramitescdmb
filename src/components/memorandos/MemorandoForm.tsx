@@ -14,9 +14,9 @@ import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaS
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 import { DocumentoMemorando } from "@/components/memorandos/DocumentoMemorando";
-import type { PersonaMemorando } from "@/lib/memorandos-formato";
+import { siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
 
-type Dependencia = { id: string; nombre: string };
+type Dependencia = { id: string; nombre: string; codigo?: string };
 type Subserie = { id: string; codigo: string; nombre: string };
 type Serie = { id: string; codigo: string; nombre: string; dependenciaId: string | null; dependenciaNombre?: string | null; subseries: Subserie[] };
 export type PersonaOpcion = { id: string; nombre: string; cargo: string; dependenciaId: string | null; dirige: boolean };
@@ -29,8 +29,9 @@ export function MemorandoForm({
   series,
   personas,
   remitente,
-  dependenciaOrigen,
-  numeroPrevio,
+  dependenciaOrigen: origenInicial,
+  origenLibre = false,
+  anio,
   ciudad,
   fecha,
   plantillas = [],
@@ -42,7 +43,9 @@ export function MemorandoForm({
   personas: PersonaOpcion[];
   remitente: PersonaMemorando & { id: string };
   dependenciaOrigen: Dependencia;
-  numeroPrevio: string;
+  /** Solo el administrador: elige desde qué oficina firma (pruebas). */
+  origenLibre?: boolean;
+  anio: number;
   ciudad: string;
   fecha: string;
   plantillas?: PlantillaOpcion[];
@@ -51,6 +54,9 @@ export function MemorandoForm({
 }) {
   const router = useRouter();
   const { confirmarIdentidad, dialogo } = useConfirmacionFirma("SGDEA");
+  const [dependenciaOrigenId, setDependenciaOrigenId] = useState(origenInicial.id);
+  const dependenciaOrigen = dependencias.find((d) => d.id === dependenciaOrigenId) ?? origenInicial;
+  const numeroPrevio = `${siglaDependencia(dependenciaOrigen.nombre, dependenciaOrigen.codigo)} – ___ /${anio}`;
   const [dependenciaDestinoId, setDependenciaDestinoId] = useState(respondeA?.dependenciaDestinoId ?? "");
   const [usuarioDestinoId, setUsuarioDestinoId] = useState(respondeA?.usuarioDestinoId ?? "");
   const [asunto, setAsunto] = useState(respondeA ? `Respuesta a ${respondeA.radicado} — ${respondeA.asunto}` : "");
@@ -105,6 +111,7 @@ export function MemorandoForm({
           asunto: asunto.trim(),
           contenido: contenido.trim(),
           folios,
+          dependenciaOrigenId: origenLibre ? dependenciaOrigenId : null,
           dependenciaDestinoId,
           usuarioDestinoId,
           proyectoId: proyectoId || null,
@@ -143,6 +150,28 @@ export function MemorandoForm({
         <section className={tarjeta}>
           <EncabezadoPaso numero={1} icono={<ArrowRightLeft className="h-4 w-4" aria-hidden />} titulo="Para" descripcion={`Lo firma y envía ${remitente.nombre} desde ${dependenciaOrigen.nombre}.`} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {origenLibre && (
+              <div className="sm:col-span-2">
+                <Field label="Oficina de origen (DE)" required help="Como administrador puede elegir desde qué oficina firma, para hacer pruebas.">
+                  <select
+                    value={dependenciaOrigenId}
+                    onChange={(e) => {
+                      setDependenciaOrigenId(e.target.value);
+                      setProyectoId("");
+                      setRevisoId("");
+                      if (e.target.value === dependenciaDestinoId) cambiarDependenciaDestino("");
+                    }}
+                    className={inputCls}
+                  >
+                    {dependencias.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            )}
             <Field label="Dependencia de destino" required>
               <select value={dependenciaDestinoId} onChange={(e) => cambiarDependenciaDestino(e.target.value)} className={inputCls}>
                 <option value="">— Seleccione —</option>

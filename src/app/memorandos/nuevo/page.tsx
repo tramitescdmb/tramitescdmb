@@ -11,7 +11,7 @@ import { db } from "@/lib/db";
 import { anioColombia } from "@/lib/fecha";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { contextoMemorandos, memorandoPendienteDe, DENOMINACIONES_QUE_ENVIAN_MEMORANDOS, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
-import { CIUDAD_MEMORANDO, fechaLargaMemorando, siglaDependencia } from "@/lib/memorandos-formato";
+import { CIUDAD_MEMORANDO, fechaLargaMemorando } from "@/lib/memorandos-formato";
 import { MemorandoForm, type PersonaOpcion, type RespuestaA } from "@/components/memorandos/MemorandoForm";
 import { CabeceraTablero } from "@/components/tablero";
 
@@ -22,7 +22,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
   const permisos = await obtenerPermisosUsuario(session.userId);
   const ctx = await contextoMemorandos(session.userId, permisos);
 
-  if (!ctx.firmante || !ctx.dependenciaId) {
+  if (!ctx.firmante || (!ctx.dependenciaId && !ctx.origenLibre)) {
     return (
       <div className="mx-auto max-w-lg rounded-md border border-stone-200 bg-white p-6 text-center">
         <h2 className="text-base font-semibold text-stone-900">Nuevo memorando</h2>
@@ -65,8 +65,15 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
     dependenciaId: u.dependenciaId,
     dirige: DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(u.denominacionEmpleo ?? "") || u.dependenciasResponsable.some((d) => d.id === u.dependenciaId),
   }));
-  const yo = personas.find((p) => p.id === session.userId);
-  const origen = dependencias.find((d) => d.id === ctx.dependenciaId);
+  let yo = personas.find((p) => p.id === session.userId);
+  if (!yo && ctx.origenLibre) {
+    const u = await db.usuario.findUnique({
+      where: { id: session.userId },
+      select: { nombre: true, denominacionEmpleo: true, denominacionComplemento: true, denominacionEncargo: true, sexo: true, rolesContratacion: true },
+    });
+    if (u) yo = { id: session.userId, nombre: u.nombre, cargo: cargoDelFirmante(u, "SGDEA"), dependenciaId: null, dirige: false };
+  }
+  const origen = dependencias.find((d) => d.id === ctx.dependenciaId) ?? (ctx.origenLibre ? dependencias[0] : undefined);
   if (!yo || !origen) redirect("/memorandos");
 
   const respondeA: RespuestaA | null =
@@ -90,7 +97,8 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
         descripcion="Diligencie el formato; la vista previa muestra el memorando tal como saldrá. Se firma electrónicamente al enviarlo."
       />
       <MemorandoForm
-        dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre }))}
+        dependencias={dependencias.map((d) => ({ id: d.id, nombre: d.nombre, codigo: d.codigo }))}
+        origenLibre={Boolean(ctx.origenLibre)}
         series={series.map((s) => ({
           id: s.id,
           codigo: s.codigo,
@@ -101,8 +109,8 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
         }))}
         personas={personas}
         remitente={{ id: yo.id, nombre: yo.nombre, cargo: yo.cargo }}
-        dependenciaOrigen={{ id: origen.id, nombre: origen.nombre }}
-        numeroPrevio={`${siglaDependencia(origen.nombre, origen.codigo)} – ___ /${anioColombia()}`}
+        dependenciaOrigen={{ id: origen.id, nombre: origen.nombre, codigo: origen.codigo }}
+        anio={anioColombia()}
         ciudad={CIUDAD_MEMORANDO}
         fecha={fechaLargaMemorando(new Date())}
         plantillas={plantillas}

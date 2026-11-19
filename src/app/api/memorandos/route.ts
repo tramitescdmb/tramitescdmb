@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const propio = await contextoMemorandos(session.userId, permisos);
-  if (!propio.firmante || !propio.dependenciaId) return NextResponse.json({ error: TEXTO_QUIEN_ENVIA }, { status: 403 });
+  if (!propio.firmante) return NextResponse.json({ error: TEXTO_QUIEN_ENVIA }, { status: 403 });
   const respondeAId = body.respondeAId ? String(body.respondeAId) : null;
   if (respondeAId && !(await memorandoPendienteDe(respondeAId, propio))) {
     return NextResponse.json({ error: "El memorando que intenta responder ya fue respondido o no está dirigido a su oficina." }, { status: 400 });
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
   const asunto = String(body.asunto ?? "").trim();
   const contenido = String(body.contenido ?? "").trim();
   const folios = Math.max(1, Math.floor(Number(body.folios) || 1));
-  const dependenciaOrigenId = propio.dependenciaId;
+  const dependenciaOrigenId = propio.origenLibre && body.dependenciaOrigenId ? String(body.dependenciaOrigenId) : propio.dependenciaId;
+  if (!dependenciaOrigenId) return NextResponse.json({ error: "Indique la oficina desde la que firma el memorando." }, { status: 400 });
   const dependenciaDestinoId = String(body.dependenciaDestinoId ?? "");
   const usuarioDestinoId = body.usuarioDestinoId ? String(body.usuarioDestinoId) : "";
 
@@ -63,11 +64,11 @@ export async function POST(req: NextRequest) {
   if (!usuarioDestinoId) return NextResponse.json({ error: "Indique la persona a quien va dirigido el memorando (PARA)." }, { status: 400 });
 
   const [origen, remitente, destinatario] = await Promise.all([
-    db.dependencia.findUnique({ where: { id: dependenciaOrigenId }, select: { nombre: true, codigo: true } }),
+    db.dependencia.findFirst({ where: { id: dependenciaOrigenId, activo: true }, select: { nombre: true, codigo: true } }),
     db.usuario.findUnique({ where: { id: session.userId }, select: SELECT_PERSONA }),
     db.usuario.findUnique({ where: { id: usuarioDestinoId }, select: SELECT_PERSONA }),
   ]);
-  if (!origen || !remitente) return NextResponse.json({ error: "No se encontró su dependencia." }, { status: 400 });
+  if (!origen || !remitente) return NextResponse.json({ error: "No se encontró la oficina de origen." }, { status: 400 });
   if (!destinatario || !destinatario.activo) return NextResponse.json({ error: "El destinatario elegido no existe o está inactivo." }, { status: 400 });
   if (destinatario.dependenciaId !== dependenciaDestinoId) {
     return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
