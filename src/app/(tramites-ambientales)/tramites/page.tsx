@@ -5,8 +5,7 @@ import { CatalogoTramites, type EntradaCatalogo } from "@/components/CatalogoTra
 import { tiempoEstimadoDias, resumenSinPrefijo } from "@/lib/tramites-formato";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
-import { LibraryBig } from "lucide-react";
-import { CabeceraTablero } from "@/components/tablero";
+import { EncabezadoSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 
 const ESTADOS_ACTIVOS = ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"];
 
@@ -81,13 +80,11 @@ export default async function CatalogoTramitesPage({ searchParams }: { searchPar
   })).filter((s) => s.items.length > 0);
 
   return (
-    <div className="space-y-4">
-      <CabeceraTablero
-        icon={LibraryBig}
-        titulo="Catálogo de trámites"
-        contador={tramites.length}
-        descripcion="Trámites ambientales de la CDMB por recurso o tema. Abra uno para ver el detalle e iniciar un expediente."
-      />
+    <div className="space-y-6">
+      <EncabezadoSolicitud titulo="Catálogo de trámites" antetitulo="CDMB · Trámites ambientales">
+        {tramites.length} trámites ambientales de la CDMB, organizados por recurso natural. Abra uno para ver el detalle, sus requisitos y
+        el procedimiento, o para iniciar un expediente.
+      </EncabezadoSolicitud>
 
       <CatalogoTramites secciones={secciones} busquedaInicial={q?.slice(0, 100) ?? ""} />
     </div>

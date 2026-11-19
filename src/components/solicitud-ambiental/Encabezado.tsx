@@ -2,14 +2,24 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Leaf } from "lucide-react";
 
-/** Encabezado (hero) de las páginas públicas de «Solicitud ambiental». */
-export function EncabezadoSolicitud({ titulo, children, acciones }: { titulo: string; children: ReactNode; acciones?: ReactNode }) {
+/** Encabezado (hero) de «Solicitud ambiental» y del catálogo de trámites. */
+export function EncabezadoSolicitud({
+  titulo,
+  children,
+  acciones,
+  antetitulo = "CDMB · Trámites ambientales en línea",
+}: {
+  titulo: string;
+  children: ReactNode;
+  acciones?: ReactNode;
+  antetitulo?: string;
+}) {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cdmb-800 via-cdmb-700 to-cdmb-500 px-5 py-7 text-white shadow-soft sm:px-8 sm:py-9">
       <Leaf className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 rotate-12 text-white/10 sm:h-52 sm:w-52" aria-hidden />
       <div className="relative">
         <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide">
-          <Leaf className="h-3.5 w-3.5" aria-hidden /> CDMB · Trámites ambientales en línea
+          <Leaf className="h-3.5 w-3.5" aria-hidden /> {antetitulo}
         </p>
         <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{titulo}</h1>
         <div className="mt-2 max-w-xl text-sm leading-relaxed text-white/90">{children}</div>

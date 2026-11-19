@@ -16,7 +16,7 @@ export default async function SolicitudAmbientalPage() {
   // Los instrumentos económicos no son trámites que radique el ciudadano.
   const tramites = entradas
     .filter((e) => !e.codigo.startsWith("IE-"))
-    .map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion }));
+    .map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion, diasEstimados: e.diasEstimados }));
   const radicables = tramites.filter((t) => t.radicable).length;
 
   return (
