@@ -101,7 +101,7 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
     nombre: "Memorandos",
     acciones: ["LEER", "CREAR"],
     etiquetas: { CREAR: "Firmar y enviar" },
-    porCargo: "Ya no habilita el envío: los memorandos están en su propio módulo y solo los envían quienes tienen cargo de Director(a) General, Secretario(a) General, Subdirector(a) o Jefe(a) de Oficina.",
+    porCargo: "Ya no habilita el envío: los memorandos están en su propio módulo y solo los envían quienes tienen cargo de Director(a) General, Secretario(a) General, Subdirector(a), Jefe(a) de Oficina o Coordinador(a) de Grupo (y el administrador del sistema).",
   },
   {
     clave: "sgdea.expedientes",

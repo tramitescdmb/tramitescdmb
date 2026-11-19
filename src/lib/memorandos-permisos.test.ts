@@ -10,15 +10,16 @@ function permisos(extra: Record<string, unknown> = {}) {
 }
 
 describe("quién envía memorandos", () => {
-  it("solo Director(a) General, Secretario(a) General, Subdirector(a) y Jefe(a) de Oficina", () => {
-    for (const d of ["DIRECTOR_GENERAL", "SECRETARIO_GENERAL", "SUBDIRECTOR", "JEFE_OFICINA"]) expect(puedeEnviarMemorando(permisos(), d, true)).toBe(true);
+  it("solo Director(a) General, Secretario(a) General, Subdirector(a), Jefe(a) de Oficina y Coordinador(a) de Grupo", () => {
+    for (const d of ["DIRECTOR_GENERAL", "SECRETARIO_GENERAL", "SUBDIRECTOR", "JEFE_OFICINA", "COORDINADOR_GRUPO"]) expect(puedeEnviarMemorando(permisos(), d, true)).toBe(true);
     for (const d of ["SECRETARIO", "ASESOR_DIRECCION", "REVISOR_FISCAL", "PROFESIONAL_ESPECIALIZADO", "CONTRATISTA", null]) {
       expect(puedeEnviarMemorando(permisos(), d, true)).toBe(false);
     }
   });
 
-  it("ni el administrador ni un rol del SGDEA lo habilitan sin el cargo", () => {
-    expect(puedeEnviarMemorando(permisos({ esAdmin: true }), "PROFESIONAL_UNIVERSITARIO", true)).toBe(false);
+  it("el administrador puede enviar (pruebas); un rol del SGDEA no lo habilita sin el cargo", () => {
+    expect(puedeEnviarMemorando(permisos({ esAdmin: true }), "PROFESIONAL_UNIVERSITARIO", true)).toBe(true);
+    expect(puedeEnviarMemorando(permisos({ esAdmin: true, dependenciaId: null }), null, false)).toBe(true);
     expect(puedeEnviarMemorando(permisos({ correspondencia: "OPERADOR_VENTANILLA" }), null, true)).toBe(false);
   });
 

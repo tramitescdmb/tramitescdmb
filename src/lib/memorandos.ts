@@ -19,8 +19,8 @@ export const VISTAS_MEMORANDOS: { id: VistaMemorandos; label: string }[] = [
 ];
 
 /**
- * Únicos cargos que envían (firman) memorandos: Director(a) General, Secretario(a) General, Subdirector(a)
- * y Jefe(a) de Oficina.
+ * Cargos que envían (firman) memorandos: Director(a) General, Secretario(a) General, Subdirector(a),
+ * Jefe(a) de Oficina y Coordinador(a) de Grupo. El administrador del sistema también puede enviarlos (pruebas).
  * Se toma de la denominación del empleo registrada en la ficha del usuario (la misma que sale en la firma).
  */
 export const DENOMINACIONES_QUE_ENVIAN_MEMORANDOS: ReadonlySet<string> = new Set<DenominacionEmpleoClave>([
@@ -28,9 +28,10 @@ export const DENOMINACIONES_QUE_ENVIAN_MEMORANDOS: ReadonlySet<string> = new Set
   "SECRETARIO_GENERAL",
   "SUBDIRECTOR",
   "JEFE_OFICINA",
+  "COORDINADOR_GRUPO",
 ]);
 
-export const TEXTO_QUIEN_ENVIA = "Los memorandos solo los envían la Dirección General, la Secretaría General, las subdirecciones y las jefaturas de oficina, según el cargo registrado en la ficha del usuario.";
+export const TEXTO_QUIEN_ENVIA = "Los memorandos solo los envían la Dirección General, la Secretaría General, las subdirecciones, las jefaturas de oficina y las coordinaciones de grupo, según el cargo registrado en la ficha del usuario.";
 
 /** Entra al módulo: administradores siempre; los demás, si el módulo está visible y tienen dependencia asignada. */
 export function accedeMemorandos(permisos: PermisosUsuario, moduloVisible: boolean): boolean {
@@ -39,10 +40,12 @@ export function accedeMemorandos(permisos: PermisosUsuario, moduloVisible: boole
 }
 
 export function puedeEnviarMemorando(permisos: PermisosUsuario, denominacionEmpleo: string | null | undefined, moduloVisible: boolean): boolean {
+  if (permisos.esAdmin) return true;
   return accedeMemorandos(permisos, moduloVisible) && Boolean(permisos.dependenciaId) && DENOMINACIONES_QUE_ENVIAN_MEMORANDOS.has(denominacionEmpleo ?? "");
 }
 
-export type ContextoMemorandos = { id: string; dependenciaId: string | null; firmante: boolean; acceso: boolean; archivo: boolean };
+/** origenLibre: el administrador elige desde qué oficina firma (para pruebas); los demás, siempre desde la suya. */
+export type ContextoMemorandos = { id: string; dependenciaId: string | null; firmante: boolean; acceso: boolean; archivo: boolean; origenLibre?: boolean };
 
 export async function contextoMemorandos(usuarioId: string, permisos: PermisosUsuario): Promise<ContextoMemorandos> {
   const [u, config] = await Promise.all([
@@ -56,6 +59,7 @@ export async function contextoMemorandos(usuarioId: string, permisos: PermisosUs
     firmante: puedeEnviarMemorando(permisos, u?.denominacionEmpleo, visible),
     acceso: accedeMemorandos(permisos, visible),
     archivo: permisos.esAdmin || puedeGestionarArchivo(permisos),
+    origenLibre: permisos.esAdmin,
   };
 }
 
