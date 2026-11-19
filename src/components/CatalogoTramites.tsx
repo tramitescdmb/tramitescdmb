@@ -2,7 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LayoutGrid, Clock, Landmark } from "lucide-react";
+import { LayoutGrid, Search } from "lucide-react";
+import { CLASE_TARJETA_TRAMITE, CuerpoTarjetaTramite } from "@/components/TarjetaTramite";
 import type { Categoria } from "@/lib/tramite-categoria";
 
 type Conteo = { activos: number; aprobados: number; negados: number };
@@ -60,72 +61,60 @@ export function CatalogoTramites({
 
   return (
     <div className="space-y-6">
-      <div className="relative max-w-md">
-        <svg viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden>
-          <circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M18 18l-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <input
-          type="search"
-          value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value);
-            if (e.target.value.trim()) setFiltro(null);
-          }}
-          placeholder="Buscar por nombre, código o ficha SUIT…"
-          className="w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-stone-800 placeholder:text-stone-400 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
-        />
-      </div>
-
-      <nav
-        className="flex flex-wrap gap-2"
-        aria-label="Filtrar por categoría"
-      >
-        <button
-          type="button"
-          onClick={() => setFiltro(null)}
-          aria-pressed={filtro === null}
-          className={`inline-flex items-center gap-2 rounded-full py-1.5 pl-2 pr-3.5 text-left transition active:scale-[0.97] ${
-            filtro === null
-              ? "border-2 border-graphite-800 bg-graphite-50"
-              : "border border-stone-200 bg-white hover:border-stone-300 hover:shadow-soft"
-          }`}
-        >
-          <span
-            className={`flex h-7 w-7 flex-none items-center justify-center rounded-full ${
-              filtro === null ? "bg-graphite-800 text-white" : "bg-stone-100 text-stone-500"
-            }`}
-            aria-hidden
-          >
-            <LayoutGrid className="h-[17px] w-[17px]" />
+      <section aria-label="Buscar trámite" className="rounded-3xl border border-stone-200 bg-white p-5 shadow-soft sm:p-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-cdmb-50 text-cdmb-700" aria-hidden>
+            <Search className="h-4 w-4" />
           </span>
-          <span className={`text-sm font-medium ${filtro === null ? "text-graphite-900" : "text-stone-700"}`}>
-            Todas <span className={filtro === null ? "font-normal text-graphite-500" : "font-normal text-stone-400"}>({totalTramites})</span>
-          </span>
-        </button>
+          <div>
+            <h2 className="text-base font-semibold text-stone-900">¿Qué trámite busca?</h2>
+            <p className="text-xs text-stone-500">Búsquelo por nombre, código o ficha SUIT, o explórelo por recurso natural.</p>
+          </div>
+        </div>
+        <div className="relative mt-4 max-w-xl">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              if (e.target.value.trim()) setFiltro(null);
+            }}
+            placeholder="Buscar por nombre, código o ficha SUIT…"
+            aria-label="Buscar trámite"
+            className="w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-stone-800 placeholder:text-stone-400 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
+          />
+        </div>
+      </section>
 
-        {secciones.map(({ cat, items }) => {
-          const activo = filtro === cat.id;
-          return (
-            <button
+      <nav aria-label="Filtrar por recurso natural" className="space-y-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-700">
+          <Search className="h-4 w-4 text-cdmb-600" aria-hidden />
+          Explore por recurso natural
+        </h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+          <BotonCategoria
+            activo={filtro === null}
+            onClick={() => setFiltro(null)}
+            clasesIcono="bg-graphite-800 text-white"
+            borde="border-graphite-800"
+            icono={<LayoutGrid className="h-5 w-5" />}
+            etiqueta="Todas"
+            cantidad={totalTramites}
+          />
+          {secciones.map(({ cat, items }) => (
+            <BotonCategoria
               key={cat.id}
-              type="button"
-              onClick={() => setFiltro(activo ? null : cat.id)}
-              aria-pressed={activo}
-              title={cat.etiqueta}
-              className={`inline-flex items-center gap-2 rounded-full py-1.5 pl-2 pr-3.5 text-left transition active:scale-[0.97] ${
-                activo ? `border-2 ${cat.clases.borde} ${cat.clases.badge}` : "border border-stone-200 bg-white hover:border-stone-300 hover:shadow-soft"
-              }`}
-            >
-              <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full ${activo ? cat.clases.icono : cat.clases.badge}`} aria-hidden>
-                {cat.iconoChico}
-              </span>
-              <span className={`text-sm font-medium ${activo ? "" : "text-stone-700"}`}>
-                {cat.etiqueta} <span className={`font-normal ${activo ? "opacity-70" : "text-stone-400"}`}>({items.length})</span>
-              </span>
-            </button>
-          );
-        })}
+              activo={filtro === cat.id}
+              onClick={() => setFiltro(filtro === cat.id ? null : cat.id)}
+              clasesIcono={cat.clases.icono}
+              borde={cat.clases.borde}
+              icono={cat.iconoGrande}
+              etiqueta={cat.etiqueta}
+              cantidad={items.length}
+            />
+          ))}
+        </div>
       </nav>
 
       {buscando && (
@@ -178,65 +167,17 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
   const { href, codigo, version, nombre, suits, descripcion, diasEstimados, conteo } = entrada;
 
   return (
-    <Link prefetch={false}
-      href={href}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 pt-5 shadow-soft transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-soft-lg active:translate-y-0 active:scale-[0.98] active:shadow-soft"
-    >
-      <span className={`absolute inset-x-0 top-0 h-1.5 ${categoria.clases.barra}`} aria-hidden />
-
-      <div className="mb-3 flex items-center justify-between">
-        <span className="rounded-md bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500">
-          {codigo} · v{version}
-        </span>
-        {diasEstimados !== null &&
-          (diasEstimados > 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-500">
-              <Clock className="h-3 w-3" aria-hidden />
-              ~{diasEstimados} días
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 text-xs text-stone-400"
-              title="El procedimiento oficial no especifica tiempos por actividad"
-            >
-              <Clock className="h-3 w-3" aria-hidden />
-              sin tiempo especificado
-            </span>
-          ))}
-      </div>
-
-      <div className="mb-2 flex items-start gap-3">
-        <span
-          className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl ${categoria.clases.icono}`}
-          title={categoria.etiqueta}
-          aria-hidden
-        >
-          {categoria.iconoGrande}
-        </span>
-        <div className="min-w-0">
-          <span className={`inline-block rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${categoria.clases.badge}`}>
-            {categoria.etiqueta}
-          </span>
-          <h3 className="mt-1 font-semibold leading-snug text-stone-900 transition group-hover:text-cdmb-700">{nombre}</h3>
-        </div>
-      </div>
-
-      {suits.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {suits.map((numero) => (
-            <span
-              key={numero}
-              className="inline-flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500"
-              title={`Inscrito en el SUIT (Sistema Único de Información de Trámites), ficha ${numero}. El enlace a la ficha oficial está disponible dentro del trámite.`}
-            >
-              <Landmark className="h-3 w-3" aria-hidden />
-              SUIT {numero}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <p className="flex-1 text-sm text-stone-500">{descripcion}</p>
+    <Link prefetch={false} href={href} className={CLASE_TARJETA_TRAMITE}>
+      <CuerpoTarjetaTramite
+        clases={categoria.clases}
+        etiqueta={categoria.etiqueta}
+        icono={categoria.iconoGrande}
+        nombre={nombre}
+        suits={suits}
+        descripcion={descripcion}
+        diasEstimados={diasEstimados}
+        codigo={`${codigo} · v${version}`}
+      />
 
       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-stone-100 pt-3">
         {!conteo && <span className="text-xs text-stone-400">Sin expedientes todavía</span>}
@@ -245,6 +186,45 @@ function TarjetaTramite({ entrada, categoria }: { entrada: EntradaCatalogo; cate
         {conteo && conteo.negados > 0 && <CountPill color="red" value={conteo.negados} label="negado" />}
       </div>
     </Link>
+  );
+}
+
+function BotonCategoria({
+  activo,
+  onClick,
+  clasesIcono,
+  borde,
+  icono,
+  etiqueta,
+  cantidad,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  clasesIcono: string;
+  borde: string;
+  icono: ReactNode;
+  etiqueta: string;
+  cantidad: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`group flex items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-cdmb-400 ${
+        activo ? `border-2 ${borde}` : "border border-stone-200"
+      }`}
+    >
+      <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${clasesIcono}`} aria-hidden>
+        {icono}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold leading-tight text-stone-900">{etiqueta}</span>
+        <span className="text-xs text-stone-500">
+          {cantidad} {cantidad === 1 ? "trámite" : "trámites"}
+        </span>
+      </span>
+    </button>
   );
 }
 

@@ -6,8 +6,9 @@ import { ArrowRight, Check, Search } from "lucide-react";
 import { SelectorTramite } from "@/components/vital/SelectorTramite";
 import type { TramiteOpcion } from "@/components/vital/tramite-opciones";
 import { categoriaTramite, CATEGORIAS_ORDEN } from "@/lib/tramite-categoria";
+import { CLASE_TARJETA_TRAMITE, CuerpoTarjetaTramite } from "@/components/TarjetaTramite";
 
-type Tramite = TramiteOpcion & { descripcion: string };
+type Tramite = TramiteOpcion & { descripcion: string; diasEstimados: number | null };
 
 /**
  * Paso 1 de «Solicitud ambiental»: el mismo selector con buscador de «Convertir en trámite» de VITAL
@@ -133,7 +134,7 @@ export function ElegirTramite({ tramites }: { tramites: Tramite[] }) {
         </div>
 
         {grupoAbierto && (
-          <ul id="tramites-categoria" className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
+          <ul id="tramites-categoria" className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 xl:grid-cols-3">
             {grupoAbierto.lista.map((t) => {
               const activo = t.clave === clave;
               return (
@@ -141,17 +142,29 @@ export function ElegirTramite({ tramites }: { tramites: Tramite[] }) {
                   <button
                     type="button"
                     onClick={() => elegir(t)}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-cdmb-50 focus:bg-cdmb-50 focus:outline-none ${activo ? "bg-cdmb-50" : ""}`}
+                    aria-pressed={activo}
+                    className={`${CLASE_TARJETA_TRAMITE} w-full ${activo ? "ring-2 ring-cdmb-500" : ""}`}
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-stone-900">{t.nombre}</span>
-                      {t.descripcion && <span className="mt-0.5 line-clamp-2 block text-xs text-stone-500">{t.descripcion}</span>}
+                    <CuerpoTarjetaTramite
+                      clases={grupoAbierto.c.clases}
+                      etiqueta={grupoAbierto.c.etiqueta}
+                      icono={<grupoAbierto.c.Icono className="h-6 w-6" />}
+                      nombre={t.nombre}
+                      suits={t.suits}
+                      descripcion={t.descripcion}
+                      diasEstimados={t.diasEstimados}
+                    />
+                    <span className="mt-3 flex items-center justify-end border-t border-stone-100 pt-3 text-sm font-semibold">
+                      {activo ? (
+                        <span className="inline-flex items-center gap-1 text-cdmb-700">
+                          <Check className="h-4 w-4" aria-hidden /> Elegido
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-acento-600 transition group-hover:gap-1.5">
+                          Elegir este trámite <ArrowRight className="h-4 w-4" aria-hidden />
+                        </span>
+                      )}
                     </span>
-                    {activo ? (
-                      <Check className="mt-0.5 h-4 w-4 flex-none text-cdmb-600" aria-label="Elegido" />
-                    ) : (
-                      <span className="mt-0.5 flex-none text-xs font-medium text-cdmb-700">Elegir</span>
-                    )}
                   </button>
                 </li>
               );
