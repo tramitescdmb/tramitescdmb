@@ -26,7 +26,7 @@ export function coincideBusqueda(t: Pick<TramiteOpcion, "nombre" | "codigo">, bu
 /**
  * Los mismos grupos y conteos del catálogo (sus mismas entradas): primero los inscritos en el SUIT y luego los demás,
  * en orden alfabético. Los instrumentos económicos (IE-) no se muestran. Los trámites sin
- * procedimiento en SIC aparecen, pero no se pueden elegir: se gestionan en VITAL.
+ * procedimiento en SIC aparecen, pero no se pueden elegir (sin procedimiento parametrizado en SIC).
  */
 function gruposTramites(tramites: TramiteOpcion[], busqueda = "", claveElegida = "") {
   const lista = tramites.filter((t) => !t.codigo.startsWith("IE-") && (t.clave === claveElegida || coincideBusqueda(t, busqueda)));
@@ -183,7 +183,7 @@ export function GestionSolicitudVital({
                   {g.lista.map((t) => (
                     <option key={t.clave} value={t.clave} disabled={!t.radicable} title={t.nombre}>
                       {acortar(t.nombre)} ({t.codigo}){t.clave === claveSugerida ? " — sugerido" : ""}
-                      {!t.radicable ? " — se gestiona en VITAL" : ""}
+                      {!t.radicable ? " — sin procedimiento parametrizado en SIC" : ""}
                     </option>
                   ))}
                 </optgroup>

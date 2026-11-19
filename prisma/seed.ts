@@ -54,11 +54,20 @@ type TramiteJson = {
   flujos: FlujoJson[];
 };
 
+/**
+ * Con códigos en la línea de comandos (`npm run db:seed -- SUIT-21916`) solo se cargan esos
+ * trámites y no se toca nada más (cargos, dependencias, administrador).
+ */
+const SOLO_CODIGOS = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+
 async function seedTramites() {
   const dataDir = join(__dirname, "..", "data", "tramites");
   const files = readdirSync(dataDir).filter(
-    (f) => f.endsWith(".json") && !f.startsWith("_")
+    (f) => f.endsWith(".json") && !f.startsWith("_") && (SOLO_CODIGOS.length === 0 || SOLO_CODIGOS.includes(f.replace(/\.json$/, "")))
   );
+  if (SOLO_CODIGOS.length > 0 && files.length !== SOLO_CODIGOS.length) {
+    throw new Error(`No se encontraron todos los trámites pedidos (${SOLO_CODIGOS.join(", ")}) en ${dataDir}`);
+  }
 
   console.log(`Encontrados ${files.length} archivos de trámites en ${dataDir}`);
 
@@ -262,6 +271,7 @@ async function seedCorrespondencia() {
 
 async function main() {
   await seedTramites();
+  if (SOLO_CODIGOS.length > 0) return;
   await seedCargos();
   await seedConfiguracionSitio();
   await seedCorrespondencia();
