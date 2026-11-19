@@ -1,4 +1,4 @@
-import { descargar, eliminar, existe, firmarSubida, subir, urlFirmada } from "@/lib/almacen";
+import { descargar, eliminar, existe, firmarSubida, inspeccionar, subir, urlFirmada } from "@/lib/almacen";
 import { CARPETA_SUBIDAS, nombreArchivo, variante } from "@/lib/carpetas-almacen";
 
 const BUCKET = "documentos";
@@ -73,4 +73,9 @@ export async function deleteDocumento(path: string) {
 
 export async function descargarDocumento(path: string): Promise<Buffer> {
   return descargar(BUCKET, path);
+}
+
+/** Tamaño real y primeros bytes de un documento subido; null si no existe. */
+export async function inspeccionarDocumento(path: string) {
+  return inspeccionar(BUCKET, path);
 }

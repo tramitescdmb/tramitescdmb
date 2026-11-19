@@ -21,6 +21,7 @@ const ICONO: Record<TipoNotificacion, { Icono: typeof Inbox; clase: string }> = 
   CONCEPTO_DEVUELTO: { Icono: RotateCcw, clase: "bg-amber-50 text-amber-700" },
   CONCEPTO_POR_ELABORAR: { Icono: ClipboardCheck, clase: "bg-violet-50 text-violet-700" },
   VITAL_NUEVA: { Icono: Inbox, clase: "bg-amber-50 text-amber-700" },
+  SOLICITUD_AMBIENTAL_NUEVA: { Icono: Inbox, clase: "bg-emerald-50 text-emerald-700" },
 };
 
 export default async function BuzonVisitasPage() {

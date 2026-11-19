@@ -144,6 +144,23 @@ export async function existe(bucket: string, ruta: string): Promise<boolean> {
   }
 }
 
+/** Tamaño real y primeros bytes de un archivo guardado (para comprobar que su contenido corresponde a su extensión). */
+export async function inspeccionar(bucket: string, ruta: string, bytes = 16): Promise<{ tamano: number; cabecera: Buffer } | null> {
+  let fh: Awaited<ReturnType<typeof fs.open>> | null = null;
+  try {
+    fh = await fs.open(/*turbopackIgnore: true*/ rutaFisica(bucket, ruta), "r");
+    const st = await fh.stat();
+    if (!st.isFile()) return null;
+    const cabecera = Buffer.alloc(Math.min(bytes, st.size));
+    if (cabecera.length > 0) await fh.read(cabecera, 0, cabecera.length, 0);
+    return { tamano: st.size, cabecera };
+  } catch {
+    return null;
+  } finally {
+    await fh?.close().catch(() => {});
+  }
+}
+
 export async function eliminar(bucket: string, rutas: string[]) {
   if (rutas.length === 0) return;
   for (const r of rutas) await fs.rm(rutaFisica(bucket, r), { force: true });
