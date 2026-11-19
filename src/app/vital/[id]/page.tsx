@@ -22,8 +22,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeConsultarVital, puedeConvertirSolicitudVital } from "@/lib/permisos";
 import { formatearFechaLarga, formatearFechaHora } from "@/lib/fecha";
 import { BandaTablero } from "@/components/tablero";
-import { GestionSolicitudVital } from "@/components/vital/GestionSolicitudVital";
-import { codigoTramiteSugerido } from "@/lib/vital-conversion";
+import { GestionSolicitudVital, type TramiteOpcion } from "@/components/vital/GestionSolicitudVital";
+import { codigoFlujoSugerido, codigoTramiteSugerido, prellenadoDesdeVital } from "@/lib/vital-conversion";
 import { todosLosSuitNumeros } from "@/lib/tramite-categoria";
 import { ArrowRightCircle } from "lucide-react";
 
@@ -351,21 +351,34 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
   const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
 
-  // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA, entre los trámites con flujo definido.
-  const tramitesRadicables =
-    permisos && puedeConvertirSolicitudVital(permisos)
-      ? (
-          // Los mismos trámites del catálogo (activos) y la misma regla de SUIT que su filtro
-          // «Sin registro en el SUIT». Los que no tienen procedimiento en SIC salen sin poder elegirse.
-          await db.tramiteTipo.findMany({
-            where: { activo: true },
-            select: { id: true, slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { suitNumero: true } } },
-            orderBy: { nombre: "asc" },
-          })
-        ).map((t) => ({ ...t, enSuit: todosLosSuitNumeros(t).length > 0, radicable: t.flujos.length > 0 }))
-      : [];
-  const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
-  const slugSugerido = tramitesRadicables.find((t) => t.radicable && t.codigo === codigoSugerido)?.slug ?? null;
+  // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA. Mismas entradas, grupos y
+  // conteos que el catálogo de trámites (un trámite con varios procedimientos inscritos cada uno en
+  // el SUIT sale una vez por procedimiento). Los que no tienen procedimiento en SIC no se pueden elegir.
+  const opcionesTramite: TramiteOpcion[] = [];
+  let claveSugerida: string | null = null;
+  if (permisos && puedeConvertirSolicitudVital(permisos)) {
+    const tramites = await db.tramiteTipo.findMany({
+      where: { activo: true },
+      select: { slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { codigo: true, nombre: true, suitNumero: true } } },
+      orderBy: { nombre: "asc" },
+    });
+    const codigoSugerido = codigoTramiteSugerido(solicitud.idTramiteVital);
+    const flujoSugerido = codigoFlujoSugerido(solicitud.idTramiteVital, prellenadoDesdeVital(solicitud).claseSolicitud);
+    for (const t of tramites) {
+      const enSuit = todosLosSuitNumeros(t).length > 0;
+      const porFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
+      const entradas = porFlujo
+        ? t.flujos.map((f) => ({ clave: `${t.slug}:${f.codigo}`, href: `/tramites/${t.slug}/nuevo?flujo=${f.codigo}`, nombre: f.nombre, flujo: f.codigo as string | null }))
+        : [{ clave: t.slug, href: `/tramites/${t.slug}/nuevo`, nombre: t.nombre, flujo: null as string | null }];
+      for (const e of entradas) {
+        opcionesTramite.push({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: t.codigo, enSuit, radicable: t.flujos.length > 0 });
+      }
+      if (t.flujos.length > 0 && t.codigo === codigoSugerido) {
+        claveSugerida = (entradas.find((e) => e.flujo && e.flujo === flujoSugerido) ?? entradas[0]).clave;
+      }
+    }
+    opcionesTramite.sort((x, y) => x.nombre.localeCompare(y.nombre, "es"));
+  }
   const gestorNombre = solicitud.gestionadaPorId
     ? (await db.usuario.findUnique({ where: { id: solicitud.gestionadaPorId }, select: { nombre: true } }))?.nombre ?? null
     : null;
@@ -429,8 +442,8 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
           expediente={solicitud.expediente}
           motivoDescarte={solicitud.motivoDescarte}
           gestionadaTexto={gestionadaTexto}
-          tramites={tramitesRadicables.map(({ slug, nombre, codigo, enSuit, radicable }) => ({ slug, nombre, codigo, enSuit, radicable }))}
-          slugSugerido={slugSugerido}
+          tramites={opcionesTramite}
+          claveSugerida={claveSugerida}
         />
       </Tarjeta>
 
