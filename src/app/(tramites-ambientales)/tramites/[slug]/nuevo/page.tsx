@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { nombreFlujo } from "@/lib/flujo-nombre";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { prellenadoDesdeVital } from "@/lib/vital-conversion";
+import { codigoFlujoSugerido, prellenadoDesdeVital } from "@/lib/vital-conversion";
 import { nombreTramiteVital } from "@/lib/vital";
 import { SectionHelp } from "@/components/Field";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
@@ -56,7 +57,10 @@ export default async function NuevoExpedientePage({
       }
     : undefined;
 
-  const nombreMostrado = flujoEnfocado?.nombre ?? tramite.nombre;
+  const codigoFlujoVital = desdeVital && !flujoEnfocado ? codigoFlujoSugerido(solicitudVital!.idTramiteVital, desdeVital.datos.claseSolicitud) : null;
+  const flujoPreseleccionado = (codigoFlujoVital && flujosParaElegir.find((f) => f.codigo === codigoFlujoVital)) || flujoInicial;
+
+  const nombreMostrado = flujoEnfocado ? nombreFlujo(flujoEnfocado.nombre) : tramite.nombre;
   const hrefVolver = flujoEnfocado ? `/tramites/${tramite.slug}?flujo=${flujoEnfocado.codigo}` : `/tramites/${tramite.slug}`;
 
   return (
@@ -86,8 +90,8 @@ export default async function NuevoExpedientePage({
           notas: d.notas,
           aplicaA: d.aplicaA,
         }))}
-        flujos={flujosParaElegir.map((f) => ({ id: f.id, nombre: f.nombre }))}
-        flujoInicialId={flujoInicial.id}
+        flujos={flujosParaElegir.map((f) => ({ id: f.id, nombre: nombreFlujo(f.nombre) }))}
+        flujoInicialId={flujoPreseleccionado.id}
         mostrarDatosPredio={aplicaDatosPredio(tramite.codigo)}
         desdeVital={desdeVital}
       />
