@@ -368,10 +368,10 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
       const enSuit = todosLosSuitNumeros(t).length > 0;
       const porFlujo = t.flujos.length >= 2 && t.flujos.every((f) => f.suitNumero);
       const entradas = porFlujo
-        ? t.flujos.map((f) => ({ clave: `${t.slug}:${f.codigo}`, href: `/tramites/${t.slug}/nuevo?flujo=${f.codigo}`, nombre: f.nombre, flujo: f.codigo as string | null }))
-        : [{ clave: t.slug, href: `/tramites/${t.slug}/nuevo`, nombre: t.nombre, flujo: null as string | null }];
+        ? t.flujos.map((f) => ({ clave: `${t.slug}:${f.codigo}`, href: `/tramites/${t.slug}/nuevo?flujo=${f.codigo}`, nombre: f.nombre, flujo: f.codigo as string | null, suits: f.suitNumero ? [f.suitNumero] : [] }))
+        : [{ clave: t.slug, href: `/tramites/${t.slug}/nuevo`, nombre: t.nombre, flujo: null as string | null, suits: todosLosSuitNumeros(t) }];
       for (const e of entradas) {
-        opcionesTramite.push({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: t.codigo, enSuit, radicable: t.flujos.length > 0 });
+        opcionesTramite.push({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: t.codigo, suits: e.suits, enSuit, radicable: t.flujos.length > 0 });
       }
       if (t.flujos.length > 0 && t.codigo === codigoSugerido) {
         claveSugerida = (entradas.find((e) => e.flujo && e.flujo === flujoSugerido) ?? entradas[0]).clave;

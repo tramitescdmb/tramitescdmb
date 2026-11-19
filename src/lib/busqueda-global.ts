@@ -3,12 +3,25 @@ import {
   puedeAccederContratacion,
   puedeAccederCorrespondencia,
   puedeAccederSolicitantes,
+  puedeAccederTramite,
   type PermisosUsuario,
 } from "@/lib/permisos";
 import { construirWhereExpedientes } from "@/lib/expedientes";
 import { construirWhereExpedienteContractual } from "@/lib/contratacion";
 import { construirWhereCorrespondencia } from "@/lib/correspondencia-data";
 import { filtroNivelAccesoComunicacion } from "@/lib/correspondencia-acceso";
+import { todosLosSuitNumeros } from "@/lib/tramite-categoria";
+
+/** Minúsculas y sin tildes: «arbol» encuentra «Árboles». */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+
+/** Cada palabra buscada aparece en cualquier parte del texto (no solo al inicio). */
+export function coincideTexto(texto: string, consulta: string): boolean {
+  const t = normalizar(texto);
+  return normalizar(consulta)
+    .split(/\s+/)
+    .every((palabra) => t.includes(palabra));
+}
 
 export type ResultadoBusqueda = { href: string; titulo: string; detalle?: string };
 export type GrupoBusqueda = { modulo: string; titulo: string; verTodos: string; resultados: ResultadoBusqueda[] };
@@ -21,6 +34,34 @@ export async function buscarGlobal(consulta: string, permisos: PermisosUsuario, 
   const qs = encodeURIComponent(q);
 
   const tareas: Promise<GrupoBusqueda | null>[] = [];
+
+  if (permisos.modulos.has("TRAMITES")) {
+    // Tipos de trámite del catálogo (son pocos): por nombre, código o número SUIT, en cualquier parte.
+    tareas.push(
+      db.tramiteTipo
+        .findMany({
+          where: { activo: true },
+          orderBy: { nombre: "asc" },
+          select: { id: true, slug: true, nombre: true, codigo: true, suitNumeros: true, flujos: { select: { suitNumero: true } } },
+        })
+        .then((tramites) => {
+          const encontrados = tramites
+            .filter((t) => puedeAccederTramite(permisos, t.id))
+            .map((t) => ({ ...t, suits: todosLosSuitNumeros(t) }))
+            .filter((t) => coincideTexto(`${t.nombre} ${t.codigo} ${t.suits.join(" ")}`, q));
+          return {
+            modulo: "TRAMITES",
+            titulo: "Trámites del catálogo",
+            verTodos: `/tramites?q=${qs}`,
+            resultados: encontrados.slice(0, POR_GRUPO).map((t) => ({
+              href: `/tramites/${t.slug}`,
+              titulo: t.nombre,
+              detalle: [t.codigo, ...t.suits.map((n) => `SUIT ${n}`)].join(" · "),
+            })),
+          };
+        })
+    );
+  }
 
   if (permisos.modulos.has("TRAMITES")) {
     tareas.push(
