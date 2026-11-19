@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { nombreFlujo } from "@/lib/flujo-nombre";
 import { notFound } from "next/navigation";
 import { AlertTriangle, FileText, Landmark, Lock, ExternalLink, User, Clock } from "lucide-react";
 import { db } from "@/lib/db";
@@ -67,7 +68,7 @@ export default async function TramiteDetallePage({
   const flujoPrincipal = flujoEnfocado ?? tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0];
   const tiempo = flujoPrincipal ? tiempoEstimadoDias(flujoPrincipal.pasos) : null;
   const suits = flujoEnfocado ? (flujoEnfocado.suitNumero ? [flujoEnfocado.suitNumero] : []) : todosLosSuitNumeros(tramite);
-  const tituloMostrado = flujoEnfocado?.nombre ?? tramite.nombre;
+  const tituloMostrado = flujoEnfocado ? nombreFlujo(flujoEnfocado.nombre) : tramite.nombre;
   const resumenMostrado = flujoEnfocado?.resumen ?? tramite.resumen ?? tramite.objeto;
   const categoria = categoriaTramite(tramite.nombre, tramite.codigo, todosLosSuitNumeros(tramite));
   const cargos = cargosQueIntervienen(flujosAMostrar);
@@ -261,7 +262,7 @@ export default async function TramiteDetallePage({
                   {flujosAMostrar.map((flujo) => (
                     <span key={flujo.id} className="inline-flex items-center gap-1.5">
                       <span className="inline-block rounded-md bg-white px-2 py-1 font-medium text-stone-600 ring-1 ring-stone-200">
-                        {flujo.nombre}
+                        {nombreFlujo(flujo.nombre)}
                       </span>
                       {flujo.suitNumero && (
                         <a
@@ -286,7 +287,7 @@ export default async function TramiteDetallePage({
                   {flujosAMostrar.length > 1 && (
                     <h3 className="mb-2 flex flex-wrap items-center gap-2">
                       <span className="inline-block rounded-md bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">
-                        {flujo.nombre}
+                        {nombreFlujo(flujo.nombre)}
                         {flujo.esFlujoInicial && " (inicia el expediente)"}
                       </span>
                       {flujo.suitNumero && (

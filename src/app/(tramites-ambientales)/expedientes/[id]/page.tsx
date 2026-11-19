@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { nombreFlujo } from "@/lib/flujo-nombre";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck, Workflow } from "lucide-react";
@@ -400,7 +401,7 @@ export default async function ExpedienteDetallePage({
           <Link href={`/tramites/${expediente.tramiteTipo.slug}`} className="hover:text-cdmb-700">
             {expediente.tramiteTipo.nombre}
           </Link>{" "}
-          · Flujo: {expediente.flujo.nombre}
+          · {nombreFlujo(expediente.flujo.nombre)}
         </p>
         {solicitudVital && (
           <details className="mt-2 text-sm">

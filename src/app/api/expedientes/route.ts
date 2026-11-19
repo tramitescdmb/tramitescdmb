@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { nombreFlujo } from "@/lib/flujo-nombre";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { generarNumeroExpediente } from "@/lib/expedientes";
@@ -307,7 +308,7 @@ export async function POST(req: NextRequest) {
     data: {
       expedienteId: creado.id,
       tipo: "CREACION",
-      descripcion: `Expediente radicado por ${session.nombre} para el trámite "${tramite.nombre}" (flujo: ${flujo.nombre})${solicitudVital ? `, desde la solicitud VITAL n.º ${solicitudVital.idVital}` : ""}.`,
+      descripcion: `Expediente radicado por ${session.nombre} para el trámite "${tramite.nombre}" (${nombreFlujo(flujo.nombre)})${solicitudVital ? `, desde la solicitud VITAL n.º ${solicitudVital.idVital}` : ""}.`,
       estadoNuevo: "RADICADO",
       usuarioId: session.userId,
     },

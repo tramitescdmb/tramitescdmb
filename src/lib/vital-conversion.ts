@@ -37,6 +37,14 @@ export function codigoTramiteSugerido(idTramiteVital: number): string | null {
   return CODIGO_TRAMITE_POR_VITAL[idTramiteVital] ?? null;
 }
 
+/** Modalidad (código de flujo) sugerida dentro del trámite, según VITAL. */
+export function codigoFlujoSugerido(idTramiteVital: number, clase: "NUEVA" | "RENOVACION" | ""): string | null {
+  if ([30, 112].includes(idTramiteVital)) return "subterranea";
+  if ([31, 109].includes(idTramiteVital)) return "superficial";
+  if (clase === "RENOVACION") return "renovacion";
+  return null;
+}
+
 /** Una solicitud que llega por sincronización cuenta como «nueva» solo si es reciente. */
 export const DIAS_SOLICITUD_VITAL_NUEVA = 60;
 
