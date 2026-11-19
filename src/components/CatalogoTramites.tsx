@@ -27,13 +27,15 @@ export type EntradaCatalogo = {
   conteo: Conteo | undefined;
 };
 
+/** Minúsculas y sin tildes: «arbol» encuentra «Árboles». */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+
+/** Cada palabra buscada debe aparecer en cualquier parte del nombre, el código o el número SUIT. */
 function coincideBusqueda(entrada: EntradaCatalogo, termino: string) {
-  const t = termino.toLowerCase();
-  return (
-    entrada.nombre.toLowerCase().includes(t) ||
-    entrada.codigo.toLowerCase().includes(t) ||
-    entrada.suits.some((s) => s.toLowerCase().includes(t))
-  );
+  const texto = normalizar(`${entrada.nombre} ${entrada.codigo} ${entrada.suits.join(" ")}`);
+  return normalizar(termino)
+    .split(/\s+/)
+    .every((palabra) => texto.includes(palabra));
 }
 
 export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaParaCliente; items: EntradaCatalogo[] }[] }) {
@@ -42,6 +44,8 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
   const totalTramites = secciones.reduce((acc, s) => acc + s.items.length, 0);
 
   const buscando = busqueda.trim().length > 0;
+  // Al escribir se quita la categoría elegida: la búsqueda recorre todo el catálogo y un trámite
+  // nunca «desaparece» por un filtro que quedó marcado. Elegir una categoría después la acota.
   const porCategoria = filtro ? secciones.filter((s) => s.cat.id === filtro) : secciones;
   const visibles = buscando
     ? porCategoria.map((s) => ({ ...s, items: s.items.filter((e) => coincideBusqueda(e, busqueda)) })).filter((s) => s.items.length > 0)
@@ -58,7 +62,10 @@ export function CatalogoTramites({ secciones }: { secciones: { cat: CategoriaPar
         <input
           type="search"
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          onChange={(e) => {
+            setBusqueda(e.target.value);
+            if (e.target.value.trim()) setFiltro(null);
+          }}
           placeholder="Buscar por nombre, código o ficha SUIT…"
           className="w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-stone-800 placeholder:text-stone-400 transition-shadow focus:border-vivo-500 focus:outline-none focus:ring-4 focus:ring-vivo-500/15"
         />
