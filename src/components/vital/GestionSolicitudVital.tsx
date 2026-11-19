@@ -8,14 +8,15 @@ import { ArrowRightCircle, CheckCircle2, XCircle, RotateCcw } from "lucide-react
 type TramiteOpcion = { slug: string; nombre: string; codigo: string; enSuit: boolean; radicable: boolean };
 
 /**
- * Solo los trámites que se pueden radicar en SIC (con procedimiento definido), con la misma
- * regla de SUIT del catálogo: primero los inscritos en el SUIT y luego los demás, en orden alfabético.
+ * Los mismos grupos y conteos del catálogo: primero los inscritos en el SUIT y luego los demás,
+ * en orden alfabético. Los instrumentos económicos (IE-) no se muestran. Los trámites sin
+ * procedimiento en SIC aparecen, pero no se pueden elegir: se gestionan en VITAL.
  */
 function gruposTramites(tramites: TramiteOpcion[]) {
-  const radicables = tramites.filter((t) => t.radicable);
+  const lista = tramites.filter((t) => !t.codigo.startsWith("IE-"));
   return [
-    { titulo: "Trámites inscritos en el SUIT", lista: radicables.filter((t) => t.enSuit) },
-    { titulo: "Sin registro en el SUIT", lista: radicables.filter((t) => !t.enSuit) },
+    { titulo: "Trámites inscritos en el SUIT", lista: lista.filter((t) => t.enSuit) },
+    { titulo: "Sin registro en el SUIT", lista: lista.filter((t) => !t.enSuit) },
   ];
 }
 
@@ -129,8 +130,9 @@ export function GestionSolicitudVital({
               .map((g) => (
                 <optgroup key={g.titulo} label={`${g.titulo} (${g.lista.length})`}>
                   {g.lista.map((t) => (
-                    <option key={t.slug} value={t.slug}>
+                    <option key={t.slug} value={t.slug} disabled={!t.radicable}>
                       {t.nombre} ({t.codigo}){t.slug === slugSugerido ? " — sugerido" : ""}
+                      {!t.radicable ? " — se gestiona en VITAL" : ""}
                     </option>
                   ))}
                 </optgroup>
