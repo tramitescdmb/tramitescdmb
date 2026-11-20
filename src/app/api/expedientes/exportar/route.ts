@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
     soloMios,
     usuarioId: session.userId,
     cargos: session.cargos,
+    archivados: sp.get("archivados") === "si",
   });
 
   const filas: FilaExportExpediente[] = [];

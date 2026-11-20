@@ -1,9 +1,13 @@
 const ESTADOS_TERMINALES = ["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"];
 const ESTADOS_EN_PAUSA = ["SUSPENDIDO", "INFORMACION_ADICIONAL_REQUERIDA"];
 
+/**
+ * Pasos que cuentan para el avance: todos, incluido un último paso de seguimiento, porque el
+ * trámite solo llega a 100 % cuando se finaliza (antes se excluía el seguimiento y el trámite
+ * marcaba 100 % sin estar terminado).
+ */
 export function pasosParaAvance(titulos: string[]): number {
-  const ultimo = titulos[titulos.length - 1] ?? "";
-  return titulos.length > 1 && /seguimiento/i.test(ultimo) ? titulos.length - 1 : titulos.length;
+  return titulos.length;
 }
 
 const CIERRES_ANTICIPADOS = ["DESISTIDO", "ARCHIVADO", "RECHAZADO"];
@@ -24,7 +28,8 @@ export function calcularAvance(
   const pasoActual = Math.min(Math.max(pasoActualNumero, 1), totalPasos);
   const completados = finalizado ? totalPasos : pasoActual - 1;
   const base = Math.max(1, Math.min(pasosAvance, totalPasos));
-  const pct = finalizado ? 100 : Math.min(100, Math.round((completados / base) * 100));
+  // 100 % solo al finalizar: mientras falte algo, como máximo 99 %.
+  const pct = finalizado ? 100 : Math.min(99, Math.round((completados / base) * 100));
   return { finalizado, pasoActual, completados, pct };
 }
 
@@ -69,7 +74,9 @@ export function ProgresoExpediente({
     : terminal
       ? verde
         ? { lleno: "bg-emerald-500", actual: "bg-emerald-600 ring-2 ring-emerald-200", texto: "text-emerald-700", etiqueta: `${nombreEstado} · por finalizar (paso ${pasoActual} de ${totalPasos})` }
-        : { lleno: "bg-red-400", actual: "bg-red-500 ring-2 ring-red-200", texto: "text-red-700", etiqueta: `${nombreEstado} · por finalizar (paso ${pasoActual} de ${totalPasos})` }
+        : rojo
+          ? { lleno: "bg-red-400", actual: "bg-red-500 ring-2 ring-red-200", texto: "text-red-700", etiqueta: `${nombreEstado} · por finalizar (paso ${pasoActual} de ${totalPasos})` }
+          : { lleno: "bg-stone-400", actual: "bg-stone-500 ring-2 ring-stone-200", texto: "text-stone-600", etiqueta: `${nombreEstado} · por finalizar (paso ${pasoActual} de ${totalPasos})` }
       : enPausa
         ? estado === "SUSPENDIDO"
           ? { lleno: "bg-amber-400", actual: "bg-amber-500 ring-2 ring-amber-200", texto: "text-amber-700", etiqueta: "Suspendido" }

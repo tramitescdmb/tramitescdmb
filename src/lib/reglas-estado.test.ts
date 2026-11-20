@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { avanceValido, evaluarCambioManualEstado, resultadosDelPaso } from "./reglas-estado";
+import fs from "node:fs";
+import path from "node:path";
+import { avanceValido, evaluarCambioManualEstado, opcionFinalizar, resultadosDelPaso } from "./reglas-estado";
 
 const pr39 = [
   { numero: 4, titulo: "NOTIFICAR Y PROGRAMAR LA VISITA", esDecision: false, opciones: null },
@@ -86,5 +88,52 @@ describe("avanceValido", () => {
   it("una decisión sin opciones avanza al siguiente paso", () => {
     const pasos = [{ numero: 1, esDecision: true, opciones: null }, { numero: 2, esDecision: false, opciones: null }];
     expect(avanceValido(pasos, 1, 2, null)).toBe(true);
+  });
+});
+
+describe("todos los procedimientos se pueden finalizar", () => {
+  const dir = path.join(__dirname, "..", "..", "data", "tramites");
+  type P = { numero: number; titulo: string; esDecision: boolean; opciones: unknown };
+  const flujos = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".json") && !f.startsWith("_"))
+    .flatMap((f) => {
+      const t = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")) as { codigo: string; flujos: { codigo: string; pasos: P[] }[] };
+      return t.flujos.map((fl) => ({ nombre: `${t.codigo}/${fl.codigo}`, pasos: fl.pasos }));
+    });
+  const ESTADOS = new Set(["APROBADO", "NEGADO", "DESISTIDO", "ARCHIVADO", "RECHAZADO"]);
+
+  it("los resultados de las decisiones son estados del sistema (o solo marcan el camino)", () => {
+    for (const { nombre, pasos } of flujos) {
+      for (const p of pasos) {
+        for (const o of (Array.isArray(p.opciones) ? p.opciones : []) as { resultado?: string | null; siguientePaso?: number | null }[]) {
+          if (o.resultado && o.siguientePaso == null) expect(ESTADOS.has(o.resultado), `${nombre} paso ${p.numero}: ${o.resultado}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("desde el último paso de cada procedimiento se puede finalizar, con o sin decisión previa", () => {
+    for (const { nombre, pasos } of flujos) {
+      const ultimo = Math.max(...pasos.map((p) => p.numero));
+      for (const estado of ["EN_TRAMITE", "APROBADO", "NEGADO"]) {
+        const op = opcionFinalizar(pasos, ultimo, estado);
+        expect(op.puede, `${nombre} en ${estado}`).toBe(true);
+        if (estado === "EN_TRAMITE") expect(op.resultados.length, nombre).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("antes del último paso solo se finaliza en la rama de desistimiento o archivo", () => {
+    const pasos = [
+      { numero: 1, opciones: null },
+      { numero: 2, opciones: [{ resultado: "APROBADO" }, { resultado: "NEGADO" }] },
+      { numero: 3, opciones: null },
+    ];
+    expect(opcionFinalizar(pasos, 3, "APROBADO")).toEqual({ puede: true, resultados: [] });
+    expect(opcionFinalizar(pasos, 2, "APROBADO").puede).toBe(false);
+    expect(opcionFinalizar(pasos, 1, "DESISTIDO")).toEqual({ puede: true, resultados: [] });
+    expect(opcionFinalizar(pasos, 3, "EN_TRAMITE").resultados).toEqual(["APROBADO", "NEGADO"]);
+    expect(opcionFinalizar([{ numero: 1, opciones: null }], 1, "EN_TRAMITE").resultados).toEqual(["APROBADO"]);
   });
 });

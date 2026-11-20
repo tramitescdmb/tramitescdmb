@@ -4,8 +4,8 @@ import { calcularAvance, pasosParaAvance } from "./ProgresoExpediente";
 describe("avance del expediente", () => {
   const titulos = ["RECIBIR", "AUTO", "VISITA", "RESOLUCIÓN", "NOTIFICAR AL USUARIO", "REALIZAR SEGUIMIENTO"];
 
-  it("no cuenta el paso final de seguimiento", () => {
-    expect(pasosParaAvance(titulos)).toBe(5);
+  it("cuenta todos los pasos, también el de seguimiento", () => {
+    expect(pasosParaAvance(titulos)).toBe(6);
     expect(pasosParaAvance(["A", "B", "NOTIFICAR"])).toBe(3);
   });
 
@@ -13,8 +13,9 @@ describe("avance del expediente", () => {
     expect(calcularAvance(3, 6, "APROBADO", 5).pct).toBe(40);
   });
 
-  it("llega a 100% al completar el paso anterior al seguimiento", () => {
-    expect(calcularAvance(6, 6, "EN_TRAMITE", 5).pct).toBe(100);
+  it("sin finalizar nunca marca 100%, ni en el último paso", () => {
+    expect(calcularAvance(6, 6, "APROBADO", 6, false).pct).toBe(83);
+    expect(calcularAvance(6, 6, "EN_TRAMITE", 5).pct).toBe(99);
     expect(calcularAvance(5, 6, "EN_TRAMITE", 5).pct).toBe(80);
   });
 

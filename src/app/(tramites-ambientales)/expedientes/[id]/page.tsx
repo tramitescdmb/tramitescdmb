@@ -7,7 +7,7 @@ import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
 import { usuarioFlujo, type UsuarioFlujo } from "@/lib/flujos";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, puedeAccederCorrespondencia } from "@/lib/permisos";
+import { verificarSesion as getSession } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { infoEvento } from "@/components/EventoIcono";
 import { Field, SectionHelp } from "@/components/Field";
@@ -32,7 +32,7 @@ import { esContratista } from "@/lib/jerarquia-firma";
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
-import { evaluarCambioManualEstado } from "@/lib/reglas-estado";
+import { CIERRES_ANTICIPADOS, evaluarCambioManualEstado, opcionFinalizar } from "@/lib/reglas-estado";
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
@@ -46,7 +46,7 @@ import { PanelGestionDocumental, BotonCerrarExpediente } from "@/components/gest
 import { ReclasificarTrdForm } from "@/components/trd/ReclasificarTrdForm";
 import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
-import { MENSAJE_EXPEDIENTE_CERRADO, fichaArchivoDe, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
+import { MENSAJE_EXPEDIENTE_CERRADO, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { BandaTablero } from "@/components/tablero";
 import { aGms } from "@/lib/coordenadas-geograficas";
@@ -184,7 +184,6 @@ export default async function ExpedienteDetallePage({
   let puedeEditarPorRol = true;
   let puedeAsignarFirmantes = false;
   let puedeValidar = false;
-  let puedeCorrespondencia = false;
   let planificador = false;
   let usuarioFlujoActual: UsuarioFlujo | null = null;
   if (session) {
@@ -193,7 +192,6 @@ export default async function ExpedienteDetallePage({
     puedeEditarPorRol = puedeEditarTramite(permisos, expediente.tramiteTipoId);
     puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
-    puedeCorrespondencia = puedeAccederCorrespondencia(permisos);
     planificador = puedePlanearVisitas(permisos);
     usuarioFlujoActual = await usuarioFlujo(session.userId, permisos, "TRAMITES");
   }
@@ -207,10 +205,7 @@ export default async function ExpedienteDetallePage({
   const requiereVisita = enEjecucion && pasoVisita.permite;
   const motivoBloqueoAprobacion = evaluarCambioManualEstado(expediente.flujo.pasos, expediente.pasoActualNumero, "APROBADO").motivo;
   const puedeEditar = puedeEditarPorRol && !cerrado;
-  const [fichaSgdea, firmasPendientes] = await Promise.all([
-    fichaArchivoDe(expediente.id),
-    cerrado ? Promise.resolve(0) : firmasPendientesTramite(expediente.id),
-  ]);
+  const firmasPendientes = cerrado ? 0 : await firmasPendientesTramite(expediente.id);
 
   const idsDocumentos = expediente.documentos.map((d) => d.id);
   const trazabilidad =
@@ -232,6 +227,39 @@ export default async function ExpedienteDetallePage({
   // pero faltan pasos del procedimiento (notificar…), que se siguen gestionando normalmente.
   const finalizado = tramiteFinalizado(expediente);
   const resuelto = esTerminal && !finalizado;
+  // Desistido/archivado/rechazado sin finalizar: ese paso es el último de su rama.
+  const cierrePendiente = resuelto && (CIERRES_ANTICIPADOS as readonly string[]).includes(expediente.estado);
+  const finalizable = opcionFinalizar(pasos, expediente.pasoActualNumero, expediente.estado);
+  const ETIQUETA_FINAL: Record<string, string> = { APROBADO: "aprobado", NEGADO: "negado" };
+  const formFinalizar = pasoActual ? (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-2">
+        {(finalizable.resultados.length > 0 ? finalizable.resultados : [null]).map((r) => (
+          <form key={r ?? "actual"} action={`/api/expedientes/${expediente.id}/avanzar`} method="post">
+            <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
+            <input type="hidden" name="finalizar" value="1" />
+            {r && <input type="hidden" name="resultadoFinal" value={r} />}
+            <button
+              type="submit"
+              className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-white ${
+                r === "NEGADO" ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"
+              }`}
+            >
+              <CheckCircle2 className="h-4 w-4" aria-hidden />
+              {finalizable.resultados.length > 1 && r
+                ? `Completar el paso ${pasoActual.numero} y finalizar: ${ETIQUETA_FINAL[r] ?? r.toLowerCase()}`
+                : `Completar el paso ${pasoActual.numero} y finalizar el trámite`}
+            </button>
+          </form>
+        ))}
+      </div>
+      <p className="text-xs text-stone-500">
+        {cierrePendiente
+          ? "El trámite ya tiene estado final en esta rama del procedimiento: al completar este paso queda finalizado (100 %) con la fecha de hoy."
+          : "Es el último paso del procedimiento: el trámite queda finalizado (100 %) con la fecha de hoy."}
+      </p>
+    </div>
+  ) : null;
   const puedeAvanzar = puedeEditar && !finalizado && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const misCargosConEncargo = (session?.cargos ?? []).map((c) => (session?.cargosEncargo.includes(c) ? `${c} (E)` : c));
@@ -498,7 +526,7 @@ export default async function ExpedienteDetallePage({
                   <span>
                     Expediente cerrado
                     {expediente.archivadoEn && <> el {formatearFechaHora(expediente.archivadoEn)}</>}
-                    {expediente.archivadoPor && <> por {expediente.archivadoPor.nombre}</>} y archivado en el SGDEA. Se
+                    {expediente.archivadoPor && <> por {expediente.archivadoPor.nombre}</>} y archivado como expediente digital. Se
                     consulta en modo lectura; para modificarlo debe reabrirse desde Administración.
                   </span>
                 </div>
@@ -509,7 +537,7 @@ export default async function ExpedienteDetallePage({
                     <span>
                       <strong>Trámite finalizado</strong>
                       {expediente.fechaCierre && <> el {formatearFechaHora(expediente.fechaCierre)}</>} con resultado{" "}
-                      <EstadoBadge estado={expediente.estado} />. Falta cerrarlo desde Administración para archivarlo en el SGDEA.
+                      <EstadoBadge estado={expediente.estado} />. Para archivarlo como expediente digital, ciérrelo desde la pestaña Administración.
                     </span>
                   </div>
                 ) : (
@@ -517,8 +545,10 @@ export default async function ExpedienteDetallePage({
                     <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
                       <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-sky-600" aria-hidden />
                       <span>
-                        Decisión registrada: <EstadoBadge estado={expediente.estado} />. El trámite aún no termina: complete
-                        los pasos que faltan del procedimiento (notificación y registro) y, en el último, use «Finalizar trámite».
+                        Decisión registrada: <EstadoBadge estado={expediente.estado} />. El trámite aún no termina:{" "}
+                        {cierrePendiente
+                          ? "complete este paso y use «Finalizar el trámite»."
+                          : "complete los pasos que faltan del procedimiento (notificación, registro…) y, en el último, use «Finalizar el trámite»."}
                       </span>
                     </div>
                   )
@@ -757,6 +787,8 @@ export default async function ExpedienteDetallePage({
                         Puede seguir adjuntando documentos y registrando la visita técnica; para avanzar el paso, pídale
                         a la persona con ese cargo (o a un administrador) que lo haga.
                       </p>
+                    ) : cierrePendiente ? (
+                      formFinalizar
                     ) : pasoActual.esDecision ? (
                       <div className="space-y-2">
                         <p className="flex items-start gap-1.5 text-xs font-medium text-stone-500">
@@ -808,23 +840,8 @@ export default async function ExpedienteDetallePage({
                           Marcar paso {pasoActual.numero} como completado → continuar al paso {siguientePaso.numero}
                         </button>
                       </form>
-                    ) : resuelto ? (
-                      <form action={`/api/expedientes/${expediente.id}/avanzar`} method="post" className="space-y-1.5">
-                        <input type="hidden" name="pasoDesde" value={expediente.pasoActualNumero} />
-                        <input type="hidden" name="finalizar" value="1" />
-                        <button
-                          type="submit"
-                          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                        >
-                          <CheckCircle2 className="h-4 w-4" aria-hidden />
-                          Completar el paso {pasoActual.numero} y finalizar el trámite
-                        </button>
-                        <p className="text-xs text-stone-500">Es el último paso del procedimiento: el trámite queda finalizado (100 %) con la fecha de hoy.</p>
-                      </form>
                     ) : (
-                      <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
-                        Último paso. Defina el estado final en Administración.
-                      </p>
+                      formFinalizar
                     )}
                     {session?.rol === "ADMIN" && !cerrado && !finalizado && pasoActual.numero > (expediente.flujo.pasos[0]?.numero ?? 1) && (
                       <details className="mt-3 rounded-md border border-stone-200 bg-stone-50/60 px-3 py-2">
@@ -1404,11 +1421,12 @@ export default async function ExpedienteDetallePage({
                 cerrado={cerrado}
                 cerradoEn={expediente.archivadoEn}
                 cerradoPor={expediente.archivadoPor?.nombre ?? null}
-                fichaSgdea={puedeCorrespondencia && fichaSgdea ? fichaSgdea : null}
+                fichaSgdea={null}
+                archivoEn="el expediente digital"
                 puedeReabrir={session?.rol === "ADMIN"}
                 cierre={{
                   descripcion:
-                    "Queda en solo lectura y se archiva en el SGDEA. Requiere estado final, TRD y firmas completas.",
+                    "Queda en solo lectura y se archiva como expediente digital (menú «Expediente electrónico»). Requiere trámite finalizado, TRD y firmas completas.",
                   bloqueo: !esTerminal
                     ? `El trámite aún no tiene un estado final (${(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).map((e) => e.toLowerCase()).join(", ")}).`
                     : !finalizado
@@ -1422,6 +1440,7 @@ export default async function ExpedienteDetallePage({
                     <BotonCerrarExpediente
                       accion={`/api/expedientes/${expediente.id}/gestion-documental`}
                       deshabilitado={!finalizado || !expediente.subserieId || firmasPendientes > 0}
+                      etiqueta="Cerrar y archivar el expediente digital"
                     />
                   ) : null,
                 }}
@@ -1493,7 +1512,12 @@ export default async function ExpedienteDetallePage({
             )}
           </div>
           {pasoActual && puedeAvanzar && (
-            pasoActual.esDecision ? (
+            cierrePendiente || (!pasoActual.esDecision && !siguientePaso) ? (
+              <a href="#avanzar" className="inline-flex items-center gap-1.5 rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                <CheckCircle2 className="h-4 w-4" aria-hidden />
+                Finalizar trámite
+              </a>
+            ) : pasoActual.esDecision ? (
               <a href="#avanzar" className="inline-flex items-center gap-1.5 rounded bg-acento-500 px-4 py-2 text-sm font-semibold text-white hover:bg-acento-600">
                 <GitBranch className="h-4 w-4" aria-hidden />
                 Decidir paso {pasoActual.numero}

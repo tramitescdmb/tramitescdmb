@@ -15,6 +15,8 @@ export type FiltrosExpedientes = {
   soloMios?: boolean;
   usuarioId?: string;
   cargos?: string[];
+  /** Solo los expedientes digitales cerrados y archivados. */
+  archivados?: boolean;
 };
 
 // Compartido entre la lista de /expedientes, la exportación (XLSX/CSV) y el módulo de minería
@@ -34,6 +36,7 @@ export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.Expedie
   if (f.tramite) filtros.push({ tramiteTipoId: { in: f.tramite.split(",").filter(Boolean) } });
   if (f.tramites && f.tramites.length > 0) filtros.push({ tramiteTipoId: { in: f.tramites } });
   if (f.municipio) filtros.push({ municipio: f.municipio });
+  if (f.archivados) filtros.push({ archivado: true });
   if (f.rango) filtros.push({ fechaRadicacion: { gte: f.rango.desde, lt: f.rango.hasta } });
   if (f.busqueda) {
     filtros.push({
