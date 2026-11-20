@@ -44,12 +44,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const esTerminal = (ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(nuevoEstado);
+  // Aprobado/negado con pasos por cumplir (notificar…) no finaliza todavía: se finaliza en el último
+  // paso. Desistido, archivado o rechazado cierran el trámite de inmediato.
+  const quedanPasos = expediente.flujo.pasos.some((p) => p.numero > expediente.pasoActualNumero);
+  const finaliza = esTerminal && !(quedanPasos && (nuevoEstado === "APROBADO" || nuevoEstado === "NEGADO"));
   await db.expediente.update({
     where: { id },
     data: {
       estado: nuevoEstado as typeof expediente.estado,
       fechaUltimoMovimiento: new Date(),
-      fechaCierre: esTerminal ? new Date() : null,
+      fechaCierre: finaliza ? new Date() : null,
     },
   });
 

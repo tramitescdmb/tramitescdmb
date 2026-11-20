@@ -15,7 +15,7 @@ import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { formatearFecha } from "@/lib/fecha";
-import { ESTADOS_EXPEDIENTE } from "@/lib/estados-expediente";
+import { ESTADOS_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { construirWhereExpedientes, aniosConRadicacion } from "@/lib/expedientes";
 
 const POR_PAGINA = 30;
@@ -277,6 +277,7 @@ export default async function ExpedientesPage({
                 totalPasos: exp.flujo.pasos.length,
                 pasosAvance: pasosParaAvance(exp.flujo.pasos.map((p) => p.titulo)),
                 estado: exp.estado,
+                finalizado: tramiteFinalizado(exp),
                 archivado: exp.archivado,
                 fechaUltimoMovimiento: formatearFecha(exp.fechaUltimoMovimiento),
               }))}
