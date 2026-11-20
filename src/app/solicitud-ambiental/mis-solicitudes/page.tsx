@@ -5,6 +5,7 @@ import { ChevronRight, FilePlus2 } from "lucide-react";
 import { BotonEncabezado, EncabezadoSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { BotonSalirCiudadano, CompletarPerfilForm, VincularSolicitudForm } from "@/components/solicitud-ambiental/CuentaCiudadana";
 import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
+import { rutaSiguienteSegura } from "@/lib/cuenta-ciudadana";
 import { db } from "@/lib/db";
 import { formatearFechaLarga as fecha } from "@/lib/fecha";
 import { nombreFlujo } from "@/lib/flujo-nombre";
@@ -14,9 +15,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Mis solicitudes — CDMB", description: "Sus solicitudes ambientales ante la CDMB." };
 
-export default async function MisSolicitudesPage() {
+export default async function MisSolicitudesPage({ searchParams }: { searchParams: Promise<{ siguiente?: string }> }) {
   const cuenta = await cuentaEnSesion();
-  if (!cuenta) redirect("/solicitud-ambiental/ingresar");
+  const { siguiente } = await searchParams;
+  const volverA = siguiente ? rutaSiguienteSegura(siguiente) : null;
+  if (!cuenta) redirect(volverA ? `/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(volverA)}` : "/solicitud-ambiental/ingresar");
 
   const salir = <BotonSalirCiudadano />;
   if (!cuenta.completa) {
@@ -25,7 +28,7 @@ export default async function MisSolicitudesPage() {
         <EncabezadoSolicitud titulo="Mis solicitudes" acciones={salir}>
           Un paso más y queda registrado.
         </EncabezadoSolicitud>
-        <CompletarPerfilForm correo={cuenta.correo} />
+        <CompletarPerfilForm correo={cuenta.correo} siguiente={volverA} />
       </div>
     );
   }

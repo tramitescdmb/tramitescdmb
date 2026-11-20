@@ -18,7 +18,7 @@ async function enviar(url: string, datos: unknown): Promise<Record<string, unkno
 }
 
 /** Primer ingreso: cédula o NIT, nombre, teléfono y autorización de datos. */
-export function CompletarPerfilForm({ correo }: { correo: string }) {
+export function CompletarPerfilForm({ correo, siguiente }: { correo: string; siguiente?: string | null }) {
   const router = useRouter();
   const [tipo, setTipo] = useState<"NATURAL" | "JURIDICA">("NATURAL");
   const [identificacion, setIdentificacion] = useState("");
@@ -35,6 +35,7 @@ export function CompletarPerfilForm({ correo }: { correo: string }) {
     setOcupado(true);
     try {
       await enviar("/api/solicitud-ambiental/cuenta/perfil", { tipo, identificacion, nombre, telefono, aceptaTratamiento: acepta });
+      if (siguiente) router.replace(siguiente);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar.");

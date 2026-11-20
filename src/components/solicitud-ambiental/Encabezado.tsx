@@ -46,7 +46,7 @@ export function BotonEncabezado({ href, children, principal = false }: { href: s
 export function PasosSolicitud({ actual }: { actual?: 1 | 2 | 3 }) {
   const pasos = [
     { n: 1, titulo: "Elija el trámite", texto: "Busque por nombre o explore por recurso natural." },
-    { n: 2, titulo: "Diligencie y adjunte", texto: "Datos del solicitante, del lugar y los documentos." },
+    { n: 2, titulo: "Ingrese y diligencie", texto: "Con su correo (código, sin contraseña); luego datos y documentos." },
     { n: 3, titulo: "Reciba su número", texto: "Con él y su cédula o NIT consulta el estado." },
   ];
   return (

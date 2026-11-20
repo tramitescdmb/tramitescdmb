@@ -38,22 +38,20 @@ export async function POST(req: NextRequest) {
   const radicable = await db.tramiteTipo.count({ where: { id: String(body.tramiteTipoId ?? ""), activo: true, flujos: { some: {} } } });
   if (!radicable) return NextResponse.json({ error: "Este trámite no se puede radicar en línea." }, { status: 400 });
 
-  // Con la sesión de «Mis solicitudes» abierta, la solicitud queda en la cuenta. Solo a nombre de la
-  // cédula o el NIT de la cuenta: a nombre de otra persona se radica sin sesión.
+  // Solo con la cuenta ciudadana verificada (correo + código) y a nombre de su cédula o NIT.
   const cuenta = await cuentaEnSesion();
-  if (cuenta?.completa && body.solicitante && typeof body.solicitante === "object") {
-    if (normalizarIdentificacion(String(body.solicitante.identificacion ?? "")) !== cuenta.identificacion) {
-      return NextResponse.json(
-        { error: "Con la sesión abierta solo puede radicar a nombre de la cédula o el NIT de su cuenta. Para radicar a nombre de otra persona, salga de su cuenta." },
-        { status: 400 }
-      );
-    }
-    if (typeof body.solicitante.email !== "string" || !body.solicitante.email.trim()) body.solicitante.email = cuenta.correo;
+  if (!cuenta?.completa || !cuenta.identificacion) {
+    return NextResponse.json({ error: "Para radicar debe ingresar con su correo. Recargue la página." }, { status: 401 });
   }
+  if (!body.solicitante || typeof body.solicitante !== "object") return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 });
+  if (normalizarIdentificacion(String(body.solicitante.identificacion ?? "")) !== cuenta.identificacion) {
+    return NextResponse.json({ error: "Solo puede radicar a nombre de la cédula o el NIT de su cuenta." }, { status: 400 });
+  }
+  if (typeof body.solicitante.email !== "string" || !body.solicitante.email.trim()) body.solicitante.email = cuenta.correo;
 
   try {
     const [usuario, numeroSolicitud] = await Promise.all([usuarioVentanillaVirtual(), numeroSolicitudLibre()]);
-    const resultado = await radicarExpediente(body, { usuario, publico: { numeroSolicitud, cuentaCiudadanaId: cuenta?.completa ? cuenta.id : null } });
+    const resultado = await radicarExpediente(body, { usuario, publico: { numeroSolicitud, cuentaCiudadanaId: cuenta.id } });
     if (!resultado.ok) return NextResponse.json({ error: resultado.error }, { status: resultado.status });
 
     await registrarAuditoriaDoc({

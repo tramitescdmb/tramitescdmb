@@ -416,28 +416,13 @@ export function NuevoExpedienteForm({
           </label>
         </div>
       )}
-      {publico && (
+      {publico && cuentaCiudadana && (
         <div className="rounded-xl border border-cdmb-200 bg-cdmb-50 px-4 py-3 text-sm text-cdmb-900">
-          {cuentaCiudadana ? (
-            <>
-              Radica con su cuenta <strong>{cuentaCiudadana.correo}</strong>: la solicitud quedará en{" "}
-              <Link href="/solicitud-ambiental/mis-solicitudes" className="font-semibold underline hover:no-underline">
-                Mis solicitudes
-              </Link>
-              , a nombre de su {cuentaCiudadana.tipo === "JURIDICA" ? "NIT" : "cédula"}.
-            </>
-          ) : (
-            <>
-              ¿Quiere ver esta solicitud, su historial y lo pendiente en un solo lugar?{" "}
-              <Link
-                href={`/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(`/solicitud-ambiental/${tramiteSlug}`)}`}
-                className="font-semibold underline hover:no-underline"
-              >
-                Ingrese o regístrese con su correo
-              </Link>{" "}
-              antes de diligenciar (no necesita contraseña). También puede radicar sin cuenta.
-            </>
-          )}
+          Radica con su cuenta <strong>{cuentaCiudadana.correo}</strong>: la solicitud quedará en{" "}
+          <Link href="/solicitud-ambiental/mis-solicitudes" className="font-semibold underline hover:no-underline">
+            Mis solicitudes
+          </Link>
+          , a nombre de su {cuentaCiudadana.tipo === "JURIDICA" ? "NIT" : "cédula"}.
         </div>
       )}
       {desdeVital && (
