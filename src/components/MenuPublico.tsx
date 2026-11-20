@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, FilePlus2, LayoutGrid, Leaf, MessageSquareText, Search, ShieldCheck, type LucideIcon } from "lucide-react";
+import { ChevronDown, FilePlus2, FolderOpen, LayoutGrid, Leaf, MessageSquareText, Search, ShieldCheck, type LucideIcon } from "lucide-react";
 
 type Enlace = { href: string; label: string; icono: LucideIcon; activo: (p: string) => boolean };
 type Grupo = { label: string; icono: LucideIcon; opciones: Enlace[] };
 type Opcion = Enlace | Grupo;
 
 const esConsultaAmbiental = (p: string) => p.startsWith("/solicitud-ambiental/consultar");
+const esCuentaAmbiental = (p: string) => p.startsWith("/solicitud-ambiental/mis-solicitudes") || p.startsWith("/solicitud-ambiental/ingresar");
 
 const OPCIONES: Opcion[] = [
   { href: "/", label: "Aplicativos CDMB", icono: LayoutGrid, activo: (p) => p === "/" },
@@ -25,8 +26,9 @@ const OPCIONES: Opcion[] = [
     label: "Solicitud ambiental",
     icono: Leaf,
     opciones: [
-      { href: "/solicitud-ambiental", label: "Radicar solicitud ambiental", icono: FilePlus2, activo: (p) => p.startsWith("/solicitud-ambiental") && !esConsultaAmbiental(p) },
+      { href: "/solicitud-ambiental", label: "Radicar solicitud ambiental", icono: FilePlus2, activo: (p) => p.startsWith("/solicitud-ambiental") && !esConsultaAmbiental(p) && !esCuentaAmbiental(p) },
       { href: "/solicitud-ambiental/consultar", label: "Consultar solicitud ambiental", icono: Search, activo: esConsultaAmbiental },
+      { href: "/solicitud-ambiental/mis-solicitudes", label: "Mis solicitudes", icono: FolderOpen, activo: esCuentaAmbiental },
     ],
   },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck, activo: (p) => p.startsWith("/validar-firma") || p.startsWith("/verificar") },

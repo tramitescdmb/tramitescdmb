@@ -772,7 +772,16 @@ model Expediente {
    */
   codigoSolicitudPublica String?
 
+  /**
+   * Cuenta ciudadana (registro liviano de «Solicitud ambiental») que ve este expediente en «Mis
+   * solicitudes». Se fija al radicar con la sesión abierta o cuando el ciudadano lo vincula con el
+   * número de solicitud. Null en todo lo demás.
+   */
+  cuentaCiudadanaId String?
+  cuentaCiudadana   CuentaCiudadana? @relation(fields: [cuentaCiudadanaId], references: [id], onDelete: SetNull)
+
   @@index([tramiteTipoId])
+  @@index([cuentaCiudadanaId])
   @@index([codigoSolicitudPublica])
   @@index([estado])
   @@index([municipio])
@@ -2751,4 +2760,71 @@ model CorreoSuprimido {
   rebotes   Int      @default(1)
   createdAt DateTime @default(now())
   ultimoEn  DateTime @default(now())
+}
+
+/**
+ * Registro liviano del ciudadano en la vista pública «Solicitud ambiental». Sin contraseña: entra con
+ * un código de un solo uso enviado a su correo. Es independiente de `Usuario` (funcionarios): no da
+ * acceso a nada interno; solo a «Mis solicitudes».
+ */
+model CuentaCiudadana {
+  id                  String          @id @default(cuid())
+  /**
+   * En minúsculas. Una cuenta por correo.
+   */
+  correo              String          @unique
+  tipo                TipoSolicitante @default(NATURAL)
+  /**
+   * Cédula o NIT normalizado (solo dígitos, sin dígito de verificación). Null hasta completar el registro.
+   */
+  identificacion      String?
+  nombre              String?
+  telefono            String?
+  /**
+   * Aceptó la autorización de tratamiento de datos personales al completar el registro.
+   */
+  aceptaTratamientoEn DateTime?
+  bloqueada           Boolean         @default(false)
+  ultimoIngreso       DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  sesiones    SesionCiudadana[]
+  expedientes Expediente[]
+
+  @@index([identificacion])
+}
+
+/**
+ * Código de ingreso de 6 dígitos enviado al correo. Se guarda solo su HMAC; vence en 10 minutos y admite 5 intentos.
+ */
+model CodigoAccesoCiudadano {
+  id         String    @id @default(cuid())
+  correo     String
+  codigoHash String
+  expiraEn   DateTime
+  intentos   Int       @default(0)
+  usadoEn    DateTime?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([correo, createdAt])
+}
+
+/**
+ * Sesión del ciudadano: la cookie lleva un valor aleatorio y aquí se guarda solo su SHA-256.
+ */
+model SesionCiudadana {
+  id         String    @id @default(cuid())
+  cuentaId   String
+  tokenHash  String    @unique
+  expiraEn   DateTime
+  revocadaEn DateTime?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+
+  cuenta CuentaCiudadana @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+
+  @@index([cuentaId])
 }

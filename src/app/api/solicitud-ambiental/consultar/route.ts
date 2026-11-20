@@ -3,11 +3,10 @@ import { db } from "@/lib/db";
 import { verificarLimiteEnvio } from "@/lib/anti-abuso";
 import { datosPeticion, registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { nombreFlujo } from "@/lib/flujo-nombre";
-import { ESTADO_PUBLICO, normalizarIdentificacion, normalizarNumeroSolicitud } from "@/lib/solicitud-ambiental";
+import { estadoPublico, etapaPublica, normalizarIdentificacion, normalizarNumeroSolicitud } from "@/lib/solicitud-ambiental";
 
 /** Mismo mensaje para cualquier dato errado: no revela si el número de solicitud existe. */
 const NO_ENCONTRADA = "No encontramos una solicitud con esos datos. Verifique la cédula o el NIT y el número de solicitud.";
-const ESTADOS_TERMINADOS = new Set(["APROBADO", "NEGADO", "RECHAZADO", "DESISTIDO", "ARCHIVADO"]);
 
 /**
  * Seguimiento público de una solicitud ambiental radicada en línea. Exige las dos cosas: la cédula
@@ -62,11 +61,8 @@ export async function POST(req: NextRequest) {
     detalle: `Consulta pública de estado de la solicitud ${numeroSolicitud} (${e.numero})`,
   });
 
-  const estado = ESTADO_PUBLICO[e.estado] ?? { etiqueta: "En trámite", explicacion: "La CDMB está gestionando su solicitud." };
-  const terminado = ESTADOS_TERMINADOS.has(e.estado) && e.fechaCierre != null;
-  const pasos = e.flujo.pasos;
-  const indice = pasos.findIndex((p) => p.numero === e.pasoActualNumero);
-  const etapa = !terminado && indice >= 0 ? { posicion: indice + 1, total: pasos.length, titulo: pasos[indice]!.titulo } : null;
+  const estado = estadoPublico(e.estado);
+  const etapa = etapaPublica({ ...e, pasos: e.flujo.pasos });
 
   return NextResponse.json({
     numeroSolicitud,
