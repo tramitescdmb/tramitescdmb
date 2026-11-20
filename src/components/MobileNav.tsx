@@ -62,7 +62,7 @@ export function MobileNav({
           />
           <div role="dialog" aria-modal="true" aria-label="Menú" className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-lateral text-white shadow-soft-lg">
             <div className="relative">
-              <EncabezadoMenu logoUrl={logoUrl} />
+              <EncabezadoMenu logoUrl={logoUrl} conHoja={false} />
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
@@ -83,7 +83,7 @@ export function MobileNav({
               mostrarMemorandos={mostrarMemorandos}
             />
 
-            <div className="border-t border-white/10 bg-lateral-oscuro/60 p-3">
+            <div className="border-t border-white/10 bg-lateral-oscuro p-3">
               <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-white/10">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded bg-acento-500 text-xs font-semibold text-white">
                   {iniciales}
