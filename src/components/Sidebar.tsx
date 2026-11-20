@@ -47,7 +47,7 @@ export function Sidebar({
         colapsado={colapsado}
       />
 
-      <div className={`flex flex-none items-center border-t border-white/10 bg-lateral-oscuro/60 ${colapsado ? "flex-col gap-1 py-2" : "gap-1 px-2 py-2"}`}>
+      <div className={`flex flex-none items-center border-t border-white/10 bg-lateral-oscuro ${colapsado ? "flex-col gap-1 py-2" : "gap-1 px-2 py-2"}`}>
         <button
           type="button"
           onClick={() => setExpandido(colapsado)}

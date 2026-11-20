@@ -1,6 +1,5 @@
 import { accedeMemorandos } from "@/lib/memorandos";
 import Link from "next/link";
-import { IconLeaf } from "@tabler/icons-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { sincaConfigurado } from "@/lib/sinca";
@@ -84,9 +83,8 @@ export async function NavBar() {
         mostrarMemorandos={mostrarMemorandos}
       />
 
-      <header className="relative overflow-hidden border-b-2 border-lateral-acento/80 bg-gradient-to-r from-lateral-oscuro via-lateral to-lateral-claro lg:hidden">
-        <IconLeaf className="pointer-events-none absolute -top-3 right-14 h-20 w-20 rotate-12 text-white/10" stroke={1.5} aria-hidden />
-        <div className="relative flex items-center justify-between gap-3 px-4 py-3">
+      <header className="border-b-2 border-lateral-acento/80 bg-lateral-oscuro lg:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
           {marca}
           <MobileNav
             esAdmin={esAdmin}

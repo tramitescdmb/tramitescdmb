@@ -2,13 +2,23 @@ import Link from "next/link";
 import { IconLeaf } from "@tabler/icons-react";
 
 /**
- * Franja de marca del menú lateral: degradado con el color escogido y la hoja de fondo, como el
- * encabezado de «Solicitud ambiental», pero compacta. Contraída solo muestra el logo.
+ * Franja de marca del menú lateral: color sólido (tono oscuro del color escogido) con la hoja,
+ * línea de acento abajo. Sin degradados para que se vea uniforme en todos los colores. Contraída solo muestra el logo.
  */
-export function EncabezadoMenu({ logoUrl, colapsado = false, enlace = true }: { logoUrl: string | null; colapsado?: boolean; enlace?: boolean }) {
+export function EncabezadoMenu({
+  logoUrl,
+  colapsado = false,
+  enlace = true,
+  conHoja = true,
+}: {
+  logoUrl: string | null;
+  colapsado?: boolean;
+  enlace?: boolean;
+  conHoja?: boolean;
+}) {
   const contenido = (
     <>
-      {!colapsado && <IconLeaf className="pointer-events-none absolute -right-3 -top-4 h-24 w-24 rotate-12 text-white/10" stroke={1.5} aria-hidden />}
+      {!colapsado && conHoja && <IconLeaf className="pointer-events-none absolute right-3 top-1/2 h-11 w-11 -translate-y-1/2 text-white/[0.08]" stroke={1.5} aria-hidden />}
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={logoUrl} alt="CDMB" className="relative h-9 w-auto max-w-[5.5rem] flex-none rounded-md bg-white p-1 shadow-sm" />
@@ -26,7 +36,7 @@ export function EncabezadoMenu({ logoUrl, colapsado = false, enlace = true }: { 
       )}
     </>
   );
-  const clase = `relative flex flex-none items-center gap-3 overflow-hidden border-b-2 border-lateral-acento/80 bg-gradient-to-br from-lateral-oscuro via-lateral to-lateral-claro text-white ${
+  const clase = `relative flex flex-none items-center gap-3 overflow-hidden border-b-2 border-lateral-acento/80 bg-lateral-oscuro text-white ${
     colapsado ? "h-16 justify-center px-2" : "h-16 px-4"
   }`;
   if (!enlace) return <div className={clase}>{contenido}</div>;
