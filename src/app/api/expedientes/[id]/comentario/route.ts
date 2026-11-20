@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const form = await req.formData();
-  const texto = String(form.get("texto") || "").trim();
+  const texto = String(form.get("texto") || "").trim().slice(0, 2000);
 
   if (texto) {
     await db.expedienteEvento.create({

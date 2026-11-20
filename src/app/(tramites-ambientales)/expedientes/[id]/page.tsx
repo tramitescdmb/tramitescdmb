@@ -2,7 +2,7 @@ import Link from "next/link";
 import { nombreFlujo } from "@/lib/flujo-nombre";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, CheckCircle2, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, Paperclip, GitBranch, CheckCheck, Workflow } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, CheckCircle2, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, GitBranch, CheckCheck, Workflow } from "lucide-react";
 import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
 import { usuarioFlujo, type UsuarioFlujo } from "@/lib/flujos";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -1308,15 +1308,27 @@ export default async function ExpedienteDetallePage({
                   La hoja de vida completa: qué pasó, cuándo y quién lo hizo — desde que se radicó hasta hoy.
                 </p>
                 {puedeEditar && (
-                  <form id="comentar" action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 flex scroll-mt-28 gap-2">
+                  <form id="comentar" action={`/api/expedientes/${expediente.id}/comentario`} method="post" className="mb-4 scroll-mt-28">
+                    <label htmlFor="texto-nota" className="mb-1 block text-xs font-medium text-stone-700">
+                      Nota interna
+                    </label>
+                    <p className="mb-2 text-xs text-stone-500">
+                      Queda en esta historia con su nombre y la fecha, a la vista de quienes consultan el trámite. No se puede editar ni borrar.
+                      Para cargar archivos use los espacios de documentos del paso.
+                    </p>
+                    <div className="flex gap-2">
                     <input
+                      id="texto-nota"
                       name="texto"
-                      placeholder="Agregar una nota o comentario al expediente…"
+                      required
+                      maxLength={2000}
+                      placeholder="Ej.: se llamó al usuario para pedir el recibo de pago…"
                       className="flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
                     />
                     <button type="submit" className="rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
-                      Comentar
+                      Agregar nota
                     </button>
+                    </div>
                   </form>
                 )}
 
@@ -1516,16 +1528,15 @@ export default async function ExpedienteDetallePage({
       {!cerrado && puedeEditar && (
         <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 bg-white px-4 py-2.5 shadow-soft-lg print:hidden">
           <div className="flex flex-wrap items-center gap-2">
-            <a href="#comentar" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+            <a
+              href="#comentar"
+              title="Escribe una nota interna que queda en la Historia del expediente con su nombre y la fecha. No es un documento: los archivos se cargan en el paso."
+              className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
               <MessageSquare className="h-4 w-4" aria-hidden />
-              Comentar
+              Agregar nota
             </a>
-            {pasoActual && (
-              <a href="#adjuntar" className="inline-flex items-center gap-1.5 rounded border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
-                <Paperclip className="h-4 w-4" aria-hidden />
-                Adjuntar documento
-              </a>
-            )}
+            <span className="text-xs text-stone-500">Nota interna en la Historia del expediente.</span>
           </div>
           {pasoActual && puedeAvanzar && (
             cierrePendiente || (!pasoActual.esDecision && !siguientePaso) ? (
