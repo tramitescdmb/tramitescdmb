@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { CheckCircle2, Lock } from "lucide-react";
 import { useAnchosColumna } from "@/lib/usar-anchos-columna";
 import { ManijaRedimension } from "@/components/ManijaRedimension";
 import { ProgresoExpediente } from "@/components/ProgresoExpediente";
@@ -22,6 +22,7 @@ export type FilaExpediente = {
   totalPasos: number;
   pasosAvance?: number;
   estado: string;
+  finalizado?: boolean;
   archivado?: boolean;
   fechaUltimoMovimiento: string;
 };
@@ -59,11 +60,20 @@ export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
             </td>
             <td className="truncate px-2.5 py-2 text-stone-500">{f.municipio}</td>
             <td className="px-2.5 py-2">
-              <ProgresoExpediente pasoActualNumero={f.pasoActualNumero} totalPasos={f.totalPasos} pasosAvance={f.pasosAvance} estado={f.estado} />
+              <ProgresoExpediente pasoActualNumero={f.pasoActualNumero} totalPasos={f.totalPasos} pasosAvance={f.pasosAvance} estado={f.estado} finalizado={f.finalizado} />
             </td>
             <td className="px-2.5 py-2">
               <div className="flex flex-wrap items-center gap-1">
                 <EstadoBadge estado={f.estado} />
+                {f.finalizado && !f.archivado && (
+                  <span
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                    title="Se completó el último paso del procedimiento"
+                  >
+                    <CheckCircle2 className="h-3 w-3" aria-hidden />
+                    Finalizado
+                  </span>
+                )}
                 {f.archivado && (
                   <span
                     className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm bg-stone-800 px-2 py-0.5 text-xs font-medium text-white"

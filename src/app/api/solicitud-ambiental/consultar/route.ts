@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   });
 
   const estado = ESTADO_PUBLICO[e.estado] ?? { etiqueta: "En trámite", explicacion: "La CDMB está gestionando su solicitud." };
-  const terminado = ESTADOS_TERMINADOS.has(e.estado);
+  const terminado = ESTADOS_TERMINADOS.has(e.estado) && e.fechaCierre != null;
   const pasos = e.flujo.pasos;
   const indice = pasos.findIndex((p) => p.numero === e.pasoActualNumero);
   const etapa = !terminado && indice >= 0 ? { posicion: indice + 1, total: pasos.length, titulo: pasos[indice]!.titulo } : null;

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeGestionarPaso } from "@/lib/cargos";
 import { puedeEditarExpediente } from "@/lib/permisos";
-import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 import { avanceValido, resultadosDelPaso } from "@/lib/reglas-estado";
@@ -32,17 +32,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const siguientePasoRaw = form.get("siguientePasoNumero");
   const resultado = form.get("resultado") ? String(form.get("resultado")) : null;
   const comentario = String(form.get("comentario") || "").trim();
+  const finalizar = form.get("finalizar") === "1";
 
   const expediente = await db.expediente.findUnique({
     where: { id },
-    include: { flujo: { include: { pasos: { orderBy: { numero: "asc" } } } } },
+    include: {
+      flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
+    },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
 
-  if (ESTADOS_TERMINALES.includes(expediente.estado)) {
+  const errorEn = (mensaje: string) => {
     const url = new URL(`/expedientes/${id}`, req.url);
-    url.searchParams.set("error", "El expediente ya tiene un estado final; cámbielo primero en la pestaña Administración.");
+    url.searchParams.set("error", mensaje);
     return NextResponse.redirect(url, { status: 303 });
+  };
+
+  if (tramiteFinalizado(expediente)) {
+    return errorEn("El trámite ya finalizó; para modificarlo, cambie primero el estado en la pestaña Administración.");
+  }
+  // Resuelto (aprobado/negado) con pasos por cumplir: solo se puede seguir al paso siguiente o finalizar.
+  const resuelto = ESTADOS_TERMINALES.includes(expediente.estado);
+  if (resuelto && resultado) {
+    return errorEn("La decisión del trámite ya está registrada; continúe con los pasos que faltan (notificación).");
   }
 
   const pasoActual = expediente.flujo.pasos.find((p) => p.numero === expediente.pasoActualNumero);
@@ -55,10 +67,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const pasoDesde = form.get("pasoDesde") ? Number(form.get("pasoDesde")) : null;
   const siguientePasoNumero = siguientePasoRaw ? Number(siguientePasoRaw) : null;
-  if ((pasoDesde !== null && pasoDesde !== expediente.pasoActualNumero) || !avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
-    const url = new URL(`/expedientes/${id}`, req.url);
-    url.searchParams.set("error", "El avance pedido no corresponde al paso actual (la página pudo quedar desactualizada). Recárguela e inténtelo de nuevo.");
-    return NextResponse.redirect(url, { status: 303 });
+  const hayPasoSiguiente = expediente.flujo.pasos.some((p) => p.numero > expediente.pasoActualNumero);
+  const desactualizado = "El avance pedido no corresponde al paso actual (la página pudo quedar desactualizada). Recárguela e inténtelo de nuevo.";
+  if (pasoDesde !== null && pasoDesde !== expediente.pasoActualNumero) return errorEn(desactualizado);
+  if (finalizar) {
+    // «Finalizar trámite»: solo en el último paso y con la decisión ya tomada.
+    if (hayPasoSiguiente || resultado || siguientePasoNumero !== null) return errorEn(desactualizado);
+    if (!resuelto) return errorEn("Para finalizar, el trámite debe tener primero su estado final (defínalo en la pestaña Administración).");
+  } else if (!avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
+    return errorEn(desactualizado);
   }
   const siguienteExiste = siguientePasoNumero
     ? expediente.flujo.pasos.some((p) => p.numero === siguientePasoNumero)
@@ -72,15 +89,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const nuevoEstado: EstadoExpediente =
     resultadoValido ?? (expediente.estado === "RADICADO" ? "EN_TRAMITE" : expediente.estado);
 
+  // El trámite finaliza (fechaCierre) al completar el último paso, o cuando la decisión no deja
+  // pasos por delante (p. ej. «Archiva el trámite»). Aprobar/negar con notificación pendiente deja
+  // el estado final pero sin fecha de cierre: el trámite sigue hasta notificar.
+  const finaliza = finalizar || (resultadoValido !== null && !siguienteExiste);
+
   // Condicional: si otra persona avanzó el trámite al mismo tiempo, este avance no se aplica dos veces.
   const { count } = await db.expediente.updateMany({
-    where: { id, pasoActualNumero: expediente.pasoActualNumero, estado: expediente.estado, archivado: false },
+    where: { id, pasoActualNumero: expediente.pasoActualNumero, estado: expediente.estado, archivado: false, fechaCierre: expediente.fechaCierre },
     data: {
       pasoActualNumero: nuevoPasoNumero,
       estado: nuevoEstado,
       fechaUltimoMovimiento: new Date(),
       responsableActualId: session.userId,
-      fechaCierre: ESTADOS_TERMINALES.includes(nuevoEstado) ? new Date() : null,
+      fechaCierre: finaliza ? new Date() : null,
     },
   });
   if (count === 0) {
@@ -97,7 +119,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: {
       expedienteId: id,
       tipo: resultadoValido ? "CAMBIO_ESTADO" : "AVANCE_PASO",
-      descripcion: [descripcionBase, comentario].filter(Boolean).join(" "),
+      descripcion: [descripcionBase, finaliza ? "Trámite finalizado." : "", comentario].filter(Boolean).join(" "),
       pasoNumero: pasoActual?.numero ?? null,
       estadoAnterior: expediente.estado,
       estadoNuevo: nuevoEstado,

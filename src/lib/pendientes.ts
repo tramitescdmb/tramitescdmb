@@ -28,6 +28,8 @@ export type ExpedientePendientes = {
   numero: string;
   estado: EstadoExp;
   pasoActualNumero: number;
+  /** Fin del procedimiento; un trámite resuelto (aprobado/negado) con pasos por cumplir la tiene en null. */
+  fechaCierre?: Date | null;
   tramiteNombre: string;
   pasos: PasoPendientes[];
   documentosCargados: { pasoNumero: number | null; descripcion: string | null; nombre: string }[];
@@ -70,7 +72,7 @@ export function clasificarPendientes(
   sesion: SesionPendientes
 ): ResumenPendientes {
   const esAdmin = sesion.rol === "ADMIN";
-  const activos = expedientes.filter((e) => !ESTADOS_TERMINALES.includes(e.estado));
+  const activos = expedientes.filter((e) => !ESTADOS_TERMINALES.includes(e.estado) || e.fechaCierre === null);
 
   const pasoActualDe = (e: ExpedientePendientes) =>
     e.pasos.find((p) => p.numero === e.pasoActualNumero) ?? null;
@@ -144,11 +146,12 @@ export async function getPendientes(sesion: SesionPendientes | null): Promise<Re
   if (!sesion) return null;
 
   const expedientes = await db.expediente.findMany({
-    where: { estado: { notIn: ESTADOS_TERMINALES } },
+    where: { archivado: false, OR: [{ estado: { notIn: ESTADOS_TERMINALES } }, { fechaCierre: null }] },
     select: {
       id: true,
       numero: true,
       estado: true,
+      fechaCierre: true,
       pasoActualNumero: true,
       tramiteTipo: { select: { nombre: true } },
       flujo: {
@@ -171,6 +174,7 @@ export async function getPendientes(sesion: SesionPendientes | null): Promise<Re
     numero: e.numero,
     estado: e.estado as EstadoExp,
     pasoActualNumero: e.pasoActualNumero,
+    fechaCierre: e.fechaCierre,
     tramiteNombre: e.tramiteTipo.nombre,
     pasos: e.flujo.pasos,
     documentosCargados: e.documentos,

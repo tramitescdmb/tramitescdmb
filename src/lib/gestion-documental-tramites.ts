@@ -1,6 +1,6 @@
 import type { NivelAccesoInformacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { cancelarFlujosDeObjeto } from "@/lib/flujos";
 import { ETIQUETA_NIVEL_ACCESO } from "@/lib/nivel-acceso";
 import {
@@ -26,6 +26,7 @@ async function expedienteAbierto(expedienteId: string) {
     select: {
       numero: true,
       estado: true,
+      fechaCierre: true,
       archivado: true,
       subserieId: true,
       nivelAcceso: true,
@@ -83,6 +84,9 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
   const actual = await expedienteAbierto(expedienteId);
   if (!(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).includes(actual.estado)) {
     throw new Error("Solo se cierra un expediente cuyo trámite ya tiene un estado final (aprobado, negado, desistido, archivado o rechazado).");
+  }
+  if (!tramiteFinalizado(actual)) {
+    throw new Error("El trámite ya tiene decisión pero no ha finalizado: complete los pasos que faltan (notificación) y use «Finalizar trámite» en el último paso.");
   }
   if (!actual.subserieId) throw new Error("Asigne la clasificación TRD antes de cerrar el expediente.");
   const pendientes = await firmasPendientesTramite(expedienteId);
