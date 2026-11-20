@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconMenu2 as Menu, IconX as X, IconLogout as LogOut } from "@tabler/icons-react";
 import { SidebarNav } from "@/components/SidebarNav";
+import { EncabezadoMenu } from "@/components/EncabezadoMenu";
+import { SelectorColorMenu } from "@/components/SelectorColorMenu";
 
 export function MobileNav({
   esAdmin,
@@ -14,6 +16,7 @@ export function MobileNav({
   mostrarCorrespondencia,
   mostrarContratacion,
   mostrarMemorandos = false,
+  logoUrl = null,
   nombre,
   subtitulo,
   iniciales,
@@ -25,6 +28,7 @@ export function MobileNav({
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
   mostrarMemorandos?: boolean;
+  logoUrl?: string | null;
   nombre: string;
   subtitulo: string;
   iniciales: string;
@@ -56,14 +60,14 @@ export function MobileNav({
             onClick={() => setAbierto(false)}
             className="absolute inset-0 bg-graphite-900/40 backdrop-blur-[2px]"
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-cdmb-800 text-white shadow-soft-lg">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-              <span className="font-semibold text-white">Menú</span>
+          <div role="dialog" aria-modal="true" aria-label="Menú" className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-lateral text-white shadow-soft-lg">
+            <div className="relative">
+              <EncabezadoMenu logoUrl={logoUrl} />
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
                 aria-label="Cerrar menú"
-                className="rounded-lg p-1.5 text-white/70 hover:bg-white/10"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-white/80 hover:bg-white/15 hover:text-white"
               >
                 <X className="h-5 w-5" aria-hidden />
               </button>
@@ -79,7 +83,7 @@ export function MobileNav({
               mostrarMemorandos={mostrarMemorandos}
             />
 
-            <div className="border-t border-white/10 p-3">
+            <div className="border-t border-white/10 bg-lateral-oscuro/60 p-3">
               <Link prefetch={false} href="/mi-cuenta" className="flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-white/10">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded bg-acento-500 text-xs font-semibold text-white">
                   {iniciales}
@@ -89,12 +93,15 @@ export function MobileNav({
                   <p className="truncate text-xs text-white/60">{subtitulo}</p>
                 </div>
               </Link>
-              <form action="/api/auth/logout" method="post" className="mt-1.5 px-2">
+              <div className="mt-1.5 flex items-center gap-2 px-2">
+              <form action="/api/auth/logout" method="post" className="flex-1">
                 <button className="flex w-full items-center gap-1.5 rounded-lg border border-white/25 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 active:scale-95">
                   <LogOut className="h-3.5 w-3.5" aria-hidden />
                   Salir
                 </button>
               </form>
+              <SelectorColorMenu />
+              </div>
             </div>
           </div>
         </div>

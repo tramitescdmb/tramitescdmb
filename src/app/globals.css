@@ -6,6 +6,46 @@
   color-scheme: light;
 }
 
+/* Colores del menú lateral (src/lib/tema-menu.ts). Tripletas RGB para que Tailwind admita opacidad.
+   fondo: barra; oscuro: encabezado y pie; claro: final del degradado; acento: opción activa. */
+:root,
+:root[data-tema-menu="verde"] {
+  --menu-fondo: 3 86 64;
+  --menu-oscuro: 4 71 53;
+  --menu-claro: 3 143 103;
+  --menu-acento: 133 200 0;
+}
+:root[data-tema-menu="azul"] {
+  --menu-fondo: 38 50 87;
+  --menu-oscuro: 26 35 64;
+  --menu-claro: 59 90 154;
+  --menu-acento: 125 211 252;
+}
+:root[data-tema-menu="pizarra"] {
+  --menu-fondo: 51 65 85;
+  --menu-oscuro: 30 41 59;
+  --menu-claro: 71 85 105;
+  --menu-acento: 251 191 36;
+}
+:root[data-tema-menu="petroleo"] {
+  --menu-fondo: 19 78 74;
+  --menu-oscuro: 11 53 50;
+  --menu-claro: 15 118 110;
+  --menu-acento: 94 234 212;
+}
+:root[data-tema-menu="vino"] {
+  --menu-fondo: 91 26 43;
+  --menu-oscuro: 61 16 25;
+  --menu-claro: 138 43 67;
+  --menu-acento: 253 164 175;
+}
+:root[data-tema-menu="grafito"] {
+  --menu-fondo: 38 38 38;
+  --menu-oscuro: 23 23 23;
+  --menu-claro: 64 64 64;
+  --menu-acento: 133 200 0;
+}
+
 body {
   background-color: #f5f7f6;
   color: #1b2a20;

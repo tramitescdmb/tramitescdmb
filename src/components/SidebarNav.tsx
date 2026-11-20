@@ -108,8 +108,9 @@ export function SidebarNav({
   ];
 
   return (
-    <nav className="scroll-menu flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto py-2" aria-label="Navegación">
-      <Grupo items={principal} activo={activo} colapsado={colapsado} pendientes={pendientes} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
+    <nav className="scroll-menu flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto py-3" aria-label="Navegación">
+      <Grupo titulo="Menú principal" items={principal} activo={activo} colapsado={colapsado} pendientes={pendientes} submenu={!colapsado && menu ? <SubmenuModulo menu={menu} /> : null} />
+      {esAdmin && colapsado && <hr className="mx-3 border-white/10" aria-hidden />}
       {esAdmin && <Grupo titulo="Administración" items={ITEMS_ADMIN} activo={activo} colapsado={colapsado} />}
     </nav>
   );
@@ -134,9 +135,9 @@ function Grupo({
   return (
     <div>
       {titulo && !colapsado && (
-        <p className="mb-1 px-5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-white/45">{titulo}</p>
+        <p className="mb-1 px-5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/50">{titulo}</p>
       )}
-      <ul>
+      <ul className="space-y-0.5">
         {items.map((item) => (
           <li key={item.href} className="relative">
             <EnlaceNav
@@ -153,7 +154,7 @@ function Grupo({
                   onClick={() => setPlegado(plegado === item.href ? null : item.href)}
                   aria-expanded={plegado !== item.href}
                   aria-label={plegado === item.href ? `Desplegar el menú de ${item.label}` : `Plegar el menú de ${item.label}`}
-                  className="absolute right-2 top-1.5 flex h-8 w-8 items-center justify-center rounded text-menu-500 hover:bg-white/10"
+                  className="absolute right-3 top-1 flex h-8 w-8 items-center justify-center rounded text-lateral-acento hover:bg-white/10"
                 >
                   <IconChevronDown className={`h-4 w-4 transition-transform ${plegado === item.href ? "-rotate-90" : ""}`} stroke={1.75} aria-hidden />
                 </button>
@@ -193,11 +194,11 @@ function EnlaceNav({
       href={item.href}
       aria-current={activo ? "page" : undefined}
       title={colapsado ? item.label : undefined}
-      className={`relative flex items-center whitespace-nowrap border-l-[3px] text-[14px] transition-colors ${
-        colapsado ? "justify-center px-0 py-3" : `gap-3 py-2.5 pl-[17px] ${conSubmenu ? "pr-11" : "pr-[17px]"}`
-      } ${activo ? "border-menu-500 bg-black/20 font-semibold text-menu-500" : "border-transparent text-white/85 hover:bg-white/5 hover:text-white"}`}
+      className={`group relative mx-2 flex items-center whitespace-nowrap rounded-md text-[14px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lateral-acento ${
+        colapsado ? "justify-center px-0 py-2.5" : `gap-3 py-2 pl-3 ${conSubmenu ? "pr-10" : "pr-3"}`
+      } ${activo ? "bg-white/[0.13] font-semibold text-white shadow-[inset_3px_0_0_rgb(var(--menu-acento))]" : "text-white/85 hover:bg-white/[0.07] hover:text-white"}`}
     >
-      <Icon className="h-5 w-5 flex-none" stroke={1.75} aria-hidden />
+      <Icon className={`h-5 w-5 flex-none transition-colors ${activo ? "text-lateral-acento" : "text-white/70 group-hover:text-white"}`} stroke={1.75} aria-hidden />
       <span className={colapsado ? "sr-only" : "min-w-0 flex-1 truncate"}>{item.label}</span>
       {pendiente && pendiente.total > 0 && (
         <span
