@@ -1426,7 +1426,7 @@ export default async function ExpedienteDetallePage({
                 puedeReabrir={session?.rol === "ADMIN"}
                 cierre={{
                   descripcion:
-                    "Queda en solo lectura y se archiva como expediente digital (sección Expedientes archivados). Requiere trámite finalizado, TRD y firmas completas.",
+                    "Queda en solo lectura y se archiva como expediente digital (menú «Expediente electrónico»). Requiere trámite finalizado, TRD y firmas completas.",
                   bloqueo: !esTerminal
                     ? `El trámite aún no tiene un estado final (${(ESTADOS_TERMINALES_EXPEDIENTE as readonly string[]).map((e) => e.toLowerCase()).join(", ")}).`
                     : !finalizado

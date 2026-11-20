@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LibraryBig, FolderOpen, Users, PenLine, Map, CalendarDays, HelpCircle } from "lucide-react";
+import { LayoutDashboard, LibraryBig, FolderOpen, Archive, Users, PenLine, Map, CalendarDays, HelpCircle } from "lucide-react";
 import { BarraModulo, type GrupoMenu } from "@/components/BarraModulo";
 import { SIN_PENDIENTES_FIRMA, textoPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 
@@ -39,12 +39,12 @@ export function TramitesTabs({
       items: [
         { href: "/expedientes", label: "Expedientes" },
         { href: "/expedientes?asignados=mi", label: "Asignados a mí" },
-        { href: "/expedientes?archivados=si", label: "Expedientes archivados" },
         { href: "/expedientes/disposicion", label: "Disposición final (TRD)", prefijo: true, separador: true },
         ...(editaFormatos ? [{ href: "/tramites-ambientales/flujos", label: "Flujos de trabajo", prefijo: true }] : []),
         ...(esAdmin ? [{ href: "/expedientes/clasificacion-trd", label: "Clasificación TRD", prefijo: true }] : []),
       ],
     },
+    { label: "Expediente electrónico", icon: Archive, href: "/expediente-electronico" },
     { label: "Visor de trámites", icon: Map, href: "/visor-tramites" },
     {
       label: "Planeador",

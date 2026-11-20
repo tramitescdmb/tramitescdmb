@@ -349,7 +349,7 @@ export default async function TramitesAyudaPage() {
 
       <Seccion n={18} id="archivo" icono={Archive} titulo="Archivo y disposición final">
         <p>
-          Un trámite finalizado se cierra desde Administración y queda como expediente digital de solo lectura, clasificado según la TRD, en «Expedientes archivados» (menú Expedientes). «Disposición final (TRD)» muestra
+          Un trámite finalizado se cierra desde Administración y queda como expediente digital de solo lectura, clasificado según la TRD, en el menú «Expediente electrónico». «Disposición final (TRD)» muestra
           los expedientes que cumplieron su tiempo de retención.
         </p>
       </Seccion>

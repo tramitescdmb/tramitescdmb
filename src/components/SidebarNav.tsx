@@ -37,7 +37,7 @@ export const ITEM_TRAMITES: Item = {
   href: "/tramites-ambientales",
   label: "Trámites ambientales 2.0",
   icon: IconFileCertificate,
-  prefijo: ["/tramites-ambientales", "/tramites", "/expedientes", "/solicitantes", "/visor-tramites", "/planeador", "/firmas"],
+  prefijo: ["/tramites-ambientales", "/tramites", "/expedientes", "/expediente-electronico", "/solicitantes", "/visor-tramites", "/planeador", "/firmas"],
 };
 export const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: IconPlugConnected, prefijo: "/vital" };
 export const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: IconArchive, prefijo: "/historico" };

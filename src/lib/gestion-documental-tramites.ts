@@ -109,7 +109,7 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
     data: { archivado: true, archivadoEn: ahora, archivadoPorId: usuarioId, fechaUltimoMovimiento: ahora },
   });
   // Por ahora el expediente de trámites se archiva como expediente digital propio del módulo
-  // (sección «Expedientes archivados»); ya no se envía al SGDEA (sincronizarArchivoTramite queda
+  // (menú «Expediente electrónico»); ya no se envía al SGDEA (sincronizarArchivoTramite queda
   // disponible para cuando se use).
   await db.expedienteEvento.create({
     data: {

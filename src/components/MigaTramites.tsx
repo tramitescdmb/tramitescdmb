@@ -6,6 +6,7 @@ const INICIO_GRUPO: Record<string, string> = {
   Panel: "/tramites-ambientales",
   "Catálogo de trámites": "/tramites",
   Expedientes: "/expedientes",
+  "Expediente electrónico": "/expediente-electronico",
   "Visor de trámites": "/visor-tramites",
   Planeador: "/planeador",
   Solicitantes: "/solicitantes",
@@ -16,6 +17,7 @@ const INICIO_GRUPO: Record<string, string> = {
 
 const RUTAS: RutaMiga[] = [
   { re: /^\/tramites-ambientales$/, trail: ["Panel"] },
+  { re: /^\/expediente-electronico/, trail: ["Expediente electrónico"] },
   { re: /^\/tramites-ambientales\/ayuda/, trail: ["Ayuda"] },
   { re: /^\/tramites-ambientales\/flujos\/[^/]+/, trail: ["Expedientes", "Flujos de trabajo", "Editar flujo"] },
   { re: /^\/tramites-ambientales\/flujos/, trail: ["Expedientes", "Flujos de trabajo"] },
