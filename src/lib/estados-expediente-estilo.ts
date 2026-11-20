@@ -48,6 +48,12 @@ export const ESTILO_ESTADO_EXPEDIENTE: Record<string, EstiloEstado> = {
     etiqueta: "Rechazado",
     glifo: `${CIRCULO}<path d="m4.9 4.9 14.2 14.2"/>`,
   },
+  // No es un estado guardado: el expediente ya pasado a expediente digital (ver ESTADO_CERRADO).
+  CERRADO: {
+    color: "#2f2e2b",
+    etiqueta: "Cerrado",
+    glifo: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  },
 };
 
 const ESTILO_DESCONOCIDO: EstiloEstado = { color: "#52514e", etiqueta: "Otro", glifo: CIRCULO };

@@ -15,7 +15,7 @@ import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
 import { obtenerPermisosUsuario, puedeAccederTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { formatearFecha } from "@/lib/fecha";
-import { ESTADOS_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
+import { ESTADOS_EXPEDIENTE, ESTADO_CERRADO, tramiteFinalizado } from "@/lib/estados-expediente";
 import { construirWhereExpedientes, aniosConRadicacion } from "@/lib/expedientes";
 
 const POR_PAGINA = 30;
@@ -84,7 +84,7 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
     cargos: session?.cargos,
     archivados: soloArchivados,
   });
-  const [total, expedientes, porEstado] = await Promise.all([
+  const [total, expedientes, porEstado, cerrados] = await Promise.all([
     db.expediente.count({ where }),
     db.expediente.findMany({
       where,
@@ -99,6 +99,8 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
       skip: (pagina - 1) * POR_PAGINA,
     }),
     db.expediente.groupBy({ by: ["estado"], where: whereSinEstado, _count: { _all: true } }),
+    // «Cerrado» se suma a la decisión: un aprobado ya pasado a expediente digital cuenta en ambas fichas.
+    db.expediente.count({ where: { AND: [whereSinEstado, { archivado: true }] } }),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
@@ -136,7 +138,7 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
     clausulasFiltro.push(`de ${t ? `${t.codigo} — ${t.nombre}` : tramite}`);
   }
   if (municipio) clausulasFiltro.push(`en ${municipio}`);
-  if (estado) clausulasFiltro.push(estado === "EN_CURSO" ? "en curso" : estado === "NEGADOS" ? "negados o rechazados" : `en estado "${estiloEstado(estado).etiqueta}"`);
+  if (estado) clausulasFiltro.push(estado === "EN_CURSO" ? "en curso" : estado === "NEGADOS" ? "negados o rechazados" : estado === ESTADO_CERRADO ? "cerrados (ya pasados a expediente digital)" : `en estado "${estiloEstado(estado).etiqueta}"`);
   if (rango) clausulasFiltro.push(`radicados entre ${etiquetaPeriodo}`);
   if (soloMios) clausulasFiltro.push("asignados a usted");
   if (busqueda) clausulasFiltro.push(`que coinciden con "${busqueda}"`);
@@ -270,6 +272,14 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
             color: estiloEstado(e).color,
             activo: estado === e,
           })),
+          {
+            clave: ESTADO_CERRADO,
+            etiqueta: "Cerrado",
+            valor: cerrados,
+            href: conFiltro({ estado: ESTADO_CERRADO }),
+            color: estiloEstado(ESTADO_CERRADO).color,
+            activo: estado === ESTADO_CERRADO,
+          },
         ]}
       />
 

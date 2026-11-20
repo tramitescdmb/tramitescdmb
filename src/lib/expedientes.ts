@@ -2,6 +2,7 @@ import type { Prisma, EstadoExpediente } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { generarNumeroTramite } from "@/lib/consecutivos";
 import type { RangoPeriodo } from "@/lib/periodo-dashboard";
+import { ESTADO_CERRADO } from "@/lib/estados-expediente";
 
 export type FiltrosExpedientes = {
   tramiteIdsPermitidos: string[] | null;
@@ -32,6 +33,7 @@ export function construirWhereExpedientes(f: FiltrosExpedientes): Prisma.Expedie
   }
   if (f.estado === "EN_CURSO") filtros.push({ estado: { in: ["RADICADO", "EN_TRAMITE", "INFORMACION_ADICIONAL_REQUERIDA", "SUSPENDIDO"] } });
   else if (f.estado === "NEGADOS") filtros.push({ estado: { in: ["NEGADO", "RECHAZADO"] } });
+  else if (f.estado === ESTADO_CERRADO) filtros.push({ archivado: true });
   else if (f.estado) filtros.push({ estado: f.estado as EstadoExpediente });
   if (f.tramite) filtros.push({ tramiteTipoId: { in: f.tramite.split(",").filter(Boolean) } });
   if (f.tramites && f.tramites.length > 0) filtros.push({ tramiteTipoId: { in: f.tramites } });
