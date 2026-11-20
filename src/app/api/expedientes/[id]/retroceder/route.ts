@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { EstadoExpediente } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { ESTADOS_TERMINALES_EXPEDIENTE } from "@/lib/estados-expediente";
+import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
+import { resultadosDelPaso } from "@/lib/reglas-estado";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const motivo = String(form.get("motivo") || "").trim();
   const expediente = await db.expediente.findUnique({
     where: { id },
-    select: { estado: true, pasoActualNumero: true, flujo: { select: { pasos: { select: { numero: true, titulo: true } } } } },
+    select: { estado: true, fechaCierre: true, pasoActualNumero: true, flujo: { select: { pasos: { select: { numero: true, titulo: true, opciones: true } } } } },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
   const pasoDestino = expediente.flujo.pasos.find((p) => p.numero === destino);
@@ -40,15 +41,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     volver.searchParams.set("error", "Indique el motivo para devolver el expediente.");
     return NextResponse.redirect(volver, { status: 303 });
   }
-  if (ESTADOS_TERMINALES.includes(expediente.estado)) {
-    volver.searchParams.set("error", "El expediente ya tiene un estado final; cámbielo primero en la pestaña Administración.");
+  if (tramiteFinalizado(expediente)) {
+    volver.searchParams.set("error", "El trámite ya finalizó; para devolverlo, cambie primero el estado en la pestaña Administración.");
     return NextResponse.redirect(volver, { status: 303 });
+  }
+  // Resuelto (aprobado/negado) con pasos por cumplir: se puede devolver. Si vuelve al paso de la
+  // decisión o antes, la decisión se deshace y el trámite queda otra vez «En trámite».
+  let estadoNuevo = expediente.estado;
+  if (ESTADOS_TERMINALES.includes(expediente.estado)) {
+    const pasoDecision = expediente.flujo.pasos
+      .filter((p) => resultadosDelPaso(p).includes(expediente.estado))
+      .sort((a, b) => a.numero - b.numero)[0];
+    if (!pasoDecision || destino <= pasoDecision.numero) estadoNuevo = "EN_TRAMITE";
   }
 
   await db.$transaction([
     db.expediente.update({
       where: { id },
-      data: { pasoActualNumero: destino, fechaUltimoMovimiento: new Date(), responsableActualId: session.userId },
+      data: { pasoActualNumero: destino, estado: estadoNuevo, fechaUltimoMovimiento: new Date(), responsableActualId: session.userId },
     }),
     db.expedienteEvento.create({
       data: {
@@ -57,7 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         descripcion: `${session.nombre} devolvió el expediente del paso ${expediente.pasoActualNumero}${pasoActual ? ` ("${pasoActual.titulo}")` : ""} al paso ${destino} ("${pasoDestino.titulo}"). Motivo: ${motivo}`,
         pasoNumero: expediente.pasoActualNumero,
         estadoAnterior: expediente.estado,
-        estadoNuevo: expediente.estado,
+        estadoNuevo,
         usuarioId: session.userId,
       },
     }),

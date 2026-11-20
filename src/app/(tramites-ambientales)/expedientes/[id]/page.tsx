@@ -826,7 +826,7 @@ export default async function ExpedienteDetallePage({
                         Último paso. Defina el estado final en Administración.
                       </p>
                     )}
-                    {session?.rol === "ADMIN" && !cerrado && pasoActual.numero > (expediente.flujo.pasos[0]?.numero ?? 1) && (
+                    {session?.rol === "ADMIN" && !cerrado && !finalizado && pasoActual.numero > (expediente.flujo.pasos[0]?.numero ?? 1) && (
                       <details className="mt-3 rounded-md border border-stone-200 bg-stone-50/60 px-3 py-2">
                         <summary className="cursor-pointer text-xs font-medium text-stone-600">Devolver a un paso anterior (administrador)</summary>
                         <form action={`/api/expedientes/${expediente.id}/retroceder`} method="post" className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,16rem)_1fr_auto] sm:items-end">
