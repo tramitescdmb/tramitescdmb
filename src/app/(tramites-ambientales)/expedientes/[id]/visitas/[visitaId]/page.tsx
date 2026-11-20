@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { CalendarClock, MapPin, User, AlertTriangle, ClipboardCheck, Info, FileText } from "lucide-react";
 import { formatoVigenteParaTramite, precargaDeVisita } from "@/lib/formatos-visita-db";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite, puedeEditarTramite, puedePlanearVisitas, puedeAnularVisitas } from "@/lib/permisos";
+import { opcionesAnulacion } from "@/lib/anular-visita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, partesColombia, sumarMinutosHora } from "@/lib/planeador";
 import { rangoTexto, temasDeVisita } from "@/lib/planeador-db";
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, esPasoDeRealizarVisita, ordenarTemasParaTramite, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
@@ -78,6 +79,9 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
   const precarga = formato ? await precargaDeVisita(visita.id, new Date()) : {};
   const temas = habilitada && !formato ? await temasDeVisita() : [];
   const { sugeridos, otros } = ordenarTemasParaTramite(temas, visita.expediente.tramiteTipo.codigo);
+  const anulacion = puedeAnularVisitas(permisos)
+    ? opcionesAnulacion({ estado: visita.estado, expedienteArchivado: visita.expediente.archivado, hoja: vt })
+    : null;
   const verEquipo = visita.estado !== "CANCELADA" && visita.estado !== "NO_REALIZADA";
   const equipoEditable = verEquipo && planificador && enEjecucion && !vt?.finalizadaEn;
   const personas = verEquipo ? await personasParaEquipo(visita.expediente.usuariosAsignados.map((u) => u.id)) : [];
@@ -293,6 +297,20 @@ export default async function HojaVisitaPage({ params }: { params: Promise<{ id:
             Pendiente de que {visita.profesional.nombre} registre la visita ({horaCorta(visita.fechaHora)}).
           </p>
         ))}
+
+      {anulacion && (anulacion.cancelar || anulacion.eliminar) && (
+        <section className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+          <span className="text-xs text-stone-500">Administrar la visita:</span>
+          <AccionesVisita
+            visitaId={visita.id}
+            puedeNoRealizada={false}
+            puedeCancelar={anulacion.cancelar}
+            puedeEliminar={anulacion.eliminar}
+            bloqueoEliminar={anulacion.bloqueoEliminar}
+            trasEliminar={`/expedientes/${id}#planeador`}
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -777,6 +777,15 @@ export function puedePlanearVisitas(permisos: PermisosUsuario): boolean {
 
 export const CARGO_SUBDIRECTOR_SEYCA = "Subdirector(a) de Evaluación y Control Ambiental (SEYCA)";
 
+/**
+ * Cancelar una visita ya cerrada (realizada o no realizada) y eliminar visitas del Planeador: solo
+ * el administrador y el Subdirector(a) SEYCA (decisión del usuario). Cancelar una visita aún
+ * programada sigue permitido a quien planea las visitas (`puedePlanearVisitas`).
+ */
+export function puedeAnularVisitas(permisos: PermisosUsuario): boolean {
+  return permisos.esAdmin || permisos.cargos.has(CARGO_SUBDIRECTOR_SEYCA);
+}
+
 export function puedeEditarFormatosVisita(permisos: PermisosUsuario): boolean {
   if (tramitesPorPerfil(permisos) && tramitesPermite(permisos, "tramites.formatos-visita", "ACTUALIZAR")) return true;
   return permisos.esAdmin || permisos.cargos.has(CARGO_SUBDIRECTOR_SEYCA);

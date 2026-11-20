@@ -22,6 +22,7 @@ import {
   puedeAsignarFirmantesDocumentoTramite,
   puedeValidarDocumentoTramite,
   puedePlanearVisitas,
+  puedeAnularVisitas,
 } from "@/lib/permisos";
 import { puedeActuarSolicitud } from "@/lib/solicitudes-firma";
 import { rotuloCalidadFirma } from "@/lib/calidad-firma";
@@ -32,6 +33,7 @@ import { esContratista } from "@/lib/jerarquia-firma";
 import { ProgramarVisitaForm } from "@/components/planeador/ProgramarVisitaForm";
 import { AccionesVisita } from "@/components/planeador/AccionesVisita";
 import { CLASE_ESTADO_VISITA, ETIQUETA_ESTADO_VISITA, expedienteEnEjecucion, finEfectivo, horaCorta, lugarSugerido, partesColombia } from "@/lib/planeador";
+import { opcionesAnulacion } from "@/lib/anular-visita";
 import { CIERRES_ANTICIPADOS, evaluarCambioManualEstado, opcionFinalizar } from "@/lib/reglas-estado";
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
@@ -138,7 +140,7 @@ export default async function ExpedienteDetallePage({
           include: {
             profesional: { select: { nombre: true } },
             programadaPor: { select: { nombre: true } },
-            visitaTecnica: { select: { id: true, resultado: true } },
+            visitaTecnica: { select: { id: true, resultado: true, finalizadaEn: true, conceptoNumero: true, documentoConceptoId: true } },
           },
         },
         creadoPor: true,
@@ -185,6 +187,7 @@ export default async function ExpedienteDetallePage({
   let puedeAsignarFirmantes = false;
   let puedeValidar = false;
   let planificador = false;
+  let anulador = false;
   let usuarioFlujoActual: UsuarioFlujo | null = null;
   if (session) {
     const permisos = await obtenerPermisosUsuario(session.userId);
@@ -193,6 +196,7 @@ export default async function ExpedienteDetallePage({
     puedeAsignarFirmantes = !cerrado && puedeAsignarFirmantesDocumentoTramite(permisos);
     puedeValidar = !cerrado && puedeValidarDocumentoTramite(permisos);
     planificador = puedePlanearVisitas(permisos);
+    anulador = puedeAnularVisitas(permisos);
     usuarioFlujoActual = await usuarioFlujo(session.userId, permisos, "TRAMITES");
   }
   const enEjecucion = expedienteEnEjecucion(expediente);
@@ -971,6 +975,9 @@ export default async function ExpedienteDetallePage({
                         const llegoElDia = visitaHabilitadaParaRegistro(partes.fecha, hoyColombia);
                         const esResponsable = planificador || session?.userId === v.profesionalId;
                         const puedeRegistrar = editable && llegoElDia && esResponsable && puedeEditar;
+                        const anulacion = anulador
+                          ? opcionesAnulacion({ estado: v.estado, expedienteArchivado: expediente.archivado, hoja: v.visitaTecnica })
+                          : null;
                         return (
                           <li key={v.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0">
@@ -1033,8 +1040,14 @@ export default async function ExpedienteDetallePage({
                                   }}
                                 />
                               )}
-                              {editable && (
-                                <AccionesVisita visitaId={v.id} puedeNoRealizada={llegoElDia && esResponsable} puedeCancelar={planificador} />
+                              {(editable || anulacion) && (
+                                <AccionesVisita
+                                  visitaId={v.id}
+                                  puedeNoRealizada={editable && llegoElDia && esResponsable}
+                                  puedeCancelar={(editable && planificador) || Boolean(anulacion?.cancelar)}
+                                  puedeEliminar={Boolean(anulacion?.eliminar)}
+                                  bloqueoEliminar={anulacion?.bloqueoEliminar ?? null}
+                                />
                               )}
                             </div>
                           </li>
