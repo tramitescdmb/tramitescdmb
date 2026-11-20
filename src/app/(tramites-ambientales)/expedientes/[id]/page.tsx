@@ -531,7 +531,10 @@ export default async function ExpedienteDetallePage({
                     Expediente cerrado
                     {expediente.archivadoEn && <> el {formatearFechaHora(expediente.archivadoEn)}</>}
                     {expediente.archivadoPor && <> por {expediente.archivadoPor.nombre}</>} y archivado como expediente digital. Se
-                    consulta en modo lectura; para modificarlo debe reabrirse desde Administración.
+                    consulta en modo lectura; para modificarlo debe reabrirse desde Administración.{" "}
+                    <Link href={`/expediente-electronico/${expediente.id}`} className="font-medium text-cdmb-700 hover:underline">
+                      Ver el expediente electrónico
+                    </Link>
                   </span>
                 </div>
               ) : (
