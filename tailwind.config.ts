@@ -69,6 +69,13 @@ export default {
           500: "#85c800",
           600: "#6ea500",
         },
+        // Menú lateral: cambia con el color que escoja cada persona (globals.css, src/lib/tema-menu.ts).
+        lateral: {
+          DEFAULT: "rgb(var(--menu-fondo) / <alpha-value>)",
+          oscuro: "rgb(var(--menu-oscuro) / <alpha-value>)",
+          claro: "rgb(var(--menu-claro) / <alpha-value>)",
+          acento: "rgb(var(--menu-acento) / <alpha-value>)",
+        },
         govco: "#3366cc",
         techblue: {
           50: "#eef5f9",

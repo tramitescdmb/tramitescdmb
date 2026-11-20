@@ -25,7 +25,7 @@ function Contador({ insignia }: { insignia: Insignia }) {
 const FILA = "flex w-full items-center gap-2.5 py-2 pr-4 text-[13.5px] transition-colors";
 
 function claseFila(activo: boolean) {
-  return `${FILA} ${activo ? "bg-black/25 font-semibold text-white" : "text-white/75 hover:bg-white/5 hover:text-white"}`;
+  return `${FILA} rounded-md ${activo ? "bg-white/[0.12] font-semibold text-white shadow-[inset_3px_0_0_rgb(var(--menu-acento))]" : "text-white/75 hover:bg-white/[0.07] hover:text-white"}`;
 }
 
 function Bloqueado({ label, motivo, sangria }: { label: string; motivo: string; sangria: string }) {
@@ -49,7 +49,7 @@ function Subgrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: boo
 
   return (
     <li>
-      <button type="button" aria-expanded={abierto} onClick={() => setAbierto((v) => !v)} className={`${claseFila(false)} pl-9 ${activo ? "!text-white" : ""}`}>
+      <button type="button" aria-expanded={abierto} onClick={() => setAbierto((v) => !v)} className={`${claseFila(false)} pl-7 ${activo ? "!text-white" : ""}`}>
         <Icon className="h-4 w-4 flex-none" aria-hidden />
         <span className="min-w-0 flex-1 truncate text-left">{grupo.label}</span>
         {grupo.insignia && <Contador insignia={grupo.insignia} />}
@@ -62,14 +62,14 @@ function Subgrupo({ grupo, activo, itemActivo }: { grupo: GrupoMenu; activo: boo
             if (motivo) {
               return (
                 <li key={it.href}>
-                  <Bloqueado label={it.label} motivo={motivo} sangria="pl-[3.75rem]" />
+                  <Bloqueado label={it.label} motivo={motivo} sangria="pl-[3.25rem]" />
                 </li>
               );
             }
             const act = itemActivo(it);
             return (
               <li key={it.href}>
-                <Link prefetch={false} href={it.href} aria-current={act ? "page" : undefined} className={`${claseFila(act)} pl-[3.75rem]`}>
+                <Link prefetch={false} href={it.href} aria-current={act ? "page" : undefined} className={`${claseFila(act)} pl-[3.25rem]`}>
                   <span className="min-w-0 flex-1 truncate">{it.label}</span>
                   {it.insignia && <Contador insignia={it.insignia} />}
                   {it.externo && <IconExternalLink className="h-3.5 w-3.5 flex-none opacity-60" stroke={1.75} aria-hidden />}
@@ -89,13 +89,13 @@ export function SubmenuModulo({ menu }: { menu: MenuPublicado }) {
   const ordenados = [...menu.grupos.filter((g) => g.lado !== "derecha"), ...menu.grupos.filter((g) => g.lado === "derecha")];
 
   return (
-    <ul className="bg-black/10 py-1">
+    <ul className="mx-2 mt-0.5 rounded-md bg-black/15 py-1">
       {ordenados.map((g) => {
         if (g.items) return <Subgrupo key={g.label} grupo={g} activo={grupoActivo(g)} itemActivo={itemActivo} />;
         if (g.bloqueadoPara) {
           return (
             <li key={g.label}>
-              <Bloqueado label={g.label} motivo={g.bloqueadoPara} sangria="pl-9" />
+              <Bloqueado label={g.label} motivo={g.bloqueadoPara} sangria="pl-7" />
             </li>
           );
         }
@@ -103,7 +103,7 @@ export function SubmenuModulo({ menu }: { menu: MenuPublicado }) {
         const act = grupoActivo(g);
         return (
           <li key={g.label}>
-            <Link prefetch={false} href={g.href!} aria-current={act ? "page" : undefined} className={`${claseFila(act)} pl-9`}>
+            <Link prefetch={false} href={g.href!} aria-current={act ? "page" : undefined} className={`${claseFila(act)} pl-7`}>
               <Icon className="h-4 w-4 flex-none" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{g.label}</span>
               {g.insignia && <Contador insignia={g.insignia} />}

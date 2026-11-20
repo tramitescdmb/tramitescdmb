@@ -5,6 +5,8 @@ import { NavBar, BarraSuperiorSesion } from "@/components/NavBar";
 import { FranjaGovCo } from "@/components/FranjaGovCo";
 import { Footer } from "@/components/Footer";
 import { PublicShellHeader } from "@/components/PublicShellHeader";
+import { cookies } from "next/headers";
+import { COOKIE_TEMA_MENU, temaMenuValido } from "@/lib/tema-menu";
 import "./globals.css";
 
 const inter = localFont({
@@ -31,8 +33,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Color del menú lateral que escogió la persona (cookie); el predeterminado es el verde institucional.
+  const temaMenu = temaMenuValido((await cookies()).get(COOKIE_TEMA_MENU)?.value);
   return (
-    <html lang="es" className={inter.variable}>
+    <html lang="es" className={inter.variable} data-tema-menu={temaMenu}>
       <body className="flex min-h-screen flex-col text-stone-900 antialiased" suppressHydrationWarning>
         <div className="print:hidden">
           <FranjaGovCo />
