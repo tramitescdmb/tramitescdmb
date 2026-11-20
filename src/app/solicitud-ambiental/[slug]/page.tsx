@@ -6,7 +6,7 @@ import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
 import { aplicaDatosPredio } from "@/lib/tramite-datos-predio";
 import { nombreFlujo } from "@/lib/flujo-nombre";
-import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
+import { cuentaEnSesion, perfilDeCuenta } from "@/lib/cuenta-ciudadana-db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,9 @@ export default async function SolicitudAmbientalTramitePage({
   const aqui = `/solicitud-ambiental/${tramite.slug}${flujoEnfocado ? `?flujo=${flujoEnfocado.codigo}` : ""}`;
   const cuenta = await cuentaEnSesion();
   if (!cuenta) redirect(`/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(aqui)}`);
-  if (!cuenta.completa || !cuenta.identificacion) redirect(`/solicitud-ambiental/mis-solicitudes?siguiente=${encodeURIComponent(aqui)}`);
+  if (!cuenta.perfilCompleto || !cuenta.identificacion) redirect(`/solicitud-ambiental/mis-solicitudes?siguiente=${encodeURIComponent(aqui)}`);
+  // Se precargan los datos del perfil; el documento y el correo de la cuenta quedan fijos.
+  const perfil = await perfilDeCuenta(cuenta.id);
 
   return (
     <div className="space-y-5">
@@ -62,7 +64,19 @@ export default async function SolicitudAmbientalTramitePage({
         flujoInicialId={flujoInicial.id}
         mostrarDatosPredio={aplicaDatosPredio(tramite.codigo)}
         publico
-        cuentaCiudadana={{ correo: cuenta.correo, tipo: cuenta.tipo, identificacion: cuenta.identificacion, telefono: cuenta.telefono }}
+        cuentaCiudadana={{
+          correo: cuenta.correo,
+          tipo: cuenta.tipo,
+          identificacion: cuenta.identificacion,
+          telefono: perfil?.celular ?? perfil?.telefono ?? cuenta.telefono,
+          nombres: perfil?.nombres,
+          apellidos: perfil?.apellidos,
+          razonSocial: perfil?.razonSocial,
+          representanteLegal: perfil?.representanteLegal,
+          representanteIdentificacion: perfil?.representanteIdentificacion,
+          regimenTributario: perfil?.regimenTributario,
+          granContribuyente: perfil?.granContribuyente,
+        }}
       />
     </div>
   );

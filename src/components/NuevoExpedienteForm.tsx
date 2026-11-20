@@ -92,7 +92,19 @@ export function NuevoExpedienteForm({
    * Vista pública con la sesión de «Mis solicitudes» abierta: la solicitud queda en la cuenta, a
    * nombre de su cédula o NIT y con su correo (no se cambian aquí).
    */
-  cuentaCiudadana?: { correo: string; tipo: "NATURAL" | "JURIDICA"; identificacion: string; telefono: string | null } | null;
+  cuentaCiudadana?: {
+    correo: string;
+    tipo: "NATURAL" | "JURIDICA";
+    identificacion: string;
+    telefono: string | null;
+    nombres?: string | null;
+    apellidos?: string | null;
+    razonSocial?: string | null;
+    representanteLegal?: string | null;
+    representanteIdentificacion?: string | null;
+    regimenTributario?: string | null;
+    granContribuyente?: boolean;
+  } | null;
 }) {
   const v = desdeVital?.datos;
   const router = useRouter();
@@ -113,15 +125,15 @@ export function NuevoExpedienteForm({
   const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">(v?.tipo ?? cuentaCiudadana?.tipo ?? "NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
   const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState(v?.identificacion ?? cuentaCiudadana?.identificacion ?? "");
-  const [solicitanteNombres, setSolicitanteNombres] = useState(v?.nombres ?? "");
-  const [solicitanteApellidos, setSolicitanteApellidos] = useState(v?.apellidos ?? "");
-  const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState(v?.razonSocial ?? "");
-  const [representanteLegal, setRepresentanteLegal] = useState(v?.representanteLegal ?? "");
-  const [representanteIdentificacion, setRepresentanteIdentificacion] = useState(v?.representanteIdentificacion ?? "");
+  const [solicitanteNombres, setSolicitanteNombres] = useState(v?.nombres ?? cuentaCiudadana?.nombres ?? "");
+  const [solicitanteApellidos, setSolicitanteApellidos] = useState(v?.apellidos ?? cuentaCiudadana?.apellidos ?? "");
+  const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState(v?.razonSocial ?? cuentaCiudadana?.razonSocial ?? "");
+  const [representanteLegal, setRepresentanteLegal] = useState(v?.representanteLegal ?? cuentaCiudadana?.representanteLegal ?? "");
+  const [representanteIdentificacion, setRepresentanteIdentificacion] = useState(v?.representanteIdentificacion ?? cuentaCiudadana?.representanteIdentificacion ?? "");
   const [solicitanteEmail, setSolicitanteEmail] = useState(v?.email ?? cuentaCiudadana?.correo ?? "");
   const [solicitanteTelefono, setSolicitanteTelefono] = useState(v?.telefono ?? cuentaCiudadana?.telefono ?? "");
-  const [regimenTributario, setRegimenTributario] = useState("");
-  const [granContribuyente, setGranContribuyente] = useState(false);
+  const [regimenTributario, setRegimenTributario] = useState(cuentaCiudadana?.regimenTributario ?? "");
+  const [granContribuyente, setGranContribuyente] = useState(cuentaCiudadana?.granContribuyente ?? false);
   const [buscandoSolicitante, setBuscandoSolicitante] = useState(false);
   const [mensajeBusqueda, setMensajeBusqueda] = useState<{ tipo: "ok" | "info" | "error"; texto: string } | null>(null);
 

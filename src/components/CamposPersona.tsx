@@ -35,6 +35,7 @@ export function CamposPersona({
   onIdentificacionLista,
   claseCampo = CLASE_CAMPO_PERSONA,
   conRepresentante = false,
+  tipoPersonaBloqueado = false,
 }: {
   valor: DatosPersona;
   onChange: (v: DatosPersona) => void;
@@ -47,6 +48,8 @@ export function CamposPersona({
   onIdentificacionLista?: (identificacion: string) => void;
   claseCampo?: string;
   conRepresentante?: boolean;
+  /** Impide cambiar natural/jurídica (p. ej. cuenta ciudadana con la identidad ya fijada). */
+  tipoPersonaBloqueado?: boolean;
 }) {
   const id = useId();
   const esJuridica = valor.tipoPersona === "JURIDICA";
@@ -70,6 +73,7 @@ export function CamposPersona({
             id={`${id}-tipo`}
             value={valor.tipoPersona}
             onChange={(e) => cambiarTipoPersona(e.target.value as TipoPersonaValor)}
+            disabled={tipoPersonaBloqueado}
             className={claseCampo}
           >
             <option value="NATURAL">Persona natural</option>
