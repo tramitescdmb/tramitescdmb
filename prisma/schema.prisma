@@ -230,6 +230,8 @@ model Usuario {
   solicitudesFirmaRecordadas SolicitudFirma[] @relation("SolicitudFirmaRecordadaPor")
 
   @@index([dependenciaId])
+  requerimientosCorreccionCreados   RequerimientoCorreccion[] @relation("RequerimientoCorreccionCreadoPor")
+  requerimientosCorreccionCancelados RequerimientoCorreccion[] @relation("RequerimientoCorreccionCanceladoPor")
 }
 
 model HistorialPassword {
@@ -514,6 +516,7 @@ model DocumentoRequeridoDefinicion {
   tramiteTipo    TramiteTipo           @relation(fields: [tramiteTipoId], references: [id], onDelete: Cascade)
   tipoDocumental TipoDocumental?       @relation(fields: [tipoDocumentalId], references: [id])
   documentos     ExpedienteDocumento[]
+  itemsCorreccion ItemCorreccion[]
 
   @@index([tramiteTipoId])
   @@index([tipoDocumentalId])
@@ -780,6 +783,8 @@ model Expediente {
   cuentaCiudadanaId String?
   cuentaCiudadana   CuentaCiudadana? @relation(fields: [cuentaCiudadanaId], references: [id], onDelete: SetNull)
 
+  requerimientosCorreccion RequerimientoCorreccion[]
+
   @@index([tramiteTipoId])
   @@index([cuentaCiudadanaId])
   @@index([codigoSolicitudPublica])
@@ -823,6 +828,8 @@ model ExpedienteDocumento {
   solicitudesFirma SolicitudFirma[]
   avisosRechazo    AvisoRechazoDocumento[]
   visitaConcepto   VisitaTecnica?                @relation("ConceptoVisitaDocumento")
+  itemsCorreccion  ItemCorreccion[]              @relation("ItemCorreccionDocumento")
+  itemReemplazo    ItemCorreccion?               @relation("ItemCorreccionReemplazo")
 
   @@index([expedienteId])
   @@index([requisitoId])
@@ -886,6 +893,8 @@ enum TipoEvento {
   EXPEDIENTE_ARCHIVADO
   EXPEDIENTE_REABIERTO
   VISITA_PROGRAMADA
+  CORRECCION_SOLICITADA
+  CORRECCION_RECIBIDA
 }
 
 model ExpedienteEvento {
@@ -1136,6 +1145,7 @@ enum TipoNotificacion {
   VITAL_NUEVA
   SOLICITUD_AMBIENTAL_NUEVA
   EXPEDIENTE_ASIGNADO
+  CORRECCION_RECIBIDA
 }
 
 model Notificacion {
@@ -2827,4 +2837,59 @@ model SesionCiudadana {
   cuenta CuentaCiudadana @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
 
   @@index([cuentaId])
+}
+
+enum EstadoRequerimientoCorreccion {
+  PENDIENTE
+  RESPONDIDO
+  CANCELADO
+}
+
+/**
+ * Devolución de una solicitud en línea al ciudadano para corregir o completar documentos, en el
+ * mismo expediente (art. 17 CPACA). Mientras está PENDIENTE el expediente queda en
+ * INFORMACION_ADICIONAL_REQUERIDA. Vencido el plazo no pasa nada automático: decide la CDMB.
+ */
+model RequerimientoCorreccion {
+  id             String                        @id @default(cuid())
+  expedienteId   String
+  /** Mensaje general para el ciudadano (lo ve en «Mis solicitudes» y en el correo). */
+  mensaje        String                        @db.Text
+  plazoHasta     DateTime
+  estado         EstadoRequerimientoCorreccion @default(PENDIENTE)
+  /** Estado del expediente antes de la devolución: se restablece cuando el ciudadano responde. */
+  estadoAnterior EstadoExpediente
+  creadoPorId    String
+  createdAt      DateTime                      @default(now())
+  respondidoEn   DateTime?
+  canceladoEn    DateTime?
+  canceladoPorId String?
+
+  expediente  Expediente       @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  creadoPor   Usuario          @relation("RequerimientoCorreccionCreadoPor", fields: [creadoPorId], references: [id])
+  canceladoPor Usuario?        @relation("RequerimientoCorreccionCanceladoPor", fields: [canceladoPorId], references: [id])
+  items       ItemCorreccion[]
+
+  @@index([expedienteId, estado])
+}
+
+/** Un documento que debe corregirse (documentoId) o faltante (sin documentoId), con el motivo para el ciudadano. */
+model ItemCorreccion {
+  id              String  @id @default(cuid())
+  requerimientoId String
+  /** Documento que se debe reemplazar; null si es un documento faltante. El original se conserva. */
+  documentoId     String?
+  requisitoId     String?
+  titulo          String
+  motivo          String  @db.Text
+  /** Documento que aportó el ciudadano en respuesta. */
+  reemplazoId     String? @unique
+
+  requerimiento RequerimientoCorreccion       @relation(fields: [requerimientoId], references: [id], onDelete: Cascade)
+  documento     ExpedienteDocumento?          @relation("ItemCorreccionDocumento", fields: [documentoId], references: [id], onDelete: SetNull)
+  reemplazo     ExpedienteDocumento?          @relation("ItemCorreccionReemplazo", fields: [reemplazoId], references: [id], onDelete: SetNull)
+  requisito     DocumentoRequeridoDefinicion? @relation(fields: [requisitoId], references: [id], onDelete: SetNull)
+
+  @@index([requerimientoId])
+  @@index([documentoId])
 }

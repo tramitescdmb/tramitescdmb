@@ -52,6 +52,9 @@ import { MENSAJE_EXPEDIENTE_CERRADO, firmasPendientesTramite, mensajeFirmasPendi
 import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { BandaTablero } from "@/components/tablero";
 import { aGms } from "@/lib/coordenadas-geograficas";
+import { DevolverCorreccion } from "@/components/DevolverCorreccion";
+import { plazoPorDefecto } from "@/lib/correccion-solicitud";
+import { CORREO_VENTANILLA_VIRTUAL } from "@/lib/solicitud-ambiental-db";
 
 const ETIQUETA_ESTADO_VALIDACION: Record<string, string> = {
   PENDIENTE: "Pendiente de revisión",
@@ -230,6 +233,26 @@ export default async function ExpedienteDetallePage({
   // Finalizado: estado final + último paso cumplido. Resuelto: ya hay decisión (aprobado/negado)
   // pero faltan pasos del procedimiento (notificar…), que se siguen gestionando normalmente.
   const finalizado = tramiteFinalizado(expediente);
+  // Solicitudes en línea: devolución al solicitante para corrección en el mismo expediente.
+  const datosCorreccion = expediente.codigoSolicitudPublica
+    ? await db.expediente.findUnique({
+        where: { id: expediente.id },
+        select: {
+          cuentaCiudadanaId: true,
+          requerimientosCorreccion: {
+            where: { estado: "PENDIENTE" },
+            take: 1,
+            select: { plazoHasta: true, mensaje: true, items: { select: { titulo: true, motivo: true, reemplazoId: true } } },
+          },
+          documentos: {
+            where: { subidoPor: { email: CORREO_VENTANILLA_VIRTUAL }, estadoValidacion: { not: "RECHAZADO" } },
+            select: { id: true, nombre: true, requisito: { select: { nombre: true } } },
+            orderBy: { createdAt: "asc" },
+          },
+          tramiteTipo: { select: { documentosRequeridos: { select: { id: true, nombre: true }, orderBy: { nombre: "asc" } } } },
+        },
+      })
+    : null;
   const resuelto = esTerminal && !finalizado;
   // Desistido/archivado/rechazado sin finalizar: ese paso es el último de su rama.
   const cierrePendiente = resuelto && (CIERRES_ANTICIPADOS as readonly string[]).includes(expediente.estado);
@@ -508,6 +531,31 @@ export default async function ExpedienteDetallePage({
               </ul>
             )}
           </details>
+        )}
+        {datosCorreccion && (
+          <div className="mt-2 text-sm">
+            <p className="text-xs text-stone-500">
+              Radicada en línea · solicitud <span className="font-mono">{expediente.codigoSolicitudPublica}</span>
+              {datosCorreccion.cuentaCiudadanaId ? " · el solicitante la sigue en «Mis solicitudes»" : ""}
+            </p>
+            <DevolverCorreccion
+              expedienteId={expediente.id}
+              documentos={datosCorreccion.documentos.map((d) => ({ id: d.id, nombre: d.nombre, titulo: d.requisito?.nombre ?? d.nombre }))}
+              requisitos={datosCorreccion.tramiteTipo.documentosRequeridos}
+              plazoSugerido={plazoPorDefecto(new Date())}
+              pendiente={
+                datosCorreccion.requerimientosCorreccion[0]
+                  ? {
+                      plazoHasta: formatearFecha(datosCorreccion.requerimientosCorreccion[0].plazoHasta),
+                      mensaje: datosCorreccion.requerimientosCorreccion[0].mensaje,
+                      items: datosCorreccion.requerimientosCorreccion[0].items.map((i) => ({ titulo: i.titulo, motivo: i.motivo, respondido: Boolean(i.reemplazoId) })),
+                    }
+                  : null
+              }
+              puedeGestionar={puedeEditar && !finalizado}
+              tieneCorreo={Boolean(expediente.solicitanteEmail || datosCorreccion.cuentaCiudadanaId)}
+            />
+          </div>
         )}
         <div className="mt-3 max-w-md">
           <ProgresoExpediente

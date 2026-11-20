@@ -23,6 +23,7 @@ const ICONO: Record<TipoNotificacion, { Icono: typeof Inbox; clase: string }> = 
   VITAL_NUEVA: { Icono: Inbox, clase: "bg-amber-50 text-amber-700" },
   SOLICITUD_AMBIENTAL_NUEVA: { Icono: Inbox, clase: "bg-emerald-50 text-emerald-700" },
   EXPEDIENTE_ASIGNADO: { Icono: UserCheck, clase: "bg-cdmb-50 text-cdmb-700" },
+  CORRECCION_RECIBIDA: { Icono: CheckCircle2, clase: "bg-emerald-50 text-emerald-700" },
 };
 
 export default async function BuzonVisitasPage() {

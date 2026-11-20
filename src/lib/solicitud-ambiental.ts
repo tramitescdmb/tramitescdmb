@@ -133,6 +133,8 @@ export function historialPublico(eventos: EventoHistorial[], pasos: { numero: nu
       texto = `Estado: ${estadoPublico(ev.estadoNuevo).etiqueta}.`;
     } else if (ev.tipo === "EXPEDIENTE_ARCHIVADO") texto = "El expediente se archivó.";
     else if (ev.tipo === "EXPEDIENTE_REABIERTO") texto = "El expediente se reabrió.";
+    else if (ev.tipo === "CORRECCION_SOLICITADA") texto = "La CDMB le pidió corregir o completar documentos.";
+    else if (ev.tipo === "CORRECCION_RECIBIDA") texto = "Usted envió los documentos corregidos; la solicitud volvió a revisión.";
     if (texto) filas.push({ fecha: ev.createdAt, texto });
   }
   return filas.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
