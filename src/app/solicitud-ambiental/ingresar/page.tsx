@@ -17,7 +17,7 @@ export default async function IngresarCiudadanoPage({ searchParams }: { searchPa
   if (await cuentaEnSesion()) redirect(siguiente);
   return (
     <div className="mx-auto max-w-xl space-y-5">
-      <EncabezadoSolicitud titulo="Mis solicitudes">
+      <EncabezadoSolicitud titulo="Ingresar o registrarse">
         Ingrese con su correo electrónico para ver todas sus solicitudes ambientales, en qué etapa están y su historial. No necesita
         contraseña: le enviamos un código cada vez. Si es la primera vez, así queda registrado.
       </EncabezadoSolicitud>

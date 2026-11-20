@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { ArrowRight, Clock, FileCheck2, FolderOpen, Mail, Search, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Clock, FileCheck2, FolderOpen, Mail, Search, ShieldCheck, UserRound } from "lucide-react";
+import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
 import { ElegirTramite } from "@/components/solicitud-ambiental/ElegirTramite";
 import { BotonEncabezado, EncabezadoSolicitud, PasosSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { entradasCatalogo } from "@/lib/opciones-catalogo";
@@ -18,6 +20,7 @@ export default async function SolicitudAmbientalPage() {
     .filter((e) => !e.codigo.startsWith("IE-"))
     .map((e) => ({ clave: e.clave, href: e.href, nombre: e.nombre, codigo: e.codigo, suits: e.suits, enSuit: e.enSuit, radicable: e.radicable, descripcion: e.descripcion, diasEstimados: e.diasEstimados }));
   const radicables = tramites.filter((t) => t.radicable).length;
+  const cuenta = await cuentaEnSesion();
 
   return (
     <div className="space-y-6">
@@ -31,8 +34,9 @@ export default async function SolicitudAmbientalPage() {
             <BotonEncabezado href="/solicitud-ambiental/consultar">
               <Search className="h-4 w-4" aria-hidden /> Consultar mi solicitud
             </BotonEncabezado>
-            <BotonEncabezado href="/solicitud-ambiental/mis-solicitudes">
-              <FolderOpen className="h-4 w-4" aria-hidden /> Mis solicitudes
+            <BotonEncabezado href={cuenta ? "/solicitud-ambiental/mis-solicitudes" : "/solicitud-ambiental/ingresar"}>
+              {cuenta ? <FolderOpen className="h-4 w-4" aria-hidden /> : <UserRound className="h-4 w-4" aria-hidden />}
+              {cuenta ? "Mis solicitudes" : "Ingresar o registrarse"}
             </BotonEncabezado>
           </>
         }
@@ -41,6 +45,33 @@ export default async function SolicitudAmbientalPage() {
         para seguir su estado. Si ingresa con su correo, verá todas sus solicitudes, su historial y lo que esté pendiente en «Mis
         solicitudes».
       </EncabezadoSolicitud>
+
+      {cuenta ? (
+        <p className="flex flex-wrap items-center gap-2 rounded-2xl border border-cdmb-200 bg-cdmb-50 px-4 py-3 text-sm text-cdmb-900">
+          <UserRound className="h-4 w-4" aria-hidden />
+          Ingresó como <strong>{cuenta.correo}</strong>. Lo que radique quedará en{" "}
+          <Link href="/solicitud-ambiental/mis-solicitudes" className="font-semibold underline hover:no-underline">
+            Mis solicitudes
+          </Link>
+          .
+        </p>
+      ) : (
+        <section className="flex flex-col gap-3 rounded-2xl border border-cdmb-200 bg-cdmb-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-cdmb-900">
+            <p className="font-semibold">Regístrese antes de empezar (recomendado)</p>
+            <p className="mt-0.5">
+              Solo con su correo, sin contraseña. Podrá ver todas sus solicitudes, su historial y, si la CDMB le pide corregir un documento,
+              cargarlo sin empezar de nuevo.
+            </p>
+          </div>
+          <Link
+            href="/solicitud-ambiental/ingresar?siguiente=/solicitud-ambiental"
+            className="inline-flex flex-none items-center justify-center gap-1.5 rounded-md bg-cdmb-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cdmb-800"
+          >
+            <UserRound className="h-4 w-4" aria-hidden /> Ingresar o registrarse
+          </Link>
+        </section>
+      )}
 
       <PasosSolicitud actual={1} />
 
