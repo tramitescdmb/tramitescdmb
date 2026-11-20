@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload, X, ShieldCheck, ArrowRightLeft, FileText, FolderTree, Paperclip, Users } from "lucide-react";
+import { Loader2, Upload, X, ShieldCheck, ArrowRightLeft, FileText, FolderTree, Paperclip, Users, Bell } from "lucide-react";
 import { EncabezadoPaso } from "@/components/sgdea/EncabezadoPaso";
 import { subirArchivoMemorando, subirDocumentosConProgreso } from "@/lib/uploads-client";
 import { ACCEPT_DOCUMENTOS } from "@/lib/uploads-config";
@@ -15,7 +15,7 @@ import { PlantillaSelector, type PlantillaOpcion } from "@/components/PlantillaS
 import { contextoBase } from "@/lib/plantillas-marcadores";
 import { useConfirmacionFirma } from "@/components/ConfirmacionIdentidadFirma";
 import { DocumentoMemorando } from "@/components/memorandos/DocumentoMemorando";
-import { siglaDependencia, trdSugeridaMemorando, type PersonaMemorando } from "@/lib/memorandos-formato";
+import { GRUPOS_MASIVOS_MEMORANDO, siglaDependencia, trdSugeridaMemorando, type GrupoMasivoMemorando, type PersonaMemorando } from "@/lib/memorandos-formato";
 import { BuscadorPersonaMemorando, type PersonaBuscable } from "@/components/memorandos/BuscadorPersonaMemorando";
 
 type Dependencia = { id: string; nombre: string; codigo?: string };
@@ -39,6 +39,7 @@ export function MemorandoForm({
   plantillas = [],
   logoUrl,
   respondeA = null,
+  totalesMasivos,
 }: {
   dependencias: Dependencia[];
   series: Serie[];
@@ -53,6 +54,8 @@ export function MemorandoForm({
   plantillas?: PlantillaOpcion[];
   logoUrl?: string | null;
   respondeA?: RespuestaA | null;
+  /** Cuántas personas recibirían cada envío masivo (sin contar a quien firma). */
+  totalesMasivos?: Record<GrupoMasivoMemorando, number>;
 }) {
   const router = useRouter();
   const { confirmarIdentidad, dialogo } = useConfirmacionFirma("SGDEA");
@@ -61,6 +64,8 @@ export function MemorandoForm({
   const numeroPrevio = `${siglaDependencia(dependenciaOrigen.nombre, dependenciaOrigen.codigo)} – ___ /${anio}`;
   const [dependenciaDestinoId, setDependenciaDestinoId] = useState(respondeA?.dependenciaDestinoId ?? "");
   const [usuarioDestinoId, setUsuarioDestinoId] = useState(respondeA?.usuarioDestinoId ?? "");
+  // "" = una persona (PARA); si no, el grupo del envío masivo.
+  const [masivo, setMasivo] = useState<GrupoMasivoMemorando | "">("");
   const [asunto, setAsunto] = useState(respondeA ? `Respuesta a ${respondeA.radicado} — ${respondeA.asunto}` : "");
   const [plazo, setPlazo] = useState(0);
   const [contenido, setContenido] = useState(respondeA?.contenido ?? "");
@@ -100,6 +105,10 @@ export function MemorandoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [personas, dependenciaOrigen.id, remitente.id]
   );
+  const opcionesDestino: { valor: GrupoMasivoMemorando | ""; etiqueta: string; total: number | null }[] = [
+    { valor: "", etiqueta: "Un destinatario (PARA)", total: null },
+    ...(Object.keys(GRUPOS_MASIVOS_MEMORANDO) as GrupoMasivoMemorando[]).map((g) => ({ valor: g, etiqueta: GRUPOS_MASIVOS_MEMORANDO[g].etiqueta, total: totalesMasivos?.[g] ?? 0 })),
+  ];
   const porId = (id: string) => personas.find((p) => p.id === id) ?? null;
   const persona = (p: PersonaOpcion | null): PersonaMemorando | null => (p ? { nombre: p.nombre, cargo: p.cargo } : null);
 
@@ -118,11 +127,13 @@ export function MemorandoForm({
 
   async function firmarYEnviar() {
     setError(null);
-    if (!dependenciaDestinoId) return setError("Indique la dependencia de destino.");
-    if (!usuarioDestinoId) return setError("Indique a quién va dirigido el memorando (PARA).");
+    if (!masivo && !dependenciaDestinoId) return setError("Indique la dependencia de destino.");
+    if (!masivo && !usuarioDestinoId) return setError("Indique a quién va dirigido el memorando (PARA).");
+    if (masivo && !(totalesMasivos?.[masivo] ?? 0)) return setError("No hay personas activas en el grupo elegido.");
     if (!asunto.trim()) return setError("El asunto es obligatorio.");
     if (!contenido.trim()) return setError("El cuerpo del memorando es obligatorio: es lo que queda firmado.");
-    if (!(await confirmarIdentidad({ detalle: `Memorando: ${asunto.trim()}` }))) return;
+    const detalleMasivo = masivo ? ` — en masivo a ${GRUPOS_MASIVOS_MEMORANDO[masivo].etiqueta.toLowerCase()} (${totalesMasivos?.[masivo] ?? 0} personas)` : "";
+    if (!(await confirmarIdentidad({ detalle: `Memorando: ${asunto.trim()}${detalleMasivo}` }))) return;
     setEnviando(true);
     setProgreso({ pct: 0, texto: "Preparando…" });
     try {
@@ -135,11 +146,12 @@ export function MemorandoForm({
           contenido: contenido.trim(),
           folios,
           dependenciaOrigenId: origenLibre ? dependenciaOrigenId : null,
-          dependenciaDestinoId,
-          usuarioDestinoId,
+          dependenciaDestinoId: masivo ? null : dependenciaDestinoId,
+          usuarioDestinoId: masivo ? null : usuarioDestinoId,
+          destinoMasivo: masivo || null,
           proyectoId: proyectoId || null,
           revisoId: revisoId || null,
-          plazoRespuestaDias: plazo || null,
+          plazoRespuestaDias: masivo ? null : plazo || null,
           respondeAId: respondeA?.id ?? null,
           serieId: serieId || null,
           subserieId: subserieId || null,
@@ -205,39 +217,80 @@ export function MemorandoForm({
                 </Field>
               </div>
             )}
-            <Field label="Dependencia de destino" required help="Escriba parte del nombre (sin importar tildes ni mayúsculas). Al elegirla se propone a quien la dirige; también puede buscar directamente a la persona.">
-              <BuscadorDependencia
-                dependencias={dependencias.filter((d) => d.id !== dependenciaOrigen.id)}
-                value={dependenciaDestinoId}
-                onChange={cambiarDependenciaDestino}
-                placeholder="Escriba para buscar la dependencia o coordinación…"
-              />
-            </Field>
-            <Field label="Destinatario (PARA)" required help="Solo Dirección General, Secretaría General, subdirecciones, jefaturas de oficina y coordinaciones de grupo. Luego lo asignan a sus colaboradores.">
-              <BuscadorPersonaMemorando
-                personas={destinatarios}
-                valor={usuarioDestinoId}
-                onChange={(id) => {
-                  setUsuarioDestinoId(id);
-                  const dep = personas.find((p) => p.id === id)?.dependenciaId;
-                  if (id && dep) setDependenciaDestinoId(dep);
-                }}
-                placeholder="Buscar destinatario…"
-                vacio="Esa dependencia no tiene a nadie con cargo directivo o de coordinación registrado en su ficha."
-              />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="Respuesta" help="Si requiere respuesta, el destinatario lo verá como pendiente con su plazo y recibirá el aviso.">
-                <select value={plazo} onChange={(e) => setPlazo(Number(e.target.value))} className={`${inputCls} max-w-sm`}>
-                  <option value={0}>No requiere respuesta (informativo)</option>
-                  {PLAZOS.map((d) => (
-                    <option key={d} value={d}>
-                      Requiere respuesta en {d} días hábiles
-                    </option>
-                  ))}
-                </select>
+            {!respondeA && totalesMasivos && (
+              <div className="sm:col-span-2">
+                <Field label="Enviar a" help="Un destinatario con cargo directivo o de coordinación, o un envío masivo. El masivo llega como notificación en la plataforma (campana y bandeja «Sin leer») y no por correo, para no llenar los buzones.">
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                    {opcionesDestino.map(({ valor, etiqueta, total }) => (
+                      <label
+                        key={valor || "persona"}
+                        className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm ${masivo === valor ? "border-vivo-500 bg-vivo-50 text-stone-900" : "border-stone-200 text-stone-700 hover:bg-stone-50"}`}
+                      >
+                        <input
+                          type="radio"
+                          name="destino-memorando"
+                          className="mt-0.5"
+                          checked={masivo === valor}
+                          onChange={() => {
+                            setMasivo(valor);
+                            if (valor) setPlazo(0);
+                          }}
+                        />
+                        <span>
+                          {etiqueta}
+                          {total !== null && <span className="block text-xs text-stone-500">{total} persona{total === 1 ? "" : "s"}</span>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+            )}
+            {masivo ? (
+              <div className="sm:col-span-2 flex items-start gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+                <Bell className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+                <span>
+                  Llegará a {totalesMasivos?.[masivo] ?? 0} persona{(totalesMasivos?.[masivo] ?? 0) === 1 ? "" : "s"} como notificación en la plataforma, sin correo. Es informativo (no pide respuesta) y
+                  queda registrado a quién se entregó y cuándo lo leyó cada persona.
+                </span>
+              </div>
+            ) : (
+              <>
+              <Field label="Dependencia de destino" required help="Escriba parte del nombre (sin importar tildes ni mayúsculas). Al elegirla se propone a quien la dirige; también puede buscar directamente a la persona.">
+                <BuscadorDependencia
+                  dependencias={dependencias.filter((d) => d.id !== dependenciaOrigen.id)}
+                  value={dependenciaDestinoId}
+                  onChange={cambiarDependenciaDestino}
+                  placeholder="Escriba para buscar la dependencia o coordinación…"
+                />
               </Field>
-            </div>
+              <Field label="Destinatario (PARA)" required help="Solo Dirección General, Secretaría General, subdirecciones, jefaturas de oficina y coordinaciones de grupo. Luego lo asignan a sus colaboradores.">
+                <BuscadorPersonaMemorando
+                  personas={destinatarios}
+                  valor={usuarioDestinoId}
+                  onChange={(id) => {
+                    setUsuarioDestinoId(id);
+                    const dep = personas.find((p) => p.id === id)?.dependenciaId;
+                    if (id && dep) setDependenciaDestinoId(dep);
+                  }}
+                  placeholder="Buscar destinatario…"
+                  vacio="Esa dependencia no tiene a nadie con cargo directivo o de coordinación registrado en su ficha."
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Respuesta" help="Si requiere respuesta, el destinatario lo verá como pendiente con su plazo y recibirá el aviso.">
+                  <select value={plazo} onChange={(e) => setPlazo(Number(e.target.value))} className={`${inputCls} max-w-sm`}>
+                    <option value={0}>No requiere respuesta (informativo)</option>
+                    {PLAZOS.map((d) => (
+                      <option key={d} value={d}>
+                        Requiere respuesta en {d} días hábiles
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -258,7 +311,7 @@ export function MemorandoForm({
                 ASUNTO: asunto,
                 REMITENTE: remitente.nombre,
                 FUNCIONARIO: remitente.nombre,
-                DESTINATARIO: porId(usuarioDestinoId)?.nombre ?? dependencias.find((d) => d.id === dependenciaDestinoId)?.nombre ?? "",
+                DESTINATARIO: masivo ? GRUPOS_MASIVOS_MEMORANDO[masivo].para : porId(usuarioDestinoId)?.nombre ?? dependencias.find((d) => d.id === dependenciaDestinoId)?.nombre ?? "",
                 DEPENDENCIA: dependenciaOrigen.nombre,
               }}
             />
@@ -363,7 +416,7 @@ export function MemorandoForm({
                 numero: numeroPrevio,
                 ciudad,
                 fecha,
-                para: persona(porId(usuarioDestinoId)),
+                para: masivo ? { nombre: GRUPOS_MASIVOS_MEMORANDO[masivo].para, cargo: "" } : persona(porId(usuarioDestinoId)),
                 de: { nombre: remitente.nombre, cargo: remitente.cargo },
                 asunto,
                 cuerpo: contenido,

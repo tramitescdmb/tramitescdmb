@@ -3,8 +3,8 @@ import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
 import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
-import { memorandoPendienteDe, contextoMemorandos, oficinaOrigenMemorando, puedeRecibirMemorando, TEXTO_QUIEN_RECIBE, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
-import { CIUDAD_MEMORANDO, siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
+import { memorandoPendienteDe, contextoMemorandos, oficinaOrigenMemorando, puedeRecibirMemorando, destinatariosMasivos, TEXTO_QUIEN_RECIBE, PLAZOS_RESPUESTA_MEMORANDO, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
+import { CIUDAD_MEMORANDO, GRUPOS_MASIVOS_MEMORANDO, esGrupoMasivo, siglaDependencia, type PersonaMemorando } from "@/lib/memorandos-formato";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { sumarDiasHabiles } from "@/lib/dias-habiles";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
@@ -56,26 +56,43 @@ export async function POST(req: NextRequest) {
   const oficina = oficinaOrigenMemorando(propio, body.dependenciaOrigenId ? String(body.dependenciaOrigenId) : null);
   if ("error" in oficina) return NextResponse.json({ error: oficina.error }, { status: 403 });
   const dependenciaOrigenId = oficina.id;
-  const dependenciaDestinoId = String(body.dependenciaDestinoId ?? "");
-  const usuarioDestinoId = body.usuarioDestinoId ? String(body.usuarioDestinoId) : "";
+  // Destino: una persona (PARA) o un grupo masivo (planta, contratistas o todos). El masivo llega como
+  // notificación en la plataforma, sin correo, y no admite plazo de respuesta.
+  const grupo = body.destinoMasivo ? String(body.destinoMasivo) : "";
+  if (grupo && !esGrupoMasivo(grupo)) return NextResponse.json({ error: "Destino masivo no válido." }, { status: 400 });
+  const masivo = esGrupoMasivo(grupo) ? grupo : null;
+  const dependenciaDestinoId = masivo ? null : String(body.dependenciaDestinoId ?? "");
+  const usuarioDestinoId = masivo ? "" : body.usuarioDestinoId ? String(body.usuarioDestinoId) : "";
 
   if (!asunto) return NextResponse.json({ error: "El asunto es obligatorio." }, { status: 400 });
   if (!contenido) return NextResponse.json({ error: "El cuerpo del memorando es obligatorio (se firma junto con el radicado)." }, { status: 400 });
-  if (!dependenciaDestinoId) return NextResponse.json({ error: "Indique la dependencia de destino." }, { status: 400 });
-  if (dependenciaOrigenId === dependenciaDestinoId) return NextResponse.json({ error: "La dependencia de destino no puede ser la suya." }, { status: 400 });
-  if (!usuarioDestinoId) return NextResponse.json({ error: "Indique la persona a quien va dirigido el memorando (PARA)." }, { status: 400 });
+  if (masivo && respondeAId) return NextResponse.json({ error: "La respuesta a un memorando no puede enviarse en masivo." }, { status: 400 });
+  if (masivo && Number(body.plazoRespuestaDias) > 0) {
+    return NextResponse.json({ error: "Un memorando masivo es informativo: no puede pedir respuesta con plazo." }, { status: 400 });
+  }
+  if (!masivo) {
+    if (!dependenciaDestinoId) return NextResponse.json({ error: "Indique la dependencia de destino." }, { status: 400 });
+    if (dependenciaOrigenId === dependenciaDestinoId) return NextResponse.json({ error: "La dependencia de destino no puede ser la suya." }, { status: 400 });
+    if (!usuarioDestinoId) return NextResponse.json({ error: "Indique la persona a quien va dirigido el memorando (PARA)." }, { status: 400 });
+  }
 
-  const [origen, remitente, destinatario] = await Promise.all([
+  const [origen, remitente, destinatario, grupoDestino] = await Promise.all([
     db.dependencia.findFirst({ where: { id: dependenciaOrigenId, activo: true }, select: { nombre: true, codigo: true } }),
     db.usuario.findUnique({ where: { id: session.userId }, select: SELECT_PERSONA }),
-    db.usuario.findUnique({ where: { id: usuarioDestinoId }, select: SELECT_PERSONA }),
+    usuarioDestinoId ? db.usuario.findUnique({ where: { id: usuarioDestinoId }, select: SELECT_PERSONA }) : Promise.resolve(null),
+    masivo ? destinatariosMasivos(masivo, session.userId) : Promise.resolve(null),
   ]);
   if (!origen || !remitente) return NextResponse.json({ error: "No se encontró la oficina de origen." }, { status: 400 });
-  if (!destinatario || !destinatario.activo) return NextResponse.json({ error: "El destinatario elegido no existe o está inactivo." }, { status: 400 });
-  if (!puedeRecibirMemorando(destinatario)) return NextResponse.json({ error: TEXTO_QUIEN_RECIBE }, { status: 400 });
-  if (destinatario.dependenciaId !== dependenciaDestinoId) {
-    return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
+  if (masivo) {
+    if (!grupoDestino?.length) return NextResponse.json({ error: "No hay personas activas en el grupo elegido." }, { status: 400 });
+  } else {
+    if (!destinatario || !destinatario.activo) return NextResponse.json({ error: "El destinatario elegido no existe o está inactivo." }, { status: 400 });
+    if (!puedeRecibirMemorando(destinatario)) return NextResponse.json({ error: TEXTO_QUIEN_RECIBE }, { status: 400 });
+    if (destinatario.dependenciaId !== dependenciaDestinoId) {
+      return NextResponse.json({ error: "El destinatario debe pertenecer a la dependencia de destino." }, { status: 400 });
+    }
   }
+  const para: PersonaMemorando = masivo ? { nombre: GRUPOS_MASIVOS_MEMORANDO[masivo].para, cargo: "" } : persona(destinatario!);
 
   async function colaborador(campo: "proyectoId" | "revisoId"): Promise<{ id: string; persona: PersonaMemorando } | null | "error"> {
     const id = body[campo] ? String(body[campo]) : "";
@@ -143,7 +160,8 @@ export async function POST(req: NextRequest) {
       folios,
       dependenciaOrigenId,
       dependenciaDestinoId,
-      usuarioDestinoId,
+      usuarioDestinoId: usuarioDestinoId || null,
+      destinatariosMasivos: grupoDestino?.map((u) => ({ usuarioId: u.id, dependenciaId: u.dependenciaId })) ?? null,
       serieId,
       subserieId,
       documentos,
@@ -153,11 +171,12 @@ export async function POST(req: NextRequest) {
         sigla: siglaDependencia(origen.nombre, origen.codigo),
         datos: {
           ciudad: CIUDAD_MEMORANDO,
-          para: persona(destinatario),
+          para,
           de: persona(remitente),
           proyecto: proyecto?.persona ?? null,
           reviso: reviso?.persona ?? null,
           oficina: origen.nombre,
+          masivo: masivo ? { grupo: masivo, total: grupoDestino!.length } : null,
         },
       },
     });
@@ -182,7 +201,7 @@ export async function POST(req: NextRequest) {
       usuarioId: session.userId,
       ip,
       userAgent,
-      detalle: `Firmó y envió el memorando ${comunicacion.radicado}${respondeAId ? " (respuesta a otro memorando)" : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""} — ${asunto.slice(0, 200)}`,
+      detalle: `Firmó y envió el memorando ${comunicacion.radicado}${respondeAId ? " (respuesta a otro memorando)" : ""}${masivo ? `, en masivo a ${GRUPOS_MASIVOS_MEMORANDO[masivo].etiqueta.toLowerCase()} (${grupoDestino!.length} personas, aviso en la plataforma sin correo)` : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""} — ${asunto.slice(0, 200)}`,
     });
 
     return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado, avisoFirmas });

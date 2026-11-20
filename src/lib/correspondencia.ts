@@ -498,8 +498,11 @@ export type EntradaRadicacionInterna = {
   contenido: string;
   folios: number;
   dependenciaOrigenId: string;
-  dependenciaDestinoId: string;
+  /** Null solo en los memorandos masivos (van a personas de todas las oficinas). */
+  dependenciaDestinoId: string | null;
   usuarioDestinoId?: string | null;
+  /** Memorando masivo: una entrega (Distribucion) por persona, con su fecha de lectura. */
+  destinatariosMasivos?: { usuarioId: string; dependenciaId: string | null }[] | null;
   serieId?: string | null;
   subserieId?: string | null;
   documentos?: EntradaDocumento[];
@@ -540,7 +543,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
         radicado,
         anio,
         origen: "VENTANILLA",
-        estado: entrada.usuarioDestinoId ? "ASIGNADA" : "RADICADA",
+        estado: entrada.usuarioDestinoId || entrada.destinatariosMasivos?.length ? "ASIGNADA" : "RADICADA",
         asunto: entrada.asunto,
         contenido: entrada.contenido,
         folios: entrada.folios,
@@ -567,6 +570,17 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
           usuarioId: entrada.usuarioDestinoId,
           asignadoPorId: entrada.radicadoPorId,
         },
+      });
+    }
+
+    if (entrada.destinatariosMasivos?.length) {
+      await tx.distribucion.createMany({
+        data: entrada.destinatariosMasivos.map((d) => ({
+          comunicacionId: comunicacion.id,
+          dependenciaId: d.dependenciaId,
+          usuarioId: d.usuarioId,
+          asignadoPorId: entrada.radicadoPorId,
+        })),
       });
     }
 
