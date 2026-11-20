@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // El despliegue compila en una carpeta aparte (NEXT_DIST_DIR=.next-nueva) y la cambia por .next solo
+  // al terminar, justo antes de reiniciar: compilar encima de .next con la plataforma en marcha dejaba
+  // páginas en «Internal Server Error» mientras duraba la compilación. Sin la variable se usa .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   outputFileTracingIncludes: {
     "/api/fondo-historico/extractor": ["./scripts/fondo-historico/*.sh", "./scripts/fondo-historico/*.cgi"],
   },

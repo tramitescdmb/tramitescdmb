@@ -59,6 +59,7 @@ volver_atras() {
   echo "$DESPUES" > "$ESTADO/.despliegue-fallido"
   git_app checkout -q -B "$ACTUAL" "$ANTES"
   instalar_dependencias
+  rm -rf .next-nueva
   if [ "$COPIA_NEXT" = 1 ] && [ -d "$ESTADO/.next-anterior" ]; then
     rm -rf .next
     cp -a "$ESTADO/.next-anterior" .next
@@ -83,9 +84,17 @@ if [ "$CAMBIA_ESQUEMA" = 1 ]; then
   sudo -u tramites bash -lc "cd $APP && npx prisma db push" || volver_atras "ERROR al aplicar el cambio de esquema. Se vuelve a la versión anterior."
 fi
 
-rm -rf "$ESTADO/.next-anterior"
-if [ -d .next ]; then cp -a .next "$ESTADO/.next-anterior"; COPIA_NEXT=1; fi
-if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && npm run build" > "$REGISTROS/desplegar-$F.log" 2>&1; then
+# Se compila en .next-nueva (next.config.ts lee NEXT_DIST_DIR) y no encima de .next: la plataforma
+# sigue atendiendo con la compilación en uso mientras dura la compilación. Compilar sobre .next con el
+# servicio en marcha dejaba páginas en «Internal Server Error» («client reference manifest ... does
+# not exist», sin pages/500.html) hasta el reinicio. Al terminar, se cambia la carpeta y se reinicia
+# de inmediato.
+rm -rf .next-nueva
+if sudo -u tramites bash -lc "cd $APP && npx prisma generate >/dev/null && NEXT_DIST_DIR=.next-nueva npm run build" > "$REGISTROS/desplegar-$F.log" 2>&1 \
+   && [ -f .next-nueva/BUILD_ID ]; then
+  rm -rf "$ESTADO/.next-anterior"
+  if [ -d .next ]; then mv .next "$ESTADO/.next-anterior"; COPIA_NEXT=1; fi
+  mv .next-nueva .next
   systemctl restart tramites
   sleep 5
   CODIGO=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/login || true)
