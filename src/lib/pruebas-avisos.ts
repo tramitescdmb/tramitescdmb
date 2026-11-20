@@ -103,6 +103,11 @@ const SELECT_FIRMA = {
 } satisfies Prisma.SolicitudFirmaSelect;
 
 const NOTIFICACION_EJEMPLO: Partial<Record<EventoAviso, { titulo: string; mensaje: string; enlace: string }>> = {
+  EXPEDIENTE_ASIGNADO: {
+    titulo: "Expediente asignado · Expediente de ejemplo",
+    mensaje: "Ana Pérez le asignó el expediente del trámite Concesión de aguas superficiales, que está en el paso 4 (visita técnica).",
+    enlace: "/expedientes",
+  },
   VISITA_SIN_PROGRAMAR: {
     titulo: "Programar visita técnica · Expediente de ejemplo",
     mensaje: "El trámite Concesión de aguas superficiales llegó al paso 4 (visita técnica) y requiere visita técnica. Asigne el personal y programe la visita.",

@@ -22,10 +22,11 @@ export type DefinicionPlantilla = ContenidoPlantilla & {
   modulo?: ModuloFirma;
 };
 
-export type GrupoPlantilla = "FIRMAS" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS" | "ADMINISTRACION";
+export type GrupoPlantilla = "FIRMAS" | "EXPEDIENTES" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS" | "ADMINISTRACION";
 
 export const GRUPOS_PLANTILLA: Record<GrupoPlantilla, string> = {
   FIRMAS: "Firmas y vistos buenos",
+  EXPEDIENTES: "Asignación de expedientes",
   VISITAS: "Visitas técnicas",
   CONCEPTOS: "Conceptos técnicos",
   VENCIMIENTOS: "Alertas de vencimiento",
@@ -148,6 +149,10 @@ export const PLANTILLAS = {
   FIRMA_RECHAZADA_TRAMITES: firmaRechazada("TRAMITES"),
   FIRMA_RECHAZADA_GECON: firmaRechazada("GECON"),
   FIRMA_RECHAZADA_SGDEA: firmaRechazada("SGDEA"),
+  EXPEDIENTE_ASIGNADO: notificacion("EXPEDIENTE_ASIGNADO", "EXPEDIENTES", "Expediente asignado", "Se asigna un expediente de trámite a una persona.", {
+    titulo: "Expediente asignado · SCA-0123-2026",
+    mensaje: "Ana Pérez le asignó el expediente del trámite Concesión de aguas superficiales, que está en el paso 4 (visita técnica).",
+  }),
   VISITA_SIN_PROGRAMAR: notificacion("VISITA_SIN_PROGRAMAR", "VISITAS", "Visita por programar", "Un expediente llega a un paso que requiere visita técnica.", {
     titulo: "Programar visita técnica · SCA-0123-2026",
     mensaje: "El trámite Concesión de aguas superficiales llegó al paso 4 (visita técnica) y requiere visita técnica. Asigne el personal y programe la visita.",
