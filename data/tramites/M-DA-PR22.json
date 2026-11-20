@@ -397,7 +397,7 @@
             {
               "respuesta": "Da por terminado el trámite (el DAA no cumple los requisitos o criterios del manual)",
               "siguientePaso": null,
-              "resultado": "TERMINADO"
+              "resultado": "ARCHIVADO"
             }
           ]
         },

@@ -7,7 +7,7 @@ import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
-import { avanceValido, resultadosDelPaso } from "@/lib/reglas-estado";
+import { CIERRES_ANTICIPADOS, avanceValido, opcionFinalizar, resultadosDelPaso } from "@/lib/reglas-estado";
 
 const ESTADOS_TERMINALES = ESTADOS_TERMINALES_EXPEDIENTE as readonly EstadoExpediente[];
 
@@ -51,11 +51,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (tramiteFinalizado(expediente)) {
     return errorEn("El trámite ya finalizó; para modificarlo, cambie primero el estado en la pestaña Administración.");
   }
-  // Resuelto (aprobado/negado) con pasos por cumplir: solo se puede seguir al paso siguiente o finalizar.
-  const resuelto = ESTADOS_TERMINALES.includes(expediente.estado);
-  if (resuelto && resultado) {
-    return errorEn("La decisión del trámite ya está registrada; continúe con los pasos que faltan (notificación).");
-  }
+  // Desistido/archivado/rechazado sin finalizar (p. ej. falta el auto de desistimiento): ese paso es
+  // el último de esa rama; no se sigue con los pasos del trámite normal, solo se finaliza.
+  const cierreAnticipado = (CIERRES_ANTICIPADOS as readonly string[]).includes(expediente.estado);
 
   const pasoActual = expediente.flujo.pasos.find((p) => p.numero === expediente.pasoActualNumero);
 
@@ -67,13 +65,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const pasoDesde = form.get("pasoDesde") ? Number(form.get("pasoDesde")) : null;
   const siguientePasoNumero = siguientePasoRaw ? Number(siguientePasoRaw) : null;
-  const hayPasoSiguiente = expediente.flujo.pasos.some((p) => p.numero > expediente.pasoActualNumero);
   const desactualizado = "El avance pedido no corresponde al paso actual (la página pudo quedar desactualizada). Recárguela e inténtelo de nuevo.";
   if (pasoDesde !== null && pasoDesde !== expediente.pasoActualNumero) return errorEn(desactualizado);
+  let resultadoFinal: EstadoExpediente | null = null;
   if (finalizar) {
-    // «Finalizar trámite»: solo en el último paso y con la decisión ya tomada.
-    if (hayPasoSiguiente || resultado || siguientePasoNumero !== null) return errorEn(desactualizado);
-    if (!resuelto) return errorEn("Para finalizar, el trámite debe tener primero su estado final (defínalo en la pestaña Administración).");
+    // «Finalizar trámite»: en el último paso (o en la rama de desistimiento/archivo).
+    const opcion = opcionFinalizar(expediente.flujo.pasos, expediente.pasoActualNumero, expediente.estado);
+    if (!opcion.puede || resultado || siguientePasoNumero !== null) return errorEn(desactualizado);
+    if (opcion.resultados.length > 0) {
+      const pedido = String(form.get("resultadoFinal") || "");
+      if (!opcion.resultados.includes(pedido) || !esEstadoValido(pedido)) return errorEn(desactualizado);
+      resultadoFinal = pedido;
+    }
+  } else if (cierreAnticipado) {
+    return errorEn("El trámite ya quedó con estado final en este paso: use «Finalizar el trámite».");
   } else if (!avanceValido(expediente.flujo.pasos, expediente.pasoActualNumero, siguientePasoNumero, resultado)) {
     return errorEn(desactualizado);
   }
@@ -86,13 +91,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     resultado && esEstadoValido(resultado) && ESTADOS_TERMINALES.includes(resultado) && resultadosDelPaso(pasoActual).includes(resultado)
       ? resultado
       : null;
+  // Una opción de decisión sin paso siguiente termina el trámite. Si su resultado no es un estado
+  // del sistema (p. ej. «Da por terminado el trámite»), queda archivado en vez de quedar atascado.
+  const decisionSinSiguiente = Boolean(pasoActual?.esDecision) && !finalizar && !siguienteExiste;
+  const estadoActual = ESTADOS_TERMINALES.includes(expediente.estado) ? expediente.estado : null;
   const nuevoEstado: EstadoExpediente =
-    resultadoValido ?? (expediente.estado === "RADICADO" ? "EN_TRAMITE" : expediente.estado);
+    resultadoFinal ??
+    resultadoValido ??
+    (decisionSinSiguiente ? (estadoActual ?? "ARCHIVADO") : expediente.estado === "RADICADO" ? "EN_TRAMITE" : expediente.estado);
 
   // El trámite finaliza (fechaCierre) al completar el último paso, o cuando la decisión no deja
   // pasos por delante (p. ej. «Archiva el trámite»). Aprobar/negar con notificación pendiente deja
   // el estado final pero sin fecha de cierre: el trámite sigue hasta notificar.
-  const finaliza = finalizar || (resultadoValido !== null && !siguienteExiste);
+  const finaliza = finalizar || decisionSinSiguiente;
 
   // Condicional: si otra persona avanzó el trámite al mismo tiempo, este avance no se aplica dos veces.
   const { count } = await db.expediente.updateMany({
@@ -118,7 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await db.expedienteEvento.create({
     data: {
       expedienteId: id,
-      tipo: resultadoValido ? "CAMBIO_ESTADO" : "AVANCE_PASO",
+      tipo: nuevoEstado !== expediente.estado ? "CAMBIO_ESTADO" : "AVANCE_PASO",
       descripcion: [descripcionBase, finaliza ? "Trámite finalizado." : "", comentario].filter(Boolean).join(" "),
       pasoNumero: pasoActual?.numero ?? null,
       estadoAnterior: expediente.estado,

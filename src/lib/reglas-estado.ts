@@ -54,3 +54,37 @@ export function avanceValido(
   if (resultado && !resultadosDelPaso(actual).includes(resultado)) return false;
   return siguientePasoNumero === natural;
 }
+
+/** Estados que cierran el trámite antes de la decisión de fondo: siempre lo finalizan. */
+export const CIERRES_ANTICIPADOS = ["DESISTIDO", "ARCHIVADO", "RECHAZADO"] as const;
+
+/**
+ * Resultado con que puede quedar un trámite que llega al último paso sin estado final: los que
+ * define su paso de decisión (aprobado/negado); si el procedimiento no tiene decisión (registros,
+ * certificaciones, entregas), se finaliza como aprobado (atendido).
+ */
+export function resultadosFinalesDelFlujo(pasos: Pick<PasoReglas, "opciones">[]): string[] {
+  const usados = new Set(pasos.flatMap((p) => resultadosDelPaso(p)));
+  const r = ESTADOS_DE_DECISION.filter((e) => usados.has(e));
+  return r.length > 0 ? [...r] : ["APROBADO"];
+}
+
+/**
+ * ¿Se puede finalizar el trámite desde el paso actual, y con qué resultado?
+ * - Desistido/archivado/rechazado (sin finalizar): sí, conservando ese estado.
+ * - Último paso del procedimiento: sí; si ya está aprobado/negado lo conserva, y si no tiene
+ *   estado final se escoge entre los resultados del procedimiento.
+ * - En cualquier otro paso: no (faltan pasos).
+ * `resultados` vacío = se conserva el estado actual.
+ */
+export function opcionFinalizar(
+  pasos: Pick<PasoReglas, "numero" | "opciones">[],
+  pasoActualNumero: number,
+  estado: string
+): { puede: boolean; resultados: string[] } {
+  if ((CIERRES_ANTICIPADOS as readonly string[]).includes(estado)) return { puede: true, resultados: [] };
+  const hayPasoSiguiente = pasos.some((p) => p.numero > pasoActualNumero);
+  if (hayPasoSiguiente) return { puede: false, resultados: [] };
+  if ((ESTADOS_DE_DECISION as readonly string[]).includes(estado)) return { puede: true, resultados: [] };
+  return { puede: true, resultados: resultadosFinalesDelFlujo(pasos) };
+}
