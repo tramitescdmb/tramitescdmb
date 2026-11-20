@@ -5,7 +5,6 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { puedeGestionarPaso } from "@/lib/cargos";
 import { puedeEditarExpediente } from "@/lib/permisos";
 import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
-import { documentosObligatoriosFaltantes } from "@/lib/documentos-obligatorios-paso";
 import { tramiteCerrado } from "@/lib/archivo-central";
 import { sincronizarAvisoVisita } from "@/lib/notificaciones";
 import { avanceValido, resultadosDelPaso } from "@/lib/reglas-estado";
@@ -39,9 +38,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     where: { id },
     include: {
       flujo: { include: { pasos: { orderBy: { numero: "asc" } } } },
-      tramiteTipo: { select: { codigo: true } },
-      documentos: { select: { pasoNumero: true, descripcion: true } },
-      visitasTecnicas: { select: { pasoNumero: true } },
     },
   });
   if (!expediente) return NextResponse.json({ error: "Expediente no encontrado" }, { status: 404 });
@@ -84,21 +80,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const siguienteExiste = siguientePasoNumero
     ? expediente.flujo.pasos.some((p) => p.numero === siguientePasoNumero)
     : false;
-
-  if (pasoActual) {
-    const faltan = documentosObligatoriosFaltantes(
-      expediente.tramiteTipo.codigo,
-      pasoActual,
-      expediente.documentos,
-      resultado,
-      expediente.visitasTecnicas.some((v) => v.pasoNumero === pasoActual.numero)
-    );
-    if (faltan.length > 0) {
-      return errorEn(
-        `Antes de completar el paso ${pasoActual.numero} cargue ${faltan.length === 1 ? "el documento obligatorio" : "los documentos obligatorios"}: ${faltan.join("; ")}.`
-      );
-    }
-  }
 
   const nuevoPasoNumero = siguienteExiste ? siguientePasoNumero! : expediente.pasoActualNumero;
   const resultadoValido =

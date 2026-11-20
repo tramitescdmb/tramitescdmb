@@ -48,7 +48,6 @@ import { DetallesPerezosos } from "@/components/trd/CatalogoTrd";
 import { resumenRetencion, subserieBuscable } from "@/lib/trd-presentacion";
 import { MENSAJE_EXPEDIENTE_CERRADO, fichaArchivoDe, firmasPendientesTramite, mensajeFirmasPendientes } from "@/lib/archivo-central";
 import { ESTADOS_TERMINALES_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
-import { documentosObligatoriosDelPaso, documentosObligatoriosFaltantes } from "@/lib/documentos-obligatorios-paso";
 import { BandaTablero } from "@/components/tablero";
 import { aGms } from "@/lib/coordenadas-geograficas";
 
@@ -234,13 +233,6 @@ export default async function ExpedienteDetallePage({
   const finalizado = tramiteFinalizado(expediente);
   const resuelto = esTerminal && !finalizado;
   const puedeAvanzar = puedeEditar && !finalizado && pasoActual ? puedeGestionarPaso(session, pasoActual.responsables) : false;
-  const visitaEnPasoActual = pasoActual ? expediente.visitasTecnicas.some((v) => v.pasoNumero === pasoActual.numero) : false;
-  const obligatoriosPasoActual = pasoActual ? documentosObligatoriosDelPaso(expediente.tramiteTipo.codigo, pasoActual) : [];
-  const faltantesPasoActual = (resultado?: string | null) =>
-    pasoActual
-      ? documentosObligatoriosFaltantes(expediente.tramiteTipo.codigo, pasoActual, expediente.documentos, resultado, visitaEnPasoActual)
-      : [];
-  const faltanObligatorios = faltantesPasoActual();
   const cargosDelPasoActual = pasoActual ? cargosEnTexto(pasoActual.responsables.join(" | ")) : [];
   const misCargosConEncargo = (session?.cargos ?? []).map((c) => (session?.cargosEncargo.includes(c) ? `${c} (E)` : c));
   const visitasDelPasoActual = pasoActual
@@ -610,16 +602,7 @@ export default async function ExpedienteDetallePage({
                           <FileText className="h-3 w-3" aria-hidden />
                           Documentos/registros de este paso
                         </dt>
-                        <dd className="text-stone-700">
-                          {pasoActual.documentos.map((d, i) => (
-                            <span key={d}>
-                              {i > 0 && ", "}
-                              {d}
-                              {obligatoriosPasoActual.includes(d) && <span className="font-semibold text-red-600" title="Obligatorio para avanzar"> *</span>}
-                            </span>
-                          ))}
-                          {obligatoriosPasoActual.length > 0 && <span className="block text-[11px] text-stone-400">* obligatorio para completar el paso</span>}
-                        </dd>
+                        <dd className="text-stone-700">{pasoActual.documentos.join(", ")}</dd>
                       </div>
                     )}
                     {pasoActual.tiempo && (
@@ -639,7 +622,6 @@ export default async function ExpedienteDetallePage({
                         expedienteId={expediente.id}
                         pasoNumero={pasoActual.numero}
                         documentosDelPaso={pasoActual.documentos}
-                        documentosObligatorios={obligatoriosPasoActual}
                         documentosCargados={documentosPasoActual.map((d) => d.descripcion ?? "")}
                       />
                     </div>
@@ -792,9 +774,7 @@ export default async function ExpedienteDetallePage({
                                 {op.resultado && <input type="hidden" name="resultado" value={op.resultado} />}
                                 <button
                                   type="submit"
-                                  disabled={faltantesPasoActual(op.resultado).length > 0}
-                                  title={faltantesPasoActual(op.resultado).length > 0 ? `Falta cargar: ${faltantesPasoActual(op.resultado).join("; ")}` : undefined}
-                                  className="rounded-md border border-cdmb-300 bg-cdmb-50 px-3 py-1.5 text-sm font-medium text-cdmb-800 hover:bg-cdmb-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="rounded-md border border-cdmb-300 bg-cdmb-50 px-3 py-1.5 text-sm font-medium text-cdmb-800 hover:bg-cdmb-100"
                                 >
                                   {op.respuesta}
                                 </button>
@@ -823,8 +803,7 @@ export default async function ExpedienteDetallePage({
                         <input type="hidden" name="siguientePasoNumero" value={siguientePaso.numero} />
                         <button
                           type="submit"
-                          disabled={faltanObligatorios.length > 0}
-                          className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600"
                         >
                           Marcar paso {pasoActual.numero} como completado → continuar al paso {siguientePaso.numero}
                         </button>
@@ -835,8 +814,7 @@ export default async function ExpedienteDetallePage({
                         <input type="hidden" name="finalizar" value="1" />
                         <button
                           type="submit"
-                          disabled={faltanObligatorios.length > 0}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                         >
                           <CheckCircle2 className="h-4 w-4" aria-hidden />
                           Completar el paso {pasoActual.numero} y finalizar el trámite
@@ -846,16 +824,6 @@ export default async function ExpedienteDetallePage({
                     ) : (
                       <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-500">
                         Último paso. Defina el estado final en Administración.
-                      </p>
-                    )}
-                    {puedeAvanzar && faltanObligatorios.length > 0 && (
-                      <p className="mt-2 flex items-start gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-                        <span>
-                          Para completar este paso falta cargar {faltanObligatorios.length === 1 ? "el documento obligatorio" : "los documentos obligatorios"}:{" "}
-                          <strong>{faltanObligatorios.join("; ")}</strong>.
-                          {pasoActual.esDecision && faltantesPasoActual("ARCHIVADO").length === 0 && " Archivar el trámite no lo exige."}
-                        </span>
                       </p>
                     )}
                     {session?.rol === "ADMIN" && !cerrado && pasoActual.numero > (expediente.flujo.pasos[0]?.numero ?? 1) && (

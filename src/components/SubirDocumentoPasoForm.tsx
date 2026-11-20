@@ -40,14 +40,11 @@ export function SubirDocumentoPasoForm({
   expedienteId,
   pasoNumero,
   documentosDelPaso,
-  documentosObligatorios = [],
   documentosCargados = [],
 }: {
   expedienteId: string;
   pasoNumero: number;
   documentosDelPaso: string[];
-  /** Los que el paso exige para avanzar (ver lib/documentos-obligatorios-paso). */
-  documentosObligatorios?: string[];
   documentosCargados?: string[];
 }) {
   const router = useRouter();
@@ -112,7 +109,6 @@ export function SubirDocumentoPasoForm({
         <div>
           <p className="mb-2 text-xs text-stone-500">
             Un espacio por cada documento que este paso indica en el procedimiento oficial.
-            {documentosObligatorios.length > 0 && " Los marcados con * son obligatorios para completar el paso."}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {documentosDelPaso.map((nombreDoc) => {
@@ -120,12 +116,7 @@ export function SubirDocumentoPasoForm({
               const archivo = archivosPorDoc[nombreDoc] ?? null;
               const cargado = documentosCargados.includes(nombreDoc);
               return (
-                <Field
-                  key={nombreDoc}
-                  label={nombreDoc}
-                  required={documentosObligatorios.includes(nombreDoc)}
-                  icon={esPago ? <Receipt className={iconSm} /> : <FileText className={iconSm} />}
-                >
+                <Field key={nombreDoc} label={nombreDoc} icon={esPago ? <Receipt className={iconSm} /> : <FileText className={iconSm} />}>
                   {cargado && !archivo && (
                     <p className="mb-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
                       <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
