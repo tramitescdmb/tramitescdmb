@@ -82,6 +82,12 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       expedientesAsignacion: { select: { id: true } },
       visitasProgramadas: { where: { estado: { not: "CANCELADA" } }, select: { expedienteId: true } },
       participacionesVisita: { where: { visita: { estado: { not: "CANCELADA" } } }, select: { visita: { select: { expedienteId: true } } } },
+      // A quien se le pide firmar, dar visto bueno o leer un documento de un trámite se le abre ese expediente
+      // (y el buzón de firmas), aunque no tenga acceso al tipo de trámite.
+      solicitudesFirmaAsignadas: {
+        where: { documentoExpedienteId: { not: null } },
+        select: { documentoExpediente: { select: { expedienteId: true } } },
+      },
       terminosAceptadosEn: true,
       perfiles: { select: { perfil: { select: { activo: true, permisos: { select: { funcionalidad: true, acciones: true } } } } } },
       excepcionesPermiso: { select: { funcionalidad: true, tipo: true, acciones: true } },
@@ -109,6 +115,7 @@ const obtenerUsuarioFresco = cache(async (userId: string): Promise<UsuarioFresco
       ...usuario.expedientesAsignacion.map((e) => e.id),
       ...usuario.visitasProgramadas.map((v) => v.expedienteId),
       ...usuario.participacionesVisita.map((p) => p.visita.expedienteId),
+      ...usuario.solicitudesFirmaAsignadas.flatMap((s) => (s.documentoExpediente ? [s.documentoExpediente.expedienteId] : [])),
     ],
     terminosAceptadosEn: usuario.terminosAceptadosEn,
     permisosPerfil: usuario.perfiles.filter((up) => up.perfil.activo).flatMap((up) => up.perfil.permisos),

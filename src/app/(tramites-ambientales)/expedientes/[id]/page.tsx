@@ -434,6 +434,15 @@ export default async function ExpedienteDetallePage({
               documentoMimeType={doc.mimeType}
             />
           )}
+          {miSolicitud && !cerrado && !puedeActuarYo && (
+            <Link
+              href={`/firmas/firmar/${miSolicitud.id}`}
+              title="Primero debe firmar quien tiene un turno anterior. Ver quién falta."
+              className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+            >
+              Su {miSolicitud.rol === "FIRMA" ? "firma" : "visto bueno"} espera turno
+            </Link>
+          )}
           {puedeAsignarFirmantes && (
             <AsignarFirmantesModal conCalidad
               permiteQuitar endpointAsignar={`/api/documentos/${doc.id}/solicitudes-firma`}
