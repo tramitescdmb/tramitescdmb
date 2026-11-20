@@ -3,6 +3,7 @@
 
 # next.js
 /.next/
+/.next-nueva/
 /out/
 
 # production
