@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     if (accion === "cerrar") {
       await cerrarExpedienteTramite(id, session.userId);
-      return responder("ok", `${expediente.numero} quedó cerrado y archivado en el SGDEA.`);
+      return responder("ok", `${expediente.numero} quedó cerrado y archivado como expediente digital.`);
     }
     await reabrirExpedienteTramite(id, String(form.get("motivo") || ""), session.userId);
     return responder("ok", `${expediente.numero} fue reabierto.`);

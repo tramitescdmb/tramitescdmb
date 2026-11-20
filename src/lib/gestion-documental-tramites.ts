@@ -7,7 +7,6 @@ import {
   MENSAJE_EXPEDIENTE_CERRADO,
   firmasPendientesTramite,
   mensajeFirmasPendientes,
-  sincronizarArchivoTramite,
   validarFundamentoNivelAcceso,
 } from "@/lib/archivo-central";
 
@@ -109,17 +108,14 @@ export async function cerrarExpedienteTramite(expedienteId: string, usuarioId: s
     where: { id: expedienteId },
     data: { archivado: true, archivadoEn: ahora, archivadoPorId: usuarioId, fechaUltimoMovimiento: ahora },
   });
-  try {
-    await sincronizarArchivoTramite(expedienteId);
-  } catch (err) {
-    await db.expediente.update({ where: { id: expedienteId }, data: { archivado: false, archivadoEn: null, archivadoPorId: null } });
-    throw err;
-  }
+  // Por ahora el expediente de trámites se archiva como expediente digital propio del módulo
+  // (sección «Expedientes archivados»); ya no se envía al SGDEA (sincronizarArchivoTramite queda
+  // disponible para cuando se use).
   await db.expedienteEvento.create({
     data: {
       expedienteId,
       tipo: "EXPEDIENTE_ARCHIVADO",
-      descripcion: `Expediente ${actual.numero} cerrado y archivado en el SGDEA.`,
+      descripcion: `Expediente digital ${actual.numero} cerrado y archivado.`,
       usuarioId,
     },
   });
@@ -135,7 +131,6 @@ export async function reabrirExpedienteTramite(expedienteId: string, motivo: str
     where: { id: expedienteId },
     data: { archivado: false, archivadoEn: null, archivadoPorId: null, fechaUltimoMovimiento: new Date() },
   });
-  await sincronizarArchivoTramite(expedienteId);
   await db.expedienteEvento.create({
     data: { expedienteId, tipo: "EXPEDIENTE_REABIERTO", descripcion: `Expediente reabierto. Motivo: ${motivo.trim()}`, usuarioId },
   });

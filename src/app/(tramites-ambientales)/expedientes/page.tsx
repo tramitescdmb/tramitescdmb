@@ -24,7 +24,7 @@ export default async function ExpedientesPage({
   searchParams,
 }: {
   searchParams: Promise<
-    FiltrosPeriodo & { estado?: string; q?: string; tramite?: string; municipio?: string; asignados?: string; page?: string }
+    FiltrosPeriodo & { estado?: string; q?: string; tramite?: string; municipio?: string; asignados?: string; archivados?: string; page?: string }
   >;
 }) {
   const sp = await searchParams;
@@ -49,6 +49,9 @@ export default async function ExpedientesPage({
   const pagina = Math.max(1, Number(pageParam) || 1);
 
   const soloMios = asignados === "mi" && Boolean(session);
+  // Sección «Expedientes archivados»: expedientes digitales ya cerrados (solo lectura).
+  const soloArchivados = sp.archivados === "si";
+  const archivados = soloArchivados ? "si" : undefined;
 
   const where = construirWhereExpedientes({
     tramiteIdsPermitidos,
@@ -61,6 +64,7 @@ export default async function ExpedientesPage({
     soloMios,
     usuarioId: session?.userId,
     cargos: session?.cargos,
+    archivados: soloArchivados,
   });
 
   const whereSinEstado = construirWhereExpedientes({
@@ -73,12 +77,13 @@ export default async function ExpedientesPage({
     soloMios,
     usuarioId: session?.userId,
     cargos: session?.cargos,
+    archivados: soloArchivados,
   });
   const [total, expedientes, porEstado] = await Promise.all([
     db.expediente.count({ where }),
     db.expediente.findMany({
       where,
-      orderBy: { fechaUltimoMovimiento: "desc" },
+      orderBy: soloArchivados ? { archivadoEn: "desc" } : { fechaUltimoMovimiento: "desc" },
       include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true, titulo: true }, orderBy: { numero: "asc" } } } } },
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
@@ -90,7 +95,7 @@ export default async function ExpedientesPage({
   const hayFiltrosExtra = Boolean(busqueda || tramite || municipio || rango);
   const conFiltro = (extra: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
-    const actuales = { estado, q, tramite, municipio, asignados, desde: sp.desde, hasta: sp.hasta, ...extra };
+    const actuales = { estado, q, tramite, municipio, asignados, archivados, desde: sp.desde, hasta: sp.hasta, ...extra };
     for (const [k, v] of Object.entries(actuales)) {
       if (v) params.set(k, v);
     }
@@ -108,7 +113,7 @@ export default async function ExpedientesPage({
   };
   const hrefExportar = (formato: "xlsx" | "csv") => {
     const params = new URLSearchParams();
-    const actuales = { estado, q, tramite, municipio, asignados, desde: sp.desde, hasta: sp.hasta, formato };
+    const actuales = { estado, q, tramite, municipio, asignados, archivados, desde: sp.desde, hasta: sp.hasta, formato };
     for (const [k, v] of Object.entries(actuales)) {
       if (v) params.set(k, v);
     }
@@ -131,9 +136,13 @@ export default async function ExpedientesPage({
     <div className="space-y-4">
       <CabeceraTablero
         icon={FolderOpen}
-        titulo="Expedientes"
+        titulo={soloArchivados ? "Expedientes archivados" : "Expedientes"}
         contador={total}
-        descripcion="Casos radicados de todos los trámites; filtre por estado o busque por número, solicitante, trámite o municipio."
+        descripcion={
+          soloArchivados
+            ? "Expedientes digitales de trámites ambientales ya finalizados, cerrados y archivados (solo lectura). Busque por número, solicitante, trámite o municipio."
+            : "Casos radicados de todos los trámites; filtre por estado o busque por número, solicitante, trámite o municipio."
+        }
         acciones={
           <>
             {session?.rol === "ADMIN" && <EnlaceTablero href="/expedientes/disposicion">Disposición final (TRD)</EnlaceTablero>}
@@ -176,6 +185,7 @@ export default async function ExpedientesPage({
       <form action="/expedientes" method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
         {estado && <input type="hidden" name="estado" value={estado} />}
         {soloMios && <input type="hidden" name="asignados" value="mi" />}
+        {soloArchivados && <input type="hidden" name="archivados" value="si" />}
         {sp.desde && <input type="hidden" name="desde" value={sp.desde} />}
         {sp.hasta && <input type="hidden" name="hasta" value={sp.hasta} />}
         <div className="min-w-[220px] flex-1">

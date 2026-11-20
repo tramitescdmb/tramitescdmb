@@ -39,6 +39,7 @@ export function TramitesTabs({
       items: [
         { href: "/expedientes", label: "Expedientes" },
         { href: "/expedientes?asignados=mi", label: "Asignados a mí" },
+        { href: "/expedientes?archivados=si", label: "Expedientes archivados" },
         { href: "/expedientes/disposicion", label: "Disposición final (TRD)", prefijo: true, separador: true },
         ...(editaFormatos ? [{ href: "/tramites-ambientales/flujos", label: "Flujos de trabajo", prefijo: true }] : []),
         ...(esAdmin ? [{ href: "/expedientes/clasificacion-trd", label: "Clasificación TRD", prefijo: true }] : []),

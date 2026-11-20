@@ -114,7 +114,7 @@ export default async function TramitesAyudaPage() {
       <Seccion n={1} id="alcance" icono={FileBadge} titulo="Alcance del módulo">
         <p>
           Trámites ambientales 2.0 administra el expediente digital de cada solicitud ambiental que se radica ante la CDMB: radicación,
-          avance por los pasos del procedimiento, documentos, visitas técnicas con su concepto, firma electrónica y archivo en el SGDEA.
+          avance por los pasos del procedimiento, documentos, visitas técnicas con su concepto, firma electrónica y archivo como expediente digital.
         </p>
         <p>
           Cada trámite del catálogo sigue el procedimiento documentado (código <Chip tono="cdmb">M-DA-PRxx</Chip>): sus pasos, responsables,
@@ -181,7 +181,7 @@ export default async function TramitesAyudaPage() {
           <Fila celdas={["Documentos", "Documentos cargados con su estado de validación y de firma."]} />
           <Fila celdas={["Flujo", "Todos los pasos del procedimiento y en cuál va el expediente."]} />
           <Fila celdas={["Historia", "Bitácora de todo lo ocurrido: radicación, avances, documentos, visitas, firmas y asignaciones."]} />
-          <Fila celdas={["Administración", "Ficha del expediente en el archivo del SGDEA y cierre del expediente."]} />
+          <Fila celdas={["Administración", "Clasificación TRD, nivel de acceso y cierre del expediente digital."]} />
         </Tabla>
         <p>
           En <strong>Expedientes</strong> se filtra por vigencia, estado, trámite, municipio y texto (número, solicitante, NIT o cédula). «Asignados a
@@ -349,7 +349,7 @@ export default async function TramitesAyudaPage() {
 
       <Seccion n={18} id="archivo" icono={Archive} titulo="Archivo y disposición final">
         <p>
-          Al cerrar un expediente queda su ficha de solo lectura en el archivo del SGDEA, clasificada según la TRD. «Disposición final (TRD)» muestra
+          Un trámite finalizado se cierra desde Administración y queda como expediente digital de solo lectura, clasificado según la TRD, en «Expedientes archivados» (menú Expedientes). «Disposición final (TRD)» muestra
           los expedientes que cumplieron su tiempo de retención.
         </p>
       </Seccion>

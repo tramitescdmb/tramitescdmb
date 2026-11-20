@@ -45,6 +45,7 @@ export function PanelGestionDocumental({
   fichaSgdea,
   cierre,
   puedeReabrir,
+  archivoEn = "el SGDEA",
 }: {
   accion: string;
   clasificacion: ClasificacionTrd | null;
@@ -58,6 +59,8 @@ export function PanelGestionDocumental({
   fichaSgdea: { id: string; numero: string } | null;
   cierre: { descripcion: string; control?: ReactNode; bloqueo?: string | null };
   puedeReabrir: boolean;
+  /** Dónde queda archivado al cerrar (texto): «el SGDEA» o, en trámites, «el expediente digital». */
+  archivoEn?: string;
 }) {
   const editable = puedeEditar && !cerrado;
 
@@ -75,7 +78,7 @@ export function PanelGestionDocumental({
               <>
                 <strong>Cerrado</strong>
                 {cerradoEn && <> el {formatearFechaHora(cerradoEn)}</>}
-                {cerradoPor && <> por {cerradoPor}</>} y archivado en el SGDEA. No admite cambios mientras no se reabra.
+                {cerradoPor && <> por {cerradoPor}</>} y archivado en {archivoEn}. No admite cambios mientras no se reabra.
               </>
             ) : (
               <>
@@ -180,7 +183,15 @@ export function PanelGestionDocumental({
   );
 }
 
-export function BotonCerrarExpediente({ accion, deshabilitado }: { accion: string; deshabilitado?: boolean }) {
+export function BotonCerrarExpediente({
+  accion,
+  deshabilitado,
+  etiqueta = "Cerrar y archivar en el SGDEA",
+}: {
+  accion: string;
+  deshabilitado?: boolean;
+  etiqueta?: string;
+}) {
   return (
     <form action={accion} method="post">
       <input type="hidden" name="accion" value="cerrar" />
@@ -190,7 +201,7 @@ export function BotonCerrarExpediente({ accion, deshabilitado }: { accion: strin
         className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-4 py-2 text-sm font-medium text-white hover:bg-acento-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Archive className="h-3.5 w-3.5" aria-hidden />
-        Cerrar y archivar en el SGDEA
+        {etiqueta}
       </button>
     </form>
   );
