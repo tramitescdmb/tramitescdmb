@@ -25,6 +25,8 @@ export type MetadatosDocumentoPdf = {
   plataforma: string;
   referencia: string;
   hashArchivo: string | null;
+  /** Registro al que pertenece el documento (trámite, etapa, tipo); se imprime en la diligencia. */
+  registro?: { etiqueta: string; valor: string }[];
   elementosEstampados: string;
   disenio: number;
 };
@@ -153,9 +155,11 @@ async function agregarDiligencia(
   });
 
   const datosContenido: Linea[] = [
-    { etiqueta: "Documento", valor: meta.documento },
+    { etiqueta: "Documento (nombre del archivo)", valor: meta.documento },
     { etiqueta: "Plataforma", valor: `${meta.plataforma} · CDMB` },
     { etiqueta: "Radicado o expediente", valor: meta.referencia },
+    // El número ya va en «Radicado o expediente»: aquí se agregan trámite, etapa y tipo de documento.
+    ...(meta.registro ?? []).filter((r) => r.valor !== meta.referencia),
     { etiqueta: "Tipo de firma", valor: "Firma electrónica · Ley 527 de 1999, art. 7 · Decreto 1074 de 2015" },
     ...(meta.hashArchivo ? [{ etiqueta: "Huella SHA-256 del documento original (Web Crypto)", valor: meta.hashArchivo }] : []),
     ...(firmas.some((f) => f.selloTiempo?.includes("RFC 3161")) ? [{ etiqueta: "Sello de tiempo", valor: "Token RFC 3161" }] : []),

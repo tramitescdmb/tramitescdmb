@@ -9,6 +9,7 @@ import { accesoDesdeArchivoSgdea } from "@/lib/acceso-archivo-modulos";
 import { descargarDocumento } from "@/lib/storage";
 import { estamparFirmaTramite } from "@/lib/pdf-rotulado";
 import { metadatosPdf } from "@/lib/metadatos-pdf";
+import { registroDocumentoTramite } from "@/lib/registro-documento";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { navegadorLegible, textoSelloTiempo } from "@/lib/evidencia-firma";
 import { formatearFechaHoraLarga } from "@/lib/fecha";
@@ -27,7 +28,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       storagePath: true,
       nombre: true,
       mimeType: true,
-      expediente: { select: { id: true, numero: true, tramiteTipoId: true } },
+      pasoNumero: true,
+      requisito: { select: { nombre: true } },
+      tipoDocumental: { select: { nombre: true } },
+      expediente: {
+        select: {
+          id: true,
+          numero: true,
+          tramiteTipoId: true,
+          tramiteTipo: { select: { nombre: true } },
+          flujo: { select: { nombre: true, pasos: { select: { numero: true, titulo: true } } } },
+        },
+      },
       firmas: {
         orderBy: { fechaHora: "asc" },
         select: {
@@ -109,7 +121,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const datos = {
     numeroExpediente: doc.expediente.numero,
     baseUrl: base,
-    metadatos: metadatosPdf({ tipo: "T", id, baseUrl: base, documento: doc.nombre, referencia: doc.expediente.numero, hashArchivo: doc.hashSha256 }),
+    metadatos: metadatosPdf({ tipo: "T", id, baseUrl: base, documento: doc.nombre, referencia: doc.expediente.numero, hashArchivo: doc.hashSha256, registro: registroDocumentoTramite(doc) }),
   };
   const firmantes = [
     ...doc.firmas.map((f) => ({

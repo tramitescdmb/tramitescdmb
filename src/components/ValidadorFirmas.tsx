@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2, FileSearch } from "lucide-react";
+import { ShieldCheck, ShieldX, Loader2, Hash, KeyRound, FileText, Building2, FileSearch, FolderOpen } from "lucide-react";
 
 type Firma = {
   id: string;
@@ -14,7 +14,15 @@ type Firma = {
   hashFirma: string | null;
   entidad: string;
 };
-type Documento = { codigo: string; plataforma: string; referencia: string; documento: string; hashArchivo: string | null; firmas: Firma[] };
+type Documento = {
+  codigo: string;
+  plataforma: string;
+  referencia: string;
+  documento: string;
+  hashArchivo: string | null;
+  registro?: { etiqueta: string; valor: string }[];
+  firmas: Firma[];
+};
 
 const formato = new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" });
 
@@ -135,10 +143,26 @@ export function ValidadorFirmas({ csvInicial = "" }: { csvInicial?: string }) {
           {documentos.map((d) => (
             <article key={d.codigo} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-soft">
               <div className="grid gap-x-6 gap-y-2 border-b border-stone-100 bg-stone-50/70 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                <Dato icono={<FileText className="h-3.5 w-3.5" />} k="Documento" v={d.documento} />
+                <Dato icono={<FileText className="h-3.5 w-3.5" />} k="Documento firmado (nombre del archivo)" v={d.documento} />
                 <Dato icono={<Building2 className="h-3.5 w-3.5" />} k="Plataforma" v={d.plataforma} />
                 <Dato icono={<Hash className="h-3.5 w-3.5" />} k="Radicado / expediente" v={d.referencia} mono />
                 <Dato icono={<KeyRound className="h-3.5 w-3.5" />} k="Código seguro de verificación" v={d.codigo} mono />
+                {d.registro && d.registro.length > 0 && (
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <p className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-stone-400">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      Registro al que pertenece el documento
+                    </p>
+                    <dl className="mt-1 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
+                      {d.registro.map((r) => (
+                        <div key={r.etiqueta} className="flex gap-1.5">
+                          <dt className="flex-none text-stone-500">{r.etiqueta}:</dt>
+                          <dd className="min-w-0 break-words text-stone-800">{r.valor}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                )}
                 {d.hashArchivo && (
                   <div className="sm:col-span-2 lg:col-span-4">
                     <Dato icono={<Hash className="h-3.5 w-3.5" />} k="SHA-256 del documento original" v={d.hashArchivo} mono />

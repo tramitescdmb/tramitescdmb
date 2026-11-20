@@ -1,6 +1,6 @@
 import { etiquetaDatoIdentificacion } from "@/lib/identificacion-firma";
 import { notFound, redirect } from "next/navigation";
-import { FileSignature, ShieldCheck, Eye } from "lucide-react";
+import { FileSignature, ShieldCheck, Eye, FileText } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -10,6 +10,8 @@ import { formatearFechaHoraLarga } from "@/lib/fecha";
 import { ordenarPorCalidad, rotuloCalidadFirma, etiquetaCalidadCompleta } from "@/lib/calidad-firma";
 import { cargoDelFirmante, nivelFirma } from "@/lib/jerarquia-firma";
 import { BotonImprimir } from "@/components/BotonImprimir";
+import { registroDocumentoTramite } from "@/lib/registro-documento";
+import { codigoVerificacion } from "@/lib/validar-firma";
 
 export default async function FichaFirmaExpedienteTramitePage({
   params,
@@ -30,7 +32,9 @@ export default async function FichaFirmaExpedienteTramitePage({
       id: true,
       numero: true,
       tramiteTipoId: true,
+      solicitanteNombre: true,
       tramiteTipo: { select: { nombre: true } },
+      flujo: { select: { nombre: true, pasos: { select: { numero: true, titulo: true } } } },
       documentos: {
         where: {
           OR: [{ firmas: { some: {} } }, { solicitudesFirma: { some: { rol: "VISTO_BUENO", estado: "COMPLETADA" } } }],
@@ -40,6 +44,14 @@ export default async function FichaFirmaExpedienteTramitePage({
         select: {
           id: true,
           nombre: true,
+          descripcion: true,
+          mimeType: true,
+          hashSha256: true,
+          createdAt: true,
+          pasoNumero: true,
+          requisito: { select: { nombre: true } },
+          tipoDocumental: { select: { nombre: true } },
+          subidoPor: { select: { nombre: true } },
           firmas: {
             orderBy: { fechaHora: "asc" },
             include: {
@@ -91,8 +103,12 @@ export default async function FichaFirmaExpedienteTramitePage({
       </div>
 
       <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-        <p className="font-mono text-sm text-stone-500">{expediente.numero}</p>
+        <p className="text-xs uppercase tracking-wide text-stone-400">Expediente</p>
+        <p className="font-mono text-sm font-semibold text-stone-800">{expediente.numero}</p>
         <p className="mt-0.5 text-base font-medium text-stone-900">{expediente.tramiteTipo.nombre}</p>
+        <p className="text-xs text-stone-500">
+          {expediente.flujo.nombre} · Solicitante: {expediente.solicitanteNombre}
+        </p>
         {documentoId && (
           <p className="mt-1 text-xs text-stone-500 print:hidden">
             Ficha de un solo documento.{" "}
@@ -124,8 +140,37 @@ export default async function FichaFirmaExpedienteTramitePage({
             )}
             <div className="mt-4 space-y-5">
               {expediente.documentos.map((doc) => (
-                <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4">
-                  <p className="mb-1.5 text-sm font-semibold text-stone-800">{doc.nombre}</p>
+                <div key={doc.id} id={`doc-${doc.id}`} className="scroll-mt-4 break-inside-avoid-page">
+                  <div className="mb-2 rounded-lg border border-cdmb-100 bg-cdmb-50/40 p-3">
+                    <p className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+                      <FileText className="h-4 w-4 flex-none text-cdmb-600" aria-hidden />
+                      Documento firmado: {doc.nombre}
+                    </p>
+                    {doc.descripcion && <p className="mt-0.5 text-xs text-stone-600">{doc.descripcion}</p>}
+                    <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                      {registroDocumentoTramite({ ...doc, expediente }).map((r) => (
+                        <Dato key={r.etiqueta} k={r.etiqueta} v={r.valor} mono={r.etiqueta === "Expediente"} />
+                      ))}
+                      <Dato k="Cargado por" v={`${doc.subidoPor.nombre} · ${formatearFechaHoraLarga(doc.createdAt)}`} />
+                      <Dato k="Código seguro de verificación (CSV)" v={codigoVerificacion("T", doc.id)} mono />
+                      <Dato k="Hash SHA-256 del archivo original" v={doc.hashSha256 ?? "no registrado"} mono />
+                      <Dato k="Identificador del documento" v={doc.id} mono />
+                    </dl>
+                    <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs print:hidden">
+                      <Link href={`/expedientes/${id}`} className="text-cdmb-700 hover:underline">
+                        Abrir el expediente
+                      </Link>
+                      {doc.mimeType === "application/pdf" && (
+                        <a href={`/api/documentos/${doc.id}/rotulado`} target="_blank" rel="noreferrer" className="text-cdmb-700 hover:underline">
+                          Ver el PDF con sello de firma
+                        </a>
+                      )}
+                      <a href={`/validar-firma?csv=${encodeURIComponent(codigoVerificacion("T", doc.id))}`} target="_blank" rel="noreferrer" className="text-cdmb-700 hover:underline">
+                        Validar en el validador público
+                      </a>
+                    </p>
+                  </div>
+                  <p className="mb-1.5 text-xs font-medium text-stone-500">Firmas y vistos buenos de este documento</p>
                   <ul className="space-y-3">
                     {ordenarPorCalidad(doc.firmas, (f) => f.calidad, (f) => nivelFirma(f.usuario)).map((f) => (
                       <li key={f.id} className={`rounded-lg border border-stone-100 bg-stone-50/60 ${rotuloCalidadFirma(f.calidad) ? "p-2.5 text-xs" : "p-3 text-sm"}`}>
@@ -145,7 +190,7 @@ export default async function FichaFirmaExpedienteTramitePage({
                           <Dato k="Fecha y hora" v={formatearFechaHoraLarga(f.fechaHora)} />
                           <Dato k="Algoritmo / formato" v={etiquetaFormatoFirma(f.formato)} />
                           <Dato k="Proveedor" v="CDMB" />
-                          <Dato k="Hash SHA-256 del contenido" v={f.hashContenido} mono />
+                          <Dato k="Huella de la firma (SHA-256)" v={f.hashContenido} mono />
                           <Dato k="Dirección IP" v={f.ip ?? "no disponible"} mono />
                           <Dato k="Agente de usuario" v={f.userAgent ?? "no disponible"} mono />
                           <Dato k="Identificador de la firma" v={f.id} mono />
