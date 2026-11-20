@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { cargoDelFirmante, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { etiquetaCalidadCompleta } from "@/lib/calidad-firma";
+import { registroDocumentoTramite, SELECT_REGISTRO_TRAMITE, type DetalleRegistro } from "@/lib/registro-documento";
+import { ETIQUETA_ETAPA } from "@/lib/contratacion-etiquetas";
 
 export type FirmaPublica = {
   id: string;
@@ -20,6 +22,8 @@ export type DocumentoFirmadoPublico = {
   referencia: string;
   documento: string;
   hashArchivo: string | null;
+  /** A qué registro pertenece el documento (expediente, trámite, etapa, tipo). Sin datos personales. */
+  registro: DetalleRegistro[];
   firmas: FirmaPublica[];
 };
 
@@ -107,19 +111,19 @@ async function buscarDocumentos(filtro: { tipo: TipoDocumentoCsv; id: string }):
     por("T")
       ? db.expedienteDocumento.findMany({
           where: por("T")!,
-          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+          select: { id: true, nombre: true, hashSha256: true, ...SELECT_REGISTRO_TRAMITE, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
         })
       : vacio,
     por("G")
       ? db.documentoContrato.findMany({
           where: { ...por("G")!, expediente: { eliminado: false } },
-          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+          select: { id: true, nombre: true, hashSha256: true, etapa: true, tipoDocumental: { select: { nombre: true } }, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
         })
       : vacio,
     por("A")
       ? db.documentoArchivo.findMany({
           where: { ...por("A")!, retiradoEn: null },
-          select: { id: true, nombre: true, hashSha256: true, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
+          select: { id: true, nombre: true, hashSha256: true, tipoDocumental: { select: { nombre: true } }, expediente: { select: { numero: true } }, firmas: { select: SELECT_FIRMA }, solicitudesFirma: SELECT_VISTOS },
         })
       : vacio,
     por("C")
@@ -135,15 +139,23 @@ async function buscarDocumentos(filtro: { tipo: TipoDocumentoCsv; id: string }):
       : vacio,
   ]);
   return [
-    ...tramites.map((d) => ({ codigo: codigoVerificacion("T", d.id), plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
-    ...contratos.map((d) => ({ codigo: codigoVerificacion("G", d.id), plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
-    ...archivo.map((d) => ({ codigo: codigoVerificacion("A", d.id), plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
+    ...tramites.map((d) => ({ codigo: codigoVerificacion("T", d.id), plataforma: PLATAFORMA_FIRMA.tramites, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, registro: registroDocumentoTramite(d), firmas: aPublicas(d.firmas, d.solicitudesFirma, "TRAMITES") })),
+    ...contratos.map((d) => ({ codigo: codigoVerificacion("G", d.id), plataforma: PLATAFORMA_FIRMA.gecon, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, registro: [
+      { etiqueta: "Expediente contractual", valor: d.expediente.numero },
+      { etiqueta: "Etapa", valor: ETIQUETA_ETAPA[d.etapa] },
+      ...(d.tipoDocumental ? [{ etiqueta: "Tipo de documento", valor: d.tipoDocumental.nombre }] : []),
+    ], firmas: aPublicas(d.firmas, d.solicitudesFirma, "GECON") })),
+    ...archivo.map((d) => ({ codigo: codigoVerificacion("A", d.id), plataforma: PLATAFORMA_FIRMA.sgdea, referencia: d.expediente.numero, documento: d.nombre, hashArchivo: d.hashSha256, registro: [
+      { etiqueta: "Expediente documental", valor: d.expediente.numero },
+      ...(d.tipoDocumental ? [{ etiqueta: "Tipo de documento", valor: d.tipoDocumental.nombre }] : []),
+    ], firmas: aPublicas(d.firmas, d.solicitudesFirma, "SGDEA") })),
     ...comunicaciones.map((d) => ({
       codigo: codigoVerificacion("C", d.id),
       plataforma: PLATAFORMA_FIRMA.sgdea,
       referencia: d.comunicacion.radicado,
       documento: d.nombre,
       hashArchivo: d.hashSha256,
+      registro: [{ etiqueta: "Radicado", valor: d.comunicacion.radicado }],
       firmas: aPublicas(d.comunicacion.firmas, d.comunicacion.solicitudesFirma, "SGDEA"),
     })),
   ];

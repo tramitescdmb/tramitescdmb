@@ -1,5 +1,6 @@
 import { codigoVerificacion, PLATAFORMA_FIRMA, type TipoDocumentoCsv } from "@/lib/validar-firma";
 import type { MetadatosDocumentoPdf } from "@/lib/pdf-rotulado";
+import type { DetalleRegistro } from "@/lib/registro-documento";
 
 const ESTAMPADO_DOCUMENTO = "Sello de firma, QR y CSV";
 
@@ -24,6 +25,7 @@ export function metadatosPdf(datos: {
   documento: string;
   referencia: string;
   hashArchivo: string | null;
+  registro?: DetalleRegistro[];
 }): MetadatosDocumentoPdf {
   const csv = codigoVerificacion(datos.tipo, datos.id);
   const urlBaseValidador = `${datos.baseUrl.replace(/\/+$/, "")}/validar-firma`;
@@ -35,6 +37,7 @@ export function metadatosPdf(datos: {
     plataforma: PLATAFORMA_POR_TIPO[datos.tipo],
     referencia: datos.referencia,
     hashArchivo: datos.hashArchivo,
+    registro: datos.registro ?? [],
     elementosEstampados: ESTAMPADO_POR_TIPO[datos.tipo],
     disenio: 7,
   };
