@@ -58,10 +58,10 @@ export default async function SolicitudAmbientalPage() {
       ) : (
         <section className="flex flex-col gap-3 rounded-2xl border border-cdmb-200 bg-cdmb-50 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-cdmb-900">
-            <p className="font-semibold">Regístrese antes de empezar (recomendado)</p>
+            <p className="font-semibold">Para radicar, ingrese o regístrese con su correo</p>
             <p className="mt-0.5">
-              Solo con su correo, sin contraseña. Podrá ver todas sus solicitudes, su historial y, si la CDMB le pide corregir un documento,
-              cargarlo sin empezar de nuevo.
+              Sin contraseña: le enviamos un código. Puede consultar el catálogo libremente; al elegir un trámite le pediremos ingresar. Así verá
+              todas sus solicitudes, su historial y, si la CDMB le pide corregir un documento, lo cargará sin empezar de nuevo.
             </p>
           </div>
           <Link

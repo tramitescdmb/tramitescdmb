@@ -5,6 +5,7 @@ import { TAMANO_MAXIMO_BYTES, TAMANO_MAXIMO_PLANO_MB, esRequisitoPlano, extensio
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { verificarLimiteEnvio } from "@/lib/anti-abuso";
 import { datosPeticion } from "@/lib/auditoria-doc";
+import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -14,6 +15,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * token firmado: 2 MB, o 10 MB si es un requisito de planos del trámite elegido.
  */
 export async function POST(req: NextRequest) {
+  const cuenta = await cuentaEnSesion();
+  if (!cuenta?.completa) return NextResponse.json({ error: "Para radicar debe ingresar con su correo. Recargue la página." }, { status: 401 });
   const { ip } = datosPeticion(req.headers);
   const limite = await verificarLimiteEnvio(ip, "solicitud-ambiental:upload-sign", { porHora: 60, porDia: 150 });
   if (!limite.permitido) return NextResponse.json({ error: limite.motivo }, { status: 429 });

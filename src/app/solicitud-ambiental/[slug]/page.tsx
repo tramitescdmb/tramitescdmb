@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EncabezadoSolicitud, PasosSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { NuevoExpedienteForm } from "@/components/NuevoExpedienteForm";
 import { getTramitePorSlug } from "@/lib/tramites-data";
@@ -31,7 +31,12 @@ export default async function SolicitudAmbientalTramitePage({
   const flujos = flujoEnfocado ? [flujoEnfocado] : tramite.flujos;
   const flujoInicial = flujoEnfocado ?? tramite.flujos.find((f) => f.esFlujoInicial) ?? tramite.flujos[0]!;
   const nombre = flujoEnfocado ? nombreFlujo(flujoEnfocado.nombre) : tramite.nombre;
+  // Para radicar se exige la cuenta ciudadana verificada (correo + código): el catálogo es público,
+  // el formulario no. Tras ingresar vuelve a este mismo trámite.
+  const aqui = `/solicitud-ambiental/${tramite.slug}${flujoEnfocado ? `?flujo=${flujoEnfocado.codigo}` : ""}`;
   const cuenta = await cuentaEnSesion();
+  if (!cuenta) redirect(`/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(aqui)}`);
+  if (!cuenta.completa || !cuenta.identificacion) redirect(`/solicitud-ambiental/mis-solicitudes?siguiente=${encodeURIComponent(aqui)}`);
 
   return (
     <div className="space-y-5">
@@ -57,11 +62,7 @@ export default async function SolicitudAmbientalTramitePage({
         flujoInicialId={flujoInicial.id}
         mostrarDatosPredio={aplicaDatosPredio(tramite.codigo)}
         publico
-        cuentaCiudadana={
-          cuenta?.completa && cuenta.identificacion
-            ? { correo: cuenta.correo, tipo: cuenta.tipo, identificacion: cuenta.identificacion, telefono: cuenta.telefono }
-            : null
-        }
+        cuentaCiudadana={{ correo: cuenta.correo, tipo: cuenta.tipo, identificacion: cuenta.identificacion, telefono: cuenta.telefono }}
       />
     </div>
   );
