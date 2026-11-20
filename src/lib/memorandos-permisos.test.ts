@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/config-sitio", () => ({ getConfiguracionSitio: async () => ({}) }));
 
-const { accedeMemorandos, oficinaOrigenMemorando, puedeRecibirMemorando, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
+const { accedeMemorandos, whereGrupoMasivo, oficinaOrigenMemorando, puedeRecibirMemorando, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
 
 function permisos(extra: Record<string, unknown> = {}) {
   return { esAdmin: false, dependenciaId: "dep-1", correspondencia: null, porPerfil: new Set(), matriz: new Map(), ...extra } as never;
@@ -78,5 +78,26 @@ describe("destinatario del memorando", () => {
     expect(puedeRecibirMemorando({ denominacionEmpleo: null, rolesContratacion: [] })).toBe(false);
     expect(puedeRecibirMemorando({ denominacionEmpleo: null, rolesContratacion: ["CONTRATISTA"] })).toBe(false);
     expect(puedeRecibirMemorando({ denominacionEmpleo: "JEFE_OFICINA", rolesContratacion: ["CONTRATISTA"] })).toBe(false);
+  });
+});
+
+describe("memorandos masivos", () => {
+  it("los contratistas sin dependencia entran al módulo para leerlos", () => {
+    expect(accedeMemorandos(permisos({ dependenciaId: null, rolesContratacion: new Set(["CONTRATISTA"]) }), true)).toBe(true);
+    expect(accedeMemorandos(permisos({ dependenciaId: null, rolesContratacion: new Set(["CONTRATISTA"]) }), false)).toBe(false);
+    expect(accedeMemorandos(permisos({ dependenciaId: null, rolesContratacion: new Set() }), true)).toBe(false);
+  });
+
+  it("planta excluye contratistas; contratistas exige el rol; todos une los dos; nunca quien firma", () => {
+    const planta = JSON.stringify(whereGrupoMasivo("PLANTA", "yo"));
+    expect(planta).toContain('"NOT":{"rolesContratacion":{"has":"CONTRATISTA"}}');
+    expect(planta).toContain('"dependenciaId":{"not":null}');
+    expect(planta).toContain('"id":{"not":"yo"}');
+    expect(planta).toContain('"estadoCuenta":"HABILITADA"');
+    const contratistas = JSON.stringify(whereGrupoMasivo("CONTRATISTAS"));
+    expect(contratistas).toContain('"rolesContratacion":{"has":"CONTRATISTA"}');
+    expect(contratistas).not.toContain("NOT");
+    const todos = JSON.stringify(whereGrupoMasivo("TODOS"));
+    expect(todos).toContain('"OR"');
   });
 });

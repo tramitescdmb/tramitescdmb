@@ -6,6 +6,23 @@
 
 export type PersonaMemorando = { nombre: string; cargo: string };
 
+/**
+ * Envío masivo: a todos los funcionarios de planta, a todos los contratistas o a todos. Llega como
+ * notificación en la plataforma (campana y bandeja «Sin leer»), no por correo. Cada persona queda con
+ * su propia entrega y su fecha de lectura (Distribucion).
+ */
+export type GrupoMasivoMemorando = "PLANTA" | "CONTRATISTAS" | "TODOS";
+
+export const GRUPOS_MASIVOS_MEMORANDO: Record<GrupoMasivoMemorando, { etiqueta: string; para: string }> = {
+  PLANTA: { etiqueta: "Todos los funcionarios de planta", para: "FUNCIONARIOS DE PLANTA DE LA CDMB" },
+  CONTRATISTAS: { etiqueta: "Todos los contratistas", para: "CONTRATISTAS DE LA CDMB" },
+  TODOS: { etiqueta: "Todos (funcionarios de planta y contratistas)", para: "FUNCIONARIOS Y CONTRATISTAS DE LA CDMB" },
+};
+
+export function esGrupoMasivo(v: unknown): v is GrupoMasivoMemorando {
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(GRUPOS_MASIVOS_MEMORANDO, v);
+}
+
 export type DatosMemorando = {
   version: 1;
   consecutivo: number;
@@ -16,6 +33,8 @@ export type DatosMemorando = {
   proyecto: PersonaMemorando | null;
   reviso: PersonaMemorando | null;
   oficina: string;
+  /** Solo en envíos masivos: a qué grupo se dirigió y a cuántas personas se entregó al firmarlo. */
+  masivo?: { grupo: GrupoMasivoMemorando; total: number } | null;
 };
 
 export const CIUDAD_MEMORANDO = "Bucaramanga";
@@ -49,6 +68,12 @@ function persona(v: unknown): PersonaMemorando | null {
   return nombre ? { nombre, cargo } : null;
 }
 
+function leerMasivo(v: unknown): DatosMemorando["masivo"] {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  return esGrupoMasivo(o.grupo) ? { grupo: o.grupo, total: Math.max(0, Math.floor(Number(o.total) || 0)) } : null;
+}
+
 /** Lee lo guardado en Comunicacion.datosMemorando. Devuelve null si no es un memorando del formato nuevo. */
 export function leerDatosMemorando(v: unknown): DatosMemorando | null {
   if (!v || typeof v !== "object") return null;
@@ -66,6 +91,7 @@ export function leerDatosMemorando(v: unknown): DatosMemorando | null {
     proyecto: persona(o.proyecto),
     reviso: persona(o.reviso),
     oficina: typeof o.oficina === "string" ? o.oficina : "",
+    masivo: leerMasivo(o.masivo),
   };
 }
 

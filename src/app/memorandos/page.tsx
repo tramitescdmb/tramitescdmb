@@ -6,6 +6,7 @@ import { contarMemorandos, contextoMemorandos, listarMemorandos, numerosDeMemora
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
+import { GRUPOS_MASIVOS_MEMORANDO, leerDatosMemorando } from "@/lib/memorandos-formato";
 import { CabeceraTablero } from "@/components/tablero";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
 
@@ -116,7 +117,10 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
                 const sinLeer = !enviados && miDistribucion && !miDistribucion.fechaAcuse;
                 const pendiente = m.fechaVencimiento && !["RESPONDIDA", "ANULADA", "ARCHIVADA"].includes(m.estado);
                 const v = pendiente ? estadoVencimiento(m.fechaVencimiento, undefined, calendario) : null;
-                const destinatario = m.distribuciones.map((d) => d.usuario?.nombre).filter(Boolean).join(", ");
+                const masivo = leerDatosMemorando(m.datosMemorando)?.masivo ?? null;
+                const destinatario = masivo
+                  ? `${m._count.distribuciones} personas`
+                  : m.distribuciones.map((d) => d.usuario?.nombre).filter(Boolean).join(", ") + (m._count.distribuciones > m.distribuciones.length ? ` y ${m._count.distribuciones - m.distribuciones.length} más` : "");
                 return (
                   <tr key={m.id}>
                     <td className="whitespace-nowrap px-4 py-2 align-top">
@@ -143,7 +147,7 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
                     <td className="max-w-[16rem] px-3 py-2 align-top text-xs text-stone-600">
                       {enviados ? (
                         <>
-                          <span className="block">{m.dependenciaDestino?.nombre ?? "—"}</span>
+                          <span className="block">{masivo ? GRUPOS_MASIVOS_MEMORANDO[masivo.grupo].etiqueta : m.dependenciaDestino?.nombre ?? "—"}</span>
                           {destinatario && <span className="block text-stone-400">{destinatario}</span>}
                         </>
                       ) : (

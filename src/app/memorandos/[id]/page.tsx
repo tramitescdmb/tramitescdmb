@@ -5,7 +5,7 @@ import { ArrowLeft, Paperclip, Reply, Send, UserCheck, Archive, PenLine } from "
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
 import { contextoMemorandos, marcarMemorandoLeido, numeroDeMemorando, whereVerMemorando } from "@/lib/memorandos";
-import { fechaLargaMemorando, leerDatosMemorando, CIUDAD_MEMORANDO, type PersonaMemorando } from "@/lib/memorandos-formato";
+import { fechaLargaMemorando, leerDatosMemorando, CIUDAD_MEMORANDO, GRUPOS_MASIVOS_MEMORANDO, type PersonaMemorando } from "@/lib/memorandos-formato";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { urlBasePlataforma } from "@/lib/avisos-correo";
@@ -124,6 +124,10 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
   };
 
   const vigentes = c.distribuciones.filter((d) => d.activa);
+  const masivo = guardado?.masivo ?? null;
+  const leidos = vigentes.filter((d) => d.fechaAcuse).length;
+  // En un masivo, la lista de a quién llegó la ven quien lo firmó, quien dirige la oficina de origen y gestión documental.
+  const verEntregas = !masivo || c.radicadoPorId === session.userId || ctx.archivo || (ctx.firmante && Boolean(ctx.dependenciaId) && ctx.dependenciaId === c.dependenciaOrigenId);
   const pendiente = Boolean(c.fechaVencimiento) && !["RESPONDIDA", "ANULADA", "ARCHIVADA"].includes(c.estado) && c.respuestas.length === 0;
   const dirigeDestino = ctx.firmante && Boolean(ctx.dependenciaId) && ctx.dependenciaId === c.dependenciaDestinoId;
   const asignadoAMi = vigentes.some((d) => d.usuarioId === session.userId);
@@ -170,7 +174,7 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-stone-500">Para</dt>
-                <dd className="text-right">{c.dependenciaDestino?.nombre ?? "—"}</dd>
+                <dd className="text-right">{masivo ? GRUPOS_MASIVOS_MEMORANDO[masivo.grupo].etiqueta : c.dependenciaDestino?.nombre ?? "—"}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-stone-500">Responder antes de</dt>
@@ -233,8 +237,28 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
             <section className="rounded-2xl border border-stone-200 bg-white p-4 text-sm shadow-soft">
               <h2 className="mb-2 flex items-center gap-1.5 font-semibold text-stone-800">
                 <UserCheck className="h-4 w-4" aria-hidden />
-                Asignado a
+                {masivo ? "Entregado a" : "Asignado a"}
               </h2>
+              {masivo && (
+                <p className="text-stone-700">
+                  {vigentes.length} persona{vigentes.length === 1 ? "" : "s"} · {leidos} lo {leidos === 1 ? "ha" : "han"} leído
+                  <span className="mt-0.5 block text-xs text-stone-500">Envío masivo: llegó como notificación en la plataforma, sin correo.</span>
+                </p>
+              )}
+              {masivo && verEntregas && vigentes.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs font-medium text-cdmb-700">Ver a quién llegó y quién lo leyó</summary>
+                  <ul className="mt-2 max-h-80 space-y-1 overflow-auto pr-1">
+                    {vigentes.map((d, i) => (
+                      <li key={i} className="flex justify-between gap-3">
+                        <span>{d.usuario?.nombre ?? "—"}</span>
+                        <span className="whitespace-nowrap text-xs text-stone-500">{d.fechaAcuse ? `Leído ${formatearFechaHora(d.fechaAcuse)}` : "Sin leer"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {!masivo && (
               <ul className="space-y-1">
                 {vigentes.map((d, i) => (
                   <li key={i} className="flex justify-between gap-3">
@@ -243,6 +267,7 @@ export default async function MemorandoPage({ params, searchParams }: { params: 
                   </li>
                 ))}
               </ul>
+              )}
               {dirigeDestino && pendiente && colaboradores.length > 0 && (
                 <form action={`/api/memorandos/${c.id}/asignar`} method="post" className="mt-3 space-y-2 border-t border-stone-100 pt-3">
                   <label className="block text-xs font-medium text-stone-600" htmlFor="usuarioId">

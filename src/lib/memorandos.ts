@@ -4,7 +4,7 @@ import { ESTADOS_ACTIVOS } from "@/lib/correspondencia-panel";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { puedeGestionarArchivo, type PermisosUsuario } from "@/lib/permisos";
 import type { DenominacionEmpleoClave } from "@/lib/denominacion-empleo";
-import { formatearNumeroMemorando, leerDatosMemorando, siglaDependencia } from "@/lib/memorandos-formato";
+import { formatearNumeroMemorando, leerDatosMemorando, siglaDependencia, type GrupoMasivoMemorando } from "@/lib/memorandos-formato";
 
 export const PLAZOS_RESPUESTA_MEMORANDO = [3, 5, 10, 15] as const;
 
@@ -47,10 +47,37 @@ export const TEXTO_QUIEN_RECIBE =
 
 export const TEXTO_QUIEN_ENVIA = "Los memorandos solo los envían la Dirección General, la Secretaría General, las subdirecciones, las jefaturas de oficina y las coordinaciones de grupo, según el cargo registrado en la ficha del usuario.";
 
-/** Entra al módulo: administradores siempre; los demás, si el módulo está visible y tienen dependencia asignada. */
+/**
+ * Entra al módulo: administradores siempre; los demás, si el módulo está visible y tienen dependencia
+ * asignada o son contratistas (para leer los memorandos masivos dirigidos a los contratistas).
+ */
 export function accedeMemorandos(permisos: PermisosUsuario, moduloVisible: boolean): boolean {
   if (permisos.esAdmin) return true;
-  return moduloVisible && Boolean(permisos.dependenciaId);
+  return moduloVisible && (Boolean(permisos.dependenciaId) || Boolean(permisos.rolesContratacion?.has("CONTRATISTA")));
+}
+
+/**
+ * A quién llega un memorando masivo. Planta: cuentas activas y habilitadas con dependencia asignada y
+ * sin rol de contratista. Contratistas: cuentas activas y habilitadas con el rol de contratista. Todos:
+ * las dos cosas. Quien firma no se incluye.
+ */
+export function whereGrupoMasivo(grupo: GrupoMasivoMemorando, excluirId?: string | null): Prisma.UsuarioWhereInput {
+  const planta: Prisma.UsuarioWhereInput = { dependenciaId: { not: null }, NOT: { rolesContratacion: { has: "CONTRATISTA" } } };
+  const contratistas: Prisma.UsuarioWhereInput = { rolesContratacion: { has: "CONTRATISTA" } };
+  const base: Prisma.UsuarioWhereInput = { activo: true, estadoCuenta: "HABILITADA", ...(excluirId ? { id: { not: excluirId } } : {}) };
+  const grupoWhere = grupo === "PLANTA" ? planta : grupo === "CONTRATISTAS" ? contratistas : { OR: [planta, contratistas] };
+  return { AND: [base, grupoWhere] };
+}
+
+export async function destinatariosMasivos(grupo: GrupoMasivoMemorando, excluirId?: string | null) {
+  return db.usuario.findMany({ where: whereGrupoMasivo(grupo, excluirId), select: { id: true, dependenciaId: true }, orderBy: { nombre: "asc" } });
+}
+
+export async function contarDestinatariosMasivos(excluirId?: string | null): Promise<Record<GrupoMasivoMemorando, number>> {
+  const [PLANTA, CONTRATISTAS, TODOS] = await Promise.all(
+    (["PLANTA", "CONTRATISTAS", "TODOS"] as const).map((g) => db.usuario.count({ where: whereGrupoMasivo(g, excluirId) }))
+  );
+  return { PLANTA, CONTRATISTAS, TODOS };
 }
 
 export function puedeEnviarMemorando(permisos: PermisosUsuario, denominacionEmpleo: string | null | undefined, moduloVisible: boolean): boolean {
@@ -197,7 +224,12 @@ export async function listarMemorandos(ctx: ContextoMemorandos, vista: VistaMemo
       radicadoPor: { select: { nombre: true } },
       respondeA: { select: { id: true, radicado: true } },
       respuestas: { select: { id: true, radicado: true }, orderBy: { fechaRadicacion: "desc" }, take: 1 },
-      distribuciones: { where: { activa: true }, select: { usuarioId: true, fechaAcuse: true, usuario: { select: { nombre: true } } } },
+      // En los enviados se muestran algunos nombres (un masivo puede tener cientos); en los recibidos, solo la entrega propia.
+      distribuciones:
+        vista === "enviados" || vista === "esperando"
+          ? { where: { activa: true }, take: 3, orderBy: { fechaAsignacion: "asc" }, select: { usuarioId: true, fechaAcuse: true, usuario: { select: { nombre: true } } } }
+          : { where: { activa: true, usuarioId: ctx.id }, select: { usuarioId: true, fechaAcuse: true, usuario: { select: { nombre: true } } } },
+      _count: { select: { distribuciones: { where: { activa: true } } } },
     },
   });
 }

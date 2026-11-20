@@ -38,6 +38,14 @@ describe("datos guardados", () => {
     expect(d?.proyecto).toBeNull();
     expect(leerDatosMemorando(null)).toBeNull();
     expect(leerDatosMemorando({ numero: "x" })).toBeNull();
+    expect(d?.masivo).toBeNull();
+  });
+
+  it("lee el grupo de un envío masivo y descarta grupos desconocidos", () => {
+    const base = { numero: "ADEI – 001 /2026", para: { nombre: "FUNCIONARIOS DE PLANTA DE LA CDMB", cargo: "" }, de: { nombre: "Oscar", cargo: "Jefe" } };
+    expect(leerDatosMemorando({ ...base, masivo: { grupo: "PLANTA", total: 312 } })?.masivo).toEqual({ grupo: "PLANTA", total: 312 });
+    expect(leerDatosMemorando({ ...base, masivo: { grupo: "OTRO", total: 3 } })?.masivo).toBeNull();
+    expect(leerDatosMemorando(base)?.para.cargo).toBe("");
   });
 });
 

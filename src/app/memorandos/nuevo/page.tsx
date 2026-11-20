@@ -10,7 +10,7 @@ import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { db } from "@/lib/db";
 import { anioColombia } from "@/lib/fecha";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
-import { contextoMemorandos, memorandoPendienteDe, puedeRecibirMemorando, DENOMINACIONES_QUE_ENVIAN_MEMORANDOS, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
+import { contarDestinatariosMasivos, contextoMemorandos, memorandoPendienteDe, puedeRecibirMemorando, DENOMINACIONES_QUE_ENVIAN_MEMORANDOS, TEXTO_QUIEN_ENVIA } from "@/lib/memorandos";
 import { CIUDAD_MEMORANDO, fechaLargaMemorando } from "@/lib/memorandos-formato";
 import { MemorandoForm, type PersonaOpcion, type RespuestaA } from "@/components/memorandos/MemorandoForm";
 import { CabeceraTablero } from "@/components/tablero";
@@ -37,7 +37,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
   const original = respondeAId ? await memorandoPendienteDe(respondeAId, ctx) : null;
   if (respondeAId && !original) redirect(`/memorandos/${respondeAId}?error=${encodeURIComponent("Este memorando ya fue respondido o no está dirigido a su oficina.")}`);
 
-  const [dependencias, series, plantillas, usuarios, config] = await Promise.all([
+  const [dependencias, series, plantillas, usuarios, config, totalesMasivos] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     listarPlantillas("INTERNA"),
@@ -57,6 +57,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
       orderBy: { nombre: "asc" },
     }),
     getConfiguracionSitio(),
+    contarDestinatariosMasivos(session.userId),
   ]);
   const personas: PersonaOpcion[] = usuarios.map((u) => ({
     id: u.id,
@@ -120,6 +121,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
         plantillas={plantillas}
         logoUrl={config.logoUrl}
         respondeA={respondeA}
+        totalesMasivos={totalesMasivos}
       />
     </div>
   );
