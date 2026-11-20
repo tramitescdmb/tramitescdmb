@@ -12,7 +12,7 @@ import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { BotonExportar } from "@/components/BotonExportar";
 import { TablaExpedientes } from "@/components/tablas/TablaExpedientes";
 import { MUNICIPIOS_JURISDICCION_CDMB } from "@/lib/municipios";
-import { obtenerPermisosUsuario, puedeAccederTramite } from "@/lib/permisos";
+import { obtenerPermisosUsuario, puedeAccederTramite, puedePlanearVisitas } from "@/lib/permisos";
 import { resolverPeriodo, type FiltrosPeriodo } from "@/lib/periodo-dashboard";
 import { formatearFecha } from "@/lib/fecha";
 import { ESTADOS_EXPEDIENTE, tramiteFinalizado } from "@/lib/estados-expediente";
@@ -89,7 +89,12 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
     db.expediente.findMany({
       where,
       orderBy: soloArchivados ? { archivadoEn: "desc" } : { fechaUltimoMovimiento: "desc" },
-      include: { tramiteTipo: true, flujo: { include: { pasos: { select: { id: true, titulo: true }, orderBy: { numero: "asc" } } } } },
+      include: {
+        tramiteTipo: true,
+        flujo: { include: { pasos: { select: { id: true, titulo: true }, orderBy: { numero: "asc" } } } },
+        usuariosAsignados: { select: { nombre: true }, orderBy: { nombre: "asc" } },
+        cargosAsignados: { select: { nombre: true } },
+      },
       take: POR_PAGINA,
       skip: (pagina - 1) * POR_PAGINA,
     }),
@@ -279,6 +284,7 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
         ) : (
           <div className="overflow-x-auto">
             <TablaExpedientes
+              puedeAsignar={Boolean(permisos && puedePlanearVisitas(permisos))}
               filas={expedientes.map((exp, i) => ({
                 id: exp.id,
                 numero: (pagina - 1) * POR_PAGINA + i + 1,
@@ -294,6 +300,7 @@ export async function ListadoExpedientes({ sp, soloArchivados = false }: { sp: P
                 finalizado: tramiteFinalizado(exp),
                 archivado: exp.archivado,
                 fechaUltimoMovimiento: formatearFecha(exp.fechaUltimoMovimiento),
+                asignados: [...exp.usuariosAsignados.map((u) => u.nombre), ...exp.cargosAsignados.map((c) => c.nombre)],
               }))}
             />
           </div>

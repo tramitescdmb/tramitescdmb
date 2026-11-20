@@ -187,6 +187,13 @@ export default async function TramitesAyudaPage() {
           En <strong>Expedientes</strong> se filtra por vigencia, estado, trámite, municipio y texto (número, solicitante, NIT o cédula). «Asignados a
           mí» reúne los expedientes donde la persona está en el personal asignado o en el equipo de una visita.
         </p>
+        <p>
+          <strong>Asignar un expediente.</strong> El administrador, el Subdirector(a) SEYCA y el Coordinador(a) de Evaluación ven el botón
+          «Asignar» (o «Reasignar» si ya tiene personal) en el recuadro «Personal asignado» de la ficha, y el enlace del mismo nombre en la columna
+          «Asignado a» del listado. El buscador muestra primero a las personas cuyo cargo corresponde al paso actual; con el filtro se buscan
+          contratistas o funcionarios de cualquier cargo. Cada persona agregada recibe el aviso en la campana (y por correo si está activo) y el
+          cambio queda en la Historia. No se asigna en trámites finalizados ni en expedientes cerrados.
+        </p>
       </Seccion>
 
       <Seccion n={6} id="pasos" icono={Footprints} titulo="Avance de los pasos">

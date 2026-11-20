@@ -110,10 +110,10 @@ export default async function ExpedienteDetallePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; ok?: string }>;
+  searchParams: Promise<{ error?: string; ok?: string; asignar?: string }>;
 }) {
   const { id } = await params;
-  const { error, ok } = await searchParams;
+  const { error, ok, asignar } = await searchParams;
 
   const [expediente, usuariosActivos, cargos] = await Promise.all([
     db.expediente.findUnique({
@@ -235,6 +235,38 @@ export default async function ExpedienteDetallePage({
   const cierrePendiente = resuelto && (CIERRES_ANTICIPADOS as readonly string[]).includes(expediente.estado);
   const finalizable = opcionFinalizar(pasos, expediente.pasoActualNumero, expediente.estado);
   const ETIQUETA_FINAL: Record<string, string> = { APROBADO: "aprobado", NEGADO: "negado" };
+  // Asignar / reasignar el expediente: quien planea las visitas (administrador, Subdirector(a) SEYCA,
+  // Coordinador(a) de Evaluación o perfil con el permiso), mientras el trámite no haya finalizado.
+  const puedeAsignarPersonal = planificador && !cerrado && !finalizado;
+  const personasAsignables = usuariosActivos.map((u) => ({
+    id: u.id,
+    nombre: u.nombre,
+    cargos: u.cargoAsignaciones.map((uc) => ({ nombre: uc.cargo.nombre, encargo: uc.encargo })),
+    dependenciaNombre: u.dependencia?.nombre ?? null,
+    contratista: Boolean(u.contratista) || esContratista(u),
+  }));
+  const sugeridosPaso = pasoActual
+    ? {
+        numero: pasoActual.numero,
+        titulo: pasoActual.titulo,
+        usuarioIds: usuariosActivos
+          .filter((u) => cargoCoincideConPaso(u.cargoAsignaciones.map((uc) => uc.cargo.nombre), pasoActual.responsables))
+          .map((u) => u.id),
+      }
+    : null;
+  const formAsignar = (variante: "principal" | "discreto", abrirAlCargar = false) => (
+    <PersonalAsignadoTramiteForm
+      expedienteId={expediente.id}
+      usuarios={personasAsignables}
+      cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
+      usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}
+      cargosIniciales={expediente.cargosAsignados.map((c) => c.id)}
+      variante={variante}
+      sugeridos={sugeridosPaso}
+      responsableActual={expediente.responsableActual?.nombre ?? null}
+      abrirAlCargar={abrirAlCargar}
+    />
+  );
   const formFinalizar = pasoActual ? (
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-2">
@@ -579,10 +611,13 @@ export default async function ExpedienteDetallePage({
                 <div className="rounded-xl md:col-span-2 border border-stone-200 bg-white shadow-soft p-4">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-stone-900">Personal asignado</h3>
-                    <a href="#planeador" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
-                      <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                      Planeador
-                    </a>
+                    <div className="flex items-center gap-3">
+                      <a href="#planeador" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+                        <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                        Planeador
+                      </a>
+                      {puedeAsignarPersonal && formAsignar("principal", asignar === "1")}
+                    </div>
                   </div>
                   {expediente.usuariosAsignados.length === 0 && expediente.cargosAsignados.length === 0 ? (
                     <p className="text-sm text-stone-400">Sin asignar todavía.</p>
@@ -894,21 +929,7 @@ export default async function ExpedienteDetallePage({
                 <section className="rounded-2xl border border-stone-200 bg-white shadow-soft p-4">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-stone-900">Personal asignado</h2>
-                    {planificador && !cerrado && (
-                      <PersonalAsignadoTramiteForm
-                        expedienteId={expediente.id}
-                        usuarios={usuariosActivos.map((u) => ({
-                          id: u.id,
-                          nombre: u.nombre,
-                          cargos: u.cargoAsignaciones.map((uc) => ({ nombre: uc.cargo.nombre, encargo: uc.encargo })),
-                          dependenciaNombre: u.dependencia?.nombre ?? null,
-                          contratista: Boolean(u.contratista) || esContratista(u),
-                        }))}
-                        cargos={cargos.map((c) => ({ id: c.id, nombre: c.nombre }))}
-                        usuariosIniciales={expediente.usuariosAsignados.map((u) => u.id)}
-                        cargosIniciales={expediente.cargosAsignados.map((c) => c.id)}
-                      />
-                    )}
+                    {puedeAsignarPersonal && formAsignar("discreto")}
                   </div>
                   {expediente.usuariosAsignados.length === 0 && expediente.cargosAsignados.length === 0 ? (
                     <p className="text-sm text-stone-400">Sin personal asignado.</p>

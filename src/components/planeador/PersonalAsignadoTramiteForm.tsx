@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserCheck, X } from "lucide-react";
+import { UserCheck, UserPlus, X } from "lucide-react";
 
 export const CARGO_PROFESIONAL_EVALUACION = "Profesional o Técnico de Evaluación";
 
 type UsuarioOpcion = { id: string; nombre: string; cargos: { nombre: string; encargo: boolean }[]; dependenciaNombre: string | null; contratista?: boolean };
 
 const FILTRO_CONTRATISTAS = "__contratistas";
+const FILTRO_PASO = "__paso";
+
+/** Personas cuyo cargo corresponde a los responsables del paso actual (sugeridas al asignar). */
+export type SugeridosPaso = { numero: number; titulo: string; usuarioIds: string[] };
 
 function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -20,15 +24,26 @@ export function PersonalAsignadoTramiteForm({
   cargos,
   usuariosIniciales,
   cargosIniciales,
+  variante = "discreto",
+  sugeridos,
+  responsableActual,
+  abrirAlCargar = false,
 }: {
   expedienteId: string;
   usuarios: UsuarioOpcion[];
   cargos: { id: string; nombre: string }[];
   usuariosIniciales: string[];
   cargosIniciales: string[];
+  /** «principal»: botón visible «Asignar» / «Reasignar» (ficha del expediente). */
+  variante?: "principal" | "discreto";
+  sugeridos?: SugeridosPaso | null;
+  /** Quien tiene el expediente en el paso actual («A cargo de»). */
+  responsableActual?: string | null;
+  /** Abre el selector al cargar la página (enlace «Asignar» del listado). */
+  abrirAlCargar?: boolean;
 }) {
   const router = useRouter();
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(abrirAlCargar);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuariosIniciales));
   const [cargosSel, setCargosSel] = useState<Set<string>>(new Set(cargosIniciales));
   const [cargoFiltro, setCargoFiltro] = useState("");
@@ -36,13 +51,22 @@ export function PersonalAsignadoTramiteForm({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const idsSugeridos = new Set(sugeridos?.usuarioIds ?? []);
+  const haySugeridos = idsSugeridos.size > 0;
   const q = normalizar(filtro.trim());
-  const buscando = q.length >= 2 || Boolean(cargoFiltro);
+  // Sin búsqueda, se muestran de entrada las personas que corresponden al paso actual.
+  const filtroEfectivo = cargoFiltro || (q.length < 2 && haySugeridos ? FILTRO_PASO : "");
+  const buscando = q.length >= 2 || Boolean(filtroEfectivo);
   const coincidentes = buscando
     ? usuarios.filter(
         (u) =>
           !seleccion.has(u.id) &&
-          (!cargoFiltro || (cargoFiltro === FILTRO_CONTRATISTAS ? u.contratista : u.cargos.some((c) => c.nombre === cargoFiltro))) &&
+          (!filtroEfectivo ||
+            (filtroEfectivo === FILTRO_CONTRATISTAS
+              ? u.contratista
+              : filtroEfectivo === FILTRO_PASO
+                ? idsSugeridos.has(u.id)
+                : u.cargos.some((c) => c.nombre === filtroEfectivo))) &&
           (!q || normalizar(`${u.nombre} ${u.dependenciaNombre ?? ""} ${u.cargos.map((c) => c.nombre).join(" ")}`).includes(q))
       )
     : [];
@@ -64,6 +88,8 @@ export function PersonalAsignadoTramiteForm({
     setError(null);
     setAbierto(true);
   }
+
+  const hayAsignados = usuariosIniciales.length > 0 || cargosIniciales.length > 0;
 
   async function guardar() {
     setGuardando(true);
@@ -87,24 +113,46 @@ export function PersonalAsignadoTramiteForm({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={abrir}
-        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-      >
-        <UserCheck className="h-3 w-3" aria-hidden />
-        Editar personal asignado
-      </button>
+      {variante === "principal" ? (
+        <button
+          type="button"
+          onClick={abrir}
+          className="inline-flex items-center gap-1.5 rounded-md bg-acento-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-acento-600"
+        >
+          {hayAsignados ? <UserCheck className="h-3.5 w-3.5" aria-hidden /> : <UserPlus className="h-3.5 w-3.5" aria-hidden />}
+          {hayAsignados ? "Reasignar" : "Asignar"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={abrir}
+          className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+        >
+          <UserCheck className="h-3 w-3" aria-hidden />
+          Editar personal asignado
+        </button>
+      )}
 
       {abierto && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-stone-900">Personal asignado al trámite</h3>
+              <h3 className="text-sm font-semibold text-stone-900">Asignar el expediente</h3>
               <button type="button" onClick={() => setAbierto(false)} className="text-stone-400 hover:text-stone-600" aria-label="Cerrar">
                 <X className="h-4 w-4" aria-hidden />
               </button>
             </div>
+
+            <p className="mb-3 text-xs text-stone-500">
+              Funcionarios o contratistas que deben trabajar este expediente. Cada persona que agregue recibe un aviso en la campana (y por correo si
+              está activo) y el cambio queda en la Historia.
+              {responsableActual && (
+                <>
+                  {" "}
+                  <span className="text-stone-700">A cargo del paso actual: {responsableActual}.</span>
+                </>
+              )}
+            </p>
 
             <div className="mb-2">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">Asignados ({seleccionados.length})</p>
@@ -131,7 +179,12 @@ export function PersonalAsignadoTramiteForm({
                 aria-label="Filtrar por cargo"
                 className="w-full rounded-md border border-stone-200 px-2 py-1.5 text-xs"
               >
-                <option value="">Todos los cargos</option>
+                <option value="">{haySugeridos ? "Responsables del paso o todos" : "Todos los cargos"}</option>
+                {haySugeridos && sugeridos && (
+                  <option value={FILTRO_PASO}>
+                    Responsables del paso {sugeridos.numero}
+                  </option>
+                )}
                 {usuarios.some((u) => u.contratista) && <option value={FILTRO_CONTRATISTAS}>Contratistas</option>}
                 {cargosConUsuarios.map((c) => (
                   <option key={c.id} value={c.nombre}>
@@ -151,10 +204,23 @@ export function PersonalAsignadoTramiteForm({
 
             <div className="max-h-60 space-y-0.5 overflow-y-auto rounded-md border border-stone-100 p-1">
               {!buscando ? (
-                <p className="px-1 py-2 text-xs text-stone-400">Escriba al menos dos letras o elija un cargo para buscar.</p>
+                <p className="px-1 py-2 text-xs text-stone-400">Escriba al menos dos letras o elija un cargo (o «Contratistas») para buscar.</p>
               ) : filtrados.length === 0 ? (
+                filtroEfectivo === FILTRO_PASO && !cargoFiltro ? (
+                  <p className="px-1 py-2 text-xs text-stone-400">
+                    Ya están asignadas todas las personas que corresponden al paso. Escriba un nombre o elija un cargo para buscar a otras.
+                  </p>
+                ) : (
                 <p className="px-1 py-2 text-xs text-stone-400">Ninguna persona coincide con la búsqueda.</p>
+                )
               ) : (
+                <>
+                {filtroEfectivo === FILTRO_PASO && sugeridos && (
+                  <p className="px-1 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                    Corresponden al paso {sugeridos.numero} ({sugeridos.titulo})
+                  </p>
+                )}
+                {
                 filtrados.map((u) => (
                   <label key={u.id} className="flex items-start gap-2 rounded px-1 py-1 text-sm text-stone-700 hover:bg-stone-50">
                     <input
@@ -171,7 +237,8 @@ export function PersonalAsignadoTramiteForm({
                       </span>
                     </span>
                   </label>
-                ))
+                ))}
+                </>
               )}
               {coincidentes.length > filtrados.length && (
                 <p className="px-1 py-1.5 text-[11px] text-stone-400">

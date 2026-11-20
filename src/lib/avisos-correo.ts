@@ -15,10 +15,11 @@ export const MODULOS_AVISO: Record<ModuloAviso, string> = {
   PLATAFORMA: "Administración de la plataforma",
 };
 
-export type CategoriaAviso = "FIRMAS" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS" | "ADMINISTRACION";
+export type CategoriaAviso = "FIRMAS" | "EXPEDIENTES" | "VISITAS" | "CONCEPTOS" | "VENCIMIENTOS" | "EXTERNOS" | "ADMINISTRACION";
 
 export const CATEGORIAS_AVISO: Record<CategoriaAviso, string> = {
   FIRMAS: "Firmas y vistos buenos",
+  EXPEDIENTES: "Asignación de expedientes",
   VISITAS: "Visitas técnicas",
   CONCEPTOS: "Conceptos técnicos",
   VENCIMIENTOS: "Alertas de vencimiento",
@@ -61,6 +62,13 @@ export const EVENTOS_AVISO = {
     evento: "Se rechaza una firma o un visto bueno",
     destinatarios: "Quien cargó o proyectó el documento",
     plataforma: "Avisos de rechazo",
+  },
+  EXPEDIENTE_ASIGNADO: {
+    categoria: "EXPEDIENTES",
+    modulos: ["TRAMITES"],
+    evento: "Se asigna un expediente de trámite a una persona",
+    destinatarios: "Persona asignada",
+    plataforma: "Campana · Mis pendientes",
   },
   VISITA_SIN_PROGRAMAR: {
     categoria: "VISITAS",
