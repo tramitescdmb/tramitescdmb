@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verificarSesion as getSession, obtenerPermisosUsuario, puedePlanearVisitas } from "@/lib/permisos";
+import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAnularVisitas, puedePlanearVisitas } from "@/lib/permisos";
+import { cancelarVisitaComoAnulador, eliminarVisita } from "@/lib/anular-visita-db";
+import { datosPeticion } from "@/lib/auditoria-doc";
 import { expedienteEnEjecucion } from "@/lib/planeador";
 import { buscarCruceVisita, leerDatosVisita, rangoTexto } from "@/lib/planeador-db";
 import { avisarProfesionalVisita, resolverNotificaciones, sincronizarAvisoVisita } from "@/lib/notificaciones";
@@ -11,6 +13,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
   const permisos = await obtenerPermisosUsuario(session.userId);
   const planificador = puedePlanearVisitas(permisos);
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const accion = body?.accion;
+  const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
+
+  // El administrador y el Subdirector(a) SEYCA cancelan visitas en cualquier estado (también
+  // realizadas o no realizadas, o de trámites que ya no están en ejecución).
+  if (accion === "cancelar" && puedeAnularVisitas(permisos)) {
+    const r = await cancelarVisitaComoAnulador(id, { id: session.userId, nombre: session.nombre }, motivo, datosPeticion(req.headers));
+    return "error" in r ? NextResponse.json({ error: r.error }, { status: r.status }) : NextResponse.json({ ok: true });
+  }
 
   const visita = await db.visitaProgramada.findUnique({
     where: { id },
@@ -27,10 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "La visita ya fue cerrada y no admite cambios." }, { status: 409 });
   }
 
-  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  const accion = body?.accion;
   const cuando = rangoTexto(visita.fechaHora, visita.fechaHoraFin);
-  const motivo = typeof body?.motivo === "string" ? body.motivo.trim() : "";
 
   if (accion === "no_realizada") {
     const elabora =
@@ -125,4 +134,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   return NextResponse.json({ error: "Acción no reconocida." }, { status: 400 });
+}
+
+/** Eliminar una visita del Planeador: solo el administrador y el Subdirector(a) SEYCA, y solo sin hoja de visita. */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
+  const permisos = await obtenerPermisosUsuario(session.userId);
+  if (!puedeAnularVisitas(permisos)) {
+    return NextResponse.json({ error: "Solo un administrador o el Subdirector(a) SEYCA pueden eliminar visitas." }, { status: 403 });
+  }
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const motivo = typeof body?.motivo === "string" ? body.motivo : "";
+  const r = await eliminarVisita(id, { id: session.userId, nombre: session.nombre }, motivo, datosPeticion(req.headers));
+  return "error" in r ? NextResponse.json({ error: r.error }, { status: r.status }) : NextResponse.json({ ok: true });
 }

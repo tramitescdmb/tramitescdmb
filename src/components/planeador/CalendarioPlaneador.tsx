@@ -28,6 +28,8 @@ export type VisitaCalendario = {
   minutos: number;
   duracion: number;
   tieneHoja: boolean;
+  /** Solo para administrador y Subdirector(a) SEYCA: qué pueden hacer con la visita. */
+  anulacion: { cancelar: boolean; eliminar: boolean; bloqueoEliminar: string | null } | null;
   habilitadaRegistro: boolean;
   puedeRegistrar: boolean;
   lugar: string;
@@ -764,7 +766,7 @@ function DetalleVisita({
               <FileText className="mt-0.5 h-4 w-4 flex-none text-stone-400" aria-hidden />
               <dd className="space-y-1 text-xs text-stone-600">
                 {v.observaciones && <p>{v.observaciones}</p>}
-                {v.motivoCambio && <p>Motivo de cancelación: {v.motivoCambio}</p>}
+                {v.motivoCambio && <p>{v.estado === "NO_REALIZADA" ? "Motivo" : "Motivo de cancelación"}: {v.motivoCambio}</p>}
               </dd>
             </div>
           )}
@@ -804,11 +806,13 @@ function DetalleVisita({
             iniciales={{ fecha: v.dia, hora: v.hora, horaFin: v.horaFin, lugar: v.lugar, profesionalId: v.profesionalId, observaciones: v.observaciones ?? "" }}
           />
         )}
-        {editable && (
+        {(editable || v.anulacion) && (
           <AccionesVisita
             visitaId={v.id}
-            puedeNoRealizada={v.habilitadaRegistro && (planificador || usuarioId === v.profesionalId)}
-            puedeCancelar={planificador}
+            puedeNoRealizada={editable && v.habilitadaRegistro && (planificador || usuarioId === v.profesionalId)}
+            puedeCancelar={(editable && planificador) || Boolean(v.anulacion?.cancelar)}
+            puedeEliminar={Boolean(v.anulacion?.eliminar)}
+            bloqueoEliminar={v.anulacion?.bloqueoEliminar ?? null}
           />
         )}
       </div>
