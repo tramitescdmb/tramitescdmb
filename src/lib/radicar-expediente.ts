@@ -92,7 +92,7 @@ export async function radicarExpediente(
     /** Permiso del funcionario sobre el trámite (no aplica en la radicación en línea). */
     verificarPermiso?: (tramiteId: string, esConversionVital: boolean) => Promise<ResultadoRadicacion | null>;
     /** Radicación en línea desde la vista pública «Solicitud ambiental». */
-    publico?: { numeroSolicitud: string };
+    publico?: { numeroSolicitud: string; cuentaCiudadanaId?: string | null };
   }
 ): Promise<ResultadoRadicacion> {
   const { id: expedienteId, tramiteTipoId, flujoId, solicitante, municipio, predioDireccion, predio, claseSolicitud, ubicacion, solicitanteUbicacion, documentos } = body;
@@ -367,6 +367,7 @@ export async function radicarExpediente(
           // En línea nadie lo tiene todavía: lo toma quien reciba el aviso.
           responsableActualId: publico ? null : usuario.id,
           codigoSolicitudPublica: publico?.numeroSolicitud ?? null,
+          cuentaCiudadanaId: publico?.cuentaCiudadanaId ?? null,
         },
       });
 

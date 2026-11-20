@@ -72,6 +72,7 @@ export function NuevoExpedienteForm({
   mostrarDatosPredio,
   desdeVital,
   publico = false,
+  cuentaCiudadana,
 }: {
   tramiteId: string;
   tramiteSlug: string;
@@ -87,6 +88,11 @@ export function NuevoExpedienteForm({
    * datos personales y, al final, el número de solicitud para el seguimiento.
    */
   publico?: boolean;
+  /**
+   * Vista pública con la sesión de «Mis solicitudes» abierta: la solicitud queda en la cuenta, a
+   * nombre de su cédula o NIT y con su correo (no se cambian aquí).
+   */
+  cuentaCiudadana?: { correo: string; tipo: "NATURAL" | "JURIDICA"; identificacion: string; telefono: string | null } | null;
 }) {
   const v = desdeVital?.datos;
   const router = useRouter();
@@ -104,16 +110,16 @@ export function NuevoExpedienteForm({
   const [predioDireccion, setPredioDireccion] = useState(v?.predioDireccion ?? "");
   const mapaSolicitanteRef = useRef<MapaUbicacionHandle>(null);
   const mapaPredioRef = useRef<MapaUbicacionHandle>(null);
-  const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">(v?.tipo ?? "NATURAL");
+  const [tipoSolicitante, setTipoSolicitante] = useState<"NATURAL" | "JURIDICA">(v?.tipo ?? cuentaCiudadana?.tipo ?? "NATURAL");
   const esJuridica = tipoSolicitante === "JURIDICA";
-  const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState(v?.identificacion ?? "");
+  const [solicitanteIdentificacion, setSolicitanteIdentificacion] = useState(v?.identificacion ?? cuentaCiudadana?.identificacion ?? "");
   const [solicitanteNombres, setSolicitanteNombres] = useState(v?.nombres ?? "");
   const [solicitanteApellidos, setSolicitanteApellidos] = useState(v?.apellidos ?? "");
   const [solicitanteRazonSocial, setSolicitanteRazonSocial] = useState(v?.razonSocial ?? "");
   const [representanteLegal, setRepresentanteLegal] = useState(v?.representanteLegal ?? "");
   const [representanteIdentificacion, setRepresentanteIdentificacion] = useState(v?.representanteIdentificacion ?? "");
-  const [solicitanteEmail, setSolicitanteEmail] = useState(v?.email ?? "");
-  const [solicitanteTelefono, setSolicitanteTelefono] = useState(v?.telefono ?? "");
+  const [solicitanteEmail, setSolicitanteEmail] = useState(v?.email ?? cuentaCiudadana?.correo ?? "");
+  const [solicitanteTelefono, setSolicitanteTelefono] = useState(v?.telefono ?? cuentaCiudadana?.telefono ?? "");
   const [regimenTributario, setRegimenTributario] = useState("");
   const [granContribuyente, setGranContribuyente] = useState(false);
   const [buscandoSolicitante, setBuscandoSolicitante] = useState(false);
@@ -375,6 +381,15 @@ export function NuevoExpedienteForm({
         {solicitanteEmail.trim() && (
           <p className="text-xs text-stone-500">También le enviamos estos datos al correo {solicitanteEmail.trim()}.</p>
         )}
+        {cuentaCiudadana && (
+          <p className="text-sm text-stone-700">
+            La solicitud ya está en{" "}
+            <Link href="/solicitud-ambiental/mis-solicitudes" className="text-cdmb-700 underline hover:no-underline">
+              Mis solicitudes
+            </Link>
+            , donde verá su avance y su historial.
+          </p>
+        )}
         <div className="flex flex-wrap gap-3 pt-2">
           <button
             type="button"
@@ -399,6 +414,27 @@ export function NuevoExpedienteForm({
             Sitio web
             <input tabIndex={-1} autoComplete="off" value={sitioWeb} onChange={(e) => setSitioWeb(e.target.value)} />
           </label>
+        </div>
+      )}
+      {publico && (
+        <div className="rounded-xl border border-cdmb-200 bg-cdmb-50 px-4 py-3 text-sm text-cdmb-900">
+          {cuentaCiudadana ? (
+            <>
+              Radica con su cuenta <strong>{cuentaCiudadana.correo}</strong>: la solicitud quedará en{" "}
+              <Link href="/solicitud-ambiental/mis-solicitudes" className="font-semibold underline hover:no-underline">
+                Mis solicitudes
+              </Link>
+              , a nombre de su {cuentaCiudadana.tipo === "JURIDICA" ? "NIT" : "cédula"}.
+            </>
+          ) : (
+            <>
+              ¿Quiere ver esta solicitud, su historial y lo pendiente en un solo lugar?{" "}
+              <Link href="/solicitud-ambiental/ingresar" className="font-semibold underline hover:no-underline">
+                Ingrese con su correo
+              </Link>{" "}
+              antes de diligenciar (no necesita contraseña). También puede radicar sin cuenta.
+            </>
+          )}
         </div>
       )}
       {desdeVital && (
@@ -441,6 +477,7 @@ export function NuevoExpedienteForm({
             name="solicitanteTipo"
             required
             value={tipoSolicitante}
+            disabled={Boolean(cuentaCiudadana)}
             onChange={(e) => setTipoSolicitante(e.target.value as "NATURAL" | "JURIDICA")}
             className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
           >
@@ -467,6 +504,7 @@ export function NuevoExpedienteForm({
               name="solicitanteIdentificacion"
               required
               value={solicitanteIdentificacion}
+              readOnly={Boolean(cuentaCiudadana)}
               onChange={(e) => setSolicitanteIdentificacion(e.target.value)}
               className="min-w-[160px] flex-1 rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder={esJuridica ? "Ej: 900123456-1" : "Ej: 91234567"}
@@ -558,6 +596,7 @@ export function NuevoExpedienteForm({
               type="email"
               name="solicitanteEmail"
               value={solicitanteEmail}
+              readOnly={Boolean(cuentaCiudadana)}
               onChange={(e) => setSolicitanteEmail(e.target.value)}
               className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm focus:border-vivo-500 focus:outline-none focus:ring-1 focus:ring-vivo-500"
               placeholder="correo@ejemplo.com"

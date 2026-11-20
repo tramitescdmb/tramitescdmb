@@ -87,3 +87,53 @@ export const ESTADO_PUBLICO: Record<string, { etiqueta: string; explicacion: str
   DESISTIDO: { etiqueta: "Terminada por desistimiento", explicacion: "El trámite terminó por desistimiento." },
   ARCHIVADO: { etiqueta: "Archivada", explicacion: "El trámite terminó y el expediente se archivó." },
 };
+
+const ESTADOS_TERMINADOS = new Set(["APROBADO", "NEGADO", "RECHAZADO", "DESISTIDO", "ARCHIVADO"]);
+const ESTADO_DESCONOCIDO = { etiqueta: "En trámite", explicacion: "La CDMB está gestionando su solicitud." };
+
+export function estadoPublico(estado: string): { etiqueta: string; explicacion: string } {
+  return ESTADO_PUBLICO[estado] ?? ESTADO_DESCONOCIDO;
+}
+
+/** Etapa actual en lenguaje del ciudadano (posición de N), o null si el trámite terminó. */
+export function etapaPublica(e: {
+  estado: string;
+  pasoActualNumero: number;
+  fechaCierre: Date | string | null;
+  pasos: { numero: number; titulo: string }[];
+}): { posicion: number; total: number; titulo: string } | null {
+  const terminado = ESTADOS_TERMINADOS.has(e.estado) && e.fechaCierre != null;
+  const indice = e.pasos.findIndex((p) => p.numero === e.pasoActualNumero);
+  return !terminado && indice >= 0 ? { posicion: indice + 1, total: e.pasos.length, titulo: e.pasos[indice]!.titulo } : null;
+}
+
+export type EventoHistorial = {
+  tipo: string;
+  createdAt: Date;
+  pasoNumero: number | null;
+  estadoAnterior: string | null;
+  estadoNuevo: string | null;
+};
+
+/**
+ * Historia visible para el ciudadano. Nunca se muestra la descripción interna del evento (puede
+ * tener nombres de funcionarios o notas internas): cada tipo se traduce a una frase fija. Las notas
+ * internas, asignaciones, firmas, visitas y cambios de clasificación no se muestran.
+ */
+export function historialPublico(eventos: EventoHistorial[], pasos: { numero: number; titulo: string }[]): { fecha: Date; texto: string }[] {
+  const titulo = (n: number | null) => pasos.find((p) => p.numero === n)?.titulo ?? null;
+  const filas: { fecha: Date; texto: string }[] = [];
+  for (const ev of eventos) {
+    let texto: string | null = null;
+    if (ev.tipo === "CREACION") texto = "Solicitud radicada.";
+    else if (ev.tipo === "AVANCE_PASO") {
+      const t = titulo(ev.pasoNumero);
+      texto = t ? `Se completó la etapa «${t}».` : "La solicitud avanzó de etapa.";
+    } else if (ev.tipo === "CAMBIO_ESTADO" && ev.estadoNuevo && ev.estadoNuevo !== ev.estadoAnterior) {
+      texto = `Estado: ${estadoPublico(ev.estadoNuevo).etiqueta}.`;
+    } else if (ev.tipo === "EXPEDIENTE_ARCHIVADO") texto = "El expediente se archivó.";
+    else if (ev.tipo === "EXPEDIENTE_REABIERTO") texto = "El expediente se reabrió.";
+    if (texto) filas.push({ fecha: ev.createdAt, texto });
+  }
+  return filas.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+}

@@ -4,6 +4,8 @@ import { verificarLimiteEnvio } from "@/lib/anti-abuso";
 import { datosPeticion, registrarAuditoriaDoc } from "@/lib/auditoria-doc";
 import { radicarExpediente, type EntradaRadicacion } from "@/lib/radicar-expediente";
 import { numeroSolicitudLibre, usuarioVentanillaVirtual } from "@/lib/solicitud-ambiental-db";
+import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
+import { normalizarIdentificacion } from "@/lib/solicitud-ambiental";
 
 /** Un formulario de trámite completo, con documentos, no se llena en menos de esto. */
 const MIN_MS_LLENADO = 15_000;
@@ -36,9 +38,22 @@ export async function POST(req: NextRequest) {
   const radicable = await db.tramiteTipo.count({ where: { id: String(body.tramiteTipoId ?? ""), activo: true, flujos: { some: {} } } });
   if (!radicable) return NextResponse.json({ error: "Este trámite no se puede radicar en línea." }, { status: 400 });
 
+  // Con la sesión de «Mis solicitudes» abierta, la solicitud queda en la cuenta. Solo a nombre de la
+  // cédula o el NIT de la cuenta: a nombre de otra persona se radica sin sesión.
+  const cuenta = await cuentaEnSesion();
+  if (cuenta?.completa && body.solicitante && typeof body.solicitante === "object") {
+    if (normalizarIdentificacion(String(body.solicitante.identificacion ?? "")) !== cuenta.identificacion) {
+      return NextResponse.json(
+        { error: "Con la sesión abierta solo puede radicar a nombre de la cédula o el NIT de su cuenta. Para radicar a nombre de otra persona, salga de su cuenta." },
+        { status: 400 }
+      );
+    }
+    if (typeof body.solicitante.email !== "string" || !body.solicitante.email.trim()) body.solicitante.email = cuenta.correo;
+  }
+
   try {
     const [usuario, numeroSolicitud] = await Promise.all([usuarioVentanillaVirtual(), numeroSolicitudLibre()]);
-    const resultado = await radicarExpediente(body, { usuario, publico: { numeroSolicitud } });
+    const resultado = await radicarExpediente(body, { usuario, publico: { numeroSolicitud, cuentaCiudadanaId: cuenta?.completa ? cuenta.id : null } });
     if (!resultado.ok) return NextResponse.json({ error: resultado.error }, { status: resultado.status });
 
     await registrarAuditoriaDoc({

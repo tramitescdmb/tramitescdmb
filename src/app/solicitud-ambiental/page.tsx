@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight, Clock, FileCheck2, Mail, Search, ShieldCheck } from "lucide-react";
+import { ArrowRight, Clock, FileCheck2, FolderOpen, Mail, Search, ShieldCheck } from "lucide-react";
 import { ElegirTramite } from "@/components/solicitud-ambiental/ElegirTramite";
 import { BotonEncabezado, EncabezadoSolicitud, PasosSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { entradasCatalogo } from "@/lib/opciones-catalogo";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Solicitud ambiental — CDMB",
-  description: "Radique en línea su solicitud de trámite ambiental ante la CDMB, sin crear una cuenta.",
+  description: "Radique en línea su solicitud de trámite ambiental ante la CDMB y siga su estado.",
 };
 
 export default async function SolicitudAmbientalPage() {
@@ -31,11 +31,15 @@ export default async function SolicitudAmbientalPage() {
             <BotonEncabezado href="/solicitud-ambiental/consultar">
               <Search className="h-4 w-4" aria-hidden /> Consultar mi solicitud
             </BotonEncabezado>
+            <BotonEncabezado href="/solicitud-ambiental/mis-solicitudes">
+              <FolderOpen className="h-4 w-4" aria-hidden /> Mis solicitudes
+            </BotonEncabezado>
           </>
         }
       >
-        Radique en línea su trámite ambiental ante la CDMB, sin crear una cuenta. Hay {radicables} trámites disponibles; al enviar recibe un
-        número de solicitud para seguir su estado.
+        Radique en línea su trámite ambiental ante la CDMB. Hay {radicables} trámites disponibles; al enviar recibe un número de solicitud
+        para seguir su estado. Si ingresa con su correo, verá todas sus solicitudes, su historial y lo que esté pendiente en «Mis
+        solicitudes».
       </EncabezadoSolicitud>
 
       <PasosSolicitud actual={1} />
