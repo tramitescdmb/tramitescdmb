@@ -2794,6 +2794,33 @@ model CuentaCiudadana {
    * Aceptó la autorización de tratamiento de datos personales al completar el registro.
    */
   aceptaTratamientoEn DateTime?
+  /**
+   * Datos básicos como en los demás registros de personas (ver DatosPersona en datos-persona.ts).
+   * `nombre` guarda el nombre completo o la razón social, armado de estos campos.
+   */
+  tipoIdentificacion          String?
+  nombres                     String?
+  apellidos                   String?
+  razonSocial                 String?
+  correoAlterno               String?
+  celular                     String?
+  direccion                   String?
+  departamento                String?
+  ciudad                      String?
+  regimenTributario           RegimenTributario?
+  granContribuyente           Boolean            @default(false)
+  representanteLegal          String?
+  representanteIdentificacion String?
+  /**
+   * Caracterización: ver TIPOS_USUARIO_CIUDADANO en cuenta-ciudadana.ts.
+   */
+  tipoUsuario                 String?
+  /**
+   * Autoriza la notificación por medios electrónicos (art. 56 CPACA) y fecha de la última autorización.
+   */
+  autorizaNotificacionElectronica Boolean   @default(false)
+  autorizaNotificacionEn          DateTime?
+  perfilActualizadoEn             DateTime?
   bloqueada           Boolean         @default(false)
   ultimoIngreso       DateTime?
   createdAt           DateTime        @default(now())
@@ -2812,6 +2839,12 @@ model CodigoAccesoCiudadano {
   id         String    @id @default(cuid())
   correo     String
   codigoHash String
+  /**
+   * INGRESO (entrar o registrarse) o CAMBIO_CORREO (confirmar el correo nuevo de la cuenta cuentaId).
+   * Un código de un propósito no sirve para el otro.
+   */
+  proposito  String    @default("INGRESO")
+  cuentaId   String?
   expiraEn   DateTime
   intentos   Int       @default(0)
   usadoEn    DateTime?

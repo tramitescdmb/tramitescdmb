@@ -57,3 +57,12 @@ Autenticación Digital de MinTIC como segundo método de ingreso, sin cambiar la
 - Si el correo institucional no está configurado o falla, nadie recibe el código (el error queda en el registro del servidor).
 - Expedientes radicados en ventanilla o desde VITAL no aparecen en la cuenta (no tienen número SL-); se puede añadir luego un vínculo con un número que entregue la ventanilla.
 - Cambio de esquema: requiere despliegue manual.
+
+## Perfil del ciudadano
+
+- Tras el primer ingreso se pide el perfil completo, con el mismo estándar de datos de persona del resto del sistema (`CamposPersona`): tipo de persona, tipo y número de documento, nombres y apellidos o razón social, representante legal (persona jurídica), correo alterno, celular y teléfono, dirección, departamento y municipio de notificación, régimen tributario y gran contribuyente. Se suman el tipo de usuario (caracterización) y la autorización de notificación electrónica (art. 56 CPACA, con fecha).
+- Las cuentas creadas antes deben completarlo al volver a «Mis solicitudes» y antes de radicar.
+- «Mi perfil» (`/solicitud-ambiental/mis-solicitudes/perfil`) permite editarlo. El tipo y el número de documento no se cambian desde la cuenta.
+- Cambio de correo: código de 6 dígitos al correo nuevo (propósito `CAMBIO_CORREO`, atado a la cuenta, 10 min, 5 intentos, un uso). La respuesta es la misma aunque el correo esté ocupado. El correo anterior recibe un aviso.
+- Auditoría: cada guardado registra en la bitácora (`CuentaCiudadana`, CREA o MODIFICA) qué campos cambiaron, sin sus valores. El cambio de correo también queda registrado.
+- La radicación se precarga con los datos del perfil.

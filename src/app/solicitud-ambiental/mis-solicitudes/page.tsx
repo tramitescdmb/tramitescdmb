@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ChevronRight, FilePlus2 } from "lucide-react";
+import { ChevronRight, FilePlus2, UserRound } from "lucide-react";
 import { BotonEncabezado, EncabezadoSolicitud } from "@/components/solicitud-ambiental/Encabezado";
-import { BotonSalirCiudadano, CompletarPerfilForm, VincularSolicitudForm } from "@/components/solicitud-ambiental/CuentaCiudadana";
-import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
+import { BotonSalirCiudadano, PerfilCiudadanoForm, VincularSolicitudForm } from "@/components/solicitud-ambiental/CuentaCiudadana";
+import { cuentaEnSesion, perfilDeCuenta } from "@/lib/cuenta-ciudadana-db";
 import { rutaSiguienteSegura } from "@/lib/cuenta-ciudadana";
 import { db } from "@/lib/db";
 import { formatearFechaLarga as fecha } from "@/lib/fecha";
@@ -22,13 +22,16 @@ export default async function MisSolicitudesPage({ searchParams }: { searchParam
   if (!cuenta) redirect(volverA ? `/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(volverA)}` : "/solicitud-ambiental/ingresar");
 
   const salir = <BotonSalirCiudadano />;
-  if (!cuenta.completa) {
+  // Primer ingreso, o cuenta creada antes del perfil completo: se piden los datos antes de seguir.
+  if (!cuenta.perfilCompleto) {
+    const perfil = await perfilDeCuenta(cuenta.id);
+    if (!perfil) redirect("/solicitud-ambiental/ingresar");
     return (
-      <div className="mx-auto max-w-xl space-y-5">
+      <div className="mx-auto max-w-2xl space-y-5">
         <EncabezadoSolicitud titulo="Mis solicitudes" acciones={salir}>
-          Un paso más y queda registrado.
+          {cuenta.completa ? "Antes de seguir, complete los datos de su perfil." : "Un paso más y queda registrado."}
         </EncabezadoSolicitud>
-        <CompletarPerfilForm correo={cuenta.correo} siguiente={volverA} />
+        <PerfilCiudadanoForm inicial={perfil} siguiente={volverA} />
       </div>
     );
   }
@@ -60,6 +63,9 @@ export default async function MisSolicitudesPage({ searchParams }: { searchParam
           <>
             <BotonEncabezado href="/solicitud-ambiental" principal>
               <FilePlus2 className="h-4 w-4" aria-hidden /> Radicar una solicitud
+            </BotonEncabezado>
+            <BotonEncabezado href="/solicitud-ambiental/mis-solicitudes/perfil">
+              <UserRound className="h-4 w-4" aria-hidden /> Mi perfil
             </BotonEncabezado>
             {salir}
           </>
