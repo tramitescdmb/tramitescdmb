@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     clausulas.push(`trámite ${t ? `${t.codigo} — ${t.nombre}` : tramite}`);
   }
   if (municipio) clausulas.push(`municipio ${municipio}`);
-  if (estado) clausulas.push(`estado "${estado.replaceAll("_", " ")}"`);
+  if (estado) clausulas.push(estado === "CERRADO" ? "cerrados (pasados a expediente digital)" : `estado "${estado.replaceAll("_", " ")}"`);
   if (rango) clausulas.push(`radicados entre ${etiquetaPeriodo}`);
   if (soloMios) clausulas.push("asignados al usuario");
   if (q) clausulas.push(`búsqueda "${q}"`);

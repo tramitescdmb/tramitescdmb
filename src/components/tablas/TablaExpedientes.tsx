@@ -77,10 +77,10 @@ export function TablaExpedientes({ filas }: { filas: FilaExpediente[] }) {
                 {f.archivado && (
                   <span
                     className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm bg-stone-800 px-2 py-0.5 text-xs font-medium text-white"
-                    title="Expediente digital cerrado y archivado"
+                    title="Ya se pasó a expediente digital: cerrado y archivado (solo lectura). La decisión se conserva."
                   >
                     <Lock className="h-3 w-3" aria-hidden />
-                    Cerrado
+                    Cerrado · expediente digital
                   </span>
                 )}
               </div>

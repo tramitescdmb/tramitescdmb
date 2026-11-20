@@ -26,3 +26,10 @@ export function tramiteFinalizado(e: { estado: string; fechaCierre: Date | strin
 export const FILTRO_TRAMITE_EN_CURSO = {
   OR: [{ estado: { notIn: [...ESTADOS_TERMINALES_EXPEDIENTE] } }, { fechaCierre: null }],
 };
+
+/**
+ * «Cerrado» no es un estado de decisión guardado: marca el expediente que ya pasó a expediente
+ * digital (cerrado y archivado, `archivado = true`). Se SUMA a la decisión: un expediente aprobado y
+ * cerrado sigue contando en «Aprobado» y además en «Cerrado».
+ */
+export const ESTADO_CERRADO = "CERRADO";
