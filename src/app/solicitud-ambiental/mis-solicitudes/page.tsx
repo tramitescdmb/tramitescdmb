@@ -43,6 +43,7 @@ export default async function MisSolicitudesPage() {
       fechaRadicacion: true,
       fechaUltimoMovimiento: true,
       fechaCierre: true,
+      requerimientosCorreccion: { where: { estado: "PENDIENTE" }, select: { plazoHasta: true }, take: 1 },
       tramiteTipo: { select: { nombre: true } },
       flujo: { select: { nombre: true, pasos: { select: { numero: true, titulo: true }, orderBy: { numero: "asc" } } } },
     },
@@ -75,6 +76,7 @@ export default async function MisSolicitudesPage() {
             const etapa = etapaPublica({ ...s, pasos: s.flujo.pasos });
             const tipo = nombreFlujo(s.flujo.nombre);
             const requiereAccion = s.estado === "INFORMACION_ADICIONAL_REQUERIDA";
+            const correccion = s.requerimientosCorreccion[0];
             return (
               <li key={s.id}>
                 <Link
@@ -91,7 +93,8 @@ export default async function MisSolicitudesPage() {
                       <span className={`rounded-full px-2 py-0.5 font-semibold ${requiereAccion ? "bg-amber-100 text-amber-900" : "bg-cdmb-50 text-cdmb-800"}`}>
                         {estado.etiqueta}
                       </span>
-                      {etapa && (
+                      {correccion && <span className="font-semibold text-amber-800">Debe corregir documentos antes del {fecha(correccion.plazoHasta)}</span>}
+                      {etapa && !correccion && (
                         <span className="text-stone-600">
                           Etapa {etapa.posicion} de {etapa.total}: {etapa.titulo}
                         </span>

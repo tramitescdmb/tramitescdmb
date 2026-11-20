@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Circle, CircleDot, FileText } from "lucide-react";
 import { EncabezadoSolicitud } from "@/components/solicitud-ambiental/Encabezado";
 import { BotonSalirCiudadano } from "@/components/solicitud-ambiental/CuentaCiudadana";
+import { CorreccionPendienteForm } from "@/components/solicitud-ambiental/CorreccionPendienteForm";
 import { cuentaEnSesion } from "@/lib/cuenta-ciudadana-db";
 import { db } from "@/lib/db";
 import { formatearFechaHora, formatearFechaLarga as fecha } from "@/lib/fecha";
@@ -29,6 +30,12 @@ export default async function DetalleMiSolicitudPage({ params }: { params: Promi
   const e = await db.expediente.findFirst({
     where: { id, cuentaCiudadanaId: cuenta.id },
     select: {
+      id: true,
+      requerimientosCorreccion: {
+        where: { estado: "PENDIENTE" },
+        select: { mensaje: true, plazoHasta: true, items: { where: { reemplazoId: null }, select: { id: true, titulo: true, motivo: true } } },
+        take: 1,
+      },
       numero: true,
       codigoSolicitudPublica: true,
       estado: true,
@@ -45,7 +52,7 @@ export default async function DetalleMiSolicitudPage({ params }: { params: Promi
       // Solo los documentos que radicó el propio solicitante; los internos (conceptos, actos) no.
       documentos: {
         where: { subidoPor: { email: CORREO_VENTANILLA_VIRTUAL } },
-        select: { id: true, nombre: true, tamanoBytes: true, createdAt: true, requisito: { select: { nombre: true } } },
+        select: { id: true, nombre: true, tamanoBytes: true, createdAt: true, requisito: { select: { nombre: true } }, itemsCorreccion: { select: { reemplazoId: true }, where: { reemplazoId: { not: null } }, take: 1 } },
         orderBy: { createdAt: "asc" },
       },
     },
@@ -58,7 +65,8 @@ export default async function DetalleMiSolicitudPage({ params }: { params: Promi
   const indiceActual = etapa ? etapa.posicion - 1 : pasos.length;
   const historial = historialPublico(e.eventos, pasos);
   const tipo = nombreFlujo(e.flujo.nombre);
-  const requiereAccion = e.estado === "INFORMACION_ADICIONAL_REQUERIDA";
+  const correccion = e.requerimientosCorreccion[0] ?? null;
+  const requiereAccion = e.estado === "INFORMACION_ADICIONAL_REQUERIDA" && !correccion;
 
   return (
     <div className="space-y-5">
@@ -77,6 +85,20 @@ export default async function DetalleMiSolicitudPage({ params }: { params: Promi
             qué debe completar.
           </p>
         </div>
+      )}
+
+      {correccion && correccion.items.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-5" aria-labelledby="titulo-correccion">
+          <h2 id="titulo-correccion" className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+            <AlertTriangle className="h-4 w-4" aria-hidden /> Debe corregir o completar estos documentos
+          </h2>
+          <p className="text-sm text-amber-900">
+            Plazo: hasta el <strong>{fecha(correccion.plazoHasta)}</strong>. No tiene que empezar de nuevo: cargue solo lo que se indica y su
+            solicitud vuelve a revisión en el mismo expediente.
+          </p>
+          {correccion.mensaje && <p className="whitespace-pre-line text-sm text-stone-700">{correccion.mensaje}</p>}
+          <CorreccionPendienteForm expedienteId={e.id} items={correccion.items} />
+        </section>
       )}
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
@@ -150,7 +172,10 @@ export default async function DetalleMiSolicitudPage({ params }: { params: Promi
               <li key={d.id} className="flex items-start gap-2 py-2 text-sm">
                 <FileText className="mt-0.5 h-4 w-4 flex-none text-stone-400" aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block break-words text-stone-800">{d.requisito?.nombre ?? d.nombre}</span>
+                  <span className="block break-words text-stone-800">
+                    {d.requisito?.nombre ?? d.nombre}
+                    {d.itemsCorreccion.length > 0 && <span className="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">Reemplazado</span>}
+                  </span>
                   <span className="block text-[11px] text-stone-400">
                     {d.requisito ? `${d.nombre} · ` : ""}
                     {tamano(d.tamanoBytes)} · {fecha(d.createdAt)}
