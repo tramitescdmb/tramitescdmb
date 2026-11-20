@@ -28,7 +28,7 @@ const OPCIONES: Opcion[] = [
     opciones: [
       { href: "/solicitud-ambiental", label: "Radicar solicitud ambiental", icono: FilePlus2, activo: (p) => p.startsWith("/solicitud-ambiental") && !esConsultaAmbiental(p) && !esCuentaAmbiental(p) },
       { href: "/solicitud-ambiental/consultar", label: "Consultar solicitud ambiental", icono: Search, activo: esConsultaAmbiental },
-      { href: "/solicitud-ambiental/mis-solicitudes", label: "Mis solicitudes", icono: FolderOpen, activo: esCuentaAmbiental },
+      { href: "/solicitud-ambiental/mis-solicitudes", label: "Ingresar o registrarse · Mis solicitudes", icono: FolderOpen, activo: esCuentaAmbiental },
     ],
   },
   { href: "/validar-firma", label: "Validador de firmas", icono: ShieldCheck, activo: (p) => p.startsWith("/validar-firma") || p.startsWith("/verificar") },

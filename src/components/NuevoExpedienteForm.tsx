@@ -429,8 +429,11 @@ export function NuevoExpedienteForm({
           ) : (
             <>
               ¿Quiere ver esta solicitud, su historial y lo pendiente en un solo lugar?{" "}
-              <Link href="/solicitud-ambiental/ingresar" className="font-semibold underline hover:no-underline">
-                Ingrese con su correo
+              <Link
+                href={`/solicitud-ambiental/ingresar?siguiente=${encodeURIComponent(`/solicitud-ambiental/${tramiteSlug}`)}`}
+                className="font-semibold underline hover:no-underline"
+              >
+                Ingrese o regístrese con su correo
               </Link>{" "}
               antes de diligenciar (no necesita contraseña). También puede radicar sin cuenta.
             </>
