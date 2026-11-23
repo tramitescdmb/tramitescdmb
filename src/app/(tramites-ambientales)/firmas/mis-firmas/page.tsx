@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { redirect } from "next/navigation";
 import { FileSignature, Eye, FileText } from "lucide-react";
 import { verificarSesion as getSession } from "@/lib/permisos";
@@ -41,6 +42,8 @@ export default async function MisFirmasTramitesPage() {
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
       <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} />
+
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="TRAMITES" />
 
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en Trámites ambientales.</EstadoVacio>

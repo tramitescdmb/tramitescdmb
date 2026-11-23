@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ResumenBuzonFirmas } from "@/components/ResumenBuzonFirmas";
 import { EsperaTurnoFirma, textoRecordatorio } from "@/components/EsperaTurnoFirma";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { redirect } from "next/navigation";
 import { Inbox, PenLine } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAccederFirmasTramite } from "@/lib/permisos";
@@ -30,6 +31,8 @@ export default async function BuzonFirmasTramitesPage() {
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
       <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} />
+
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="TRAMITES" />
 
       <ResumenBuzonFirmas solicitudes={solicitudes} />
 

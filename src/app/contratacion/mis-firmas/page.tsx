@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { FileSignature, Eye, FileText } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeGestionarContratistas } from "@/lib/permisos";
 import { db } from "@/lib/db";
@@ -35,6 +36,8 @@ export default async function MisFirmasContratacionPage() {
     <section className="space-y-4">
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
       <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_GECON} />
+
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="GECON" />
 
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ningún documento en GECON.</EstadoVacio>

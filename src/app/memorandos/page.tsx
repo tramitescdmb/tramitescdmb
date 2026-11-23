@@ -7,6 +7,7 @@ import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { estadoVencimiento } from "@/lib/pqrsd";
 import { formatearFecha } from "@/lib/fecha";
 import { GRUPOS_MASIVOS_MEMORANDO, leerDatosMemorando } from "@/lib/memorandos-formato";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { CabeceraTablero } from "@/components/tablero";
 import { EstadoComunicacionBadge } from "@/components/EstadoBadge";
 
@@ -23,6 +24,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 
 const VACIO: Record<VistaMemorandos, string> = {
   "por-firmar": "No tiene memorandos pendientes de su firma.",
+  "mis-firmas": "Aún no ha firmado memorandos.",
   "por-responder": "No tiene memorandos pendientes de respuesta.",
   "sin-leer": "No tiene memorandos sin leer.",
   recibidos: "Aún no ha recibido memorandos.",
@@ -67,6 +69,8 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
           ) : undefined
         }
       />
+
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="SGDEA" memorandos />
 
       <div className="overflow-hidden rounded-md border border-stone-200 bg-white">
         <nav className="flex flex-wrap border-b border-stone-200" aria-label="Vistas de memorandos">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { ResumenBuzonFirmas } from "@/components/ResumenBuzonFirmas";
 import { EsperaTurnoFirma, textoRecordatorio } from "@/components/EsperaTurnoFirma";
 import { redirect } from "next/navigation";
@@ -27,6 +28,8 @@ export default async function BuzonContratacionPage() {
     <section className="space-y-4">
       <TituloSeccion icon={Inbox}>Buzón de firmas</TituloSeccion>
       <FirmasSubNav pendientes={resumirPendientesFirma(solicitudes)} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_GECON} />
+
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="GECON" />
 
       <ResumenBuzonFirmas solicitudes={solicitudes} />
 

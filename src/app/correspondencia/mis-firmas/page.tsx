@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdvertenciaFirmasEnEspera } from "@/components/AdvertenciaFirmasEnEspera";
 import { redirect } from "next/navigation";
 import { FileSignature, Eye, FileText } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeAdministrarArchivo } from "@/lib/permisos";
@@ -25,6 +26,8 @@ export default async function MisFirmasCorrespondenciaPage() {
       <TituloSeccion icon={FileSignature}>Mis firmas</TituloSeccion>
       <FirmasSubNav pendientes={pendientes} rechazosPorAtender={rechazosPorAtender} rutas={RUTAS_FIRMAS_SGDEA} />
 
+      <AdvertenciaFirmasEnEspera usuarioId={session.userId} modulo="SGDEA" />
+
       {firmas.length === 0 ? (
         <EstadoVacio icon={FileSignature}>Todavía no ha firmado ninguna comunicación ni documento en el SGDEA.</EstadoVacio>
       ) : (
@@ -41,7 +44,7 @@ export default async function MisFirmasCorrespondenciaPage() {
                     )}
                   </p>
                   <p className="truncate text-xs text-stone-400">
-                    {f.comunicacion ? f.comunicacion.radicado : `Expediente ${f.documentoArchivo!.expediente.numero}`}
+                    {f.comunicacion ? `${f.comunicacion.tipo === "INTERNA" ? "Memorando · " : ""}${f.comunicacion.radicado}` : `Expediente ${f.documentoArchivo!.expediente.numero}`}
                   </p>
                   <p className="mt-0.5 font-mono text-[11px] text-stone-400">
                     {formatearFechaHoraLarga(f.fechaHora)} · SHA-256 {f.hashContenido.slice(0, 16)}…
@@ -62,11 +65,11 @@ export default async function MisFirmasCorrespondenciaPage() {
                       </a>
                     )}
                     <Link
-                      href={`/correspondencia/${f.comunicacion.id}`}
+                      href={`${f.comunicacion.tipo === "INTERNA" ? "/memorandos" : "/correspondencia"}/${f.comunicacion.id}`}
                       className="inline-flex flex-none items-center gap-1 rounded-md border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
                     >
                       <Eye className="h-3.5 w-3.5" aria-hidden />
-                      Ver comunicación
+                      {f.comunicacion.tipo === "INTERNA" ? "Ver memorando" : "Ver comunicación"}
                     </Link>
                     <Link
                       href={`/correspondencia/${f.comunicacion.id}/ficha-firma`}
