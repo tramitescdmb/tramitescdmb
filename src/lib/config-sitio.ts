@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import { getBrandingRuta } from "@/lib/branding-storage";
 
 const VACIA = {
   id: "singleton",
@@ -40,7 +41,17 @@ const VACIA = {
 export const getConfiguracionSitio = unstable_cache(
   async () => {
     const config = await db.configuracionSitio.findUnique({ where: { id: "singleton" } });
-    return config ?? VACIA;
+    if (!config) return VACIA;
+    // Las URL guardadas antes eran absolutas (https://192.168.7.61/...) y dejaban de cargar al
+    // entrar por el dominio. Se calcula siempre la ruta relativa a partir del archivo guardado.
+    const ruta = (path: string | null, url: string | null) => (path ? getBrandingRuta(path) : url);
+    return {
+      ...config,
+      logoUrl: ruta(config.logoPath, config.logoUrl),
+      logoGovcoUrl: ruta(config.logoGovcoPath, config.logoGovcoUrl),
+      logoColombiaUrl: ruta(config.logoColombiaPath, config.logoColombiaUrl),
+      logoPotenciaUrl: ruta(config.logoPotenciaPath, config.logoPotenciaUrl),
+    };
   },
   ["configuracion-sitio"],
   { revalidate: 60, tags: ["configuracion-sitio"] }

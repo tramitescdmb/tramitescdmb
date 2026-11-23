@@ -1,4 +1,4 @@
-import { eliminar, firmarSubida, urlPublica } from "@/lib/almacen";
+import { eliminar, firmarSubida, rutaPublica, urlPublica } from "@/lib/almacen";
 
 const BUCKET = "branding";
 
@@ -11,8 +11,14 @@ export async function crearUrlSubidaFirmadaBranding(path: string) {
   return firmarSubida(BUCKET, path);
 }
 
+/** URL absoluta: solo para correos. */
 export function getBrandingPublicUrl(path: string) {
   return urlPublica(BUCKET, path);
+}
+
+/** Ruta relativa para mostrar logos y sellos dentro de la plataforma. */
+export function getBrandingRuta(path: string) {
+  return rutaPublica(BUCKET, path);
 }
 
 export async function deleteBranding(path: string) {
