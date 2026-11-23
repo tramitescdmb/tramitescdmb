@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
 import { contextoMemorandos } from "@/lib/memorandos";
+import { WHERE_MEMORANDO_ENTREGADO } from "@/lib/memorandos-envio";
 import { registrarRespuestaFuncionario, type EntradaDocumento } from "@/lib/correspondencia";
 import { rutasDeCarpetaNueva } from "@/lib/rutas-adjuntos";
 import { MENSAJE_RUTA_AJENA } from "@/lib/storage";
@@ -16,8 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const ctx = await contextoMemorandos(session.userId, await obtenerPermisosUsuario(session.userId));
   if (!ctx.acceso) return NextResponse.json({ error: "No tiene acceso al módulo de memorandos." }, { status: 403 });
 
-  const memo = await db.comunicacion.findUnique({
-    where: { id },
+  const memo = await db.comunicacion.findFirst({
+    where: { id, AND: [WHERE_MEMORANDO_ENTREGADO] },
     select: { tipo: true, radicado: true, distribuciones: { where: { activa: true, usuarioId: session.userId }, select: { id: true } } },
   });
   if (!memo || memo.tipo !== "INTERNA") return NextResponse.json({ error: "El memorando no existe." }, { status: 404 });

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/config-sitio", () => ({ getConfiguracionSitio: async () => ({}) }));
 
+const { WHERE_MEMORANDO_ENTREGADO } = await import("@/lib/memorandos-envio");
 const { accedeMemorandos, whereGrupoMasivo, oficinaOrigenMemorando, puedeRecibirMemorando, puedeEnviarMemorando, whereMemorandos, whereVerMemorando } = await import("@/lib/memorandos");
 
 function permisos(extra: Record<string, unknown> = {}) {
@@ -47,7 +48,15 @@ describe("acceso al módulo", () => {
 
   it("cada quien ve solo los memorandos en que participa", () => {
     const w = whereVerMemorando({ id: "u1", dependenciaId: "dep-1", firmante: false, acceso: true, archivo: false });
-    expect(w).toEqual({ tipo: "INTERNA", OR: [{ radicadoPorId: "u1" }, { respuestaPorId: "u1" }, { distribuciones: { some: { usuarioId: "u1" } } }, { solicitudesFirma: { some: { usuarioAsignadoId: "u1" } } }] });
+    expect(w).toEqual({
+      tipo: "INTERNA",
+      OR: [
+        { radicadoPorId: "u1" },
+        { respuestaPorId: "u1" },
+        { solicitudesFirma: { some: { usuarioAsignadoId: "u1" } } },
+        { AND: [WHERE_MEMORANDO_ENTREGADO, { OR: [{ distribuciones: { some: { usuarioId: "u1" } } }] }] },
+      ],
+    });
     expect(whereVerMemorando({ id: "u1", dependenciaId: null, firmante: false, acceso: false, archivo: false })).toEqual({ id: "" });
     expect(whereVerMemorando({ id: "u1", dependenciaId: "d", firmante: true, acceso: true, archivo: true })).toEqual({ tipo: "INTERNA" });
   });
@@ -99,5 +108,34 @@ describe("memorandos masivos", () => {
     expect(contratistas).not.toContain("NOT");
     const todos = JSON.stringify(whereGrupoMasivo("TODOS"));
     expect(todos).toContain('"OR"');
+  });
+});
+
+describe("memorando con firmas de proyectó / revisó (retenido)", () => {
+  const funcionario = { id: "u1", dependenciaId: "dep-1", firmante: false, acceso: true, archivo: false };
+  const jefe = { id: "j1", dependenciaId: "dep-2", firmante: true, acceso: true, archivo: false };
+
+  it("no llega a Recibidos, Sin leer ni Por responder hasta la última firma", () => {
+    for (const vista of ["recibidos", "sin-leer", "por-responder", "esperando"] as const) {
+      expect(JSON.stringify(whereMemorandos(funcionario, vista))).toContain(JSON.stringify(WHERE_MEMORANDO_ENTREGADO));
+    }
+    expect(JSON.stringify(WHERE_MEMORANDO_ENTREGADO)).toBe(
+      JSON.stringify({ solicitudesFirma: { none: { rol: "FIRMA", calidad: { in: ["PROYECTO", "REVISO"] }, estado: { in: ["PENDIENTE", "RECHAZADA"] } } } })
+    );
+  });
+
+  it("quien dirige la oficina destinataria solo lo ve ya entregado; la de origen, siempre", () => {
+    const w = JSON.stringify(whereVerMemorando(jefe));
+    expect(w).toContain('{"dependenciaOrigenId":"dep-2"}');
+    expect(w).toContain(`{"AND":[${JSON.stringify(WHERE_MEMORANDO_ENTREGADO)},{"OR":[{"distribuciones":{"some":{"usuarioId":"j1"}}},{"dependenciaDestinoId":"dep-2"}]}]}`);
+  });
+});
+
+describe("por responder", () => {
+  it("todo memorando dirigido a una dependencia, con o sin plazo; los masivos (sin dependencia) no", () => {
+    const w = JSON.stringify(whereMemorandos({ id: "u1", dependenciaId: "dep-1", firmante: true, acceso: true, archivo: false }, "por-responder"));
+    expect(w).toContain('"dependenciaDestinoId":{"not":null}');
+    expect(w).not.toContain("fechaVencimiento");
+    expect(w).toContain('"respuestas":{"none":{"estado":{"not":"ANULADA"}}}');
   });
 });

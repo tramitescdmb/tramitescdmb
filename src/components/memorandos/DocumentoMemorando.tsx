@@ -1,6 +1,22 @@
 import { bloquesCuerpo, type PersonaMemorando, type SegmentoTexto } from "@/lib/memorandos-formato";
 
-export type FirmaMemorandoDoc = { fecha: string; hash: string; sello: string | null };
+/**
+ * Metadatos de una firma electrónica, tal como salen en el recuadro del documento y en el PDF
+ * (mismos datos de la ficha técnica de firmas, sin identificación personal ni IP).
+ */
+export type FirmaMemorandoDoc = {
+  fecha: string;
+  hash: string;
+  sello: string | null;
+  /** Identificador de la firma en el registro (código de verificación). */
+  id?: string | null;
+  nombre?: string | null;
+  cargo?: string | null;
+  /** «Firmante principal», «Proyectó», «Revisó». */
+  calidad?: string | null;
+  /** «Firma electrónica (hash SHA-256)», etc. */
+  formato?: string | null;
+};
 
 export type DatosDocumentoMemorando = {
   numero: string | null;
@@ -17,7 +33,9 @@ export type DatosDocumentoMemorando = {
   estadoReviso?: string | null;
   oficina: string;
   firma?: FirmaMemorandoDoc | null;
-  verificacion?: { radicado: string; url: string } | null;
+  firmaProyecto?: FirmaMemorandoDoc | null;
+  firmaReviso?: FirmaMemorandoDoc | null;
+  verificacion?: { radicado: string; url: string; radicadoEn?: string | null } | null;
 };
 
 const celda = "border border-stone-500 px-1.5 py-1 align-top";
@@ -78,28 +96,15 @@ function Destinatario({ etiqueta, p, mayusculas }: { etiqueta: string; p: Person
 }
 
 /**
- * Memorando institucional con el formato del modelo ADEI – 054 /2026: encabezado, número, ciudad y
- * fecha, PARA / DE, asunto, cuerpo, firma y cuadro de responsables. Sirve igual para la vista previa
- * del formulario, la ficha del memorando firmado y su descarga en PDF.
+ * Memorando institucional con el formato del modelo ADEI – 054 /2026 (sin encabezado de logo ni nombre
+ * de la entidad): número, ciudad y fecha, PARA / DE, asunto, cuerpo, firma con sus metadatos y cuadro de
+ * responsables. Sirve para la vista previa del formulario y la ficha del memorando; el PDF se arma
+ * aparte, con texto vectorial, a partir de los mismos datos (memorando-pdf.ts).
  */
-export function DocumentoMemorando({ d, logoUrl, id }: { d: DatosDocumentoMemorando; logoUrl?: string | null; id?: string }) {
+export function DocumentoMemorando({ d, id }: { d: DatosDocumentoMemorando; id?: string }) {
   return (
     <article id={id} className="documento-memorando mx-auto max-w-[21.6cm] bg-white px-10 py-8 font-[Arial,Helvetica,sans-serif] text-[13px] leading-snug text-black print:px-0 print:py-0">
-      <div data-pdf-encabezado className="flex items-center gap-3 border-b border-stone-300 pb-2">
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="CDMB" className="h-10 w-auto object-contain" />
-        ) : (
-          <span className="text-base font-bold text-cdmb-700">CDMB</span>
-        )}
-        <span className="text-[10px] uppercase leading-tight text-stone-600">
-          Corporación Autónoma Regional para la Defensa
-          <br />
-          de la Meseta de Bucaramanga
-        </span>
-      </div>
-
-      <div data-pdf-cuerpo className="space-y-5 pt-6">
+      <div className="space-y-5">
         <p className="text-center font-bold">MEMORANDO</p>
 
         <div className="space-y-3">
@@ -123,11 +128,7 @@ export function DocumentoMemorando({ d, logoUrl, id }: { d: DatosDocumentoMemora
 
         <div className="break-inside-avoid pt-6" data-pdf-bloque>
           {d.firma ? (
-            <p className="mb-1 inline-block rounded border border-cdmb-600 px-2 py-1 text-[10px] leading-tight text-cdmb-800">
-              <b>Firmado electrónicamente</b> · {d.firma.fecha}
-              <br />
-              SHA-256 {d.firma.hash.slice(0, 16)}…{d.firma.sello ? ` · ${d.firma.sello}` : ""}
-            </p>
+            <RecuadroFirma f={d.firma} />
           ) : (
             <p className="mb-1 h-8 text-[10px] italic text-stone-400">(Firma electrónica al enviar)</p>
           )}
@@ -135,31 +136,13 @@ export function DocumentoMemorando({ d, logoUrl, id }: { d: DatosDocumentoMemora
           <p>{d.de?.cargo ?? ""}</p>
         </div>
 
-        <table className="w-full border-collapse text-[10px]" data-pdf-bloque>
+        <table className="w-full table-fixed border-collapse text-[10px]" data-pdf-bloque>
           <tbody>
-            {d.proyecto && (
-              <tr>
-                <td className={`${celda} w-[20%]`}>Proyectó:</td>
-                <td className={`${celda} w-[30%]`}>{d.proyecto.nombre}</td>
-                <td className={celda}>
-                  {d.proyecto.cargo}
-                  {d.estadoProyecto && <span className="block text-[9px] italic text-stone-500">{d.estadoProyecto}</span>}
-                </td>
-              </tr>
-            )}
-            {d.reviso && (
-              <tr>
-                <td className={`${celda} w-[20%]`}>Revisó:</td>
-                <td className={`${celda} w-[30%]`}>{d.reviso.nombre}</td>
-                <td className={celda}>
-                  {d.reviso.cargo}
-                  {d.estadoReviso && <span className="block text-[9px] italic text-stone-500">{d.estadoReviso}</span>}
-                </td>
-              </tr>
-            )}
+            {d.proyecto && <FilaResponsable etiqueta="Proyectó:" p={d.proyecto} firma={d.firmaProyecto} estado={d.estadoProyecto} />}
+            {d.reviso && <FilaResponsable etiqueta="Revisó:" p={d.reviso} firma={d.firmaReviso} estado={d.estadoReviso} />}
             <tr>
-              <td className={`${celda} w-[20%]`}>Oficina responsable:</td>
-              <td className={celda} colSpan={2}>
+              <td className={`${celda} w-[18%]`}>Oficina responsable:</td>
+              <td className={celda} colSpan={3}>
                 {d.oficina}
               </td>
             </tr>
@@ -167,12 +150,85 @@ export function DocumentoMemorando({ d, logoUrl, id }: { d: DatosDocumentoMemora
         </table>
 
         {d.verificacion && (
-          <p className="text-[9px] leading-snug text-stone-600">
-            Documento firmado electrónicamente conforme al artículo 7 de la Ley 527 de 1999 y al Decreto 1074 de 2015. Radicado{" "}
-            <b className="font-mono">{d.verificacion.radicado}</b>. Verifique su autenticidad en <span className="break-all">{d.verificacion.url}</span>.
-          </p>
+          <div className="break-inside-avoid border-t border-stone-300 pt-2 text-[9px] leading-snug text-stone-700" data-pdf-bloque>
+            <p className="font-bold uppercase">Datos del documento</p>
+            <p>
+              Radicado <b className="font-mono">{d.verificacion.radicado}</b>
+              {d.numero ? ` · Memorando ${d.numero}` : ""}
+              {d.verificacion.radicadoEn ? ` · Radicado el ${d.verificacion.radicadoEn}` : ""}
+              {` · ${[d.firma, d.firmaProyecto, d.firmaReviso].filter(Boolean).length} firma(s) electrónica(s)`}
+            </p>
+            <p className="mt-0.5">
+              Documento firmado electrónicamente conforme al artículo 7 de la Ley 527 de 1999 y al Decreto 1074 de 2015. Verifique su autenticidad en{" "}
+              <span className="break-all">{d.verificacion.url}</span> con el código de cada firma.
+            </p>
+          </div>
         )}
       </div>
     </article>
+  );
+}
+
+/** Recuadro de la firma de quien envía: firmante, calidad, fecha y hora, código y huella del contenido firmado. */
+function RecuadroFirma({ f }: { f: FirmaMemorandoDoc }) {
+  return (
+    <div className="mb-2 max-w-[26rem] rounded border border-cdmb-600 px-2 py-1.5 text-[9px] leading-snug text-stone-800">
+      <p className="text-[10px] font-bold uppercase text-cdmb-800">Firmado electrónicamente</p>
+      {f.nombre && (
+        <p>
+          <span className="text-stone-500">Firmante:</span> {f.nombre}
+          {f.cargo ? ` — ${f.cargo}` : ""}
+          {f.calidad ? ` (${f.calidad})` : ""}
+        </p>
+      )}
+      <p>
+        <span className="text-stone-500">Fecha y hora:</span> {f.fecha} (hora de Colombia)
+      </p>
+      {f.id && (
+        <p>
+          <span className="text-stone-500">Código de la firma:</span> <span className="font-mono">{f.id}</span>
+        </p>
+      )}
+      <p className="break-all">
+        <span className="text-stone-500">Huella SHA-256:</span> <span className="font-mono">{f.hash}</span>
+      </p>
+      {(f.formato || f.sello) && (
+        <p>
+          {f.formato && (
+            <>
+              <span className="text-stone-500">Mecanismo:</span> {f.formato}
+            </>
+          )}
+          {f.formato && f.sello ? " · " : ""}
+          {f.sello && (
+            <>
+              <span className="text-stone-500">Sello de tiempo:</span> {f.sello}
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function FilaResponsable({ etiqueta, p, firma, estado }: { etiqueta: string; p: PersonaMemorando; firma?: FirmaMemorandoDoc | null; estado?: string | null }) {
+  return (
+    <tr>
+      <td className={`${celda} w-[18%]`}>{etiqueta}</td>
+      <td className={`${celda} w-[24%]`}>{p.nombre}</td>
+      <td className={`${celda} w-[24%]`}>{p.cargo}</td>
+      <td className={`${celda} text-[8.5px] leading-tight`}>
+        {firma ? (
+          <>
+            <b className="block text-cdmb-800">Firmado electrónicamente</b>
+            {firma.fecha}
+            {firma.id && <span className="block break-all font-mono">Código: {firma.id}</span>}
+            <span className="block break-all font-mono">SHA-256: {firma.hash.slice(0, 24)}…</span>
+          </>
+        ) : (
+          <span className="italic text-stone-500">{estado ?? "Pendiente de firma"}</span>
+        )}
+      </td>
+    </tr>
   );
 }

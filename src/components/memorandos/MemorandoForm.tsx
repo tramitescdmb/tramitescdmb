@@ -37,7 +37,6 @@ export function MemorandoForm({
   ciudad,
   fecha,
   plantillas = [],
-  logoUrl,
   respondeA = null,
   totalesMasivos,
 }: {
@@ -52,7 +51,6 @@ export function MemorandoForm({
   ciudad: string;
   fecha: string;
   plantillas?: PlantillaOpcion[];
-  logoUrl?: string | null;
   respondeA?: RespuestaA | null;
   /** Cuántas personas recibirían cada envío masivo (sin contar a quien firma). */
   totalesMasivos?: Record<GrupoMasivoMemorando, number>;
@@ -161,7 +159,12 @@ export function MemorandoForm({
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "No se pudo enviar el memorando.");
       setProgreso({ pct: 100, texto: "Listo." });
-      router.push(`/memorandos/${data.id}${data.avisoFirmas ? `?error=${encodeURIComponent(data.avisoFirmas)}` : ""}`);
+      const aviso = data.avisoFirmas
+        ? `?error=${encodeURIComponent(data.avisoFirmas)}`
+        : data.retenido
+          ? `?ok=${encodeURIComponent("Memorando firmado. Se entregará a los destinatarios automáticamente cuando firmen quien proyectó y quien revisó.")}`
+          : "";
+      router.push(`/memorandos/${data.id}${aviso}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo enviar el memorando.");
       setProgreso(null);
@@ -278,12 +281,12 @@ export function MemorandoForm({
                 />
               </Field>
               <div className="sm:col-span-2">
-                <Field label="Respuesta" help="Si requiere respuesta, el destinatario lo verá como pendiente con su plazo y recibirá el aviso.">
+                <Field label="Plazo de respuesta" help="El destinatario lo tendrá en «Por responder» hasta que lo responda. Si fija un plazo, cuenta desde que el memorando le llega.">
                   <select value={plazo} onChange={(e) => setPlazo(Number(e.target.value))} className={`${inputCls} max-w-sm`}>
-                    <option value={0}>No requiere respuesta (informativo)</option>
+                    <option value={0}>Sin plazo fijo</option>
                     {PLAZOS.map((d) => (
                       <option key={d} value={d}>
-                        Requiere respuesta en {d} días hábiles
+                        Responder en {d} días hábiles
                       </option>
                     ))}
                   </select>
@@ -326,7 +329,7 @@ export function MemorandoForm({
             numero={3}
             icono={<Users className="h-4 w-4" aria-hidden />}
             titulo="Proyectó y revisó"
-            descripcion="Opcional. Personas de su oficina que aparecen en el cuadro al pie. Al enviar, el memorando les llega a su bandeja «Por firmar» con aviso en la campana y por correo, para que firmen."
+            descripcion="Opcional. Personas de su oficina que aparecen en el cuadro al pie. Si indica alguna, el memorando primero les llega solo a ellas («Por firmar», con aviso en la campana y por correo) y se entrega a los destinatarios automáticamente con la última firma."
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Proyectó">
@@ -411,7 +414,6 @@ export function MemorandoForm({
         <div className="max-h-[85vh] overflow-auto rounded-2xl border border-stone-200 bg-stone-100 p-3 shadow-soft">
           <div className="shadow-sm">
             <DocumentoMemorando
-              logoUrl={logoUrl}
               d={{
                 numero: numeroPrevio,
                 ciudad,

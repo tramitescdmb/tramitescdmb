@@ -12,6 +12,7 @@ import { radicarInterna, type EntradaDocumento } from "@/lib/correspondencia";
 import { validarLoteDocumentosSGDEA } from "@/lib/uploads-sgdea";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 import { asignarFirmantes } from "@/lib/solicitudes-firma";
+import { liberarMemorandoSiFirmado } from "@/lib/memorandos-envio";
 
 const SELECT_PERSONA = {
   id: true,
@@ -149,12 +150,16 @@ export async function POST(req: NextRequest) {
   if (requiereRespuesta && !(PLAZOS_RESPUESTA_MEMORANDO as readonly number[]).includes(plazo)) {
     return NextResponse.json({ error: "Plazo de respuesta no válido." }, { status: 400 });
   }
-  const fechaLimiteRespuesta = requiereRespuesta ? sumarDiasHabiles(new Date(), plazo, await getCalendarioLaboral()) : null;
+  // Con firmas de proyectó / revisó el memorando queda retenido: solo llega a «Por firmar» de esas
+  // personas y se entrega a los destinatarios con la última firma. El plazo cuenta desde la entrega.
+  const retenido = Boolean(proyecto || reviso);
+  const fechaLimiteRespuesta = requiereRespuesta && !retenido ? sumarDiasHabiles(new Date(), plazo, await getCalendarioLaboral()) : null;
 
   try {
     const comunicacion = await radicarInterna({
       fechaLimiteRespuesta,
       respondeAId,
+      retenerEntrega: retenido,
       asunto,
       contenido,
       folios,
@@ -177,6 +182,7 @@ export async function POST(req: NextRequest) {
           reviso: reviso?.persona ?? null,
           oficina: origen.nombre,
           masivo: masivo ? { grupo: masivo, total: grupoDestino!.length } : null,
+          envio: { retenido, plazoRespuestaDias: requiereRespuesta ? plazo : null, liberadoEn: null },
         },
       },
     });
@@ -191,8 +197,10 @@ export async function POST(req: NextRequest) {
     if (cofirmantes.length > 0) {
       await asignarFirmantes({ tipo: "comunicacion", id: comunicacion.id }, session.userId, cofirmantes, ip, userAgent).catch((e) => {
         console.error("asignarFirmantes (memorando) falló:", e);
-        avisoFirmas = "El memorando se envió, pero no se pudo pedir la firma de quien proyectó o revisó: informe al administrador del sistema.";
+        avisoFirmas = "El memorando se entregó sin la firma de quien proyectó o revisó, porque no se pudo pedir: informe al administrador del sistema.";
       });
+      // Si no se pudo pedir ninguna firma, no hay nada que esperar: se entrega de una vez.
+      if (avisoFirmas) await liberarMemorandoSiFirmado(comunicacion.id, session.userId).catch((e) => console.error("liberarMemorandoSiFirmado falló:", e));
     }
     await registrarAuditoriaDoc({
       entidad: "Comunicacion",
@@ -201,10 +209,10 @@ export async function POST(req: NextRequest) {
       usuarioId: session.userId,
       ip,
       userAgent,
-      detalle: `Firmó y envió el memorando ${comunicacion.radicado}${respondeAId ? " (respuesta a otro memorando)" : ""}${masivo ? `, en masivo a ${GRUPOS_MASIVOS_MEMORANDO[masivo].etiqueta.toLowerCase()} (${grupoDestino!.length} personas, aviso en la plataforma sin correo)` : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""} — ${asunto.slice(0, 200)}`,
+      detalle: `Firmó ${retenido ? "el memorando" : "y envió el memorando"} ${comunicacion.radicado}${retenido ? " (retenido hasta que firmen quien proyectó y quien revisó)" : ""}${respondeAId ? " (respuesta a otro memorando)" : ""}${masivo ? `, en masivo a ${GRUPOS_MASIVOS_MEMORANDO[masivo].etiqueta.toLowerCase()} (${grupoDestino!.length} personas, aviso en la plataforma sin correo)` : ""}${requiereRespuesta ? `, requiere respuesta en ${plazo} días hábiles` : ""} — ${asunto.slice(0, 200)}`,
     });
 
-    return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado, avisoFirmas });
+    return NextResponse.json({ id: comunicacion.id, radicado: comunicacion.radicado, avisoFirmas, retenido: retenido && !avisoFirmas });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "No se pudo enviar el memorando." }, { status: 500 });
   }

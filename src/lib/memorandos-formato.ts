@@ -35,6 +35,11 @@ export type DatosMemorando = {
   oficina: string;
   /** Solo en envíos masivos: a qué grupo se dirigió y a cuántas personas se entregó al firmarlo. */
   masivo?: { grupo: GrupoMasivoMemorando; total: number } | null;
+  /**
+   * Entrega: si lleva firmas de proyectó / revisó, queda retenido hasta la última firma (ver
+   * memorandos-envio.ts). El plazo de respuesta se cuenta desde la entrega.
+   */
+  envio?: { retenido: boolean; plazoRespuestaDias: number | null; liberadoEn: string | null } | null;
 };
 
 export const CIUDAD_MEMORANDO = "Bucaramanga";
