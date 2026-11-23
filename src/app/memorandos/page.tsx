@@ -24,6 +24,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 
 const VACIO: Record<VistaMemorandos, string> = {
   "por-firmar": "No tiene memorandos pendientes de su firma.",
+  "mis-firmas": "Aún no ha firmado memorandos.",
   "por-responder": "No tiene memorandos pendientes de respuesta.",
   "sin-leer": "No tiene memorandos sin leer.",
   recibidos: "Aún no ha recibido memorandos.",

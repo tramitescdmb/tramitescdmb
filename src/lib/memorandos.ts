@@ -9,10 +9,11 @@ import { formatearNumeroMemorando, leerDatosMemorando, siglaDependencia, type Gr
 
 export const PLAZOS_RESPUESTA_MEMORANDO = [3, 5, 10, 15] as const;
 
-export type VistaMemorandos = "por-firmar" | "por-responder" | "sin-leer" | "recibidos" | "esperando" | "enviados";
+export type VistaMemorandos = "por-firmar" | "mis-firmas" | "por-responder" | "sin-leer" | "recibidos" | "esperando" | "enviados";
 
 export const VISTAS_MEMORANDOS: { id: VistaMemorandos; label: string }[] = [
   { id: "por-firmar", label: "Por firmar" },
+  { id: "mis-firmas", label: "Mis firmas" },
   { id: "por-responder", label: "Por responder" },
   { id: "sin-leer", label: "Sin leer" },
   { id: "recibidos", label: "Recibidos" },
@@ -149,6 +150,9 @@ export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos)
   switch (vista) {
     case "por-firmar":
       return { tipo: "INTERNA", estado: { not: "ANULADA" }, solicitudesFirma: { some: porFirmarDe(ctx.id) } };
+    case "mis-firmas":
+      // Memorandos que la persona ya firmó (como quien envía, proyectó o revisó).
+      return { tipo: "INTERNA", firmas: { some: { usuarioId: ctx.id } } };
     case "por-responder":
       return {
         AND: [
