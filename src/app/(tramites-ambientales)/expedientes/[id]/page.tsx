@@ -38,6 +38,7 @@ import { CIERRES_ANTICIPADOS, evaluarCambioManualEstado, opcionFinalizar } from 
 import { CLASE_RESULTADO_VISITA, ETIQUETA_RESULTADO_VISITA, evaluarPasoParaVisita, visitaHabilitadaParaRegistro } from "@/lib/temas-visita";
 import { EditarDocumentoBoton } from "@/components/EditarDocumentoBoton";
 import { ValidarDocumentoBoton } from "@/components/ValidarDocumentoBoton";
+import { BotonRecordarFirma } from "@/components/BotonRecordarFirma";
 import { AsignarFirmantesModal } from "@/components/AsignarFirmantesModal";
 import { ConfirmarFirmaModal } from "@/components/ConfirmarFirmaModal";
 import { VistaPreviaDocumento } from "@/components/VistaPreviaDocumento";
@@ -358,6 +359,17 @@ export default async function ExpedienteDetallePage({
       estado: s.estado,
       completadoEn: s.completadoEn ? formatearFechaHora(s.completadoEn) : null,
     }));
+    // Quien solicitó la firma o ya firmó puede recordarle al firmante pendiente cuyo turno ya llegó.
+    const puedoRecordar = (s: (typeof solicitudes)[number]) =>
+      !cerrado &&
+      !!session &&
+      s.estado === "PENDIENTE" &&
+      s.rol !== "LECTURA" &&
+      s.usuarioAsignadoId !== session.userId &&
+      puedeActuarSolicitud(solicitudes, s) &&
+      (session.rol === "ADMIN" ||
+        doc.solicitudesFirma.some((o) => o.id === s.id && o.asignadoPorId === session.userId) ||
+        solicitudes.some((o) => o.usuarioAsignadoId === session.userId && o.estado === "COMPLETADA" && o.rol !== "LECTURA"));
     const miSolicitud = session
       ? solicitudes.find((s) => s.usuarioAsignadoId === session.userId && s.estado === "PENDIENTE" && s.rol !== "LECTURA")
       : undefined;
@@ -384,8 +396,11 @@ export default async function ExpedienteDetallePage({
               {solicitudes
                 .filter((s) => s.estado !== "RECHAZADA")
                 .map((s) => (
-                  <span key={s.id} className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
-                    {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                  <span key={s.id} className="inline-flex items-center gap-1">
+                    <span className={`rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${CLASE_ESTADO_SOLICITUD[s.estado]}`}>
+                      {s.usuarioAsignadoNombre} · {etiquetaFirmante(s)} · {ETIQUETA_ESTADO_SOLICITUD[s.estado]}
+                    </span>
+                    {puedoRecordar(s) && <BotonRecordarFirma solicitudId={s.id} nombre={s.usuarioAsignadoNombre} />}
                   </span>
                 ))}
             </div>

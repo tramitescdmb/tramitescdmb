@@ -11,6 +11,7 @@ import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { conceptosDevueltosA, conceptosPorRevisar } from "@/lib/revision-concepto";
 import { contarMemorandos, contextoMemorandos } from "@/lib/memorandos";
 import { contarPendientesBuzonSgdea } from "@/lib/firmas-sgdea";
+import { DIAS_ESPERA_AVISO, listarFirmasEnEspera } from "@/lib/firmas-en-espera";
 
 type Aviso = { clave: string; titulo: string; detalle?: string; href: string; alerta: boolean; cantidad: number; modulo: "TRAMITES" | "SGDEA" | "GECON" | "MEMORANDOS" };
 
@@ -174,6 +175,23 @@ export async function GET() {
     if (rechazos > 0) {
       avisos.push({ clave: "rechazos-gecon", titulo: `${rechazos} firma(s) rechazada(s) en GECON`, detalle: "Documentos que usted cargó", href: "/contratacion/rechazos-firma", alerta: true, cantidad: rechazos, modulo: "GECON" });
     }
+  }
+
+  // Documentos que el usuario envió a firma o ya firmó y que llevan días esperando a otra persona.
+  const enEspera = await listarFirmasEnEspera(session.userId, { minDias: DIAS_ESPERA_AVISO }).catch(() => []);
+  for (const modulo of ["TRAMITES", "GECON", "SGDEA"] as const) {
+    const delModulo = enEspera.filter((f) => f.modulo === modulo);
+    if (delModulo.length === 0) continue;
+    const nombres = [...new Set(delModulo.map((f) => f.pendiente))];
+    avisos.push({
+      clave: `firmas-en-espera-${modulo.toLowerCase()}`,
+      titulo: delModulo.length === 1 ? `${delModulo[0]!.pendiente} no ha firmado un documento suyo` : `${delModulo.length} documento(s) suyos esperan la firma de otra persona`,
+      detalle: `Hace ${DIAS_ESPERA_AVISO} días o más · ${nombres.slice(0, 3).join(", ")}${nombres.length > 3 ? "…" : ""}`,
+      href: "/firmas-en-espera",
+      alerta: true,
+      cantidad: delModulo.length,
+      modulo,
+    });
   }
 
   return NextResponse.json({ avisos });

@@ -175,8 +175,8 @@ export const EVENTOS_AVISO = {
   FIRMA_SIN_ATENDER: {
     categoria: "VENCIMIENTOS",
     modulos: MODULOS_FIRMA,
-    evento: "Firma o visto bueno sin atender a los 3 y a los 10 días, cuando ya es su turno",
-    destinatarios: "Persona asignada",
+    evento: "Firma o visto bueno sin atender a los 3 y a los 10 días de llegarle el turno",
+    destinatarios: "Persona asignada; también quien solicitó la firma y quienes ya firmaron el documento",
     plataforma: "Buzón de firmas",
     diario: HORA_ALERTAS,
   },
