@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
-import { getBrandingPublicUrl, deleteBranding } from "@/lib/branding-storage";
+import { getBrandingRuta, deleteBranding } from "@/lib/branding-storage";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 const CAMPOS: Record<string, { url: string; path: string; etiqueta: string }> = {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const actual = await db.configuracionSitio.findUnique({ where: { id: "singleton" } });
   const pathAnterior = actual?.[config.path as keyof typeof actual] as string | null | undefined;
 
-  const url = getBrandingPublicUrl(path);
+  const url = getBrandingRuta(path);
 
   await db.configuracionSitio.upsert({
     where: { id: "singleton" },

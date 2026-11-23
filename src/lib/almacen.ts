@@ -137,8 +137,17 @@ export function redirigirAlmacen(url: string, status = 307): Response {
   return new Response(null, { status, headers: { Location: url, "Cache-Control": "private, no-store" } });
 }
 
+/** URL absoluta (para correos, que se abren fuera de la plataforma). */
 export function urlPublica(bucket: string, ruta: string): string {
-  return `${urlBase()}/api/almacen/${bucket}/${codificar(ruta)}`;
+  return `${urlBase()}${rutaPublica(bucket, ruta)}`;
+}
+
+/**
+ * Ruta relativa de un archivo público (logos y sellos). Las páginas usan esta y no la absoluta:
+ * así la imagen carga por la misma dirección por la que se entró (IP o dominio), aunque cambie.
+ */
+export function rutaPublica(bucket: string, ruta: string): string {
+  return `/api/almacen/${bucket}/${codificar(ruta)}`;
 }
 
 export async function descargar(bucket: string, ruta: string): Promise<Buffer> {
