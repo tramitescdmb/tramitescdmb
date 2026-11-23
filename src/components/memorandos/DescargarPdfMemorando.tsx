@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
-import { documentoAPdf } from "@/lib/pdf-desde-documento";
+import { memorandoAPdf } from "@/lib/memorando-pdf";
+import type { DatosDocumentoMemorando } from "@/components/memorandos/DocumentoMemorando";
 
-/** Genera el PDF del memorando en el navegador, a partir del documento en pantalla, y lo descarga. */
-export function DescargarPdfMemorando({ idDocumento, nombreArchivo }: { idDocumento: string; nombreArchivo: string }) {
+/**
+ * Genera el PDF del memorando en el navegador con texto vectorial (nítido, seleccionable y liviano), a
+ * partir de los mismos datos del documento en pantalla, y lo descarga.
+ */
+export function DescargarPdfMemorando({ datos, nombreArchivo }: { datos: DatosDocumentoMemorando; nombreArchivo: string }) {
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function descargar() {
-    const raiz = document.getElementById(idDocumento);
-    if (!raiz) return;
     setGenerando(true);
     setError(null);
     try {
-      const bytes = await documentoAPdf(raiz, nombreArchivo);
+      const bytes = await memorandoAPdf(datos, nombreArchivo);
       const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/pdf" }));
       const a = document.createElement("a");
       a.href = url;

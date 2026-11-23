@@ -509,6 +509,11 @@ export type EntradaRadicacionInterna = {
   radicadoPorId: string;
   fechaLimiteRespuesta?: Date | null;
   respondeAId?: string | null;
+  /**
+   * Memorando que espera firmas de proyectó / revisó: aún no se entrega, así que el memorando al que
+   * responde no se marca como respondido hasta la última firma (lo hace liberarMemorandoSiFirmado).
+   */
+  retenerEntrega?: boolean;
   /** Formato del memorando: se le asigna el número de la oficina dentro de la misma transacción. */
   memorando?: { codigoDependencia: string; sigla: string; datos: Omit<DatosMemorando, "version" | "consecutivo" | "numero"> } | null;
 };
@@ -558,7 +563,7 @@ export async function radicarInterna(entrada: EntradaRadicacionInterna) {
       },
     });
 
-    if (entrada.respondeAId) {
+    if (entrada.respondeAId && !entrada.retenerEntrega) {
       await tx.comunicacion.update({ where: { id: entrada.respondeAId }, data: { estado: "RESPONDIDA" } });
     }
 
@@ -655,13 +660,15 @@ export async function registrarRespuestaFuncionario(
       tipo: true,
       estado: true,
       fechaVencimiento: true,
+      dependenciaDestinoId: true,
       _count: { select: { respuestas: true } },
       firmas: { select: { id: true, usuarioId: true, usuario: { select: { nombre: true } } } },
     },
   });
   if (!c) throw new Error("La comunicación no existe.");
   const esMemorando = c.tipo === "INTERNA";
-  if (esMemorando && !c.fechaVencimiento) throw new Error("Este memorando es informativo: no requiere respuesta.");
+  // Los memorandos masivos (sin dependencia de destino) son informativos; los dirigidos a una dependencia se responden.
+  if (esMemorando && !c.dependenciaDestinoId) throw new Error("Este memorando es informativo (envío masivo): no requiere respuesta.");
   if (c.tipo === "ENVIADA") throw new Error("Solo se responde a comunicaciones recibidas o a memorandos que requieren respuesta.");
   if (esMemorando && ["RESPONDIDA", "ARCHIVADA"].includes(c.estado)) throw new Error("Este memorando ya fue respondido.");
   if (c.estado === "ANULADA") throw new Error("No se puede responder una comunicación anulada.");

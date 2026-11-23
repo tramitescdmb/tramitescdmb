@@ -116,6 +116,9 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
                 const miDistribucion = m.distribuciones.find((d) => d.usuarioId === session.userId);
                 const sinLeer = !enviados && miDistribucion && !miDistribucion.fechaAcuse;
                 const pendiente = m.fechaVencimiento && !["RESPONDIDA", "ANULADA", "ARCHIVADA"].includes(m.estado);
+                // Retenido: espera firmas de proyectó / revisó (o alguna se rechazó); aún no se entrega.
+                const enFirma = m.estado !== "ANULADA" && m.solicitudesFirma.length > 0;
+                const firmaRechazada = m.solicitudesFirma.some((x) => x.estado === "RECHAZADA");
                 const v = pendiente ? estadoVencimiento(m.fechaVencimiento, undefined, calendario) : null;
                 const masivo = leerDatosMemorando(m.datosMemorando)?.masivo ?? null;
                 const destinatario = masivo
@@ -165,11 +168,12 @@ export default async function MemorandosPage({ searchParams }: { searchParams: P
                           {v && <span className={`rounded-sm px-1.5 py-0.5 text-[11px] font-medium ${v.clase}`}>{v.texto}</span>}
                         </>
                       ) : (
-                        <span className="text-stone-400">Informativo</span>
+                        <span className="text-stone-400">{masivo || !m.dependenciaDestino ? "Informativo" : "Sin plazo fijo"}</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2 align-top">
-                      <EstadoComunicacionBadge estado={m.estado} etiqueta={ETIQUETA_ESTADO[m.estado] ?? m.estado} />
+                      <EstadoComunicacionBadge estado={enFirma ? "EN_REPARTO" : m.estado} etiqueta={enFirma ? (firmaRechazada ? "Firma rechazada" : "En firma") : ETIQUETA_ESTADO[m.estado] ?? m.estado} />
+                      {enFirma && enviados && <span className="block text-[11px] text-amber-700">Se entrega con la última firma</span>}
                       {m.respuestas[0] && (
                         <Link href={`/memorandos/${m.respuestas[0].id}`} className="block text-[11px] text-cdmb-700 hover:underline">
                           Respuesta {m.respuestas[0].radicado}

@@ -7,6 +7,7 @@ import { estadoPorFirmas } from "@/lib/estado-firmas";
 import { resumirPendientesFirma, type ResumenPendientesFirma } from "@/lib/calidad-firma";
 import { cargoDelFirmante, esContratista, nivelFirma, puedeSerFirmantePrincipal, puedeSolicitarFirmas, type ModuloFirma } from "@/lib/jerarquia-firma";
 import { registrarAuditoriaDoc } from "@/lib/auditoria-doc";
+import { liberarMemorandoSiFirmado } from "@/lib/memorandos-envio";
 import { hashFirmaComunicacion, validarComunicacionFirmable, verificarHuellasAdjuntos, SELECT_COMUNICACION_FIRMABLE } from "@/lib/firma-comunicacion";
 import { supervisoresDelExpediente } from "@/lib/firmantes-gecon";
 import { claveMatriz, programarAvisos, type Mensaje } from "@/lib/avisos-correo";
@@ -643,6 +644,10 @@ async function completarSolicitudFirmaReservada(
       userAgent,
       detalle: `Firmó "${c.radicado}" (solicitud asignada)`,
     }).catch((e) => console.error("registrarAuditoriaDoc (completarSolicitudFirma comunicacion) falló:", e));
+    // Memorando retenido por firmas de proyectó / revisó: con la última firma se entrega a sus destinatarios.
+    if (c.tipo === "INTERNA") {
+      await liberarMemorandoSiFirmado(c.id, usuarioId).catch((e) => console.error("liberarMemorandoSiFirmado falló:", e));
+    }
   } else if (solicitud.documentoArchivo) {
     const doc = solicitud.documentoArchivo;
     await validarDocumentoArchivoFirmable(doc.id);

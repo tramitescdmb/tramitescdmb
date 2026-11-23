@@ -4,6 +4,7 @@ import { ESTADOS_ACTIVOS } from "@/lib/correspondencia-panel";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { puedeGestionarArchivo, type PermisosUsuario } from "@/lib/permisos";
 import type { DenominacionEmpleoClave } from "@/lib/denominacion-empleo";
+import { FIRMA_QUE_RETIENE, WHERE_MEMORANDO_ENTREGADO } from "@/lib/memorandos-envio";
 import { formatearNumeroMemorando, leerDatosMemorando, siglaDependencia, type GrupoMasivoMemorando } from "@/lib/memorandos-formato";
 
 export const PLAZOS_RESPUESTA_MEMORANDO = [3, 5, 10, 15] as const;
@@ -123,10 +124,12 @@ function directivoDeDestino(ctx: ContextoMemorandos): Prisma.ComunicacionWhereIn
   return ctx.firmante && ctx.dependenciaId ? [{ dependenciaDestinoId: ctx.dependenciaId }] : [];
 }
 
+/** Recibidos: solo los ya entregados. Un memorando que espera firmas de proyectó / revisó aún no le llega a nadie. */
 function recibidosPor(ctx: ContextoMemorandos): Prisma.ComunicacionWhereInput {
   return {
     tipo: "INTERNA",
     estado: { not: "ANULADA" },
+    AND: [WHERE_MEMORANDO_ENTREGADO],
     OR: [{ distribuciones: { some: { usuarioId: ctx.id, activa: true } } }, ...directivoDeDestino(ctx)],
   };
 }
@@ -140,7 +143,9 @@ function porFirmarDe(usuarioId: string): Prisma.SolicitudFirmaWhereInput {
 
 export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos): Prisma.ComunicacionWhereInput {
   if (!ctx.acceso) return NADA;
-  const pendiente: Prisma.ComunicacionWhereInput = { fechaVencimiento: { not: null }, estado: { in: ESTADOS_ACTIVOS } };
+  // Por responder: todo memorando dirigido a una dependencia (con o sin plazo) mientras no se responda. Los
+  // masivos (planta, contratistas, todos) no tienen dependencia de destino: son informativos.
+  const pendiente: Prisma.ComunicacionWhereInput = { dependenciaDestinoId: { not: null }, estado: { in: ESTADOS_ACTIVOS }, AND: [WHERE_MEMORANDO_ENTREGADO, { respuestas: { none: { estado: { not: "ANULADA" } } } }] };
   switch (vista) {
     case "por-firmar":
       return { tipo: "INTERNA", estado: { not: "ANULADA" }, solicitudesFirma: { some: porFirmarDe(ctx.id) } };
@@ -153,7 +158,7 @@ export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos)
         ],
       };
     case "sin-leer":
-      return { tipo: "INTERNA", estado: { not: "ANULADA" }, distribuciones: { some: { usuarioId: ctx.id, activa: true, fechaAcuse: null } } };
+      return { tipo: "INTERNA", estado: { not: "ANULADA" }, AND: [WHERE_MEMORANDO_ENTREGADO], distribuciones: { some: { usuarioId: ctx.id, activa: true, fechaAcuse: null } } };
     case "recibidos":
       return recibidosPor(ctx);
     case "esperando":
@@ -171,16 +176,21 @@ export function whereMemorandos(ctx: ContextoMemorandos, vista: VistaMemorandos)
 export function whereVerMemorando(ctx: ContextoMemorandos): Prisma.ComunicacionWhereInput {
   if (!ctx.acceso) return NADA;
   if (ctx.archivo) return { tipo: "INTERNA" };
-  const directivo: Prisma.ComunicacionWhereInput[] =
-    ctx.firmante && ctx.dependenciaId ? [{ dependenciaDestinoId: ctx.dependenciaId }, { dependenciaOrigenId: ctx.dependenciaId }] : [];
+  const directivo = ctx.firmante && Boolean(ctx.dependenciaId);
   return {
     tipo: "INTERNA",
     OR: [
       { radicadoPorId: ctx.id },
       { respuestaPorId: ctx.id },
-      { distribuciones: { some: { usuarioId: ctx.id } } },
       { solicitudesFirma: { some: { usuarioAsignadoId: ctx.id } } },
-      ...directivo,
+      ...(directivo ? [{ dependenciaOrigenId: ctx.dependenciaId }] : []),
+      // Destinatarios: solo cuando ya se entregó (con todas las firmas de proyectó / revisó).
+      {
+        AND: [
+          WHERE_MEMORANDO_ENTREGADO,
+          { OR: [{ distribuciones: { some: { usuarioId: ctx.id } } }, ...(directivo ? [{ dependenciaDestinoId: ctx.dependenciaId }] : [])] },
+        ],
+      },
     ],
   };
 }
@@ -229,6 +239,8 @@ export async function listarMemorandos(ctx: ContextoMemorandos, vista: VistaMemo
         vista === "enviados" || vista === "esperando"
           ? { where: { activa: true }, take: 3, orderBy: { fechaAsignacion: "asc" }, select: { usuarioId: true, fechaAcuse: true, usuario: { select: { nombre: true } } } }
           : { where: { activa: true, usuarioId: ctx.id }, select: { usuarioId: true, fechaAcuse: true, usuario: { select: { nombre: true } } } },
+      // Firmas de proyectó / revisó por resolver: si hay alguna, el memorando sigue retenido (no entregado).
+      solicitudesFirma: { where: FIRMA_QUE_RETIENE, select: { estado: true } },
       _count: { select: { distribuciones: { where: { activa: true } } } },
     },
   });

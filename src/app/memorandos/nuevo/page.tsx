@@ -6,7 +6,6 @@ import { listarDependenciasActivas } from "@/lib/dependencias";
 import { listarSeriesVigentes } from "@/lib/trd";
 import { subserieBuscable } from "@/lib/trd-presentacion";
 import { listarPlantillas } from "@/lib/plantillas";
-import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { db } from "@/lib/db";
 import { anioColombia } from "@/lib/fecha";
 import { cargoDelFirmante } from "@/lib/jerarquia-firma";
@@ -37,7 +36,7 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
   const original = respondeAId ? await memorandoPendienteDe(respondeAId, ctx) : null;
   if (respondeAId && !original) redirect(`/memorandos/${respondeAId}?error=${encodeURIComponent("Este memorando ya fue respondido o no está dirigido a su oficina.")}`);
 
-  const [dependencias, series, plantillas, usuarios, config, totalesMasivos] = await Promise.all([
+  const [dependencias, series, plantillas, usuarios, totalesMasivos] = await Promise.all([
     listarDependenciasActivas(),
     listarSeriesVigentes(),
     listarPlantillas("INTERNA"),
@@ -56,7 +55,6 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
       },
       orderBy: { nombre: "asc" },
     }),
-    getConfiguracionSitio(),
     contarDestinatariosMasivos(session.userId),
   ]);
   const personas: PersonaOpcion[] = usuarios.map((u) => ({
@@ -119,7 +117,6 @@ export default async function NuevoMemorandoPage({ searchParams }: { searchParam
         ciudad={CIUDAD_MEMORANDO}
         fecha={fechaLargaMemorando(new Date())}
         plantillas={plantillas}
-        logoUrl={config.logoUrl}
         respondeA={respondeA}
         totalesMasivos={totalesMasivos}
       />
