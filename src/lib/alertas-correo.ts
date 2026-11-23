@@ -1,4 +1,3 @@
-import type { RolFirmante } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getCalendarioLaboral } from "@/lib/calendario-laboral";
 import { diasHabilesEntre, type CalendarioLaboral } from "@/lib/dias-habiles";
@@ -9,6 +8,7 @@ import { hoyColombia } from "@/lib/contratacion-panel";
 import { obtenerPermisosUsuario, puedeDistribuir } from "@/lib/permisos";
 import { BUZON_POR_MODULO, moduloDeObjetivo, rutaDeFirma } from "@/lib/solicitudes-firma";
 import { randomUUID } from "crypto";
+import { claveObjetivoFirma, DIAS_ESPERA_AVISO, diasDesde, esSuTurno, interesadosEnFirma, turnoDesde, WHERE_OBJETIVO_VIGENTE } from "@/lib/firmas-en-espera";
 import {
   claveMatriz,
   clavesDeEvento,
@@ -51,6 +51,7 @@ const PQRSD_DIAS_AVISO = 3;
 const MEMORANDO_DIAS_AVISO = 1;
 const FLUJO_DIAS_AVISO = 1;
 const FIRMA_DIAS_SIN_ATENDER = [3, 10];
+const FIRMA_DIAS_ESPERA_OTRO = [DIAS_ESPERA_AVISO, 10];
 const INFORME_DIAS_RETRASO = [1, 10];
 
 function iso(d: Date) {
@@ -230,22 +231,9 @@ async function alertasInformes(bandeja: Bandeja) {
   }
 }
 
-function claveObjetivoFirma(s: { comunicacionId: string | null; documentoContratoId: string | null; documentoExpedienteId: string | null; documentoArchivoId: string | null }) {
-  return s.comunicacionId ?? s.documentoContratoId ?? s.documentoExpedienteId ?? s.documentoArchivoId ?? "";
-}
-
 async function alertasFirmas(bandeja: Bandeja, { ahora }: Contexto) {
   const pendientes = await db.solicitudFirma.findMany({
-    where: {
-      estado: "PENDIENTE",
-      rol: { not: "LECTURA" },
-      AND: [
-        { OR: [{ comunicacionId: null }, { comunicacion: { estado: { not: "ANULADA" } } }] },
-        { OR: [{ documentoContratoId: null }, { documentoContrato: { expediente: { cerrado: false, eliminado: false } } }] },
-        { OR: [{ documentoExpedienteId: null }, { documentoExpediente: { expediente: { archivado: false } } }] },
-        { OR: [{ documentoArchivoId: null }, { documentoArchivo: { retiradoEn: null, expediente: { estado: "ABIERTO" } } }] },
-      ],
-    },
+    where: { estado: "PENDIENTE", rol: { not: "LECTURA" }, AND: WHERE_OBJETIVO_VIGENTE },
     take: 3000,
     select: {
       id: true,
@@ -253,44 +241,82 @@ async function alertasFirmas(bandeja: Bandeja, { ahora }: Contexto) {
       orden: true,
       asignadoEn: true,
       usuarioAsignadoId: true,
+      asignadoPorId: true,
       comunicacionId: true,
       documentoContratoId: true,
       documentoExpedienteId: true,
       documentoArchivoId: true,
-      comunicacion: { select: { radicado: true } },
+      usuarioAsignado: { select: { nombre: true } },
+      comunicacion: { select: { radicado: true, tipo: true } },
       documentoContrato: { select: { nombre: true, expedienteId: true, expediente: { select: { numero: true } } } },
       documentoExpediente: { select: { nombre: true, expedienteId: true, expediente: { select: { numero: true } } } },
       documentoArchivo: { select: { nombre: true, expedienteDocumentalId: true, expediente: { select: { numero: true } } } },
     },
   });
-  const bloqueantes = new Map<string, number[]>();
+  if (pendientes.length === 0) return;
+  // Todas las solicitudes de esos documentos: para saber cuándo empezó cada turno y quién ya firmó.
+  const ids = (campo: "comunicacionId" | "documentoContratoId" | "documentoExpedienteId" | "documentoArchivoId") => [
+    ...new Set(pendientes.map((p) => p[campo]).filter((x): x is string => Boolean(x))),
+  ];
+  const hermanas = await db.solicitudFirma.findMany({
+    where: {
+      OR: [
+        { comunicacionId: { in: ids("comunicacionId") } },
+        { documentoContratoId: { in: ids("documentoContratoId") } },
+        { documentoExpedienteId: { in: ids("documentoExpedienteId") } },
+        { documentoArchivoId: { in: ids("documentoArchivoId") } },
+      ],
+    },
+    select: { rol: true, orden: true, estado: true, completadoEn: true, usuarioAsignadoId: true, comunicacionId: true, documentoContratoId: true, documentoExpedienteId: true, documentoArchivoId: true },
+  });
+  const porObjetivo = new Map<string, typeof hermanas>();
+  for (const h of hermanas) porObjetivo.set(claveObjetivoFirma(h), [...(porObjetivo.get(claveObjetivoFirma(h)) ?? []), h]);
+
   for (const s of pendientes) {
-    if (s.rol !== ("FIRMA" satisfies RolFirmante)) continue;
-    const k = claveObjetivoFirma(s);
-    bloqueantes.set(k, [...(bloqueantes.get(k) ?? []), s.orden]);
-  }
-  for (const s of pendientes) {
-    const dias = Math.floor((ahora.getTime() - s.asignadoEn.getTime()) / DIA);
-    const nivel = escalon(dias, FIRMA_DIAS_SIN_ATENDER);
-    if (nivel === null) continue;
-    if ((bloqueantes.get(claveObjetivoFirma(s)) ?? []).some((o) => o < s.orden)) continue;
+    const del = porObjetivo.get(claveObjetivoFirma(s)) ?? [];
+    if (!esSuTurno(s, del)) continue;
+    const dias = diasDesde(turnoDesde(s, del), ahora);
     const tipo = s.comunicacionId ? "comunicacion" : s.documentoContratoId ? "documentoContrato" : s.documentoArchivoId ? "documentoArchivo" : "documentoExpediente";
     const doc = s.documentoContrato ?? s.documentoExpediente ?? s.documentoArchivo;
     const nombre = s.comunicacion ? s.comunicacion.radicado : doc ? `${doc.nombre} (${doc.expediente.numero})` : "Documento";
     const modulo = moduloDeObjetivo(tipo);
-    bandeja.agregar([s.usuarioAsignadoId], {
-      evento: "FIRMA_SIN_ATENDER",
-      modulo,
-      clave: `firma-sin-atender:${s.id}:${nivel}`,
-      grupo: "Firmas sin atender",
-      texto: `${s.rol === "FIRMA" ? "Firmar" : "Visto bueno"}: ${nombre} — asignada hace ${dias} día(s)`,
-      ruta: rutaDeFirma(
-        s.id,
+    const rutaDocumento = s.comunicacionId
+      ? `${s.comunicacion?.tipo === "INTERNA" ? "/memorandos" : "/correspondencia"}/${s.comunicacionId}`
+      : s.documentoArchivo
+        ? `/correspondencia/expedientes/${s.documentoArchivo.expedienteDocumentalId}`
+        : s.documentoContrato
+          ? `/contratacion/expedientes/${s.documentoContrato.expedienteId}`
+          : s.documentoExpediente
+            ? `/expedientes/${s.documentoExpediente.expedienteId}`
+            : BUZON_POR_MODULO[modulo];
+
+    // Al firmante pendiente: a los 3 y a los 10 días de llegarle el turno.
+    const nivel = escalon(dias, FIRMA_DIAS_SIN_ATENDER);
+    if (nivel !== null) {
+      bandeja.agregar([s.usuarioAsignadoId], {
+        evento: "FIRMA_SIN_ATENDER",
         modulo,
-        s.comunicacionId ? `/correspondencia/${s.comunicacionId}` : s.documentoArchivo ? `/correspondencia/expedientes/${s.documentoArchivo.expedienteDocumentalId}` : BUZON_POR_MODULO.SGDEA
-      ),
-      urgente: nivel >= 10,
-    });
+        clave: `firma-sin-atender:${s.id}:${nivel}`,
+        grupo: "Firmas sin atender",
+        texto: `${s.rol === "FIRMA" ? "Firmar" : "Visto bueno"}: ${nombre} — pendiente hace ${dias} día(s)`,
+        ruta: rutaDeFirma(s.id, modulo, rutaDocumento),
+        urgente: nivel >= 10,
+      });
+    }
+
+    // A quien solicitó la firma y a quienes ya firmaron: que sepan a quién se espera.
+    const nivelEspera = escalon(dias, FIRMA_DIAS_ESPERA_OTRO);
+    if (nivelEspera !== null) {
+      bandeja.agregar(interesadosEnFirma(s, del), {
+        evento: "FIRMA_SIN_ATENDER",
+        modulo,
+        clave: `firma-espera-otro:${s.id}:${nivelEspera}`,
+        grupo: "Documentos que esperan la firma de otra persona",
+        texto: `${nombre}: ${s.usuarioAsignado.nombre} no ha ${s.rol === "FIRMA" ? "firmado" : "dado el visto bueno"} — pendiente hace ${dias} día(s)`,
+        ruta: "/firmas-en-espera",
+        urgente: nivelEspera >= 10,
+      });
+    }
   }
 }
 
