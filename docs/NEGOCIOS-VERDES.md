@@ -82,3 +82,12 @@ Hoy nginx publica todo el SIC sin distinguir rutas. Antes de abrir el dominio a 
 restringir por rutas: desde fuera solo `/negocios-verdes` (sin `/negocios-verdes/admin`),
 `/api/almacen/negocios-verdes/`, `/_next/static` y las demás páginas públicas que decida la CDMB; el resto
 solo desde la red interna. Este cambio no está hecho en el repositorio.
+
+## Dirección pública (QR y enlaces)
+
+Los QR de las fichas, el botón «Compartir», el enlace de vista y las descargas del geovisor, el
+sitemap y robots usan `URL_PUBLICA_NV` (en el `.env` de la VM). Vacía, cada persona recibe la
+dirección por la que entró. Mientras no haya certificado se puede poner, por ejemplo,
+`URL_PUBLICA_NV="http://sic.cdmb.gov.co"`; cuando exista, `URL_PUBLICA_NV="https://sic.cdmb.gov.co"`.
+Ojo: hoy nginx manda toda petición http a https (`deploy/nginx/tramites`), así que una dirección
+http solo evita el aviso del navegador si nginx deja de redirigir /negocios-verdes.

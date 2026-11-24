@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { accesoSitioNV } from "@/lib/negocios-verdes-acceso";
 import { datosGeovisorNV } from "@/lib/negocios-verdes-geovisor-data";
 import { GeovisorNV } from "@/components/negocios-verdes/GeovisorNV";
+import { urlPublicaNV } from "@/lib/negocios-verdes-sitio";
 
 export const metadata: Metadata = { title: "Geovisor — Negocios Verdes CDMB", robots: { index: false } };
 
@@ -15,7 +16,7 @@ export default async function GeovisorIncrustado({ searchParams }: { searchParam
   const d = await datosGeovisorNV(await searchParams);
   return (
     <div className="h-dvh bg-white font-nv text-nv-texto">
-      <GeovisorNV {...d} embed />
+      <GeovisorNV {...d} base={urlPublicaNV()} embed />
     </div>
   );
 }

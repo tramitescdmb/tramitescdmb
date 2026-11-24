@@ -5,18 +5,18 @@ import { Link2, Share2 } from "lucide-react";
 import { IconBrandFacebook, IconBrandWhatsapp, IconBrandX } from "@tabler/icons-react";
 
 /** QR con la dirección pública de la ficha (se arma en el navegador con la dirección por la que entró). */
-export function QrNegocioNV({ slug, nombre }: { slug: string; nombre: string }) {
+export function QrNegocioNV({ slug, nombre, base = "" }: { slug: string; nombre: string; base?: string }) {
   const [svg, setSvg] = useState<string | null>(null);
   useEffect(() => {
     let vivo = true;
     import("bwip-js/browser").then(({ default: bwipjs }) => {
-      const url = `${window.location.origin}/negocios-verdes/negocio/${encodeURIComponent(slug)}`;
+      const url = `${base || window.location.origin}/negocios-verdes/negocio/${encodeURIComponent(slug)}`;
       if (vivo) setSvg(bwipjs.toSVG({ bcid: "qrcode", text: url, scale: 2 }));
     });
     return () => {
       vivo = false;
     };
-  }, [slug]);
+  }, [slug, base]);
   return (
     <div className="flex w-[108px] flex-col items-center">
       <div className="h-[110px] w-[110px] rounded-[12px] border border-nv-borde bg-white p-2 shadow-[0_3px_10px_rgba(0,0,0,0.10)] [&_svg]:h-full [&_svg]:w-full" role="img" aria-label={`Código QR de ${nombre}`} dangerouslySetInnerHTML={svg ? { __html: svg } : undefined} />
@@ -26,7 +26,7 @@ export function QrNegocioNV({ slug, nombre }: { slug: string; nombre: string }) 
 }
 
 /** Botón «Compartir»: menú con WhatsApp, Facebook, X y copiar enlace (o el menú del sistema en el celular). */
-export function CompartirNV({ nombre }: { nombre: string }) {
+export function CompartirNV({ nombre, base = "" }: { nombre: string; base?: string }) {
   const [abierto, setAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const caja = useRef<HTMLDivElement>(null);
@@ -38,7 +38,7 @@ export function CompartirNV({ nombre }: { nombre: string }) {
     document.addEventListener("mousedown", cerrar);
     return () => document.removeEventListener("mousedown", cerrar);
   }, [abierto]);
-  const url = () => window.location.href.split("#")[0];
+  const url = () => `${base || window.location.origin}${window.location.pathname}${window.location.search}`;
   const texto = `${nombre} — Negocios Verdes CDMB`;
   const abrir = (u: string) => {
     window.open(u, "_blank", "noopener,noreferrer");

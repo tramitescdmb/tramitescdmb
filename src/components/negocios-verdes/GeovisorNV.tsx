@@ -53,7 +53,7 @@ type Pestana = "filtrar" | "capas" | "medir";
  * Medir), herramientas a la izquierda del mapa (panel, mi ubicación, imagen, ayuda), zoom a la
  * derecha, límites municipales con su nombre y grupos de negocios en verde oscuro.
  */
-export function GeovisorNV({ puntos, categorias, sinUbicacion, inicial, embed = false }: { puntos: PuntoMapaNV[]; categorias: { slug: string; nombre: string }[]; sinUbicacion: number; inicial: VistaMapa; embed?: boolean }) {
+export function GeovisorNV({ puntos, categorias, sinUbicacion, inicial, embed = false, base = "" }: { base?: string; puntos: PuntoMapaNV[]; categorias: { slug: string; nombre: string }[]; sinUbicacion: number; inicial: VistaMapa; embed?: boolean }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<import("leaflet").Map | null>(null);
   const L = useRef<typeof import("leaflet") | null>(null);
@@ -364,7 +364,7 @@ export function GeovisorNV({ puntos, categorias, sinUbicacion, inicial, embed = 
     const m = mapa.current;
     const c = m?.getCenter();
     const q = escribirVistaMapa(filtro, activas, c && m ? [c.lat, c.lng, m.getZoom()] : null);
-    const url = `${window.location.origin}/negocios-verdes/geovisor${q ? `?${q}` : ""}`;
+    const url = `${(base || window.location.origin)}/negocios-verdes/geovisor${q ? `?${q}` : ""}`;
     try {
       await navigator.clipboard.writeText(url);
       avisar("Enlace de esta vista copiado.");
@@ -375,8 +375,8 @@ export function GeovisorNV({ puntos, categorias, sinUbicacion, inicial, embed = 
 
   const zonaGeoJSON = () => {
     const anillo = [...vertices, vertices[0]!].map(([la, ln]) => [ln, la]);
-    const base = window.location.origin;
-    const fc = JSON.parse(puntosGeoJSON(enZona, base)) as FeatureCollection;
+    const origen = base || window.location.origin;
+    const fc = JSON.parse(puntosGeoJSON(enZona, origen)) as FeatureCollection;
     fc.features.unshift({ type: "Feature", geometry: { type: "Polygon", coordinates: [anillo] } as Geometry, properties: { tipo: "zona", area_m2: Math.round(areaPoligonoM2(vertices)), perimetro_m: Math.round(perimetro), negocios: enZona.length } });
     descargar("zona-negocios-verdes.geojson", JSON.stringify(fc), "application/geo+json");
   };
@@ -630,10 +630,10 @@ export function GeovisorNV({ puntos, categorias, sinUbicacion, inicial, embed = 
                 <div className="mt-4 border-t border-nv-borde" />
                 <Rotulo>Descargar lo que se ve ahora</Rotulo>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => descargar("negocios-verdes.geojson", puntosGeoJSON(visibles, window.location.origin), "application/geo+json")} className={accion}>
+                  <button type="button" onClick={() => descargar("negocios-verdes.geojson", puntosGeoJSON(visibles, (base || window.location.origin)), "application/geo+json")} className={accion}>
                     <Download className="h-3.5 w-3.5" aria-hidden /> GeoJSON ({visibles.length})
                   </button>
-                  <button type="button" onClick={() => descargar("negocios-verdes.csv", puntosCsv(visibles, window.location.origin), "text/csv;charset=utf-8")} className={accion}>
+                  <button type="button" onClick={() => descargar("negocios-verdes.csv", puntosCsv(visibles, (base || window.location.origin)), "text/csv;charset=utf-8")} className={accion}>
                     <Download className="h-3.5 w-3.5" aria-hidden /> CSV
                   </button>
                 </div>
