@@ -4,7 +4,17 @@
 server {
     listen 80 default_server;
     server_name _;
-    return 301 https://$host$request_uri;
+    # TEMPORAL (24-nov-2026, decisión del usuario) mientras se compra el certificado: el sitio
+    # público de Negocios Verdes (solo datos públicos) también responde por http, para que los QR y
+    # enlaces abran sin el aviso del navegador. El panel, el inicio de sesión y todo el SIC siguen
+    # yendo a https. Al instalar el certificado, borrar estas location y dejar solo el «return 301».
+    location ^~ /negocios-verdes/admin { return 301 https://$host$request_uri; }
+    location ^~ /negocios-verdes            { include /etc/nginx/snippets/tramites-http-nv.conf; }
+    location ^~ /_next/                     { include /etc/nginx/snippets/tramites-http-nv.conf; }
+    location ^~ /api/almacen/negocios-verdes/ { include /etc/nginx/snippets/tramites-http-nv.conf; }
+    location = /robots.txt                  { include /etc/nginx/snippets/tramites-http-nv.conf; }
+    location = /favicon.ico                 { include /etc/nginx/snippets/tramites-http-nv.conf; }
+    location / { return 301 https://$host$request_uri; }
 }
 server {
     listen 443 ssl http2 default_server;
