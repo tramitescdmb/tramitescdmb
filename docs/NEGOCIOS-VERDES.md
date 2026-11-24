@@ -29,11 +29,18 @@ módulo, solo ve Negocios Verdes.
 |---|---|---|
 | Negocios | Administrador | Crear, editar y eliminar negocios: datos públicos, clasificación, portada, galería, productos, ficha técnica interna y puntajes por año. En la ficha del negocio, «Personas vinculadas» asigna responsable CDMB, delegado y representante (un vínculo vigente por tipo; el anterior pasa al historial con su fecha de fin). |
 | Personas | Administrador | Directorio de responsables, delegados y representantes. No se elimina una persona con vínculos: se desactiva. |
-| Importar / exportar | Cualquiera con panel exporta; importa quien puede crear y editar | CSV con las mismas columnas de la plataforma anterior (punto y coma, abre en Excel). Importar primero revisa sin cambiar nada; actualiza por `id` o `slug` y crea los demás sin publicar. Si hay filas con error se corrigen o se importan solo las válidas. Nunca toca fotos, productos, ficha técnica ni puntajes. |
+| Importar / exportar | Cualquiera con panel exporta; importa quien puede crear y editar | CSV con las mismas columnas de la plataforma anterior (punto y coma, abre en Excel). Importar primero revisa sin cambiar nada; actualiza por `id` o `slug` y crea los demás sin publicar. Si hay filas con error se corrigen o se importan solo las válidas. Nunca toca fotos, productos, ficha técnica, puntajes ni el teléfono y el correo secundarios (no están en el CSV). |
 | Clasificación | Administrador de configuración | Categorías, subcategorías y actividades productivas. Las que están en uso no se eliminan: se desactivan y dejan de verse en el sitio. |
 | Apariencia del sitio | Administrador de configuración | Logos (Negocios Verdes, GOV.CO, Colombia, Potencia de la vida) y banners de inicio. Las imágenes van al NAS en `negocios-verdes/sitio-assets/`; al cambiar o quitar una se borra la anterior. |
 
 Cada cambio queda en la auditoría documental con quién lo hizo.
+
+## Correos del negocio
+
+Cada negocio tiene **Correo** y **Correo secundario** (opcional), en «Datos públicos» de la ficha del panel.
+Los dos se validan igual (sin espacios, una sola @, dominio completo) y el secundario no puede repetir el
+principal. Si el negocio está publicado, ambos salen en «Información de contacto» de su ficha pública.
+«Revisión de datos» también señala los correos secundarios mal escritos.
 
 ## Sitio público: páginas
 

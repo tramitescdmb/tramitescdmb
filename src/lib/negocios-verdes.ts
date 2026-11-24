@@ -110,6 +110,7 @@ export type NegocioPublico = {
   telefonoSecundario: string | null;
   whatsapp: string | null;
   email: string | null;
+  emailSecundario: string | null;
   sitioWeb: string | null;
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -143,6 +144,7 @@ export const SELECT_NEGOCIO_PUBLICO = {
   telefonoSecundario: true,
   whatsapp: true,
   email: true,
+  emailSecundario: true,
   sitioWeb: true,
   facebookUrl: true,
   instagramUrl: true,
@@ -179,6 +181,7 @@ export type FilaNegocioPublico = {
   telefonoSecundario: string | null;
   whatsapp: string | null;
   email: string | null;
+  emailSecundario: string | null;
   sitioWeb: string | null;
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -231,6 +234,7 @@ export function aNegocioPublico(f: FilaNegocioPublico): NegocioPublico {
     telefonoSecundario: f.telefonoSecundario,
     whatsapp: f.whatsapp,
     email: f.email,
+    emailSecundario: f.emailSecundario,
     sitioWeb: urlExternaSegura(f.sitioWeb),
     facebookUrl: urlExternaSegura(f.facebookUrl),
     instagramUrl: urlExternaSegura(f.instagramUrl),

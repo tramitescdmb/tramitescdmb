@@ -55,6 +55,7 @@ export async function negocioParaEditar(id: string) {
     telefonoSecundario: n.telefonoSecundario,
     whatsapp: n.whatsapp,
     email: n.email,
+    emailSecundario: n.emailSecundario,
     sitioWeb: n.sitioWeb,
     facebookUrl: n.facebookUrl,
     instagramUrl: n.instagramUrl,
@@ -112,6 +113,7 @@ export async function guardarNegocioNV(id: string | null, d: NegocioValidado, fi
     telefonoSecundario: d.telefonoSecundario,
     whatsapp: d.whatsapp,
     email: d.email,
+    emailSecundario: d.emailSecundario,
     sitioWeb: d.sitioWeb,
     facebookUrl: d.facebookUrl,
     instagramUrl: d.instagramUrl,
@@ -277,7 +279,7 @@ export type FilaRevisionNV = { tipo: "negocio" | "persona"; id: string; nombre: 
  */
 export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
   const [negocios, personas] = await Promise.all([
-    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
+    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, emailSecundario: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
     db.nvPersona.findMany({ where: { correo: { not: null } }, select: { id: true, nombres: true, apellidos: true, municipio: true, activo: true, correo: true }, orderBy: { nombres: "asc" } }),
   ]);
   const filas: FilaRevisionNV[] = [];
@@ -285,6 +287,8 @@ export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
     const problemas: ProblemaDatoNV[] = [];
     const correo = problemaCorreo(n.email);
     if (correo) problemas.push({ grave: true, texto: `Correo «${n.email}»: ${correo}` });
+    const secundario = problemaCorreo(n.emailSecundario);
+    if (secundario) problemas.push({ grave: true, texto: `Correo secundario «${n.emailSecundario}»: ${secundario}` });
     const u = verificarUbicacion(n.latitud, n.longitud, n.municipio);
     for (const t of u.errores) problemas.push({ grave: true, texto: `${t} (${n.latitud ?? "sin latitud"}, ${n.longitud ?? "sin longitud"})` });
     for (const t of u.avisos) problemas.push({ grave: false, texto: t });

@@ -35,6 +35,7 @@ function fila(extra: Partial<FilaNegocioPublico> = {}): FilaNegocioPublico {
     telefonoSecundario: null,
     whatsapp: "300 123 4567",
     email: "cafe@example.com",
+    emailSecundario: "ventas@example.com",
     sitioWeb: "cafe.example.com",
     facebookUrl: "javascript:alert(1)",
     instagramUrl: null,
