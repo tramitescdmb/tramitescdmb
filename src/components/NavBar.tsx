@@ -1,4 +1,5 @@
 import { accedeMemorandos } from "@/lib/memorandos";
+import { accedePanelNV } from "@/lib/negocios-verdes-permisos";
 import Link from "next/link";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
@@ -52,6 +53,7 @@ export async function NavBar() {
   const mostrarCorrespondencia = puedeAccederCorrespondencia(permisos) && enMenu(permisos, "SGDEA");
   const mostrarContratacion = puedeAccederContratacion(permisos) && enMenu(permisos, "GECON");
   const mostrarMemorandos = accedeMemorandos(permisos, config.memorandosVisibleFuncionarios !== false) && enMenu(permisos, "MEMORANDOS");
+  const mostrarNegociosVerdes = accedePanelNV(permisos) && enMenu(permisos, "NEGOCIOS_VERDES");
   const subtitulo = await subtituloSesion(session);
 
   const marca = (
@@ -81,6 +83,7 @@ export async function NavBar() {
         mostrarCorrespondencia={mostrarCorrespondencia}
         mostrarContratacion={mostrarContratacion}
         mostrarMemorandos={mostrarMemorandos}
+        mostrarNegociosVerdes={mostrarNegociosVerdes}
       />
 
       <header className="border-b-2 border-lateral-acento/80 bg-lateral-oscuro lg:hidden">
@@ -94,6 +97,7 @@ export async function NavBar() {
             mostrarCorrespondencia={mostrarCorrespondencia}
             mostrarContratacion={mostrarContratacion}
             mostrarMemorandos={mostrarMemorandos}
+            mostrarNegociosVerdes={mostrarNegociosVerdes}
             logoUrl={config.logoUrl}
             nombre={session.nombre}
             subtitulo={subtitulo}

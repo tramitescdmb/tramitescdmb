@@ -30,6 +30,10 @@ model ConfiguracionSitio {
   vitalVisibleFuncionarios    Boolean @default(true)
   sincaVisibleFuncionarios    Boolean @default(true)
   memorandosVisibleFuncionarios Boolean @default(true)
+  /// Panel interno de Negocios Verdes (/negocios-verdes/admin) para los funcionarios con perfil del módulo.
+  negociosVerdesVisibleFuncionarios Boolean @default(true)
+  /// Sitio público /negocios-verdes. Apagado hasta migrar los datos y abrir el dominio.
+  negociosVerdesSitioPublico        Boolean @default(false)
 
   selloTiempoTsaUrl String?
 
@@ -293,6 +297,7 @@ enum ModuloAplicativo {
   GECON
   VITAL
   SINCA
+  NEGOCIOS_VERDES
 }
 
 enum SeccionSoloLectura {
@@ -2925,4 +2930,288 @@ model ItemCorreccion {
 
   @@index([requerimientoId])
   @@index([documentoId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Negocios Verdes (módulo /negocios-verdes). Datos traídos de la plataforma anterior conservando
+// los identificadores (UUID) y los slug, para que los enlaces de cada negocio sigan funcionando.
+// Las imágenes viven en el NAS, en el almacén público «negocios-verdes» (campos *Ruta).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Categoría oficial del Programa Nacional de Negocios Verdes (PNNV 2022-2030).
+model NvCategoria {
+  id                String   @id @default(uuid()) @db.Uuid
+  nombre            String
+  slug              String   @unique
+  descripcion       String?  @db.Text
+  icono             String?
+  iconoRuta         String?
+  categoriaNacional String?
+  orden             Int      @default(0)
+  activo            Boolean  @default(true)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @default(now()) @updatedAt
+
+  subcategorias     NvSubcategoria[]
+  negociosPrincipal NvNegocio[]
+  negocios          NvNegocioCategoria[]
+}
+
+model NvSubcategoria {
+  id            String   @id @default(uuid()) @db.Uuid
+  categoriaId   String   @db.Uuid
+  nombre        String
+  slug          String   @unique
+  icono         String?
+  iconoRuta     String?
+  orden         Int      @default(0)
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @default(now()) @updatedAt
+
+  categoria   NvCategoria             @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  actividades NvActividad[]
+  negocios    NvNegocioSubcategoria[]
+
+  @@index([categoriaId])
+}
+
+/// Actividad productiva (tercer nivel de la taxonomía).
+model NvActividad {
+  id             String   @id @default(uuid()) @db.Uuid
+  subcategoriaId String   @db.Uuid
+  nombre         String
+  slug           String   @unique
+  descripcion    String?  @db.Text
+  icono          String?
+  iconoRuta      String?
+  orden          Int      @default(0)
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @default(now()) @updatedAt
+
+  subcategoria NvSubcategoria       @relation(fields: [subcategoriaId], references: [id], onDelete: Restrict)
+  negocios     NvNegocioActividad[]
+
+  @@index([subcategoriaId])
+}
+
+model NvVereda {
+  id            String   @id @default(uuid()) @db.Uuid
+  municipio     String
+  nombre        String
+  slug          String
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @default(now()) @updatedAt
+
+  negocios NvNegocio[]
+
+  @@unique([municipio, slug])
+}
+
+/// Negocio verde. Los campos de primer nivel son los que puede ver la ciudadanía (cuando `activo`);
+/// `fichaTecnica` guarda el seguimiento interno de la CDMB (NIT, permisos, fortalezas, etc.) y nunca
+/// sale en el sitio público.
+model NvNegocio {
+  id                  String   @id @default(uuid()) @db.Uuid
+  nombre              String
+  slug                String   @unique
+  categoriaId         String   @db.Uuid
+  municipio           String
+  veredaId            String?  @db.Uuid
+  direccion           String?
+  latitud             Float?
+  longitud            Float?
+  descripcionCorta    String?  @db.Text
+  descripcion         String?  @db.Text
+  producto            String?  @db.Text
+  telefono            String?
+  telefonoSecundario  String?
+  whatsapp            String?
+  email               String?
+  sitioWeb            String?
+  facebookUrl         String?
+  instagramUrl        String?
+  fotoPortadaRuta     String?
+  representanteLegal  String?
+  emprendimientoVerde Boolean  @default(false)
+  selloMarca          Boolean  @default(false)
+  avalado             Boolean  @default(false)
+  destacado           Boolean  @default(false)
+  /// Publicado en el sitio público.
+  activo              Boolean  @default(false)
+  fichaTecnica        Json     @default("{}")
+  creadoEn            DateTime @default(now())
+  actualizadoEn       DateTime @default(now()) @updatedAt
+  creadoPorId         String?
+
+  categoria     NvCategoria             @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  vereda        NvVereda?               @relation(fields: [veredaId], references: [id], onDelete: SetNull)
+  categorias    NvNegocioCategoria[]
+  subcategorias NvNegocioSubcategoria[]
+  actividades   NvNegocioActividad[]
+  fotos         NvNegocioFoto[]
+  productos     NvNegocioProducto[]
+  puntajes      NvNegocioPuntaje[]
+  personas      NvNegocioPersona[]
+
+  @@index([activo])
+  @@index([municipio])
+  @@index([categoriaId])
+}
+
+model NvNegocioCategoria {
+  negocioId   String @db.Uuid
+  categoriaId String @db.Uuid
+
+  negocio   NvNegocio   @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  categoria NvCategoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@id([negocioId, categoriaId])
+  @@index([categoriaId])
+}
+
+model NvNegocioSubcategoria {
+  negocioId      String @db.Uuid
+  subcategoriaId String @db.Uuid
+
+  negocio      NvNegocio      @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  subcategoria NvSubcategoria @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
+
+  @@id([negocioId, subcategoriaId])
+  @@index([subcategoriaId])
+}
+
+model NvNegocioActividad {
+  negocioId   String @db.Uuid
+  actividadId String @db.Uuid
+
+  negocio   NvNegocio   @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  actividad NvActividad @relation(fields: [actividadId], references: [id], onDelete: Restrict)
+
+  @@id([negocioId, actividadId])
+  @@index([actividadId])
+}
+
+/// Galería de fotos del negocio.
+model NvNegocioFoto {
+  id        String   @id @default(uuid()) @db.Uuid
+  negocioId String   @db.Uuid
+  ruta      String
+  orden     Int      @default(0)
+  creadoEn  DateTime @default(now())
+
+  negocio NvNegocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@index([negocioId])
+}
+
+/// Hasta tres productos destacados por negocio (orden 0, 1 y 2).
+model NvNegocioProducto {
+  id          String   @id @default(uuid()) @db.Uuid
+  negocioId   String   @db.Uuid
+  orden       Int
+  nombre      String?
+  fotoRuta    String?
+  descripcion String?  @db.Text
+  creadoEn    DateTime @default(now())
+
+  negocio NvNegocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, orden])
+}
+
+/// Puntaje de seguimiento de la CDMB por año (interno).
+model NvNegocioPuntaje {
+  negocioId String  @db.Uuid
+  anio      Int
+  puntaje   Decimal @db.Decimal(5, 2)
+
+  negocio NvNegocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@id([negocioId, anio])
+}
+
+enum NvTipoPersona {
+  RESPONSABLE_CDMB
+  DELEGADO
+  REPRESENTANTE
+}
+
+/// Personas vinculadas a los negocios (internas): responsables de la CDMB, delegados y representantes.
+model NvPersona {
+  id                 String        @id @default(uuid()) @db.Uuid
+  tipo               NvTipoPersona
+  nombres            String
+  apellidos          String?
+  tipoDocumento      String?
+  documento          String?
+  telefono           String?
+  correo             String?
+  cargo              String?
+  direccion          String?
+  municipio          String?
+  naturalezaJuridica String?
+  activo             Boolean       @default(true)
+  creadoEn           DateTime      @default(now())
+  actualizadoEn      DateTime?     @updatedAt
+
+  negocios NvNegocioPersona[]
+
+  @@index([tipo])
+}
+
+/// Vínculo vigente o histórico de una persona con un negocio (vigenteHasta null = vigente).
+model NvNegocioPersona {
+  id                 String        @id @default(uuid()) @db.Uuid
+  negocioId          String        @db.Uuid
+  personaId          String        @db.Uuid
+  tipo               NvTipoPersona
+  nit                String?
+  naturalezaJuridica String?
+  vigenteDesde       DateTime      @default(now())
+  vigenteHasta       DateTime?
+  asignadoPorId      String?
+  nota               String?       @db.Text
+  creadoEn           DateTime      @default(now())
+
+  negocio NvNegocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  persona NvPersona @relation(fields: [personaId], references: [id], onDelete: Restrict)
+
+  @@index([negocioId, tipo])
+  @@index([personaId])
+}
+
+/// Opciones de las listas desplegables de la ficha técnica (campo + valor).
+model NvOpcionCampo {
+  id       String   @id @default(uuid()) @db.Uuid
+  campo    String
+  valor    String
+  orden    Int      @default(0)
+  creadoEn DateTime @default(now())
+
+  @@unique([campo, valor])
+}
+
+/// Banners del carrusel de inicio del sitio público.
+model NvBanner {
+  id                  String   @id @default(uuid()) @db.Uuid
+  imagenRuta          String
+  urlDestino          String?
+  abrirEnPestanaNueva Boolean  @default(true)
+  orden               Int      @default(0)
+  activo              Boolean  @default(true)
+  creadoEn            DateTime @default(now())
+  actualizadoEn       DateTime @default(now()) @updatedAt
+}
+
+/// Apariencia del sitio público (una sola fila, id "singleton").
+model NvConfiguracion {
+  id               String   @id @default("singleton")
+  logoRuta         String?
+  logoGovcoRuta    String?
+  logoColombiaRuta String?
+  logoPotenciaRuta String?
+  actualizadoEn    DateTime @default(now()) @updatedAt
 }

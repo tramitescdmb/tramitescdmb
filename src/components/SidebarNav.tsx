@@ -25,6 +25,7 @@ import {
   IconCalendarTime,
   IconMail,
   IconFileText,
+  IconLeaf,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -48,6 +49,7 @@ export const ITEM_VITAL: Item = { href: "/vital", label: "VITAL", icon: IconPlug
 export const ITEM_HISTORICO: Item = { href: "/historico/solicitudes", label: "SINCA 1.0", icon: IconArchive, prefijo: "/historico", color: "203 213 225" };
 export const ITEM_CORRESPONDENCIA: Item = { href: "/correspondencia/panel", label: "SGDEA CDMB", icon: IconInbox, prefijo: "/correspondencia", color: "125 211 252" };
 export const ITEM_MEMORANDOS: Item = { href: "/memorandos", label: "Memorandos", icon: IconFileText, prefijo: "/memorandos", color: "196 181 253" };
+export const ITEM_NEGOCIOS_VERDES: Item = { href: "/negocios-verdes/admin", label: "Negocios Verdes", icon: IconLeaf, prefijo: "/negocios-verdes/admin", color: "190 242 100" };
 export const ITEM_CONTRATACION: Item = { href: "/contratacion/panel", label: "GECON", icon: IconBriefcase, prefijo: "/contratacion", color: "253 186 116" };
 
 export const ITEMS_ADMIN: Item[] = [
@@ -70,6 +72,7 @@ export function SidebarNav({
   mostrarCorrespondencia = false,
   mostrarContratacion = false,
   mostrarMemorandos = false,
+  mostrarNegociosVerdes = false,
   colapsado = false,
 }: {
   esAdmin: boolean;
@@ -79,6 +82,7 @@ export function SidebarNav({
   mostrarCorrespondencia?: boolean;
   mostrarContratacion?: boolean;
   mostrarMemorandos?: boolean;
+  mostrarNegociosVerdes?: boolean;
   colapsado?: boolean;
 }) {
   const pathname = usePathname();
@@ -110,6 +114,7 @@ export function SidebarNav({
     ...(mostrarContratacion ? [ITEM_CONTRATACION] : []),
     ...(mostrarVital ? [ITEM_VITAL] : []),
     ...(mostrarSinca ? [ITEM_HISTORICO] : []),
+    ...(mostrarNegociosVerdes ? [ITEM_NEGOCIOS_VERDES] : []),
   ];
 
   return (

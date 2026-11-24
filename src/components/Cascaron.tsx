@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { ProveedorMenuModulo } from "@/components/MenuModulo";
+import { esSitioPublicoNV } from "@/lib/negocios-verdes";
 
 function esRutaPublica(pathname: string) {
   return (
@@ -29,6 +30,16 @@ export function Cascaron({
   children: ReactNode;
 }) {
   const pathname = usePathname() ?? "";
+
+  // Sitio público de Negocios Verdes: lleva su propio encabezado (el panel interno usa el menú del SIC).
+  if (esSitioPublicoNV(pathname)) {
+    return (
+      <div className="flex min-w-0 flex-1 flex-col">
+        <main className="w-full flex-1">{children}</main>
+        <div className="print:hidden">{pie}</div>
+      </div>
+    );
+  }
 
   if (esRutaPublica(pathname)) {
     return (

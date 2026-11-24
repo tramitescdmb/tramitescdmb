@@ -208,6 +208,7 @@ export const obtenerPermisosUsuario = cache(async (userId: string): Promise<Perm
     GECON: config.geconVisibleFuncionarios,
     VITAL: config.vitalVisibleFuncionarios,
     SINCA: config.sincaVisibleFuncionarios,
+    NEGOCIOS_VERDES: config.negociosVerdesVisibleFuncionarios !== false,
   };
   const modulos = new Set<ModuloAplicativo>(
     (Object.keys(visiblesGlobal) as ModuloAplicativo[]).filter((m) => esAdmin || (Boolean(usuario?.activo) && habilitados.has(m) && visiblesGlobal[m]))

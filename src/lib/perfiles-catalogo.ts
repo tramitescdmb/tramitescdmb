@@ -8,7 +8,7 @@ export const ETIQUETA_ACCION: Record<Accion, string> = {
   ELIMINAR: "Eliminar",
 };
 
-export const MODULOS_PERFIL = ["GENERAL", "TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"] as const;
+export const MODULOS_PERFIL = ["GENERAL", "TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA", "NEGOCIOS_VERDES"] as const;
 export type ModuloPerfil = (typeof MODULOS_PERFIL)[number];
 
 export const ETIQUETA_MODULO_PERFIL: Record<ModuloPerfil, string> = {
@@ -18,6 +18,7 @@ export const ETIQUETA_MODULO_PERFIL: Record<ModuloPerfil, string> = {
   GECON: "GECON",
   VITAL: "VITAL",
   SINCA: "SINCA 1.0",
+  NEGOCIOS_VERDES: "Negocios Verdes",
 };
 
 export type Funcionalidad = {
@@ -179,6 +180,20 @@ export const FUNCIONALIDADES: readonly Funcionalidad[] = [
   { clave: "sinca.solicitudes", modulo: "SINCA", nombre: "Solicitudes y NIT de SINCA 1.0", acciones: ["LEER"] },
   { clave: "sinca.tablero", modulo: "SINCA", nombre: "Tablero de SINCA 1.0", acciones: ["LEER"] },
   { clave: "sinca.mineria", modulo: "SINCA", nombre: "Minería de datos", acciones: ["LEER"] },
+
+  {
+    clave: "negociosVerdes.gestion",
+    modulo: "NEGOCIOS_VERDES",
+    nombre: "Negocios, personas, productos, puntajes e importación",
+    acciones: ["LEER", "CREAR", "ACTUALIZAR", "ELIMINAR"],
+    alcance: "Ver da entrada al panel interno /negocios-verdes/admin (solo desde la red de la CDMB).",
+  },
+  {
+    clave: "negociosVerdes.configuracion",
+    modulo: "NEGOCIOS_VERDES",
+    nombre: "Categorías, subcategorías, actividades productivas y apariencia del sitio",
+    acciones: ["ACTUALIZAR"],
+  },
 ];
 
 export const FUNCIONALIDAD_POR_CLAVE = new Map(FUNCIONALIDADES.map((f) => [f.clave, f]));

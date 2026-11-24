@@ -16,6 +16,7 @@ export function MobileNav({
   mostrarCorrespondencia,
   mostrarContratacion,
   mostrarMemorandos = false,
+  mostrarNegociosVerdes = false,
   logoUrl = null,
   nombre,
   subtitulo,
@@ -28,6 +29,7 @@ export function MobileNav({
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
   mostrarMemorandos?: boolean;
+  mostrarNegociosVerdes?: boolean;
   logoUrl?: string | null;
   nombre: string;
   subtitulo: string;
@@ -81,6 +83,7 @@ export function MobileNav({
               mostrarCorrespondencia={mostrarCorrespondencia}
               mostrarContratacion={mostrarContratacion}
               mostrarMemorandos={mostrarMemorandos}
+              mostrarNegociosVerdes={mostrarNegociosVerdes}
             />
 
             <div className="border-t border-white/10 bg-lateral-oscuro p-3">

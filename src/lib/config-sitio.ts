@@ -20,6 +20,8 @@ const VACIA = {
   vitalVisibleFuncionarios: true,
   sincaVisibleFuncionarios: true,
   memorandosVisibleFuncionarios: true,
+  negociosVerdesVisibleFuncionarios: true,
+  negociosVerdesSitioPublico: false,
   selloTiempoTsaUrl: null,
   passwordLongitudMinima: 8,
   passwordLongitudMaxima: 72,

@@ -1,4 +1,4 @@
-import { Archive, Briefcase, FileBadge, Link2, Mail, type LucideIcon } from "lucide-react";
+import { Archive, Briefcase, FileBadge, Leaf, Link2, Mail, type LucideIcon } from "lucide-react";
 import type { ModuloUsuario } from "@/lib/modulos-usuario";
 
 export const ICONOS_MODULO: Record<ModuloUsuario, LucideIcon> = {
@@ -7,4 +7,5 @@ export const ICONOS_MODULO: Record<ModuloUsuario, LucideIcon> = {
   GECON: Briefcase,
   VITAL: Link2,
   SINCA: Archive,
+  NEGOCIOS_VERDES: Leaf,
 };

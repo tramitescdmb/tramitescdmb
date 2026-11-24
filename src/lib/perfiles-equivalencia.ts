@@ -34,6 +34,7 @@ import {
   puedeVerTableroContratos,
   type PermisosUsuario,
 } from "@/lib/permisos";
+import { accedePanelNV, puedeConfigurarNV, puedeGestionarNV } from "@/lib/negocios-verdes-permisos";
 import type { Accion, Matriz, ModuloPerfil } from "@/lib/perfiles-catalogo";
 
 const USUARIO = "usuario-referencia";
@@ -46,7 +47,8 @@ export type RolLegado =
   | { tipo: "CORRESPONDENCIA"; rol: RolCorrespondencia }
   | { tipo: "CONTRATACION"; rol: RolContratacion }
   | { tipo: "TRAMITES"; nivel: "VER" | "EDITAR" }
-  | { tipo: "SECCION"; seccion: SeccionSoloLectura };
+  | { tipo: "SECCION"; seccion: SeccionSoloLectura }
+  | { tipo: "NEGOCIOS_VERDES"; nivel: "GESTION" | "CONFIGURACION" };
 
 export function permisosDeReferencia(rol: RolLegado): PermisosUsuario {
   const contratacion = rol.tipo === "CONTRATACION" ? new Set([rol.rol]) : new Set<RolContratacion>();
@@ -63,9 +65,13 @@ export function permisosDeReferencia(rol: RolLegado): PermisosUsuario {
     asignadoExpedientes: contratacion.has("FUNCIONARIO_CONTRATACION") ? new Set([EXPEDIENTE]) : new Set(),
     cargos: new Set(),
     cargosEncargo: new Set(),
-    modulos: new Set(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA"]),
-    porPerfil: new Set(),
-    matriz: new Map(),
+    modulos: new Set(["TRAMITES", "SGDEA", "GECON", "VITAL", "SINCA", "NEGOCIOS_VERDES"]),
+    porPerfil: new Set(rol.tipo === "NEGOCIOS_VERDES" ? ["NEGOCIOS_VERDES"] : []),
+    // Negocios Verdes nace por perfil (no tiene rol anterior): su referencia es la propia matriz del perfil.
+    matriz:
+      rol.tipo === "NEGOCIOS_VERDES"
+        ? new Map(Object.entries(matrizNegociosVerdes(rol.nivel)).map(([f, a]) => [f, new Set<string>(a)]))
+        : new Map(),
   };
 }
 
@@ -150,6 +156,14 @@ export function matrizDesdeReglas(p: PermisosUsuario): Matriz {
     "sinca.solicitudes": { LEER: puedeAccederSeccion(p, "SINCA_BASE") },
     "sinca.tablero": { LEER: puedeAccederSeccion(p, "SINCA_DASHBOARD") },
     "sinca.mineria": { LEER: puedeAccederSeccion(p, "SINCA_MINERIA") },
+
+    "negociosVerdes.gestion": {
+      LEER: accedePanelNV(p),
+      CREAR: puedeGestionarNV(p, "CREAR"),
+      ACTUALIZAR: puedeGestionarNV(p, "ACTUALIZAR"),
+      ELIMINAR: puedeGestionarNV(p, "ELIMINAR"),
+    },
+    "negociosVerdes.configuracion": { ACTUALIZAR: puedeConfigurarNV(p) },
   };
 
   const matriz: Matriz = {};
@@ -185,7 +199,30 @@ export const PERFILES_SEMILLA: readonly PerfilSemilla[] = [
   { claveOrigen: "SECCION:SINCA_BASE", nombre: "SINCA 1.0 — solicitudes", modulo: "SINCA", descripcion: "Consulta solicitudes y NIT del histórico.", rol: { tipo: "SECCION", seccion: "SINCA_BASE" } },
   { claveOrigen: "SECCION:SINCA_DASHBOARD", nombre: "SINCA 1.0 — tablero", modulo: "SINCA", descripcion: "Consulta el tablero del histórico.", rol: { tipo: "SECCION", seccion: "SINCA_DASHBOARD" } },
   { claveOrigen: "SECCION:SINCA_MINERIA", nombre: "SINCA 1.0 — minería de datos", modulo: "SINCA", descripcion: "Consulta la minería de datos del histórico.", rol: { tipo: "SECCION", seccion: "SINCA_MINERIA" } },
+
+  {
+    claveOrigen: "NEGOCIOS_VERDES:GESTION",
+    nombre: "Negocios Verdes — Administrador",
+    modulo: "NEGOCIOS_VERDES",
+    descripcion: "Gestiona negocios, personas, productos, puntajes, importación CSV y tablero. Solo ve este módulo si no tiene otros habilitados.",
+    rol: { tipo: "NEGOCIOS_VERDES", nivel: "GESTION" },
+  },
+  {
+    claveOrigen: "NEGOCIOS_VERDES:CONFIGURACION",
+    nombre: "Negocios Verdes — Administrador de configuración",
+    modulo: "NEGOCIOS_VERDES",
+    descripcion: "Lo del administrador más la taxonomía (categorías, subcategorías y actividades) y la apariencia del sitio público.",
+    rol: { tipo: "NEGOCIOS_VERDES", nivel: "CONFIGURACION" },
+  },
 ];
+
+/** Matriz de los perfiles propios de Negocios Verdes (módulo nuevo: no hay rol anterior del que derivarla). */
+export function matrizNegociosVerdes(nivel: "GESTION" | "CONFIGURACION"): Matriz {
+  return {
+    "negociosVerdes.gestion": ["LEER", "CREAR", "ACTUALIZAR", "ELIMINAR"],
+    ...(nivel === "CONFIGURACION" ? { "negociosVerdes.configuracion": ["ACTUALIZAR"] } : {}),
+  };
+}
 
 export function matrizSemilla(semilla: PerfilSemilla): Matriz {
   return matrizDesdeReglas(permisosDeReferencia(semilla.rol));

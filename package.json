@@ -16,7 +16,8 @@
     "db:studio": "prisma studio",
     "sinca:sync": "tsx scripts/sinca-sync.ts",
     "sinca:enrich": "tsx scripts/sinca-enrich.ts",
-    "sinca:coordenadas": "tsx scripts/sinca-coordenadas.ts"
+    "sinca:coordenadas": "tsx scripts/sinca-coordenadas.ts",
+    "nv:migrar": "tsx scripts/negocios-verdes-migrar.ts"
   },
   "dependencies": {
     "@peculiar/asn1-schema": "^2.9.4",

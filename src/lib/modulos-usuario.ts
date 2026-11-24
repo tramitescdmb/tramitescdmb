@@ -1,6 +1,6 @@
 import type { CampoVisibilidadModulo } from "@/lib/modulos-visibles";
 
-export type ModuloUsuario = "TRAMITES" | "SGDEA" | "GECON" | "VITAL" | "SINCA";
+export type ModuloUsuario = "TRAMITES" | "SGDEA" | "GECON" | "VITAL" | "SINCA" | "NEGOCIOS_VERDES";
 
 export type PestanaFichaUsuario = "datos" | "firma" | "cuenta" | "tramites" | "modulos" | "consulta" | "visitas";
 
@@ -10,6 +10,7 @@ export const MODULOS_USUARIO: { id: ModuloUsuario; nombre: string; corto: string
   { id: "GECON", nombre: "GECON — Contratación", corto: "GECON", pestana: "modulos", campoGlobal: "geconVisibleFuncionarios" },
   { id: "VITAL", nombre: "VITAL", corto: "VITAL", pestana: "consulta", campoGlobal: "vitalVisibleFuncionarios" },
   { id: "SINCA", nombre: "SINCA 1.0", corto: "SINCA 1.0", pestana: "consulta", campoGlobal: "sincaVisibleFuncionarios" },
+  { id: "NEGOCIOS_VERDES", nombre: "Negocios Verdes", corto: "Negocios Verdes", pestana: "modulos", campoGlobal: "negociosVerdesVisibleFuncionarios" },
 ];
 
 export const IDS_MODULOS_USUARIO = MODULOS_USUARIO.map((m) => m.id);
@@ -33,5 +34,8 @@ export function faltanteModulo(id: ModuloUsuario, c: ConfiguracionAccesoUsuario)
       return c.secciones.some((s) => s.startsWith("VITAL_")) ? null : "Sin secciones de VITAL";
     case "SINCA":
       return c.secciones.some((s) => s.startsWith("SINCA_")) ? null : "Sin secciones de SINCA 1.0";
+    case "NEGOCIOS_VERDES":
+      // El alcance lo da el perfil (Roles): «Negocios Verdes — Gestión» o «— Configuración».
+      return null;
   }
 }

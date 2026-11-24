@@ -16,6 +16,9 @@ function filtroUsuariosConRol(semilla: PerfilSemilla): Prisma.UsuarioWhereInput 
       return { activo: true, rol: { not: "ADMIN" }, rolesContratacion: { has: rol.rol } };
     case "SECCION":
       return { activo: true, rol: { not: "ADMIN" }, seccionesAcceso: { some: { seccion: rol.seccion } } };
+    case "NEGOCIOS_VERDES":
+      // Módulo sin rol anterior: «con el rol» = quienes tienen asignado este perfil.
+      return { activo: true, rol: { not: "ADMIN" }, perfiles: { some: { perfil: { claveOrigen: semilla.claveOrigen } } } };
   }
 }
 
