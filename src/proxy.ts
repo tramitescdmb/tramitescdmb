@@ -14,8 +14,9 @@ const PUBLIC_PATHS = [
   "/api/correo/mantenimiento",
   "/api/sistema/aviso-falla",
   "/api/salud",
+  "/robots.txt",
 ];
-const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/solicitud-ambiental", "/api/solicitud-ambiental", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico", "/api/almacen"];
+const PUBLIC_PREFIXES = ["/pqrsd", "/api/pqrsd", "/solicitud-ambiental", "/api/solicitud-ambiental", "/verificar", "/validar-firma", "/api/validar-firma", "/api/fondo-historico", "/api/almacen", "/geo"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

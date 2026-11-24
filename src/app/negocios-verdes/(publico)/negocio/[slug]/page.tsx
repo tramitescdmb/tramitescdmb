@@ -18,7 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: n.nombre,
     description: n.descripcionCorta ?? `${n.categoria.nombre} en ${n.municipio}.`,
-    openGraph: { title: n.nombre, description: n.descripcionCorta ?? undefined, images: n.fotoPortadaUrl ? [n.fotoPortadaUrl] : undefined },
+    openGraph: { title: n.nombre, description: n.descripcionCorta ?? undefined, images: n.fotoPortadaUrl ? [n.fotoPortadaUrl] : undefined, type: "website", locale: "es_CO" },
+    alternates: { canonical: `/negocios-verdes/negocio/${encodeURIComponent(n.slug)}` },
   };
 }
 
@@ -42,8 +43,23 @@ export default async function FichaNegocioVerde({ params }: Props) {
       ? `https://www.openstreetmap.org/?mlat=${n.latitud}&mlon=${n.longitud}#map=16/${n.latitud}/${n.longitud}`
       : null;
 
+  // Datos estructurados para buscadores (solo campos públicos; «<» escapado para no cerrar el script).
+  const jsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: n.nombre,
+    description: n.descripcionCorta ?? undefined,
+    image: n.fotoPortadaUrl ?? undefined,
+    telephone: n.telefono ?? undefined,
+    email: n.email ?? undefined,
+    url: n.sitioWeb ?? undefined,
+    address: { "@type": "PostalAddress", streetAddress: n.direccion ?? undefined, addressLocality: n.municipio, addressRegion: "Santander", addressCountry: "CO" },
+    geo: n.latitud != null && n.longitud != null ? { "@type": "GeoCoordinates", latitude: n.latitud, longitude: n.longitud } : undefined,
+  }).replace(/</g, "\\u003c");
+
   return (
     <article className="space-y-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <Link prefetch={false} href="/negocios-verdes#buscar" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Volver al directorio
       </Link>
@@ -138,6 +154,10 @@ export default async function FichaNegocioVerde({ params }: Props) {
                     <a href={mapa} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 hover:underline">
                       Ver en el mapa
                     </a>
+                    {" · "}
+                    <Link prefetch={false} href={`/negocios-verdes/geovisor?v=${n.latitud},${n.longitud},16&capas=municipios,areas`} className="font-medium text-emerald-700 hover:underline">
+                      Ver en el geovisor
+                    </Link>
                   </>
                 )}
               </Dato>

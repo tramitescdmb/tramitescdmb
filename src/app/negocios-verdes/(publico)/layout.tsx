@@ -2,10 +2,17 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
-import { getConfiguracionSitio } from "@/lib/config-sitio";
-import { verificarSesion, obtenerPermisosUsuario } from "@/lib/permisos";
-import { accedePanelNV } from "@/lib/negocios-verdes-permisos";
+import { accesoSitioNV } from "@/lib/negocios-verdes-acceso";
 import { configuracionPublicaNV } from "@/lib/negocios-verdes-data";
+
+const MENU = [
+  ["/negocios-verdes", "Inicio"],
+  ["/negocios-verdes#buscar", "Buscar"],
+  ["/negocios-verdes/geovisor", "Geovisor"],
+  ["/negocios-verdes/nosotros", "¿Qué son?"],
+  ["/negocios-verdes/plan-nacional", "Plan Nacional"],
+  ["/negocios-verdes/contacto", "Contacto"],
+] as const;
 
 export const metadata: Metadata = {
   title: { default: "Negocios Verdes — CDMB", template: "%s — Negocios Verdes CDMB" },
@@ -18,14 +25,8 @@ export const metadata: Metadata = {
  * salvo a quien tiene acceso al panel interno, que lo ve en vista previa.
  */
 export default async function NegociosVerdesPublicoLayout({ children }: { children: ReactNode }) {
-  const config = await getConfiguracionSitio();
-  const abierto = config.negociosVerdesSitioPublico === true;
-  let vistaPrevia = false;
-  if (!abierto) {
-    const session = await verificarSesion();
-    vistaPrevia = Boolean(session && accedePanelNV(await obtenerPermisosUsuario(session.userId)));
-  }
-  const nv = await configuracionPublicaNV().catch(() => ({ logoUrl: null, banners: [] }));
+  const { abierto, vistaPrevia } = await accesoSitioNV();
+  const nv = await configuracionPublicaNV().catch(() => ({ logoUrl: null, logosPie: [], banners: [] }));
 
   return (
     <div className="flex min-h-full flex-col bg-stone-50">
@@ -45,13 +46,12 @@ export default async function NegociosVerdesPublicoLayout({ children }: { childr
               <span className="block truncate text-xs text-stone-500">CDMB — Meseta de Bucaramanga</span>
             </span>
           </Link>
-          <nav aria-label="Negocios Verdes" className="flex items-center gap-1 text-sm">
-            <Link prefetch={false} href="/negocios-verdes" className="rounded-md px-3 py-1.5 font-medium text-stone-700 hover:bg-emerald-50 hover:text-emerald-800">
-              Inicio
-            </Link>
-            <Link prefetch={false} href="/negocios-verdes#buscar" className="rounded-md px-3 py-1.5 font-medium text-stone-700 hover:bg-emerald-50 hover:text-emerald-800">
-              Buscar negocios
-            </Link>
+          <nav aria-label="Negocios Verdes" className="flex flex-wrap items-center gap-0.5 text-sm">
+            {MENU.map(([href, texto]) => (
+              <Link key={href} prefetch={false} href={href} className="rounded-md px-2.5 py-1.5 font-medium text-stone-700 hover:bg-emerald-50 hover:text-emerald-800">
+                {texto}
+              </Link>
+            ))}
           </nav>
         </div>
       </header>
@@ -73,6 +73,24 @@ export default async function NegociosVerdesPublicoLayout({ children }: { childr
           </div>
         )}
       </div>
+      <footer className="border-t border-stone-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 text-xs text-stone-500 sm:px-6">
+          <p>
+            Corporación Autónoma Regional para la Defensa de la Meseta de Bucaramanga (CDMB) · Ventanilla de Negocios Verdes ·{" "}
+            <Link prefetch={false} href="/negocios-verdes/contacto" className="hover:underline">
+              Contacto
+            </Link>
+          </p>
+          {nv.logosPie.length > 0 && (
+            <div className="flex items-center gap-4">
+              {nv.logosPie.map((l) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={l.url} src={l.url} alt={l.alt} className="h-8 w-auto" />
+              ))}
+            </div>
+          )}
+        </div>
+      </footer>
     </div>
   );
 }
