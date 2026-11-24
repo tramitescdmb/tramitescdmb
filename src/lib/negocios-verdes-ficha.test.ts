@@ -27,6 +27,14 @@ describe("validarNegocio", () => {
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "siete", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/no es un número/);
   });
 
+  it("correo secundario: opcional, bien escrito y distinto del principal", () => {
+    const base = { nombre: "A", municipio: "Tona", categoriaId: CAT };
+    expect(validarNegocio(base, { negocioId: null }).datos).toMatchObject({ emailSecundario: null });
+    expect(validarNegocio({ ...base, email: "info@a.co", emailSecundario: " ventas@a.co " }, { negocioId: null }).datos).toMatchObject({ email: "info@a.co", emailSecundario: "ventas@a.co" });
+    expect(validarNegocio({ ...base, emailSecundario: "ventas@gmailcom" }, { negocioId: null }).errores.join(" ")).toMatch(/^Correo secundario: .*gmail\.com/);
+    expect(validarNegocio({ ...base, email: "info@a.co", emailSecundario: "INFO@a.co" }, { negocioId: null }).errores.join(" ")).toMatch(/igual al principal/);
+  });
+
   it("solo acepta imágenes de la carpeta del negocio o las que ya tenía", () => {
     const propias = new Set(["negocios-fotos/viejo/portada.jpg"]);
     expect(rutaImagenValida(`negocios-fotos/${N}/1-a.jpg`, N, new Set())).toBe(`negocios-fotos/${N}/1-a.jpg`);

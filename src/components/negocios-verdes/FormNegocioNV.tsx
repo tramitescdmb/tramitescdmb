@@ -68,6 +68,7 @@ export function FormNegocioNV({
     telefonoSecundario: negocio?.telefonoSecundario ?? "",
     whatsapp: negocio?.whatsapp ?? "",
     email: negocio?.email ?? "",
+    emailSecundario: negocio?.emailSecundario ?? "",
     sitioWeb: negocio?.sitioWeb ?? "",
     facebookUrl: negocio?.facebookUrl ?? "",
     instagramUrl: negocio?.instagramUrl ?? "",
@@ -268,6 +269,9 @@ export function FormNegocioNV({
           </Campo>
           <Campo etiqueta="Correo">
             <input type="email" value={d.email} onChange={set("email")} className={entrada} />
+          </Campo>
+          <Campo etiqueta="Correo secundario">
+            <input type="email" value={d.emailSecundario} onChange={set("emailSecundario")} className={entrada} />
           </Campo>
           <Campo etiqueta="Sitio web">
             <input value={d.sitioWeb} onChange={set("sitioWeb")} className={entrada} />

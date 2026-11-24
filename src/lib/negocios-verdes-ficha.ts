@@ -129,6 +129,7 @@ export type EntradaNegocio = {
   telefonoSecundario?: unknown;
   whatsapp?: unknown;
   email?: unknown;
+  emailSecundario?: unknown;
   sitioWeb?: unknown;
   facebookUrl?: unknown;
   instagramUrl?: unknown;
@@ -163,6 +164,7 @@ export type NegocioValidado = {
   telefonoSecundario: string | null;
   whatsapp: string | null;
   email: string | null;
+  emailSecundario: string | null;
   sitioWeb: string | null;
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -233,6 +235,10 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
   const email = txt(e.email, 200);
   const malCorreo = problemaCorreo(email);
   if (malCorreo) errores.push(malCorreo);
+  const emailSecundario = txt(e.emailSecundario, 200);
+  const malSecundario = problemaCorreo(emailSecundario);
+  if (malSecundario) errores.push(`Correo secundario: ${malSecundario}`);
+  else if (email && emailSecundario && email.toLowerCase() === emailSecundario.toLowerCase()) errores.push("El correo secundario es igual al principal: escriba otro o déjelo vacío.");
   const veredaId = typeof e.veredaId === "string" && UUID.test(e.veredaId) ? e.veredaId : null;
 
   const fotos = Array.isArray(e.fotos) ? e.fotos.map((r) => rutaImagenValida(r, opciones.negocioId, anteriores)).filter((r): r is string => Boolean(r)).slice(0, 12) : [];
@@ -264,6 +270,7 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
       telefonoSecundario: txt(e.telefonoSecundario, 40),
       whatsapp: txt(e.whatsapp, 40),
       email,
+      emailSecundario,
       sitioWeb: txt(e.sitioWeb, 300),
       facebookUrl: txt(e.facebookUrl, 300),
       instagramUrl: txt(e.instagramUrl, 300),

@@ -173,6 +173,13 @@ export default async function FichaNegocioVerde({ params }: Props) {
                 </a>
               </Fila>
             )}
+            {n.emailSecundario && (
+              <Fila icono={Mail}>
+                <a href={`mailto:${n.emailSecundario}`} className="hover:underline">
+                  {n.emailSecundario}
+                </a>
+              </Fila>
+            )}
             {n.representanteLegal && <Fila icono={IconId}>Representante legal: {n.representanteLegal}</Fila>}
           </ul>
         </section>

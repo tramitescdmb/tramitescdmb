@@ -3030,6 +3030,7 @@ model NvNegocio {
   telefonoSecundario  String?
   whatsapp            String?
   email               String?
+  emailSecundario     String?
   sitioWeb            String?
   facebookUrl         String?
   instagramUrl        String?
