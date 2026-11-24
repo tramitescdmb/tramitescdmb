@@ -8,6 +8,7 @@ export function PestanasPanelNV({ configurar, gestionar }: { configurar: boolean
   const pestanas = [
     { href: "/negocios-verdes/admin", label: "Negocios", activa: pathname === "/negocios-verdes/admin" || pathname.startsWith("/negocios-verdes/admin/negocios") },
     { href: "/negocios-verdes/admin/personas", label: "Personas", activa: pathname.startsWith("/negocios-verdes/admin/personas") },
+    { href: "/negocios-verdes/admin/revision", label: "Revisión de datos", activa: pathname.startsWith("/negocios-verdes/admin/revision") },
     { href: "/negocios-verdes/admin/csv", label: gestionar ? "Importar / exportar" : "Exportar", activa: pathname.startsWith("/negocios-verdes/admin/csv") },
     ...(configurar
       ? [

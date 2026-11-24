@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { MUNICIPIOS_NV, esMunicipioNV } from "@/lib/negocios-verdes";
 import { listarNegociosPanel, resumenPanelNV } from "@/lib/negocios-verdes-data";
+import { revisionDatosNV } from "@/lib/negocios-verdes-admin";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
 import { verificarSesion, obtenerPermisosUsuario } from "@/lib/permisos";
 import { puedeGestionarNV } from "@/lib/negocios-verdes-permisos";
@@ -25,12 +26,14 @@ export default async function PanelNegociosVerdes({ searchParams }: Props) {
   const estado = sp.estado === "publicados" || sp.estado === "borradores" ? sp.estado : undefined;
   const municipio = esMunicipioNV(sp.municipio) ? sp.municipio : undefined;
   const session = await verificarSesion();
-  const [resumen, negocios, config, permisos] = await Promise.all([
+  const [resumen, negocios, config, permisos, revision] = await Promise.all([
     resumenPanelNV(),
     listarNegociosPanel({ q: sp.q, municipio, estado }),
     getConfiguracionSitio(),
     session ? obtenerPermisosUsuario(session.userId) : null,
+    revisionDatosNV(),
   ]);
+  const porCorregir = revision.filter((f) => f.problemas.some((p) => p.grave)).length;
   const puedeCrear = Boolean(permisos && puedeGestionarNV(permisos, "CREAR"));
 
   return (
@@ -38,6 +41,15 @@ export default async function PanelNegociosVerdes({ searchParams }: Props) {
       {!config.negociosVerdesSitioPublico && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
           El sitio público está apagado: la ciudadanía ve «Sitio en preparación». Se enciende en Administración → Módulos, casilla «Negocios Verdes — Sitio público».
+        </p>
+      )}
+
+      {porCorregir > 0 && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
+          {porCorregir} registro{porCorregir === 1 ? "" : "s"} con correo mal escrito o coordenadas fuera de la jurisdicción.{" "}
+          <Link prefetch={false} href="/negocios-verdes/admin/revision" className="font-medium underline">
+            Ver revisión de datos
+          </Link>
         </p>
       )}
 

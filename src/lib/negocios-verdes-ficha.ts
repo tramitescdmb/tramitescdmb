@@ -4,6 +4,7 @@
  * mismas claves que tenían en la plataforma anterior (nit, concesion_aguas, …).
  */
 import { esMunicipioNV, slugNV, type MunicipioNV } from "@/lib/negocios-verdes";
+import { problemaCorreo, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
 
 export type TipoCampoFicha = "texto" | "textoLargo" | "fecha" | "entero" | "lista";
 
@@ -203,11 +204,11 @@ export function rutaImagenValida(ruta: unknown, negocioId: string | null, anteri
   return /^[A-Za-z0-9._/-]+$/.test(ruta) ? ruta : null;
 }
 
-function coordenada(v: unknown, min: number, max: number, nombre: string, errores: string[]): number | null {
+function coordenada(v: unknown, nombre: string, errores: string[]): number | null {
   if (v === null || v === undefined || v === "") return null;
-  const n = Number(typeof v === "string" ? v.replace(",", ".") : v);
-  if (!Number.isFinite(n) || n < min || n > max) {
-    errores.push(`${nombre} fuera de rango.`);
+  const n = Number(typeof v === "string" ? v.trim().replace(",", ".") : v);
+  if (!Number.isFinite(n)) {
+    errores.push(`${nombre} no es un número.`);
     return null;
   }
   return n;
@@ -226,11 +227,12 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
   const categoriaId = typeof e.categoriaId === "string" && UUID.test(e.categoriaId) ? e.categoriaId : categoriaIds[0];
   if (!categoriaId) errores.push("Elija al menos una categoría.");
   if (categoriaId && !categoriaIds.includes(categoriaId)) categoriaIds.unshift(categoriaId);
-  const latitud = coordenada(e.latitud, -5, 15, "Latitud", errores);
-  const longitud = coordenada(e.longitud, -82, -66, "Longitud", errores);
-  if ((latitud === null) !== (longitud === null)) errores.push("Escriba latitud y longitud juntas, o ninguna.");
+  const latitud = coordenada(e.latitud, "Latitud", errores);
+  const longitud = coordenada(e.longitud, "Longitud", errores);
+  if (!errores.some((x) => x.endsWith("no es un número."))) errores.push(...verificarUbicacion(latitud, longitud).errores);
   const email = txt(e.email, 200);
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errores.push("El correo no es válido.");
+  const malCorreo = problemaCorreo(email);
+  if (malCorreo) errores.push(malCorreo);
   const veredaId = typeof e.veredaId === "string" && UUID.test(e.veredaId) ? e.veredaId : null;
 
   const fotos = Array.isArray(e.fotos) ? e.fotos.map((r) => rutaImagenValida(r, opciones.negocioId, anteriores)).filter((r): r is string => Boolean(r)).slice(0, 12) : [];

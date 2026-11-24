@@ -4,6 +4,7 @@ import { eliminar, limpiarCarpetasVacias } from "@/lib/almacen";
 import { BUCKET_NEGOCIOS_VERDES, urlImagenNV } from "@/lib/negocios-verdes";
 import { ETIQUETA_CACHE_NV } from "@/lib/negocios-verdes-data";
 import type { NegocioValidado, ValorFicha } from "@/lib/negocios-verdes-ficha";
+import { problemaCorreo, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
 
 export function refrescarSitioNV() {
   revalidateTag(ETIQUETA_CACHE_NV, { expire: 0 });
@@ -264,4 +265,34 @@ export async function aplicarImportacionNV(filas: { id: string | null; slug: str
   );
   refrescarSitioNV();
   return { creados, actualizados };
+}
+
+export type ProblemaDatoNV = { grave: boolean; texto: string };
+export type FilaRevisionNV = { tipo: "negocio" | "persona"; id: string; nombre: string; municipio: string | null; activo: boolean; problemas: ProblemaDatoNV[] };
+
+/**
+ * Revisión de datos: negocios con correo mal escrito o coordenadas fuera de la jurisdicción (o en
+ * otro municipio del que dicen) y personas con correo mal escrito. Lo grave impide guardar el
+ * negocio hasta corregirlo; el aviso solo se muestra.
+ */
+export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
+  const [negocios, personas] = await Promise.all([
+    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
+    db.nvPersona.findMany({ where: { correo: { not: null } }, select: { id: true, nombres: true, apellidos: true, municipio: true, activo: true, correo: true }, orderBy: { nombres: "asc" } }),
+  ]);
+  const filas: FilaRevisionNV[] = [];
+  for (const n of negocios) {
+    const problemas: ProblemaDatoNV[] = [];
+    const correo = problemaCorreo(n.email);
+    if (correo) problemas.push({ grave: true, texto: `Correo «${n.email}»: ${correo}` });
+    const u = verificarUbicacion(n.latitud, n.longitud, n.municipio);
+    for (const t of u.errores) problemas.push({ grave: true, texto: `${t} (${n.latitud ?? "sin latitud"}, ${n.longitud ?? "sin longitud"})` });
+    for (const t of u.avisos) problemas.push({ grave: false, texto: t });
+    if (problemas.length) filas.push({ tipo: "negocio", id: n.id, nombre: n.nombre, municipio: n.municipio, activo: n.activo, problemas });
+  }
+  for (const p of personas) {
+    const correo = problemaCorreo(p.correo);
+    if (correo) filas.push({ tipo: "persona", id: p.id, nombre: `${p.nombres} ${p.apellidos ?? ""}`.trim(), municipio: p.municipio, activo: p.activo, problemas: [{ grave: true, texto: `Correo «${p.correo}»: ${correo}` }] });
+  }
+  return filas;
 }

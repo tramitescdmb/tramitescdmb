@@ -42,10 +42,10 @@ const VACIA: Omit<PersonaFila, "id" | "negocios"> = {
 };
 const entrada = "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm";
 
-export function PersonasNV({ personas, puedeCrear, puedeEditar, puedeEliminar }: { personas: PersonaFila[]; puedeCrear: boolean; puedeEditar: boolean; puedeEliminar: boolean }) {
+export function PersonasNV({ personas, puedeCrear, puedeEditar, puedeEliminar, busquedaInicial = "" }: { personas: PersonaFila[]; puedeCrear: boolean; puedeEditar: boolean; puedeEliminar: boolean; busquedaInicial?: string }) {
   const router = useRouter();
   const [tipo, setTipo] = useState<TipoPersonaNV | "">("");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(busquedaInicial);
   const [editando, setEditando] = useState<(Omit<PersonaFila, "negocios" | "id"> & { id: string | null }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);

@@ -20,10 +20,11 @@ describe("validarNegocio", () => {
     expect(r.datos).toMatchObject({ slug: "cafe-la-montana", categoriaIds: [CAT], subcategoriaIds: [CAT], activo: false });
   });
 
-  it("latitud y longitud van juntas y dentro de Colombia", () => {
+  it("latitud y longitud van juntas y dentro de la jurisdicción", () => {
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "7,1" }, { negocioId: null }).errores.join(" ")).toMatch(/juntas/);
-    expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "70", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/Latitud/);
+    expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "70", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/jurisdicción/);
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "7,12", longitud: "-73.1" }, { negocioId: null }).datos).toMatchObject({ latitud: 7.12, longitud: -73.1 });
+    expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "siete", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/no es un número/);
   });
 
   it("solo acepta imágenes de la carpeta del negocio o las que ya tenía", () => {

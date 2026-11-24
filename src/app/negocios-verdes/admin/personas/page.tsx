@@ -5,7 +5,8 @@ import { PersonasNV } from "@/components/negocios-verdes/PersonasNV";
 
 export const dynamic = "force-dynamic";
 
-export default async function PersonasNegociosVerdes() {
+export default async function PersonasNegociosVerdes({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
   const session = await verificarSesion();
   const permisos = session ? await obtenerPermisosUsuario(session.userId) : null;
   const personas = await db.nvPersona.findMany({
@@ -14,6 +15,7 @@ export default async function PersonasNegociosVerdes() {
   });
   return (
     <PersonasNV
+      busquedaInicial={typeof q === "string" ? q.slice(0, 120) : ""}
       personas={personas.map((p) => ({
         id: p.id,
         tipo: p.tipo,

@@ -1,6 +1,7 @@
 /** Validación (pura) de taxonomía y personas de Negocios Verdes. */
 import { esMunicipioNV, slugNV } from "@/lib/negocios-verdes";
 import { NATURALEZAS } from "@/lib/negocios-verdes-ficha";
+import { problemaCorreo } from "@/lib/negocios-verdes-verificacion";
 
 export type NivelTaxonomia = "categoria" | "subcategoria" | "actividad";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,7 +46,8 @@ export function validarPersona(e: Record<string, unknown>) {
   const nombres = txt(e.nombres, 120);
   if (!nombres) errores.push("Escriba los nombres.");
   const correo = txt(e.correo, 200);
-  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) errores.push("El correo no es válido.");
+  const malCorreo = problemaCorreo(correo);
+  if (malCorreo) errores.push(malCorreo);
   const municipio = txt(e.municipio);
   const naturaleza = txt(e.naturalezaJuridica);
   if (naturaleza && !(NATURALEZAS as readonly string[]).includes(naturaleza)) errores.push("Naturaleza jurídica no válida.");
