@@ -23,8 +23,15 @@ const nextConfig: NextConfig = {
       {
         // Las páginas solo se pueden incrustar en la propia plataforma (evita el clickjacking). Se
         // excluyen los archivos del almacén: llevan su propia CSP (sandbox para HTML/SVG subidos).
-        source: "/((?!api/almacen/).*)",
+        source: "/((?!api/almacen/|negocios-verdes/geovisor/embed).*)",
         headers: [{ key: "Content-Security-Policy", value: "frame-ancestors 'self'" }],
+      },
+      {
+        // El geovisor público de Negocios Verdes se puede incrustar en las páginas de la CDMB (solo
+        // consulta, sin sesión ni acciones). En navegadores actuales esta CSP prevalece sobre el
+        // X-Frame-Options SAMEORIGIN que pone nginx.
+        source: "/negocios-verdes/geovisor/embed",
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors 'self' https://cdmb.gov.co https://*.cdmb.gov.co" }],
       },
     ];
   },

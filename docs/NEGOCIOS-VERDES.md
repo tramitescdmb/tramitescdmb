@@ -35,6 +35,23 @@ módulo, solo ve Negocios Verdes.
 
 Cada cambio queda en la auditoría documental con quién lo hizo.
 
+## Sitio público: páginas
+
+| Ruta | Contenido |
+|---|---|
+| `/negocios-verdes` | Inicio con buscador (texto sin tildes, municipio, clasificación, reconocimiento). |
+| `/negocios-verdes/negocio/<slug>` | Ficha del negocio, con datos estructurados (schema.org LocalBusiness) para buscadores. |
+| `/negocios-verdes/geovisor` | Mapa con los negocios (colores por categoría, agrupados), filtros, 8 capas de referencia (`public/geo`: municipios, áreas protegidas, páramos, veredas, hidrografía, AICA, bosque seco, subzonas), mi ubicación, enlace de la vista y descarga CSV/GeoJSON de lo visible. Solo se dibujan coordenadas dentro de la jurisdicción. |
+| `/negocios-verdes/geovisor/embed` | El mismo mapa para incrustar con `<iframe>` en páginas de `cdmb.gov.co` (CSP `frame-ancestors` en `next.config.ts`). |
+| `/negocios-verdes/nosotros`, `/plan-nacional`, `/contacto` | Páginas fijas de la plataforma anterior. La clasificación de «¿Qué son?» se lee de la base. |
+| `/negocios-verdes/sitemap.xml`, `/robots.txt` | Para buscadores; el sitemap queda vacío mientras el sitio esté apagado. |
+
+No se trasladaron del geovisor anterior: medición de distancias y áreas, reporte HTML y descarga del mapa en PNG.
+
+## Dominio anterior
+
+Cuando TI publique `sic.cdmb.gov.co` con certificado, el dominio anterior se redirige con `deploy/nginx/negocios-verdes-dominio-anterior.conf` (no está activo). Las rutas se conservan con el prefijo `/negocios-verdes`, incluidas `/negocio/<slug>` y `/buscar?…` (que pasa el filtro al buscador). `/admin` va al sitio público: el panel no se publica en internet.
+
 ## Qué es público y qué no
 
 El sitio público lee solo los campos de `SELECT_NEGOCIO_PUBLICO` y los arma con `aNegocioPublico`

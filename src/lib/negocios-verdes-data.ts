@@ -50,6 +50,11 @@ export const configuracionPublicaNV = unstable_cache(
     ]);
     return {
       logoUrl: urlImagenNV(config?.logoRuta),
+      logosPie: [
+        { url: urlImagenNV(config?.logoGovcoRuta), alt: "GOV.CO" },
+        { url: urlImagenNV(config?.logoColombiaRuta), alt: "Colombia" },
+        { url: urlImagenNV(config?.logoPotenciaRuta), alt: "Colombia potencia de la vida" },
+      ].filter((l): l is { url: string; alt: string } => Boolean(l.url)),
       banners: banners.map((b) => ({ id: b.id, imagenUrl: urlImagenNV(b.imagenRuta), urlDestino: b.urlDestino, abrirEnPestanaNueva: b.abrirEnPestanaNueva })),
     };
   },
