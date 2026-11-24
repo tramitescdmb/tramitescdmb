@@ -21,6 +21,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans],
+        // Negocios Verdes conserva la tipografía de su plataforma anterior (Work Sans).
+        nv: ["var(--font-nv)", "var(--font-sans)", ...defaultTheme.fontFamily.sans],
       },
       borderRadius: {
         sm: "0.125rem",
@@ -77,6 +79,24 @@ export default {
           acento: "rgb(var(--menu-acento) / <alpha-value>)",
         },
         govco: "#3366cc",
+        // Paleta de Negocios Verdes (la misma de la plataforma anterior, lib/theme/nv_colors.dart).
+        nv: {
+          primario: "#038f67",
+          oscuro: "#026b4d",
+          claro: "#dceee6",
+          acento: "#ff8623",
+          "acento-oscuro": "#cc6b1c",
+          vivo: "#01bd32",
+          menu: "#85c800",
+          fondo: "#faf8f3",
+          texto: "#1b2a20",
+          texto2: "#5b6b60",
+          borde: "#e1e5df",
+          neutro: "#20272a",
+          whatsapp: "#25d366",
+          gris: "#8c8c7a",
+          azul: "#2a6f97",
+        },
         techblue: {
           50: "#eef5f9",
           100: "#d6e7f0",

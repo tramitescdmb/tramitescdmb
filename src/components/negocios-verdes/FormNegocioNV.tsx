@@ -10,23 +10,23 @@ import type { CatalogosFormularioNV, NegocioEditable } from "@/lib/negocios-verd
 type Imagen = { ruta: string; url: string | null };
 type Producto = { nombre: string; descripcion: string; foto: Imagen | null };
 
-const entrada = "w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200";
+const entrada = "w-full rounded-[8px] border border-nv-texto2/40 px-3 py-2 text-sm focus:border-nv-primario focus:outline-none focus:ring-2 focus:ring-nv-claro";
 
 function Campo({ etiqueta, children, ayuda, ancho }: { etiqueta: string; children: React.ReactNode; ayuda?: string; ancho?: boolean }) {
   return (
     <label className={`block text-sm ${ancho ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 block font-medium text-stone-700">{etiqueta}</span>
+      <span className="mb-1 block font-medium text-nv-texto">{etiqueta}</span>
       {children}
-      {ayuda && <span className="mt-1 block text-xs text-stone-500">{ayuda}</span>}
+      {ayuda && <span className="mt-1 block text-xs text-nv-texto2">{ayuda}</span>}
     </label>
   );
 }
 
 function Seccion({ titulo, children, descripcion }: { titulo: string; children: React.ReactNode; descripcion?: string }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-      <h2 className="text-base font-semibold text-stone-900">{titulo}</h2>
-      {descripcion && <p className="mt-0.5 text-xs text-stone-500">{descripcion}</p>}
+    <section className="rounded-[12px] border border-nv-borde bg-white p-4 sm:p-5">
+      <h2 className="text-[17px] font-medium text-nv-primario">{titulo}</h2>
+      {descripcion && <p className="mt-0.5 text-xs text-nv-texto2">{descripcion}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -187,12 +187,12 @@ export function FormNegocioNV({
     const escrito = window.prompt(`Para eliminar «${negocio.nombre}» con todas sus fotos, escriba ELIMINAR:`);
     if (escrito?.trim().toUpperCase() !== "ELIMINAR") return;
     const r = await fetch(`/api/negocios-verdes/negocios/${negocio.id}`, { method: "DELETE" });
-    if (r.ok) router.push("/negocios-verdes/admin?eliminado=1");
+    if (r.ok) router.push("/negocios-verdes/admin/negocios");
     else setMensaje({ tipo: "error", texto: (await r.json().catch(() => ({}))).error ?? "No se pudo eliminar." });
   }
 
   const botonImagen = (clave: string, alElegir: (img: Imagen) => void, texto = "Subir imagen") => (
-    <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 ${nuevo ? "pointer-events-none opacity-50" : ""}`}>
+    <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-nv-texto2/40 bg-white px-3 py-1.5 text-xs font-medium text-nv-texto hover:bg-nv-fondo ${nuevo ? "pointer-events-none opacity-50" : ""}`}>
       {subiendo === clave ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
       {texto}
       <input
@@ -287,12 +287,12 @@ export function FormNegocioNV({
       <Seccion titulo="Clasificación (PNNV 2022-2030)">
         <div className="space-y-4 text-sm">
           <fieldset>
-            <legend className="mb-1.5 font-medium text-stone-700">Categorías *</legend>
+            <legend className="mb-1.5 font-medium text-nv-texto">Categorías *</legend>
             <div className="flex flex-wrap gap-2">
               {catalogos.categorias
                 .filter((c) => c.activo || categorias.has(c.id) || c.id === d.categoriaId)
                 .map((c) => (
-                  <label key={c.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 ${categorias.has(c.id) ? "border-emerald-500 bg-emerald-50 text-emerald-900" : "border-stone-300"}`}>
+                  <label key={c.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 ${categorias.has(c.id) ? "border-nv-primario bg-nv-claro text-nv-oscuro" : "border-nv-texto2/40"}`}>
                     <input
                       type="checkbox"
                       className="sr-only"
@@ -303,7 +303,7 @@ export function FormNegocioNV({
                       }}
                     />
                     {c.icono} {c.nombre}
-                    {!c.activo && <span className="text-xs text-stone-500">(inactiva)</span>}
+                    {!c.activo && <span className="text-xs text-nv-texto2">(inactiva)</span>}
                   </label>
                 ))}
             </div>
@@ -322,10 +322,10 @@ export function FormNegocioNV({
           </Campo>
           {subsVisibles.length > 0 && (
             <fieldset>
-              <legend className="mb-1.5 font-medium text-stone-700">Subcategorías</legend>
+              <legend className="mb-1.5 font-medium text-nv-texto">Subcategorías</legend>
               <div className="flex flex-wrap gap-2">
                 {subsVisibles.map((s) => (
-                  <label key={s.id} className={`flex cursor-pointer items-center rounded-full border px-3 py-1 ${subcategorias.has(s.id) ? "border-emerald-500 bg-emerald-50" : "border-stone-300"}`}>
+                  <label key={s.id} className={`flex cursor-pointer items-center rounded-full border px-3 py-1 ${subcategorias.has(s.id) ? "border-nv-primario bg-nv-claro" : "border-nv-texto2/40"}`}>
                     <input type="checkbox" className="sr-only" checked={subcategorias.has(s.id)} onChange={() => alternar(subcategorias, setSubcategorias, s.id)} />
                     {s.nombre}
                   </label>
@@ -335,10 +335,10 @@ export function FormNegocioNV({
           )}
           {actsVisibles.length > 0 && (
             <fieldset>
-              <legend className="mb-1.5 font-medium text-stone-700">Actividades productivas</legend>
+              <legend className="mb-1.5 font-medium text-nv-texto">Actividades productivas</legend>
               <div className="flex flex-wrap gap-2">
                 {actsVisibles.map((a) => (
-                  <label key={a.id} className={`flex cursor-pointer items-center rounded-full border px-3 py-1 ${actividades.has(a.id) ? "border-emerald-500 bg-emerald-50" : "border-stone-300"}`}>
+                  <label key={a.id} className={`flex cursor-pointer items-center rounded-full border px-3 py-1 ${actividades.has(a.id) ? "border-nv-primario bg-nv-claro" : "border-nv-texto2/40"}`}>
                     <input type="checkbox" className="sr-only" checked={actividades.has(a.id)} onChange={() => alternar(actividades, setActividades, a.id)} />
                     {a.nombre}
                   </label>
@@ -361,7 +361,7 @@ export function FormNegocioNV({
             ] as const
           ).map(([k, t]) => (
             <label key={k} className="flex items-center gap-2">
-              <input type="checkbox" checked={flags[k]} onChange={(e) => setFlags((x) => ({ ...x, [k]: e.target.checked }))} className="rounded border-stone-300" />
+              <input type="checkbox" checked={flags[k]} onChange={(e) => setFlags((x) => ({ ...x, [k]: e.target.checked }))} className="rounded border-nv-texto2/40" />
               {t}
             </label>
           ))}
@@ -371,12 +371,12 @@ export function FormNegocioNV({
       <Seccion titulo="Fotos y productos destacados" descripcion={nuevo ? "Guarde el negocio primero; después podrá subir sus fotos." : "JPG, PNG o WebP. Se reducen antes de subir y se guardan en el NAS."}>
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="h-24 w-36 overflow-hidden rounded-lg bg-stone-100">
+            <div className="h-24 w-36 overflow-hidden rounded-[8px] bg-black/[0.05]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {portada?.url && <img src={portada.url} alt="Portada" className="h-full w-full object-cover" />}
             </div>
             <div className="space-y-1.5">
-              <p className="text-sm font-medium text-stone-700">Foto de portada</p>
+              <p className="text-sm font-medium text-nv-texto">Foto de portada</p>
               <div className="flex gap-2">
                 {botonImagen("portada", setPortada, portada ? "Cambiar" : "Subir portada")}
                 {portada && (
@@ -389,10 +389,10 @@ export function FormNegocioNV({
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-stone-700">Galería ({fotos.length}/12)</p>
+            <p className="mb-2 text-sm font-medium text-nv-texto">Galería ({fotos.length}/12)</p>
             <div className="flex flex-wrap gap-2">
               {fotos.map((f, i) => (
-                <div key={f.ruta} className="relative h-20 w-20 overflow-hidden rounded-lg bg-stone-100">
+                <div key={f.ruta} className="relative h-20 w-20 overflow-hidden rounded-[8px] bg-black/[0.05]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {f.url && <img src={f.url} alt="" className="h-full w-full object-cover" />}
                   <button type="button" aria-label="Quitar foto" onClick={() => setFotos(fotos.filter((_, j) => j !== i))} className="absolute right-0.5 top-0.5 rounded-full bg-white/90 p-0.5 text-red-700">
@@ -406,8 +406,8 @@ export function FormNegocioNV({
 
           <div className="grid gap-3 lg:grid-cols-3">
             {productos.map((p, i) => (
-              <div key={i} className="space-y-2 rounded-lg border border-stone-200 p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Producto {i + 1}</p>
+              <div key={i} className="space-y-2 rounded-[8px] border border-nv-borde p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-nv-texto2">Producto {i + 1}</p>
                 <input
                   value={p.nombre}
                   placeholder="Nombre"
@@ -443,7 +443,7 @@ export function FormNegocioNV({
         <div className="space-y-5">
           {gruposFicha.map((g) => (
             <fieldset key={g}>
-              <legend className="mb-2 text-sm font-semibold text-emerald-800">{g}</legend>
+              <legend className="mb-2 text-sm font-semibold text-nv-oscuro">{g}</legend>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {CAMPOS_FICHA.filter((c) => c.grupo === g).map((c) => {
                   const valor = ficha[c.clave] ?? "";
@@ -451,7 +451,7 @@ export function FormNegocioNV({
                   const lista = `nv-opciones-${c.clave}`;
                   return (
                     <label key={c.clave} className={`block text-sm ${c.tipo === "textoLargo" ? "sm:col-span-2 lg:col-span-3" : ""}`}>
-                      <span className="mb-1 block text-stone-700">{c.etiqueta}</span>
+                      <span className="mb-1 block text-nv-texto">{c.etiqueta}</span>
                       {c.tipo === "lista" ? (
                         <select value={valor} onChange={(e) => cambiar(e.target.value)} className={entrada}>
                           <option value="">—</option>
@@ -500,20 +500,20 @@ export function FormNegocioNV({
                 </button>
               </div>
             ))}
-            <button type="button" onClick={() => setPuntajes([...puntajes, { anio: String(new Date().getFullYear()), puntaje: "" }])} className="text-sm font-medium text-emerald-700 hover:underline">
+            <button type="button" onClick={() => setPuntajes([...puntajes, { anio: String(new Date().getFullYear()), puntaje: "" }])} className="text-sm font-medium text-nv-primario hover:underline">
               + Agregar año
             </button>
           </div>
         </Seccion>
       )}
 
-      <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-stone-200 bg-white/95 px-1 py-3 backdrop-blur">
-        <button disabled={guardando || subiendo !== null} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-nv-borde bg-white/95 px-1 py-3 backdrop-blur">
+        <button disabled={guardando || subiendo !== null} className="inline-flex items-center gap-1.5 rounded-[8px] bg-nv-primario px-5 py-2 text-sm font-semibold text-white hover:bg-nv-oscuro disabled:opacity-60">
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
           {nuevo ? "Crear negocio" : "Guardar cambios"}
         </button>
         {mensaje && (
-          <p role="status" className={`text-sm ${mensaje.tipo === "ok" ? "text-emerald-700" : "text-red-700"}`}>
+          <p role="status" className={`text-sm ${mensaje.tipo === "ok" ? "text-nv-primario" : "text-red-700"}`}>
             {mensaje.texto}
           </p>
         )}

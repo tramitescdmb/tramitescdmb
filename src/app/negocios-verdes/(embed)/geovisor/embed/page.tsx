@@ -14,13 +14,8 @@ export default async function GeovisorIncrustado({ searchParams }: { searchParam
   if (!abierto && !vistaPrevia) return <p className="p-6 text-center text-sm text-stone-600">El geovisor de Negocios Verdes estará disponible muy pronto.</p>;
   const d = await datosGeovisorNV(await searchParams);
   return (
-    <div className="flex h-dvh flex-col bg-white p-2">
+    <div className="h-dvh bg-white font-nv text-nv-texto">
       <GeovisorNV {...d} embed />
-      <p className="pt-1 text-right text-[11px] text-stone-500">
-        <a href="/negocios-verdes/geovisor" target="_blank" rel="noopener" className="hover:underline">
-          Negocios Verdes CDMB — abrir el geovisor completo
-        </a>
-      </p>
     </div>
   );
 }

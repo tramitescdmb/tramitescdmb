@@ -18,6 +18,19 @@ const inter = localFont({
   display: "swap",
 });
 
+// Tipografía de Negocios Verdes (Work Sans, licencia OFL: fonts/WorkSans-OFL.txt). Solo la usan sus páginas.
+const workSans = localFont({
+  src: [
+    { path: "./fonts/worksans-Regular.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/worksans-Medium.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/worksans-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/worksans-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-nv",
+  display: "swap",
+  preload: false,
+});
+
 // Todas las páginas dependen de la sesión y de la base (ya eran dinámicas en Next 15). Next 16 intenta
 // prerenderizarlas en el build y, si la base no responde (como en el CI), el build falla; así se declara
 // de una vez que nada se genera en el build y que nada consulta la base al compilar.
@@ -36,7 +49,7 @@ export default async function RootLayout({
   // Color del menú lateral que escogió la persona (cookie); el predeterminado es el verde institucional.
   const temaMenu = temaMenuValido((await cookies()).get(COOKIE_TEMA_MENU)?.value);
   return (
-    <html lang="es" className={inter.variable} data-tema-menu={temaMenu}>
+    <html lang="es" className={`${inter.variable} ${workSans.variable}`} data-tema-menu={temaMenu}>
       <body className="flex min-h-screen flex-col text-stone-900 antialiased" suppressHydrationWarning>
         <div className="print:hidden">
           <FranjaGovCo />

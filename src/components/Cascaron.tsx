@@ -31,17 +31,10 @@ export function Cascaron({
 }) {
   const pathname = usePathname() ?? "";
 
-  // Sitio público de Negocios Verdes: lleva su propio encabezado (el panel interno usa el menú del SIC).
-  // Geovisor incrustado (iframe): sin pie.
-  if (pathname === "/negocios-verdes/geovisor/embed") return <main className="w-full flex-1">{children}</main>;
-
-  if (esSitioPublicoNV(pathname)) {
-    return (
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main className="w-full flex-1">{children}</main>
-        <div className="print:hidden">{pie}</div>
-      </div>
-    );
+  // Negocios Verdes conserva el aspecto de su plataforma anterior: el sitio público trae su propio
+  // encabezado y pie, y el panel interno su propio menú lateral (con enlace de regreso al SIC).
+  if (esSitioPublicoNV(pathname) || pathname === "/negocios-verdes/admin" || pathname.startsWith("/negocios-verdes/admin/")) {
+    return <main className="flex w-full min-w-0 flex-1 flex-col">{children}</main>;
   }
 
   if (esRutaPublica(pathname)) {

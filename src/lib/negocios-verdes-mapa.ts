@@ -106,7 +106,7 @@ export function puntosCsv(puntos: PuntoMapaNV[], base: string): string {
 }
 
 /** Estado del geovisor que se guarda en el enlace para compartir (?q=&municipio=&categoria=&reconocimiento=&capas=&v=lat,lng,zoom). */
-export function leerVistaMapa(sp: URLSearchParams): { filtro: FiltroMapaNV; capas: string[]; vista: [number, number, number] | null } {
+export function leerVistaMapa(sp: URLSearchParams): { filtro: FiltroMapaNV; capas: string[]; vista: [number, number, number] | null; negocio: string | null } {
   const rec = sp.get("reconocimiento") ?? "";
   const v = (sp.get("v") ?? "").split(",").map(Number);
   return {
@@ -117,6 +117,8 @@ export function leerVistaMapa(sp: URLSearchParams): { filtro: FiltroMapaNV; capa
       reconocimiento: rec === "avalado" || rec === "sello" || rec === "emprendimiento" ? rec : "",
     },
     capas: (sp.get("capas") ?? "").split(",").filter((c) => /^[a-z_]{2,20}$/.test(c)).slice(0, 10),
+    // ?negocio=slug: el geovisor se acerca a ese negocio y abre su aviso (desde la ficha o el buscador).
+    negocio: /^[a-z0-9-]{1,120}$/.test(sp.get("negocio") ?? "") ? sp.get("negocio") : null,
     vista: v.length === 3 && coordenadaEnJurisdiccion(v[0]!, v[1]!) && v[2]! >= 8 && v[2]! <= 19 ? [v[0]!, v[1]!, Math.round(v[2]!)] : null,
   };
 }

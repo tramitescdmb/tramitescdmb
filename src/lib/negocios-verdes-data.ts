@@ -51,9 +51,9 @@ export const configuracionPublicaNV = unstable_cache(
     return {
       logoUrl: urlImagenNV(config?.logoRuta),
       logosPie: [
-        { url: urlImagenNV(config?.logoGovcoRuta), alt: "GOV.CO" },
         { url: urlImagenNV(config?.logoColombiaRuta), alt: "Colombia" },
         { url: urlImagenNV(config?.logoPotenciaRuta), alt: "Colombia potencia de la vida" },
+        { url: urlImagenNV(config?.logoGovcoRuta), alt: "GOV.CO" },
       ].filter((l): l is { url: string; alt: string } => Boolean(l.url)),
       banners: banners.map((b) => ({ id: b.id, imagenUrl: urlImagenNV(b.imagenRuta), urlDestino: b.urlDestino, abrirEnPestanaNueva: b.abrirEnPestanaNueva })),
     };
@@ -106,3 +106,30 @@ export async function listarNegociosPanel(filtro: { q?: string; municipio?: stri
     take: 500,
   });
 }
+
+export type NodoTaxonomiaNV = { id: string; nombre: string; slug: string; icono: string | null; iconoUrl: string | null };
+export type CategoriaPublicaNV = NodoTaxonomiaNV & { subcategorias: (NodoTaxonomiaNV & { actividades: NodoTaxonomiaNV[] })[] };
+
+/** Clasificación activa (categoría → subcategoría → actividad), para los filtros del inicio y del buscador. */
+export const taxonomiaPublicaNV = unstable_cache(
+  async (): Promise<CategoriaPublicaNV[]> => {
+    const nodo = { id: true, nombre: true, slug: true, icono: true, iconoRuta: true } as const;
+    const orden = [{ orden: "asc" as const }, { nombre: "asc" as const }];
+    const filas = await db.nvCategoria.findMany({
+      where: { activo: true },
+      orderBy: orden,
+      select: {
+        ...nodo,
+        subcategorias: {
+          where: { activo: true },
+          orderBy: orden,
+          select: { ...nodo, actividades: { where: { activo: true }, orderBy: orden, select: nodo } },
+        },
+      },
+    });
+    const n = <T extends { iconoRuta: string | null }>({ iconoRuta, ...r }: T) => ({ ...r, iconoUrl: urlImagenNV(iconoRuta) });
+    return filas.map((c) => ({ ...n(c), subcategorias: c.subcategorias.map((s) => ({ ...n(s), actividades: s.actividades.map(n) })) })) as CategoriaPublicaNV[];
+  },
+  ["nv-taxonomia-publica"],
+  { revalidate: 60, tags: [ETIQUETA_CACHE_NV] }
+);
