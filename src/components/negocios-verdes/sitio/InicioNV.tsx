@@ -11,6 +11,21 @@ export type DiapositivaNV =
   | { tipo: "imagen"; imagenUrl: string; destino: string | null; nuevaPestana: boolean }
   | { tipo: "texto"; titulo: string; subtitulo: string; fondo: string; oscuro: boolean; boton?: string; destino?: string };
 
+/**
+ * Imagen de un banner. Si no ocupa todo el recuadro (banners de distinta proporción), el espacio
+ * sobrante se llena con la misma imagen desenfocada en lugar de una franja de color.
+ */
+function ImagenBanner({ url, natural }: { url: string; natural: boolean }) {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className={`relative ${natural ? "block h-auto w-full" : "h-full w-full object-contain"}`} />
+    </div>
+  );
+}
+
 /** Carrusel del inicio: banners cargados en «Apariencia» o, si no hay, las 4 diapositivas genéricas. */
 export function CarruselNV({ diapositivas }: { diapositivas: DiapositivaNV[] }) {
   const [i, setI] = useState(0);
@@ -23,22 +38,22 @@ export function CarruselNV({ diapositivas }: { diapositivas: DiapositivaNV[] }) 
   }, [reproduciendo, n, i]);
   if (n === 0) return null;
   const ir = (x: number) => setI(((x % n) + n) % n);
+  // Con solo banners de imagen, el carrusel toma la proporción de la imagen a todo el ancho: sin franjas ni recortes.
+  const soloImagenes = diapositivas.every((d) => d.tipo === "imagen");
   const boton = "rounded-full bg-black/25 p-1.5 text-white hover:bg-black/40";
 
   return (
-    <section aria-roledescription="carrusel" aria-label="Destacados" className="relative h-[min(300px,25vw)] min-h-[180px] w-full overflow-hidden bg-nv-menu">
+    <section aria-roledescription="carrusel" aria-label="Destacados" className={`relative w-full overflow-hidden ${soloImagenes ? "bg-nv-fondo" : "h-[min(300px,25vw)] min-h-[180px] bg-nv-menu"}`}>
       <div className="flex h-full transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${i * 100}%)` }}>
         {diapositivas.map((d, k) => (
           <div key={k} className="h-full w-full flex-none" aria-hidden={k !== i}>
             {d.tipo === "imagen" ? (
               d.destino ? (
                 <a href={d.destino} target={d.nuevaPestana ? "_blank" : undefined} rel={d.nuevaPestana ? "noopener noreferrer" : undefined} tabIndex={k === i ? 0 : -1} className="block h-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={d.imagenUrl} alt="" className="h-full w-full object-contain" />
+                  <ImagenBanner url={d.imagenUrl} natural={soloImagenes} />
                 </a>
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={d.imagenUrl} alt="" className="h-full w-full object-contain" />
+                <ImagenBanner url={d.imagenUrl} natural={soloImagenes} />
               )
             ) : (
               <div className="flex h-full flex-col items-center justify-center px-6 text-center" style={{ background: d.fondo, color: d.oscuro ? "#1b2a20" : "#fff" }}>
