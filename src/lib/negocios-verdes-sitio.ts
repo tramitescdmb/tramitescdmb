@@ -50,3 +50,8 @@ export const RECONOCIMIENTOS_NV = [
       "Certificación oficial que reconoce a las empresas y emprendimientos que generan un impacto ambiental positivo, garantizan buenas prácticas sociales y económicas, y protegen los recursos naturales. Se otorga a los negocios que superan el 71 % de cumplimiento en la evaluación de criterios.",
   },
 ] as const;
+
+/** Logo de la CDMB que usaba la plataforma anterior cuando no se ha subido uno en «Apariencia». */
+export const LOGO_CDMB_NV = "/negocios-verdes/iconografia/logo_cdmb.png";
+/** Imagen genérica del programa (para negocios y productos sin foto). */
+export const LOGO_PROGRAMA_NV = "/negocios-verdes/iconografia/logo_negocios_verdes.png";

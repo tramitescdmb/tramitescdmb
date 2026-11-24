@@ -140,3 +140,19 @@ main:has([data-tablero]) .encabezado-modulo {
 main:has([data-tablero]) .encabezado-modulo ~ :not(.encabezado-modulo) {
   margin-top: 0 !important;
 }
+
+/* Geovisor de Negocios Verdes: nombre del municipio sobre su límite (como en la plataforma anterior). */
+.leaflet-tooltip.nv-etiqueta-municipio {
+  background: rgba(255, 255, 255, 0.92);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: #026b4d;
+  font-family: var(--font-nv), sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+}
+.leaflet-tooltip.nv-etiqueta-municipio::before {
+  display: none;
+}

@@ -273,7 +273,9 @@ export function leerFiltroNV(sp: Record<string, string | string[] | undefined>):
     return s ? s.slice(0, 120) : undefined;
   };
   const municipio = uno("municipio");
-  const reconocimiento = uno("reconocimiento");
+  // La plataforma anterior marcaba el reconocimiento con avalado=1, sello=1 o emprendimiento=1.
+  const anterior = (["avalado", "sello", "emprendimiento"] as const).find((k) => uno(k) === "1" || uno(k) === "true");
+  const reconocimiento = uno("reconocimiento") ?? anterior;
   return {
     q: uno("q"),
     municipio: esMunicipioNV(municipio) ? municipio : undefined,

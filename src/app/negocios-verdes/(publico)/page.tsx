@@ -1,156 +1,139 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { filtrarNegociosNV, leerFiltroNV, paginar, type FiltroNV } from "@/lib/negocios-verdes";
-import { configuracionPublicaNV, listarNegociosPublicos, opcionesFiltroNV } from "@/lib/negocios-verdes-data";
+import { redirect } from "next/navigation";
+import { ArrowRight, BadgeCheck, Leaf, MapPin, Network, Shapes, Store, Tag, Workflow } from "lucide-react";
+import { MUNICIPIOS_NV } from "@/lib/negocios-verdes";
+import { configuracionPublicaNV, listarNegociosPublicos, taxonomiaPublicaNV } from "@/lib/negocios-verdes-data";
 import { TarjetaNegocio } from "@/components/negocios-verdes/TarjetaNegocio";
+import { BuscadorInicioNV, CarruselNV, FiltrosInicioNV, type DiapositivaNV } from "@/components/negocios-verdes/sitio/InicioNV";
 
 export const dynamic = "force-dynamic";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-function enlacePagina(filtro: FiltroNV, pagina: number) {
-  const q = new URLSearchParams();
-  for (const [k, v] of Object.entries(filtro)) if (v) q.set(k, v);
-  if (pagina > 1) q.set("pagina", String(pagina));
-  const s = q.toString();
-  return `/negocios-verdes${s ? `?${s}` : ""}#buscar`;
+/** Onda divisora entre franjas (misma curva de la plataforma anterior). */
+function Onda({ fondo, onda }: { fondo: string; onda: string }) {
+  return (
+    <svg viewBox="0 0 100 34" preserveAspectRatio="none" className="-mb-px block h-[34px] w-full" style={{ background: fondo }} aria-hidden>
+      <path d="M0 18.7 Q25 0 50 13.6 T100 6.8 V34 H0 Z" fill={onda} />
+    </svg>
+  );
 }
 
+const PILARES = [
+  { icono: BadgeCheck, titulo: "Verificados por la CDMB", texto: "Cada negocio pasa por un proceso real de verificación de la Ventanilla de Negocios Verdes antes de aparecer en este directorio." },
+  { icono: Leaf, titulo: "Impacto ambiental positivo", texto: "Prácticas que protegen los recursos naturales y la biodiversidad en los 13 municipios de la jurisdicción de la CDMB." },
+  {
+    icono: Network,
+    titulo: "Parte del Plan Nacional",
+    texto: "Cada negocio queda clasificado bajo las 3 categorías, 12 subcategorías y 29 actividades productivas oficiales del Plan Nacional de Negocios Verdes 2022-2030.",
+  },
+];
+
 export default async function NegociosVerdesInicio({ searchParams }: Props) {
+  // Enlaces viejos del buscador (/negocios-verdes?q=…) siguen funcionando: van al buscador.
   const sp = await searchParams;
-  const filtro = leerFiltroNV(sp);
-  const [todos, nv] = await Promise.all([listarNegociosPublicos(), configuracionPublicaNV()]);
-  const opciones = opcionesFiltroNV(todos);
-  const resultado = paginar(filtrarNegociosNV(todos, filtro), Number(sp.pagina) || 1);
-  const hayFiltro = Object.values(filtro).some(Boolean);
-  const banner = nv.banners.find((b) => b.imagenUrl);
-  const municipios = new Set(todos.map((n) => n.municipio)).size;
+  const viejo = new URLSearchParams();
+  for (const k of ["q", "municipio", "categoria", "subcategoria", "actividad", "reconocimiento", "pagina"]) {
+    const v = sp[k];
+    if (typeof v === "string" && v.trim()) viejo.set(k, v.trim().slice(0, 120));
+  }
+  if (viejo.size > 0) redirect(`/negocios-verdes/buscar?${viejo}`);
+
+  const [todos, nv, categorias] = await Promise.all([listarNegociosPublicos(), configuracionPublicaNV(), taxonomiaPublicaNV()]);
+  const destacados = todos.filter((n) => n.destacado).slice(0, 6);
+  const subcategorias = categorias.reduce((s, c) => s + c.subcategorias.length, 0);
+  const actividades = categorias.reduce((s, c) => s + c.subcategorias.reduce((t, x) => t + x.actividades.length, 0), 0);
+
+  const banners: DiapositivaNV[] = nv.banners
+    .filter((b): b is typeof b & { imagenUrl: string } => Boolean(b.imagenUrl))
+    .map((b) => ({ tipo: "imagen", imagenUrl: b.imagenUrl, destino: b.urlDestino, nuevaPestana: b.abrirEnPestanaNueva }));
+  const diapositivas: DiapositivaNV[] = banners.length
+    ? banners
+    : [
+        { tipo: "texto", titulo: "Negocios Verdes CDMB", subtitulo: `${todos.length} negocios verdes en los 13 municipios de la jurisdicción CDMB`, fondo: "#85c800", oscuro: true },
+        { tipo: "texto", titulo: "¿Qué son los Negocios Verdes?", subtitulo: "Conoce los requisitos y beneficios de hacer parte del programa de la CDMB.", fondo: "#ff8623", oscuro: true, boton: "Conocer más", destino: "/negocios-verdes/nosotros" },
+        { tipo: "texto", titulo: "Encuentra por categoría", subtitulo: "Agrosistemas, turismo sostenible, biocomercio, tecnologías verdes y más.", fondo: "#01bd32", oscuro: true, boton: "Ver categorías", destino: "/negocios-verdes/buscar" },
+        { tipo: "texto", titulo: "13 municipios, un solo directorio", subtitulo: "Bucaramanga, Floridablanca, Girón, Piedecuesta y 9 municipios más de la jurisdicción CDMB.", fondo: "#20272a", oscuro: false, boton: "Buscar por municipio", destino: "/negocios-verdes/buscar" },
+      ];
+
+  const cifras = [
+    { icono: MapPin, etiqueta: "Municipios", valor: MUNICIPIOS_NV.length },
+    { icono: Shapes, etiqueta: "Categorías", valor: categorias.length },
+    { icono: Tag, etiqueta: "Subcategorías", valor: subcategorias },
+    { icono: Workflow, etiqueta: "Actividades productivas", valor: actividades },
+    { icono: Store, etiqueta: "Negocios verdes", valor: todos.length },
+  ];
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-2xl bg-emerald-800 text-white">
-        {banner?.imagenUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={banner.imagenUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
-        )}
-        <div className="relative px-6 py-10 sm:px-10 sm:py-14">
-          <p className="text-sm font-medium uppercase tracking-wide text-emerald-200">Programa Nacional de Negocios Verdes</p>
-          <h1 className="mt-2 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">Negocios verdes de la Meseta de Bucaramanga</h1>
-          <p className="mt-3 max-w-2xl text-base text-emerald-50">
-            Conozca y contacte los negocios que ofrecen bienes y servicios con impacto ambiental positivo en los municipios de la jurisdicción de la CDMB.
-          </p>
-          <dl className="mt-6 flex flex-wrap gap-6 text-sm">
-            <div>
-              <dt className="text-emerald-200">Negocios publicados</dt>
-              <dd className="text-2xl font-semibold">{todos.length}</dd>
-            </div>
-            <div>
-              <dt className="text-emerald-200">Municipios</dt>
-              <dd className="text-2xl font-semibold">{municipios}</dd>
-            </div>
-            <div>
-              <dt className="text-emerald-200">Categorías</dt>
-              <dd className="text-2xl font-semibold">{opciones.categorias.length}</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
+    <div>
+      <CarruselNV diapositivas={diapositivas} />
+      <BuscadorInicioNV sugerencias={todos.map((n) => n.nombre)} />
 
-      <section id="buscar" className="scroll-mt-4 space-y-4">
-        <form method="get" action="/negocios-verdes#buscar" className="grid gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-stone-700">¿Qué busca?</span>
-            <input
-              type="search"
-              name="q"
-              defaultValue={filtro.q ?? ""}
-              placeholder="Café, ecoturismo, miel…"
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-stone-700">Municipio</span>
-            <select name="municipio" defaultValue={filtro.municipio ?? ""} className="w-full rounded-lg border border-stone-300 px-3 py-2">
-              <option value="">Todos</option>
-              {opciones.municipios.map((m) => (
-                <option key={m.valor} value={m.valor}>
-                  {m.nombre} ({m.cantidad})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-stone-700">Categoría</span>
-            <select name="categoria" defaultValue={filtro.categoria ?? ""} className="w-full rounded-lg border border-stone-300 px-3 py-2">
-              <option value="">Todas</option>
-              {opciones.categorias.map((c) => (
-                <option key={c.valor} value={c.valor}>
-                  {c.nombre} ({c.cantidad})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-stone-700">Reconocimiento</span>
-            <select name="reconocimiento" defaultValue={filtro.reconocimiento ?? ""} className="w-full rounded-lg border border-stone-300 px-3 py-2">
-              <option value="">Cualquiera</option>
-              <option value="avalado">Avalado</option>
-              <option value="sello">Sello de marca</option>
-              <option value="emprendimiento">Emprendimiento verde</option>
-            </select>
-          </label>
-          <div className="flex items-end gap-2">
-            <button type="submit" className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
-              <Search className="h-4 w-4" aria-hidden /> Buscar
-            </button>
-          </div>
-        </form>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-stone-600">
-          <p>
-            {resultado.total === 1 ? "1 negocio" : `${resultado.total} negocios`}
-            {hayFiltro ? " con ese filtro" : ""}
-          </p>
-          {hayFiltro && (
-            <Link prefetch={false} href="/negocios-verdes#buscar" className="font-medium text-emerald-700 hover:underline">
-              Quitar filtros
+      {destacados.length > 0 && (
+        <section className="px-5 pb-2 pt-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-[22px] font-semibold">Negocios destacados</h2>
+            <Link prefetch={false} href="/negocios-verdes/buscar" className="text-sm font-semibold text-nv-vivo hover:underline">
+              Ver todos
             </Link>
-          )}
-        </div>
-
-        {resultado.items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center text-sm text-stone-600">
-            {todos.length === 0 ? "Todavía no hay negocios publicados." : "No hay negocios que coincidan con la búsqueda. Pruebe con otras palabras o quite algún filtro."}
-          </p>
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {resultado.items.map((n) => (
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {destacados.map((n) => (
               <li key={n.id} className="flex">
-                <div className="flex w-full">
-                  <TarjetaNegocio negocio={n} />
-                </div>
+                <TarjetaNegocio negocio={n} />
               </li>
             ))}
           </ul>
-        )}
+        </section>
+      )}
 
-        {resultado.paginas > 1 && (
-          <nav aria-label="Páginas" className="flex flex-wrap items-center justify-center gap-2 text-sm">
-            {resultado.pagina > 1 && (
-              <Link prefetch={false} href={enlacePagina(filtro, resultado.pagina - 1)} className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 hover:bg-stone-50">
-                Anterior
-              </Link>
-            )}
-            <span className="text-stone-600">
-              Página {resultado.pagina} de {resultado.paginas}
-            </span>
-            {resultado.pagina < resultado.paginas && (
-              <Link prefetch={false} href={enlacePagina(filtro, resultado.pagina + 1)} className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 hover:bg-stone-50">
-                Siguiente
-              </Link>
-            )}
-          </nav>
-        )}
+      <FiltrosInicioNV categorias={categorias} />
+
+      <div className="mt-2">
+        <Onda fondo="#faf8f3" onda="#85c800" />
+        <section className="bg-nv-menu px-5 py-7">
+          <div className="mx-auto max-w-[820px] text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/negocios-verdes/iconografia/oso_anteojos_1.png" alt="" className="mx-auto h-16 w-auto" />
+            <dl className="mt-3 flex flex-wrap justify-evenly gap-y-5">
+              {cifras.map(({ icono: Icono, etiqueta, valor }) => (
+                <div key={etiqueta} className="flex w-[140px] flex-col items-center">
+                  <Icono className="h-[22px] w-[22px]" aria-hidden />
+                  <dt className="order-3 mt-1 text-[13px] font-medium">{etiqueta}</dt>
+                  <dd className="order-2 mt-1.5 text-[32px] font-bold leading-none">{valor}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+        <Onda fondo="#85c800" onda="#dceee6" />
+      </div>
+
+      <section className="bg-gradient-to-b from-nv-claro to-nv-fondo px-5 py-11 text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/negocios-verdes/iconografia/frailejon_1.png" alt="" className="h-[34px] w-[34px] object-contain" />
+        </span>
+        <h2 className="mt-4 text-2xl font-bold">¿Qué son los Negocios Verdes?</h2>
+        <p className="mx-auto mt-2.5 max-w-[560px] text-[15px] text-nv-texto2">
+          Son emprendimientos y empresas que ofrecen bienes y servicios con impacto ambiental positivo, verificados por la Ventanilla de Negocios Verdes en los 13 municipios de la jurisdicción de la CDMB.
+        </p>
+        <div className="mx-auto mt-8 grid max-w-[900px] gap-4 text-left md:grid-cols-3">
+          {PILARES.map(({ icono: Icono, titulo, texto }) => (
+            <div key={titulo} className="rounded-[16px] bg-white p-5 shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-nv-claro text-nv-vivo">
+                <Icono className="h-6 w-6" aria-hidden />
+              </span>
+              <h3 className="mt-6 text-[15px] font-semibold">{titulo}</h3>
+              <p className="mt-1.5 text-[13px] leading-[1.4] text-nv-texto2">{texto}</p>
+            </div>
+          ))}
+        </div>
+        <Link prefetch={false} href="/negocios-verdes/nosotros" className="mt-7 inline-flex items-center gap-2 rounded-[8px] bg-nv-acento px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nv-acento-oscuro">
+          <ArrowRight className="h-[18px] w-[18px]" aria-hidden /> Conocer más
+        </Link>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/negocios-verdes/iconografia/logo_feria_nv.png" alt="Feria Regional de Negocios Verdes" className="mx-auto mt-7 h-12 w-auto" />
       </section>
     </div>
   );

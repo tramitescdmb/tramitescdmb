@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { BandaTituloNV } from "@/components/negocios-verdes/sitio/BandaTituloNV";
 import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Plan Nacional de Negocios Verdes 2022-2030",
-  description: "Propósito, objetivos, metas a 2030 y líneas estratégicas del Plan Nacional de Negocios Verdes 2022-2030 del Ministerio de Ambiente y Desarrollo Sostenible.",
+  description:
+    "Propósito, objetivos, metas a 2030 y líneas estratégicas del Plan Nacional de Negocios Verdes 2022-2030 del Ministerio de Ambiente y Desarrollo Sostenible.",
 };
 
 const METAS = [
@@ -12,9 +14,18 @@ const METAS = [
   ["$2,1 billones", "en ingresos generados"],
 ];
 const ENFOQUES = [
-  ["Social", "Pone a las economías populares y comunidades en el centro del Plan: empoderamiento, saberes ancestrales y enfoque diferencial (étnico, jóvenes, género, campesino), buscando que la riqueza natural también genere riqueza monetaria para quienes cuidan los ecosistemas."],
-  ["Ambiental", "El impacto ambiental positivo es la razón principal de los negocios verdes: conservación, cambio de materiales y energías no renovables por renovables, mantenimiento de la biodiversidad y de servicios ecosistémicos, y reducción de emisiones de gases efecto invernadero."],
-  ["Económico", "Impulsa la transición hacia una economía de la biodiversidad: instrumentos económicos y financieros, circuitos cortos de comercialización, encadenamientos regionales y consumo responsable en instituciones públicas, empresas privadas y clientes finales."],
+  [
+    "Social",
+    "Pone a las economías populares y comunidades en el centro del Plan: empoderamiento, saberes ancestrales y enfoque diferencial (étnico, jóvenes, género, campesino), buscando que la riqueza natural también genere riqueza monetaria para quienes cuidan los ecosistemas.",
+  ],
+  [
+    "Ambiental",
+    "El impacto ambiental positivo es la razón principal de los negocios verdes: conservación, cambio de materiales y energías no renovables por renovables, mantenimiento de la biodiversidad y de servicios ecosistémicos, y reducción de emisiones de gases efecto invernadero.",
+  ],
+  [
+    "Económico",
+    "Impulsa la transición hacia una economía de la biodiversidad: instrumentos económicos y financieros, circuitos cortos de comercialización, encadenamientos regionales y consumo responsable en instituciones públicas, empresas privadas y clientes finales.",
+  ],
 ];
 const LINEAS = [
   "Alianzas, articulación y política",
@@ -33,81 +44,114 @@ const OBJETIVOS = [
 ];
 
 export default function PlanNacionalNV() {
-  const h2 = "text-xl font-semibold text-stone-900";
+  const h2 = "text-xl font-semibold text-nv-texto";
   return (
-    <article className="mx-auto max-w-4xl space-y-10">
-      <header>
-        <h1 className="text-3xl font-bold text-stone-900">Plan Nacional de Negocios Verdes 2022-2030</h1>
-        <p className="mt-1 text-stone-600">Ministerio de Ambiente y Desarrollo Sostenible de Colombia</p>
-      </header>
-      <section className="space-y-2">
-        <h2 className={h2}>Propósito superior</h2>
-        <p className="text-stone-700">
-          En 2030 los negocios verdes serán un renglón de impacto social y ambiental en la economía nacional, competitivos, inclusivos y sostenibles, contribuyendo al desarrollo bajo en carbono y
-          resiliente al clima, así como al aprovechamiento y conservación de capital natural que soporta el desarrollo de los territorios.
-        </p>
-      </section>
-      <section className="space-y-2">
-        <h2 className={h2}>Objetivo general</h2>
-        <p className="text-stone-700">
-          Incrementar y consolidar los negocios verdes que generan impacto ambiental positivo, empleo verde inclusivo e impulsan el crecimiento verde del país, incentivando el consumo consciente y
-          sostenible.
-        </p>
-      </section>
-      <section className="space-y-2">
-        <h2 className={h2}>Objetivos específicos</h2>
-        <ol className="list-decimal space-y-2 pl-5 text-stone-700">
-          {OBJETIVOS.map((o) => (
-            <li key={o}>{o}</li>
-          ))}
-        </ol>
-      </section>
-      <section className="space-y-3">
-        <h2 className={h2}>Meta a 2030</h2>
-        <dl className="grid gap-4 sm:grid-cols-3">
-          {METAS.map(([n, t]) => (
-            <div key={t} className="rounded-xl bg-emerald-800 p-5 text-white">
-              <dt className="text-3xl font-bold">{n}</dt>
-              <dd className="text-sm text-emerald-50">{t}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-      <section className="space-y-3">
-        <h2 className={h2}>Tres enfoques</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {ENFOQUES.map(([n, t]) => (
-            <div key={n} className="rounded-xl border border-stone-200 bg-white p-5">
-              <h3 className="font-semibold text-emerald-800">{n}</h3>
-              <p className="mt-2 text-sm text-stone-600">{t}</p>
-            </div>
-          ))}
+    <>
+      <BandaTituloNV titulo="Plan Nacional de Negocios Verdes 2022-2030" />
+      <article className="mx-auto max-w-[760px] space-y-10 px-5 py-7">
+        <header>
+          <p className="mt-1 text-nv-texto2">
+            Ministerio de Ambiente y Desarrollo Sostenible de Colombia
+          </p>
+        </header>
+        <section className="space-y-2">
+          <h2 className={h2}>Propósito superior</h2>
+          <p className="text-nv-texto">
+            En 2030 los negocios verdes serán un renglón de impacto social y
+            ambiental en la economía nacional, competitivos, inclusivos y
+            sostenibles, contribuyendo al desarrollo bajo en carbono y
+            resiliente al clima, así como al aprovechamiento y conservación de
+            capital natural que soporta el desarrollo de los territorios.
+          </p>
+        </section>
+        <section className="space-y-2">
+          <h2 className={h2}>Objetivo general</h2>
+          <p className="text-nv-texto">
+            Incrementar y consolidar los negocios verdes que generan impacto
+            ambiental positivo, empleo verde inclusivo e impulsan el crecimiento
+            verde del país, incentivando el consumo consciente y sostenible.
+          </p>
+        </section>
+        <section className="space-y-2">
+          <h2 className={h2}>Objetivos específicos</h2>
+          <ol className="list-decimal space-y-2 pl-5 text-nv-texto">
+            {OBJETIVOS.map((o) => (
+              <li key={o}>{o}</li>
+            ))}
+          </ol>
+        </section>
+        <section className="space-y-3">
+          <h2 className={h2}>Meta a 2030</h2>
+          <dl className="grid gap-4 sm:grid-cols-3">
+            {METAS.map(([n, t]) => (
+              <div
+                key={t}
+                className="rounded-[12px] bg-nv-oscuro p-5 text-white"
+              >
+                <dt className="text-3xl font-bold">{n}</dt>
+                <dd className="text-sm text-white/90">{t}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+        <section className="space-y-3">
+          <h2 className={h2}>Tres enfoques</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {ENFOQUES.map(([n, t]) => (
+              <div
+                key={n}
+                className="rounded-[12px] border border-nv-borde bg-white p-5"
+              >
+                <h3 className="font-semibold text-nv-oscuro">{n}</h3>
+                <p className="mt-2 text-sm text-nv-texto2">{t}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="space-y-3">
+          <h2 className={h2}>8 líneas estratégicas</h2>
+          <p className="text-nv-texto">
+            El plan de acción hacia 2030 se organiza en 8 líneas estratégicas de
+            intervención: cuatro transversales y de soporte, y cuatro con
+            alcance específico.
+          </p>
+          <ol className="grid gap-2 sm:grid-cols-2">
+            {LINEAS.map((l, i) => (
+              <li
+                key={l}
+                className="flex items-center gap-3 rounded-[8px] border border-nv-borde bg-white px-4 py-2.5 text-sm text-nv-texto"
+              >
+                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-nv-claro font-semibold text-nv-oscuro">
+                  {i + 1}
+                </span>
+                {l}
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section className="rounded-[12px] border border-nv-borde bg-white p-4 text-sm text-nv-texto2">
+          <strong>Fuente:</strong> Plan Nacional de Negocios Verdes 2022-2030.
+          Ministerio de Ambiente y Desarrollo Sostenible, Colombia (2022). Banco
+          Interamericano de Desarrollo (BID), Biointropic y Corporación
+          Biocomercio Sostenible.
+        </section>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            prefetch={false}
+            href="/negocios-verdes/nosotros"
+            className="rounded-[8px] border border-nv-vivo bg-white px-4 py-2 text-sm font-semibold text-nv-vivo hover:bg-nv-claro"
+          >
+            ← ¿Qué son los Negocios Verdes?
+          </Link>
+          <Link
+            prefetch={false}
+            href="/negocios-verdes#buscar"
+            className="rounded-[8px] bg-nv-acento px-4 py-2 text-sm font-semibold text-white hover:bg-nv-acento-oscuro"
+          >
+            Explorar negocios
+          </Link>
         </div>
-      </section>
-      <section className="space-y-3">
-        <h2 className={h2}>8 líneas estratégicas</h2>
-        <p className="text-stone-700">El plan de acción hacia 2030 se organiza en 8 líneas estratégicas de intervención: cuatro transversales y de soporte, y cuatro con alcance específico.</p>
-        <ol className="grid gap-2 sm:grid-cols-2">
-          {LINEAS.map((l, i) => (
-            <li key={l} className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-800">
-              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-emerald-100 font-semibold text-emerald-800">{i + 1}</span>
-              {l}
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className="rounded-xl bg-stone-100 p-4 text-sm text-stone-600">
-        <strong>Fuente:</strong> Plan Nacional de Negocios Verdes 2022-2030. Ministerio de Ambiente y Desarrollo Sostenible, Colombia (2022). Banco Interamericano de Desarrollo (BID), Biointropic y Corporación
-        Biocomercio Sostenible.
-      </section>
-      <div className="flex flex-wrap gap-3">
-        <Link prefetch={false} href="/negocios-verdes/nosotros" className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-white">
-          ← ¿Qué son los Negocios Verdes?
-        </Link>
-        <Link prefetch={false} href="/negocios-verdes#buscar" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
-          Explorar negocios
-        </Link>
-      </div>
-    </article>
+      </article>
+    </>
   );
 }

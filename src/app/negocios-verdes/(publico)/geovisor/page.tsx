@@ -9,13 +9,5 @@ export const metadata: Metadata = {
 
 export default async function GeovisorNegociosVerdes({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const d = await datosGeovisorNV(await searchParams);
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900">Geovisor</h1>
-        <p className="text-sm text-stone-600">Ubique los negocios verdes en el mapa y consulte las áreas de importancia ambiental de la jurisdicción.</p>
-      </div>
-      <GeovisorNV {...d} />
-    </div>
-  );
+  return <GeovisorNV {...d} />;
 }
