@@ -4,6 +4,7 @@ import { eliminar, limpiarCarpetasVacias } from "@/lib/almacen";
 import { BUCKET_NEGOCIOS_VERDES, urlImagenNV } from "@/lib/negocios-verdes";
 import { ETIQUETA_CACHE_NV } from "@/lib/negocios-verdes-data";
 import type { NegocioValidado, ValorFicha } from "@/lib/negocios-verdes-ficha";
+import { problemaCorreo, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
 
 export function refrescarSitioNV() {
   revalidateTag(ETIQUETA_CACHE_NV, { expire: 0 });
@@ -160,4 +161,138 @@ export async function guardarPuntajesNV(negocioId: string, puntajes: { anio: num
     db.nvNegocioPuntaje.deleteMany({ where: { negocioId } }),
     db.nvNegocioPuntaje.createMany({ data: puntajes.map((p) => ({ negocioId, anio: p.anio, puntaje: p.puntaje.toFixed(2) })) }),
   ]);
+}
+
+// ─── CSV ────────────────────────────────────────────────────────────────────
+
+export async function negociosParaCsv() {
+  const filas = await db.nvNegocio.findMany({
+    orderBy: { nombre: "asc" },
+    include: {
+      categoria: { select: { nombre: true } },
+      categorias: { select: { categoria: { select: { nombre: true } } } },
+      subcategorias: { select: { subcategoria: { select: { nombre: true } } } },
+      actividades: { select: { actividad: { select: { nombre: true } } } },
+    },
+  });
+  return filas.map((n) => {
+    const otras = n.categorias.map((c) => c.categoria.nombre).filter((c) => c !== n.categoria.nombre);
+    return {
+      id: n.id,
+      slug: n.slug,
+      nombre: n.nombre,
+      municipio: n.municipio,
+      direccion: n.direccion,
+      latitud: n.latitud,
+      longitud: n.longitud,
+      descripcionCorta: n.descripcionCorta,
+      descripcion: n.descripcion,
+      telefono: n.telefono,
+      whatsapp: n.whatsapp,
+      email: n.email,
+      sitioWeb: n.sitioWeb,
+      facebookUrl: n.facebookUrl,
+      instagramUrl: n.instagramUrl,
+      avalado: n.avalado,
+      selloMarca: n.selloMarca,
+      emprendimientoVerde: n.emprendimientoVerde,
+      destacado: n.destacado,
+      activo: n.activo,
+      // La principal va primero: al importar, la primera categoría es la principal.
+      categorias: [n.categoria.nombre, ...otras],
+      subcategorias: n.subcategorias.map((s) => s.subcategoria.nombre),
+      actividades: n.actividades.map((a) => a.actividad.nombre),
+    };
+  });
+}
+
+export async function catalogoCsvNV() {
+  const [categorias, subcategorias, actividades] = await Promise.all([
+    db.nvCategoria.findMany({ select: { id: true, nombre: true } }),
+    db.nvSubcategoria.findMany({ select: { id: true, nombre: true } }),
+    db.nvActividad.findMany({ select: { id: true, nombre: true } }),
+  ]);
+  return { categorias, subcategorias, actividades };
+}
+
+/**
+ * Aplica las filas válidas de un CSV: si el negocio existe (por id o por slug) se actualizan sus
+ * datos públicos y su clasificación; si no, se crea sin publicar. Todo en una transacción.
+ */
+export async function aplicarImportacionNV(filas: { id: string | null; slug: string | null; datos: NegocioValidado }[], usuarioId: string) {
+  let creados = 0;
+  let actualizados = 0;
+  await db.$transaction(
+    async (tx) => {
+      for (const { id, datos: d } of filas) {
+        const existente =
+          (id ? await tx.nvNegocio.findUnique({ where: { id }, select: { id: true } }) : null) ??
+          (await tx.nvNegocio.findUnique({ where: { slug: d.slug }, select: { id: true } }));
+        const publicos = {
+          nombre: d.nombre,
+          municipio: d.municipio,
+          direccion: d.direccion,
+          latitud: d.latitud,
+          longitud: d.longitud,
+          descripcionCorta: d.descripcionCorta,
+          descripcion: d.descripcion,
+          telefono: d.telefono,
+          whatsapp: d.whatsapp,
+          email: d.email,
+          sitioWeb: d.sitioWeb,
+          facebookUrl: d.facebookUrl,
+          instagramUrl: d.instagramUrl,
+          avalado: d.avalado,
+          selloMarca: d.selloMarca,
+          emprendimientoVerde: d.emprendimientoVerde,
+          destacado: d.destacado,
+          categoriaId: d.categoriaId,
+        };
+        const n = existente
+          ? await tx.nvNegocio.update({ where: { id: existente.id }, data: { ...publicos, activo: d.activo } })
+          : await tx.nvNegocio.create({ data: { ...publicos, slug: d.slug, activo: false, creadoPorId: usuarioId } });
+        if (existente) actualizados++;
+        else creados++;
+        await tx.nvNegocioCategoria.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioSubcategoria.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioActividad.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioCategoria.createMany({ data: d.categoriaIds.map((categoriaId) => ({ negocioId: n.id, categoriaId })) });
+        await tx.nvNegocioSubcategoria.createMany({ data: d.subcategoriaIds.map((subcategoriaId) => ({ negocioId: n.id, subcategoriaId })) });
+        await tx.nvNegocioActividad.createMany({ data: d.actividadIds.map((actividadId) => ({ negocioId: n.id, actividadId })) });
+      }
+    },
+    { timeout: 120_000 }
+  );
+  refrescarSitioNV();
+  return { creados, actualizados };
+}
+
+export type ProblemaDatoNV = { grave: boolean; texto: string };
+export type FilaRevisionNV = { tipo: "negocio" | "persona"; id: string; nombre: string; municipio: string | null; activo: boolean; problemas: ProblemaDatoNV[] };
+
+/**
+ * Revisión de datos: negocios con correo mal escrito o coordenadas fuera de la jurisdicción (o en
+ * otro municipio del que dicen) y personas con correo mal escrito. Lo grave impide guardar el
+ * negocio hasta corregirlo; el aviso solo se muestra.
+ */
+export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
+  const [negocios, personas] = await Promise.all([
+    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
+    db.nvPersona.findMany({ where: { correo: { not: null } }, select: { id: true, nombres: true, apellidos: true, municipio: true, activo: true, correo: true }, orderBy: { nombres: "asc" } }),
+  ]);
+  const filas: FilaRevisionNV[] = [];
+  for (const n of negocios) {
+    const problemas: ProblemaDatoNV[] = [];
+    const correo = problemaCorreo(n.email);
+    if (correo) problemas.push({ grave: true, texto: `Correo «${n.email}»: ${correo}` });
+    const u = verificarUbicacion(n.latitud, n.longitud, n.municipio);
+    for (const t of u.errores) problemas.push({ grave: true, texto: `${t} (${n.latitud ?? "sin latitud"}, ${n.longitud ?? "sin longitud"})` });
+    for (const t of u.avisos) problemas.push({ grave: false, texto: t });
+    if (problemas.length) filas.push({ tipo: "negocio", id: n.id, nombre: n.nombre, municipio: n.municipio, activo: n.activo, problemas });
+  }
+  for (const p of personas) {
+    const correo = problemaCorreo(p.correo);
+    if (correo) filas.push({ tipo: "persona", id: p.id, nombre: `${p.nombres} ${p.apellidos ?? ""}`.trim(), municipio: p.municipio, activo: p.activo, problemas: [{ grave: true, texto: `Correo «${p.correo}»: ${correo}` }] });
+  }
+  return filas;
 }
