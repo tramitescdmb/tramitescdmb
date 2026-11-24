@@ -52,6 +52,15 @@ export const RECONOCIMIENTOS_NV = [
 ] as const;
 
 /** Logo de la CDMB que usaba la plataforma anterior cuando no se ha subido uno en «Apariencia». */
+/**
+ * Dirección pública con la que se arman QR, enlaces para compartir, sitemap y descargas del
+ * geovisor (variable URL_PUBLICA_NV, p. ej. «http://sic.cdmb.gov.co» mientras no haya certificado y
+ * «https://sic.cdmb.gov.co» cuando exista). Vacía: se usa la dirección por la que entró la persona.
+ */
+export function urlPublicaNV(): string {
+  return (process.env.URL_PUBLICA_NV ?? "").trim().replace(/\/+$/, "");
+}
+
 export const LOGO_CDMB_NV = "/negocios-verdes/iconografia/logo_cdmb.png";
 /** Imagen genérica del programa (para negocios y productos sin foto). */
 export const LOGO_PROGRAMA_NV = "/negocios-verdes/iconografia/logo_negocios_verdes.png";

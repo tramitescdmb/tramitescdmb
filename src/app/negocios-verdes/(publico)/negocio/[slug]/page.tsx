@@ -6,7 +6,7 @@ import { IconBrandFacebook, IconBrandInstagram, IconBrandWhatsapp, IconId, type 
 import { enlaceWhatsapp } from "@/lib/negocios-verdes";
 import { negocioPublicoPorSlug } from "@/lib/negocios-verdes-data";
 import { aPuntoMapa } from "@/lib/negocios-verdes-mapa";
-import { LOGO_PROGRAMA_NV } from "@/lib/negocios-verdes-sitio";
+import { LOGO_PROGRAMA_NV, urlPublicaNV } from "@/lib/negocios-verdes-sitio";
 import { Reconocimientos } from "@/components/negocios-verdes/TarjetaNegocio";
 import { CompartirNV, QrNegocioNV } from "@/components/negocios-verdes/sitio/FichaAccionesNV";
 import { MapaResultadosNV } from "@/components/negocios-verdes/sitio/MapaResultadosNV";
@@ -92,7 +92,7 @@ export default async function FichaNegocioVerde({ params }: Props) {
           </div>
         )}
         <div className="absolute right-4 top-4">
-          <QrNegocioNV slug={n.slug} nombre={n.nombre} />
+          <QrNegocioNV slug={n.slug} nombre={n.nombre} base={urlPublicaNV()} />
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export default async function FichaNegocioVerde({ params }: Props) {
               <IconBrandWhatsapp className="h-5 w-5" aria-hidden /> Escribir por WhatsApp
             </a>
           )}
-          <CompartirNV nombre={n.nombre} />
+          <CompartirNV nombre={n.nombre} base={urlPublicaNV()} />
           {n.telefono && (
             <a href={tel(n.telefono)} className={botonBorde}>
               <Phone className="h-[18px] w-[18px]" aria-hidden /> {n.telefono}

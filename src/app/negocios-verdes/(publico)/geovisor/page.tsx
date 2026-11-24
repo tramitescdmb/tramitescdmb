@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { datosGeovisorNV } from "@/lib/negocios-verdes-geovisor-data";
 import { GeovisorNV } from "@/components/negocios-verdes/GeovisorNV";
+import { urlPublicaNV } from "@/lib/negocios-verdes-sitio";
 
 export const metadata: Metadata = {
   title: "Geovisor",
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 
 export default async function GeovisorNegociosVerdes({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const d = await datosGeovisorNV(await searchParams);
-  return <GeovisorNV {...d} />;
+  return <GeovisorNV {...d} base={urlPublicaNV()} />;
 }
