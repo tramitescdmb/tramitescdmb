@@ -42,6 +42,17 @@ Los dos se validan igual (sin espacios, una sola @, dominio completo) y el secun
 principal. Si el negocio está publicado, ambos salen en «Información de contacto» de su ficha pública.
 «Revisión de datos» también señala los correos secundarios mal escritos.
 
+Negocios que traen dos correos en «Correo» (aviso «Tiene más de un correo»): el script
+`scripts/negocios-verdes-correo-secundario.ts` deja el primero como correo y pasa el segundo a «Correo
+secundario». No separa (y los lista para corregir a mano) los que tienen tres o más correos, texto
+además de los correos, correos pegados o ya otro correo secundario. Cada cambio queda en la auditoría.
+En la VM:
+
+```bash
+sudo -u tramites bash -lc "cd /opt/tramites/app && npm run nv:correo-secundario -- --ensayo"   # qué cambiaría
+sudo -u tramites bash -lc "cd /opt/tramites/app && npm run nv:correo-secundario"               # aplicar
+```
+
 ## Sitio público: páginas
 
 | Ruta | Contenido |
