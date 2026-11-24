@@ -161,3 +161,107 @@ export async function guardarPuntajesNV(negocioId: string, puntajes: { anio: num
     db.nvNegocioPuntaje.createMany({ data: puntajes.map((p) => ({ negocioId, anio: p.anio, puntaje: p.puntaje.toFixed(2) })) }),
   ]);
 }
+
+// ─── CSV ────────────────────────────────────────────────────────────────────
+
+export async function negociosParaCsv() {
+  const filas = await db.nvNegocio.findMany({
+    orderBy: { nombre: "asc" },
+    include: {
+      categoria: { select: { nombre: true } },
+      categorias: { select: { categoria: { select: { nombre: true } } } },
+      subcategorias: { select: { subcategoria: { select: { nombre: true } } } },
+      actividades: { select: { actividad: { select: { nombre: true } } } },
+    },
+  });
+  return filas.map((n) => {
+    const otras = n.categorias.map((c) => c.categoria.nombre).filter((c) => c !== n.categoria.nombre);
+    return {
+      id: n.id,
+      slug: n.slug,
+      nombre: n.nombre,
+      municipio: n.municipio,
+      direccion: n.direccion,
+      latitud: n.latitud,
+      longitud: n.longitud,
+      descripcionCorta: n.descripcionCorta,
+      descripcion: n.descripcion,
+      telefono: n.telefono,
+      whatsapp: n.whatsapp,
+      email: n.email,
+      sitioWeb: n.sitioWeb,
+      facebookUrl: n.facebookUrl,
+      instagramUrl: n.instagramUrl,
+      avalado: n.avalado,
+      selloMarca: n.selloMarca,
+      emprendimientoVerde: n.emprendimientoVerde,
+      destacado: n.destacado,
+      activo: n.activo,
+      // La principal va primero: al importar, la primera categoría es la principal.
+      categorias: [n.categoria.nombre, ...otras],
+      subcategorias: n.subcategorias.map((s) => s.subcategoria.nombre),
+      actividades: n.actividades.map((a) => a.actividad.nombre),
+    };
+  });
+}
+
+export async function catalogoCsvNV() {
+  const [categorias, subcategorias, actividades] = await Promise.all([
+    db.nvCategoria.findMany({ select: { id: true, nombre: true } }),
+    db.nvSubcategoria.findMany({ select: { id: true, nombre: true } }),
+    db.nvActividad.findMany({ select: { id: true, nombre: true } }),
+  ]);
+  return { categorias, subcategorias, actividades };
+}
+
+/**
+ * Aplica las filas válidas de un CSV: si el negocio existe (por id o por slug) se actualizan sus
+ * datos públicos y su clasificación; si no, se crea sin publicar. Todo en una transacción.
+ */
+export async function aplicarImportacionNV(filas: { id: string | null; slug: string | null; datos: NegocioValidado }[], usuarioId: string) {
+  let creados = 0;
+  let actualizados = 0;
+  await db.$transaction(
+    async (tx) => {
+      for (const { id, datos: d } of filas) {
+        const existente =
+          (id ? await tx.nvNegocio.findUnique({ where: { id }, select: { id: true } }) : null) ??
+          (await tx.nvNegocio.findUnique({ where: { slug: d.slug }, select: { id: true } }));
+        const publicos = {
+          nombre: d.nombre,
+          municipio: d.municipio,
+          direccion: d.direccion,
+          latitud: d.latitud,
+          longitud: d.longitud,
+          descripcionCorta: d.descripcionCorta,
+          descripcion: d.descripcion,
+          telefono: d.telefono,
+          whatsapp: d.whatsapp,
+          email: d.email,
+          sitioWeb: d.sitioWeb,
+          facebookUrl: d.facebookUrl,
+          instagramUrl: d.instagramUrl,
+          avalado: d.avalado,
+          selloMarca: d.selloMarca,
+          emprendimientoVerde: d.emprendimientoVerde,
+          destacado: d.destacado,
+          categoriaId: d.categoriaId,
+        };
+        const n = existente
+          ? await tx.nvNegocio.update({ where: { id: existente.id }, data: { ...publicos, activo: d.activo } })
+          : await tx.nvNegocio.create({ data: { ...publicos, slug: d.slug, activo: false, creadoPorId: usuarioId } });
+        if (existente) actualizados++;
+        else creados++;
+        await tx.nvNegocioCategoria.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioSubcategoria.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioActividad.deleteMany({ where: { negocioId: n.id } });
+        await tx.nvNegocioCategoria.createMany({ data: d.categoriaIds.map((categoriaId) => ({ negocioId: n.id, categoriaId })) });
+        await tx.nvNegocioSubcategoria.createMany({ data: d.subcategoriaIds.map((subcategoriaId) => ({ negocioId: n.id, subcategoriaId })) });
+        await tx.nvNegocioActividad.createMany({ data: d.actividadIds.map((actividadId) => ({ negocioId: n.id, actividadId })) });
+      }
+    },
+    { timeout: 120_000 }
+  );
+  refrescarSitioNV();
+  return { creados, actualizados };
+}

@@ -5,6 +5,8 @@ import { verificarSesion, obtenerPermisosUsuario } from "@/lib/permisos";
 import { puedeGestionarNV } from "@/lib/negocios-verdes-permisos";
 import { catalogosFormularioNV, negocioParaEditar } from "@/lib/negocios-verdes-admin";
 import { FormNegocioNV } from "@/components/negocios-verdes/FormNegocioNV";
+import { VinculosNegocioNV } from "@/components/negocios-verdes/VinculosNegocioNV";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,10 @@ export default async function EditarNegocioNV({ params, searchParams }: { params
   const [negocio, catalogos] = await Promise.all([negocioParaEditar(id).catch(() => null), catalogosFormularioNV()]);
   if (!negocio || !permisos) notFound();
   const editable = puedeGestionarNV(permisos, "ACTUALIZAR");
+  const [vinculos, personas] = await Promise.all([
+    db.nvNegocioPersona.findMany({ where: { negocioId: id }, orderBy: [{ vigenteHasta: { sort: "desc", nulls: "first" } }, { vigenteDesde: "desc" }], include: { persona: { select: { nombres: true, apellidos: true } } } }),
+    editable ? db.nvPersona.findMany({ where: { activo: true }, orderBy: { nombres: "asc" }, select: { id: true, nombres: true, apellidos: true, tipo: true } }) : Promise.resolve([]),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -36,6 +42,21 @@ export default async function EditarNegocioNV({ params, searchParams }: { params
       ) : (
         <p className="text-sm text-stone-600">Su perfil solo permite consultar.</p>
       )}
+      <VinculosNegocioNV
+        negocioId={negocio.id}
+        editable={editable}
+        personas={personas.map((p) => ({ id: p.id, tipo: p.tipo, nombre: `${p.nombres} ${p.apellidos ?? ""}`.trim() }))}
+        vinculos={vinculos.map((v) => ({
+          id: v.id,
+          tipo: v.tipo,
+          persona: `${v.persona.nombres} ${v.persona.apellidos ?? ""}`.trim(),
+          nit: v.nit,
+          naturalezaJuridica: v.naturalezaJuridica,
+          nota: v.nota,
+          desde: v.vigenteDesde.toISOString(),
+          hasta: v.vigenteHasta?.toISOString() ?? null,
+        }))}
+      />
     </div>
   );
 }

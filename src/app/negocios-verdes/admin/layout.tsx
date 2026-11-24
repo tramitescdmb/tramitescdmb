@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ExternalLink, Leaf } from "lucide-react";
 import { verificarSesion as getSession, obtenerPermisosUsuario } from "@/lib/permisos";
-import { accedePanelNV } from "@/lib/negocios-verdes-permisos";
+import { accedePanelNV, puedeConfigurarNV, puedeGestionarNV } from "@/lib/negocios-verdes-permisos";
+import { PestanasPanelNV } from "@/components/negocios-verdes/PestanasPanelNV";
 import { registrarAuditoriaDoc, datosPeticion } from "@/lib/auditoria-doc";
 
 export const metadata: Metadata = { title: "Negocios Verdes — SIC CDMB" };
@@ -40,6 +41,7 @@ export default async function NegociosVerdesAdminLayout({ children }: { children
           Ver sitio público <ExternalLink className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>
+      <PestanasPanelNV configurar={puedeConfigurarNV(permisos)} gestionar={puedeGestionarNV(permisos, "CREAR")} />
       <div>{children}</div>
     </div>
   );
