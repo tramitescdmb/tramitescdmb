@@ -86,7 +86,7 @@ export async function guardarPerfilesDeUsuario(usuarioId: string, perfilIds: str
   return { perfiles: validos.size, excepciones: unicas.size };
 }
 
-const MODULO_DE_FUNCIONALIDAD: Record<string, string> = { tramites: "TRAMITES", sgdea: "SGDEA", gecon: "GECON", vital: "VITAL", sinca: "SINCA" };
+const MODULO_DE_FUNCIONALIDAD: Record<string, string> = { tramites: "TRAMITES", sgdea: "SGDEA", gecon: "GECON", vital: "VITAL", sinca: "SINCA", negociosVerdes: "NEGOCIOS_VERDES" };
 const ORDEN_SGDEA = ["ADMIN_ARCHIVO", "OPERADOR_VENTANILLA", "JEFE_DEPENDENCIA", "FUNCIONARIO_DEPENDENCIA"] as const;
 
 async function derivarCamposDesdeRoles(usuarioId: string) {

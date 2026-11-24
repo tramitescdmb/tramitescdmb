@@ -3,8 +3,10 @@ import { constants as fsConst } from "fs";
 import fs from "fs/promises";
 import path from "path";
 
-export const BUCKETS_PUBLICOS = new Set(["branding"]);
-const BUCKETS_VALIDOS = new Set(["documentos", "branding"]);
+// «negocios-verdes»: imágenes del sitio público de Negocios Verdes (portadas, galería, productos,
+// banners e íconos). Son públicas por naturaleza; ningún documento de usuario va en este almacén.
+export const BUCKETS_PUBLICOS = new Set(["branding", "negocios-verdes"]);
+const BUCKETS_VALIDOS = new Set(["documentos", "branding", "negocios-verdes"]);
 
 /** Los archivos viven siempre en el NAS (ALMACEN_LOCAL_DIR). */
 export function almacenLocal(): string | null {

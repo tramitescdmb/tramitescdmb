@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { refreshSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { esSitioPublicoNV } from "@/lib/negocios-verdes";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -26,6 +27,7 @@ export async function proxy(req: NextRequest) {
   if (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
+    esSitioPublicoNV(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   ) {

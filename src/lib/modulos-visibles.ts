@@ -4,7 +4,9 @@ export type CampoVisibilidadModulo =
   | "geconVisibleFuncionarios"
   | "vitalVisibleFuncionarios"
   | "sincaVisibleFuncionarios"
-  | "memorandosVisibleFuncionarios";
+  | "memorandosVisibleFuncionarios"
+  | "negociosVerdesVisibleFuncionarios"
+  | "negociosVerdesSitioPublico";
 
 export const MODULOS_CONFIGURABLES: { campo: CampoVisibilidadModulo; nombre: string; efecto: string }[] = [
   {
@@ -42,5 +44,17 @@ export const MODULOS_CONFIGURABLES: { campo: CampoVisibilidadModulo; nombre: str
     nombre: "SINCA 1.0 — Consulta histórica",
     efecto:
       "Desmarcado: el módulo desaparece del menú y se bloquea el acceso para todos menos administradores, aunque tengan asignadas las secciones de SINCA 1.0.",
+  },
+  {
+    campo: "negociosVerdesVisibleFuncionarios",
+    nombre: "Negocios Verdes — Panel administrativo",
+    efecto:
+      "Desmarcado: el panel interno (/negocios-verdes/admin) desaparece del menú y se bloquea para todos menos administradores, aunque tengan un perfil de Negocios Verdes. No afecta el sitio público.",
+  },
+  {
+    campo: "negociosVerdesSitioPublico",
+    nombre: "Negocios Verdes — Sitio público",
+    efecto:
+      "Marcado: la ciudadanía puede consultar el directorio en /negocios-verdes sin iniciar sesión (solo negocios publicados y solo sus datos públicos). Desmarcado: el sitio muestra «Sitio en preparación»; quienes tienen acceso al panel lo ven en vista previa.",
   },
 ];

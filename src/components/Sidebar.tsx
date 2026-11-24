@@ -15,6 +15,7 @@ export function Sidebar({
   mostrarCorrespondencia,
   mostrarContratacion,
   mostrarMemorandos = false,
+  mostrarNegociosVerdes = false,
 }: {
   logoUrl: string | null;
   esAdmin: boolean;
@@ -24,6 +25,7 @@ export function Sidebar({
   mostrarCorrespondencia: boolean;
   mostrarContratacion: boolean;
   mostrarMemorandos?: boolean;
+  mostrarNegociosVerdes?: boolean;
 }) {
   const { expandido, setExpandido } = useMenuModulo();
   const colapsado = !expandido;
@@ -44,6 +46,7 @@ export function Sidebar({
         mostrarCorrespondencia={mostrarCorrespondencia}
         mostrarContratacion={mostrarContratacion}
         mostrarMemorandos={mostrarMemorandos}
+        mostrarNegociosVerdes={mostrarNegociosVerdes}
         colapsado={colapsado}
       />
 

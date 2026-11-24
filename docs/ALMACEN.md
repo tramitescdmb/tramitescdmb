@@ -16,6 +16,12 @@ Los archivos de los usuarios viven en el NAS (`ALMACEN_LOCAL_DIR`, en la VM mont
 | `_subidas/<identificador>/` | Llegada temporal: el navegador sube aquí y, al registrar el documento, el sistema lo mueve a su carpeta. Si queda algo, es una subida que no se terminó de registrar. |
 | `derivados/` | Caché de PDF con el sello de firma/rótulo. Se regenera solo; se puede borrar. |
 
+**Almacén público de Negocios Verdes** (`<ALMACEN_LOCAL_DIR>/negocios-verdes/`, al lado de `documentos/` y
+`branding/`): imágenes del sitio público /negocios-verdes. Se sirven sin firma por
+`/api/almacen/negocios-verdes/...` porque son públicas por naturaleza. Dentro: `negocios-fotos/` (portadas,
+galería y productos) y `sitio-assets/` (banners, logos e íconos), con la misma ruta que tenían en la
+plataforma anterior. Aquí no va ningún documento de usuario.
+
 Los nombres de carpeta y de archivo se guardan sin tildes ni caracteres especiales
 (`Acta de visita (firmada).pdf` → `Acta_de_visita_firmada.pdf`). Si ya existe un archivo con el mismo
 nombre se guarda como `Acta_2.pdf`; nunca se pisa uno existente.
