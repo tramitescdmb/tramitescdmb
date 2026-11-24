@@ -25,22 +25,22 @@ export default async function EditarNegocioNV({ params, searchParams }: { params
 
   return (
     <div className="space-y-4">
-      <Link prefetch={false} href="/negocios-verdes/admin" className="text-sm font-medium text-emerald-700 hover:underline">
+      <Link prefetch={false} href="/negocios-verdes/admin/negocios" className="text-sm font-medium text-nv-vivo hover:underline">
         ← Negocios
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-stone-900">{negocio.nombre}</h2>
+        <h2 className="text-[26px] font-normal">{negocio.nombre}</h2>
         {negocio.activo && (
-          <Link prefetch={false} href={`/negocios-verdes/negocio/${encodeURIComponent(negocio.slug)}`} target="_blank" className="inline-flex items-center gap-1 text-sm text-emerald-700 hover:underline">
+          <Link prefetch={false} href={`/negocios-verdes/negocio/${encodeURIComponent(negocio.slug)}`} target="_blank" className="inline-flex items-center gap-1 text-sm text-nv-primario hover:underline">
             Ver ficha pública <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </Link>
         )}
       </div>
-      {creado && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Negocio creado. Ya puede subir su portada, galería y productos.</p>}
+      {creado && <p className="rounded-[8px] bg-nv-claro px-3 py-2 text-sm text-nv-oscuro">Negocio creado. Ya puede subir su portada, galería y productos.</p>}
       {editable ? (
         <FormNegocioNV negocio={negocio} catalogos={catalogos} puedeEliminar={puedeGestionarNV(permisos, "ELIMINAR")} />
       ) : (
-        <p className="text-sm text-stone-600">Su perfil solo permite consultar.</p>
+        <p className="text-sm text-nv-texto2">Su perfil solo permite consultar.</p>
       )}
       <VinculosNegocioNV
         negocioId={negocio.id}

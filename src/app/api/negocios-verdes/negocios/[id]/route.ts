@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auditarNV, exigirPermisoNV } from "@/lib/negocios-verdes-api";
 import { limpiarFicha, validarNegocio } from "@/lib/negocios-verdes-ficha";
-import { eliminarNegocioNV, guardarNegocioNV, imagenesDeNegocio, slugDisponible } from "@/lib/negocios-verdes-admin";
+import { eliminarNegocioNV, guardarNegocioNV, imagenesDeNegocio, refrescarSitioNV, slugDisponible } from "@/lib/negocios-verdes-admin";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -30,6 +30,27 @@ export async function PUT(req: NextRequest, { params }: Params) {
     console.error("[negocios-verdes] editar", e);
     return NextResponse.json({ error: "No se pudo guardar. Revise que la categoría, subcategorías y vereda sigan existiendo." }, { status: 400 });
   }
+}
+
+/**
+ * Cambio rápido desde el listado (interruptor «publicado» y estrella «destacado»), como en la
+ * plataforma anterior. No toca el resto de la ficha.
+ */
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const acceso = await exigirPermisoNV("ACTUALIZAR");
+  if ("error" in acceso) return acceso.error;
+  const { id } = await params;
+  const body = (await req.json().catch(() => ({}))) as { activo?: unknown; destacado?: unknown };
+  const cambio: { activo?: boolean; destacado?: boolean } = {};
+  if (typeof body.activo === "boolean") cambio.activo = body.activo;
+  if (typeof body.destacado === "boolean") cambio.destacado = body.destacado;
+  if (!Object.keys(cambio).length) return NextResponse.json({ error: "No hay nada que cambiar." }, { status: 400 });
+  const n = await db.nvNegocio.update({ where: { id }, data: cambio, select: { nombre: true, activo: true, destacado: true } }).catch(() => null);
+  if (!n) return NextResponse.json({ error: "El negocio ya no existe." }, { status: 404 });
+  const que = "activo" in cambio ? (n.activo ? "publicó" : "retiró del sitio público") : n.destacado ? "marcó como destacado" : "quitó de destacados";
+  await auditarNV({ entidad: "NvNegocio", entidadId: id, accion: "MODIFICA", usuarioId: acceso.session.userId, detalle: `${acceso.session.nombre} ${que} el negocio verde «${n.nombre}»` });
+  refrescarSitioNV();
+  return NextResponse.json({ activo: n.activo, destacado: n.destacado });
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {

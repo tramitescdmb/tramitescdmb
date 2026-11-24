@@ -41,21 +41,21 @@ export function ImportarCsvNV({ puedeImportar }: { puedeImportar: boolean }) {
 
   return (
     <div className="space-y-4">
-      <section className="space-y-2 rounded-xl border border-stone-200 bg-white p-4">
-        <h3 className="font-semibold text-stone-900">Exportar</h3>
-        <p className="text-sm text-stone-600">
+      <section className="space-y-2 rounded-[12px] border border-nv-borde bg-white p-4">
+        <h3 className="font-semibold text-nv-texto">Exportar</h3>
+        <p className="text-sm text-nv-texto2">
           Descarga todos los negocios (publicados y sin publicar) con las mismas columnas de la plataforma anterior. Se abre en Excel. Sirve también como plantilla para importar.
           No incluye ficha técnica, puntajes ni personas.
         </p>
-        <a href="/api/negocios-verdes/exportar" className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800">
+        <a href="/api/negocios-verdes/exportar" className="inline-flex items-center gap-1 rounded-[8px] bg-nv-primario px-3 py-1.5 text-sm font-medium text-white hover:bg-nv-oscuro">
           <Download className="h-4 w-4" /> Exportar CSV
         </a>
       </section>
 
       {puedeImportar && (
-        <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-          <h3 className="font-semibold text-stone-900">Importar</h3>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-stone-600">
+        <section className="space-y-3 rounded-[12px] border border-nv-borde bg-white p-4">
+          <h3 className="font-semibold text-nv-texto">Importar</h3>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-nv-texto2">
             <li>Las filas con «id» o «slug» de un negocio existente lo actualizan; las demás crean negocios nuevos, que quedan sin publicar.</li>
             <li>Categorías, subcategorías y actividades se escriben por su nombre, separadas por «|», y deben existir en la clasificación.</li>
             <li>Solo cambia datos públicos y clasificación: nunca fotos, productos, ficha técnica ni puntajes.</li>
@@ -73,13 +73,13 @@ export function ImportarCsvNV({ puedeImportar }: { puedeImportar: boolean }) {
               }}
               className="text-sm"
             />
-            <button type="button" disabled={!archivo || ocupado} onClick={() => enviar(false)} className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50">
+            <button type="button" disabled={!archivo || ocupado} onClick={() => enviar(false)} className="inline-flex items-center gap-1 rounded-[8px] border border-nv-texto2/40 px-3 py-1.5 text-sm font-medium text-nv-texto hover:bg-nv-fondo disabled:opacity-50">
               <Upload className="h-4 w-4" /> Revisar archivo
             </button>
           </div>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-[8px] bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
           {resumen && (
-            <div className="space-y-2 rounded-lg bg-stone-50 p-3 text-sm">
+            <div className="space-y-2 rounded-[8px] bg-nv-fondo p-3 text-sm">
               <p>
                 {resumen.total} fila{resumen.total === 1 ? "" : "s"} leída{resumen.total === 1 ? "" : "s"}; {resumen.conError === 0 ? "todas válidas." : `${resumen.conError} con error.`}
               </p>
@@ -98,20 +98,20 @@ export function ImportarCsvNV({ puedeImportar }: { puedeImportar: boolean }) {
                   type="button"
                   disabled={ocupado}
                   onClick={() => window.confirm(`Se importarán ${resumen.total - resumen.conError} filas y se omitirán ${resumen.conError} con error, que quedan como están. ¿Continuar?`) && enviar(true, true)}
-                  className="rounded-lg border border-emerald-700 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+                  className="rounded-[8px] border border-nv-primario px-3 py-1.5 text-sm font-medium text-nv-oscuro hover:bg-nv-claro disabled:opacity-50"
                 >
                   Importar solo las {resumen.total - resumen.conError} filas válidas
                 </button>
               )}
               {resumen.conError === 0 && resumen.total > 0 && (
-                <button type="button" disabled={ocupado} onClick={() => enviar(true)} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50">
+                <button type="button" disabled={ocupado} onClick={() => enviar(true)} className="rounded-[8px] bg-nv-primario px-3 py-1.5 text-sm font-medium text-white hover:bg-nv-oscuro disabled:opacity-50">
                   Importar {resumen.total} fila{resumen.total === 1 ? "" : "s"}
                 </button>
               )}
             </div>
           )}
           {hecho && (
-            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <p className="rounded-[8px] bg-nv-claro px-3 py-2 text-sm text-nv-oscuro">
               Importación terminada: {hecho.creados ?? 0} negocios nuevos (sin publicar) y {hecho.actualizados ?? 0} actualizados{hecho.omitidas ? `; ${hecho.omitidas} filas con error se omitieron` : ""}.
             </p>
           )}

@@ -15,10 +15,10 @@ export default async function AparienciaNegociosVerdes() {
   return (
     <AparienciaNV
       logos={[
-        { campo: "logo", titulo: "Logo de Negocios Verdes", url: urlImagenNV(c?.logoRuta) },
-        { campo: "govco", titulo: "Logo GOV.CO", url: urlImagenNV(c?.logoGovcoRuta) },
-        { campo: "colombia", titulo: "Logo Colombia", url: urlImagenNV(c?.logoColombiaRuta) },
-        { campo: "potencia", titulo: "Logo Potencia de la vida", url: urlImagenNV(c?.logoPotenciaRuta) },
+        { campo: "logo", titulo: "Logo principal", ayuda: "Barra superior, inicio y menú del administrador.", url: urlImagenNV(c?.logoRuta) },
+        { campo: "colombia", titulo: "Sello Colombia", ayuda: "Pie de página, junto al sello GOV.CO.", url: urlImagenNV(c?.logoColombiaRuta) },
+        { campo: "potencia", titulo: "Sello Colombia Potencia de la Vida", ayuda: "Pie de página, a la derecha del sello de Colombia.", url: urlImagenNV(c?.logoPotenciaRuta) },
+        { campo: "govco", titulo: "Sello GOV.CO", ayuda: "Pie de página. Use la versión blanca: el fondo es verde oscuro.", url: urlImagenNV(c?.logoGovcoRuta) },
       ]}
       banners={banners.map((b) => ({ id: b.id, imagenUrl: urlImagenNV(b.imagenRuta), urlDestino: b.urlDestino ?? "", abrirEnPestanaNueva: b.abrirEnPestanaNueva, orden: b.orden, activo: b.activo }))}
     />

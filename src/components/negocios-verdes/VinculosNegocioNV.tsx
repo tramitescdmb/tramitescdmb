@@ -17,7 +17,7 @@ export type VinculoFila = {
   hasta: string | null;
 };
 
-const entrada = "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm";
+const entrada = "w-full rounded-[8px] border border-nv-texto2/40 px-3 py-1.5 text-sm";
 const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", year: "numeric" });
 
 /** Personas vinculadas a un negocio: vigentes por tipo, asignar, terminar e historial. */
@@ -64,29 +64,29 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-      <h3 className="font-semibold text-stone-900">Personas vinculadas</h3>
+    <section className="space-y-3 rounded-[12px] border border-nv-borde bg-white p-4">
+      <h3 className="font-semibold text-nv-texto">Personas vinculadas</h3>
       {vigentes.length === 0 ? (
-        <p className="text-sm text-stone-500">Sin personas vigentes.</p>
+        <p className="text-sm text-nv-texto2">Sin personas vigentes.</p>
       ) : (
-        <ul className="divide-y divide-stone-100 text-sm">
+        <ul className="divide-y divide-nv-borde text-sm">
           {vigentes.map((v) => (
             <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <div>
-                <p className="font-medium text-stone-800">{v.persona}</p>
-                <p className="text-xs text-stone-500">
+                <p className="font-medium text-nv-texto">{v.persona}</p>
+                <p className="text-xs text-nv-texto2">
                   {TIPOS_PERSONA[v.tipo]} desde {fecha(v.desde)}
                   {v.nit ? ` · NIT ${v.nit}` : ""}
                   {v.naturalezaJuridica ? ` · ${v.naturalezaJuridica}` : ""}
                 </p>
-                {v.nota && <p className="text-xs text-stone-600">{v.nota}</p>}
+                {v.nota && <p className="text-xs text-nv-texto2">{v.nota}</p>}
               </div>
               {editable && (
                 <button
                   type="button"
                   disabled={ocupado}
                   onClick={() => window.confirm(`¿Terminar el vínculo de ${v.persona}? Quedará en el historial.`) && ejecutar(() => llamarNV(`/api/negocios-verdes/negocios/${negocioId}/personas?vinculo=${v.id}`, "DELETE"))}
-                  className="rounded-lg border border-stone-300 px-2.5 py-1 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+                  className="rounded-[8px] border border-nv-texto2/40 px-2.5 py-1 text-xs text-nv-texto hover:bg-nv-fondo disabled:opacity-50"
                 >
                   Terminar vínculo
                 </button>
@@ -97,8 +97,8 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
       )}
 
       {editable && (
-        <form onSubmit={asignar} className="grid gap-2 rounded-lg bg-stone-50 p-3 sm:grid-cols-2">
-          <label className="text-xs text-stone-600">
+        <form onSubmit={asignar} className="grid gap-2 rounded-[8px] bg-nv-fondo p-3 sm:grid-cols-2">
+          <label className="text-xs text-nv-texto2">
             Tipo
             <select value={tipo} onChange={(e) => { setTipo(e.target.value as TipoPersonaNV); setPersonaId(""); }} className={entrada}>
               {(Object.keys(TIPOS_PERSONA) as TipoPersonaNV[]).map((t) => (
@@ -106,7 +106,7 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
               ))}
             </select>
           </label>
-          <label className="text-xs text-stone-600">
+          <label className="text-xs text-nv-texto2">
             Persona
             <select value={personaId} onChange={(e) => setPersonaId(e.target.value)} className={entrada} required>
               <option value="">Seleccione…</option>
@@ -117,11 +117,11 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
           </label>
           {tipo === "REPRESENTANTE" && (
             <>
-              <label className="text-xs text-stone-600">
+              <label className="text-xs text-nv-texto2">
                 NIT
                 <input value={nit} onChange={(e) => setNit(e.target.value)} maxLength={30} className={entrada} />
               </label>
-              <label className="text-xs text-stone-600">
+              <label className="text-xs text-nv-texto2">
                 Naturaleza jurídica
                 <select value={naturaleza} onChange={(e) => setNaturaleza(e.target.value)} className={entrada}>
                   <option value="">Sin dato</option>
@@ -132,15 +132,15 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
               </label>
             </>
           )}
-          <label className="text-xs text-stone-600 sm:col-span-2">
+          <label className="text-xs text-nv-texto2 sm:col-span-2">
             Nota
             <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={1000} className={entrada} />
           </label>
           <div className="sm:col-span-2">
-            <button type="submit" disabled={ocupado || !personaId} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50">
+            <button type="submit" disabled={ocupado || !personaId} className="rounded-[8px] bg-nv-primario px-3 py-1.5 text-sm font-medium text-white hover:bg-nv-oscuro disabled:opacity-50">
               Asignar
             </button>
-            <span className="ml-2 text-xs text-stone-500">Si ya hay una persona vigente de ese tipo, su vínculo se cierra y pasa al historial.</span>
+            <span className="ml-2 text-xs text-nv-texto2">Si ya hay una persona vigente de ese tipo, su vínculo se cierra y pasa al historial.</span>
           </div>
         </form>
       )}
@@ -148,11 +148,11 @@ export function VinculosNegocioNV({ negocioId, vinculos, personas, editable }: {
 
       {historial.length > 0 && (
         <div>
-          <button type="button" onClick={() => setVerHistorial(!verHistorial)} className="text-sm text-emerald-700 hover:underline">
+          <button type="button" onClick={() => setVerHistorial(!verHistorial)} className="text-sm text-nv-primario hover:underline">
             {verHistorial ? "Ocultar historial" : `Ver historial (${historial.length})`}
           </button>
           {verHistorial && (
-            <ul className="mt-2 space-y-1 text-xs text-stone-600">
+            <ul className="mt-2 space-y-1 text-xs text-nv-texto2">
               {historial.map((v) => (
                 <li key={v.id}>
                   {v.persona} · {TIPOS_PERSONA[v.tipo]} · {fecha(v.desde)} a {fecha(v.hasta!)}
