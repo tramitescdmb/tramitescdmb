@@ -3,6 +3,8 @@ import { ExternalLink } from "lucide-react";
 import { MUNICIPIOS_NV, esMunicipioNV } from "@/lib/negocios-verdes";
 import { listarNegociosPanel, resumenPanelNV } from "@/lib/negocios-verdes-data";
 import { getConfiguracionSitio } from "@/lib/config-sitio";
+import { verificarSesion, obtenerPermisosUsuario } from "@/lib/permisos";
+import { puedeGestionarNV } from "@/lib/negocios-verdes-permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +24,14 @@ export default async function PanelNegociosVerdes({ searchParams }: Props) {
   const sp = await searchParams;
   const estado = sp.estado === "publicados" || sp.estado === "borradores" ? sp.estado : undefined;
   const municipio = esMunicipioNV(sp.municipio) ? sp.municipio : undefined;
-  const [resumen, negocios, config] = await Promise.all([
+  const session = await verificarSesion();
+  const [resumen, negocios, config, permisos] = await Promise.all([
     resumenPanelNV(),
     listarNegociosPanel({ q: sp.q, municipio, estado }),
     getConfiguracionSitio(),
+    session ? obtenerPermisosUsuario(session.userId) : null,
   ]);
+  const puedeCrear = Boolean(permisos && puedeGestionarNV(permisos, "CREAR"));
 
   return (
     <div className="space-y-6">
@@ -36,12 +41,21 @@ export default async function PanelNegociosVerdes({ searchParams }: Props) {
         </p>
       )}
 
+      {sp.eliminado && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Negocio eliminado.</p>}
+      {puedeCrear && (
+        <div className="flex justify-end">
+          <Link prefetch={false} href="/negocios-verdes/admin/negocios/nuevo" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
+            + Nuevo negocio
+          </Link>
+        </div>
+      )}
+
       {resumen.total === 0 ? (
         <div className="rounded-xl border border-dashed border-stone-300 bg-white p-6 text-sm text-stone-600">
           <p className="font-medium text-stone-800">Aún no hay negocios cargados.</p>
           <p className="mt-1">
-            Los datos de la plataforma anterior se traen con el script de migración (<code>npm run nv:migrar</code>, ver docs/NEGOCIOS-VERDES.md). El
-            formulario para crear y editar negocios llega en la siguiente fase.
+            Los datos de la plataforma anterior se traen con el script de migración (<code>npm run nv:migrar</code>, ver docs/NEGOCIOS-VERDES.md),
+            o se crean uno a uno con «Nuevo negocio».
           </p>
         </div>
       ) : (
@@ -97,7 +111,9 @@ export default async function PanelNegociosVerdes({ searchParams }: Props) {
               {negocios.map((n) => (
                 <tr key={n.id}>
                   <td className="px-3 py-2">
-                    <span className="font-medium text-stone-900">{n.nombre}</span>
+                    <Link prefetch={false} href={`/negocios-verdes/admin/negocios/${n.id}`} className="font-medium text-stone-900 hover:text-emerald-800 hover:underline">
+                      {n.nombre}
+                    </Link>
                     {n.destacado && <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800">Destacado</span>}
                     {n.activo && (
                       <Link
