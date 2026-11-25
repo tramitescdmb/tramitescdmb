@@ -127,7 +127,7 @@ export async function GET() {
       avisos.push({
         clave: "vital-nuevas",
         titulo: vitalNuevas === 1 ? "Tiene una nueva solicitud de VITAL" : `Tiene ${vitalNuevas} nuevas solicitudes de VITAL`,
-        detalle: "Por convertir en trámite",
+        detalle: vitalNuevas === 1 ? "Revise si es procedente convertirla en trámite" : "Revise si es procedente convertirlas en trámite",
         href: "/vital?gestion=nuevas",
         alerta: true,
         cantidad: vitalNuevas,
