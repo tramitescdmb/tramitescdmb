@@ -16,7 +16,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { completarAnexosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
+import { completarAnexosVital, completarDatosVital, nombreTramiteVital, urlVitalPublico } from "@/lib/vital";
 import { ETIQUETA_ORIGEN_COORDENADA, puntoDesdeCampos } from "@/lib/coordenadas-texto";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { obtenerPermisosUsuario, puedeConsultarVital, puedeConvertirSolicitudVital } from "@/lib/permisos";
@@ -217,7 +217,7 @@ function DatosInteresado({ i }: { i: Interesado }) {
 
 function CamposFormulario({ datos }: { datos: unknown }) {
   if (!datos || typeof datos !== "object") {
-    return <p className="text-sm text-stone-400">El trámite no trae campos de formulario.</p>;
+    return <p className="text-sm text-stone-400">VITAL no entregó los datos del formulario de esta solicitud.</p>;
   }
   const entradas = Object.entries(datos as Record<string, unknown>)
     .map(([k, v]) => {
@@ -249,7 +249,9 @@ async function AnexosVital({ solicitudId, idVital, reportados: reportadosGuardad
   let reportados = reportadosGuardados;
   let documentos = guardados;
   let fallo: string | null = null;
-  if ((reportados ?? 0) > documentos.length || reportados == null) {
+  // Siempre se pide la lista actual a VITAL: puede agregar anexos (acuse, paquete) después
+  // de la primera sincronización. Si no responde, se muestra lo guardado.
+  {
     // VITAL pasa por el puente y X-Road: obtener los tokens y la lista puede tardar.
     // La consulta sigue aunque se agote la espera y deja la lista guardada.
     const r = await Promise.race([
@@ -340,6 +342,22 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
     },
   });
   if (!solicitud) notFound();
+
+  // Si la solicitud quedó sin formulario, sin solicitante o sin fecha (VITAL falló al
+  // sincronizarla), se vuelven a pedir esos datos antes de mostrar la ficha.
+  if (solicitud.camposTramite == null || solicitud.solicitanteRaw == null || solicitud.fechaRadicacion == null) {
+    const r = await Promise.race([
+      completarDatosVital(solicitud.id).catch(() => ({ ok: false })),
+      new Promise<{ ok: false }>((res) => setTimeout(() => res({ ok: false }), 12_000)),
+    ]);
+    if (r.ok || solicitud.fechaRadicacion == null) {
+      const actual = await db.solicitudVital.findUnique({
+        where: { id },
+        select: { camposTramite: true, solicitanteRaw: true, solicitanteNombre: true, solicitanteIdentificacion: true, solicitanteCorreo: true, fechaRadicacion: true },
+      });
+      if (actual) Object.assign(solicitud, actual);
+    }
+  }
   const punto = puntoDesdeCampos(solicitud.camposTramite);
 
   const interesados: Interesado[] = dedupeInteresados(
@@ -350,7 +368,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         : []
   );
 
-  const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : null;
+  const fechaRad = solicitud.fechaRadicacion ? formatearFechaLarga(solicitud.fechaRadicacion) : "Sin fecha en VITAL";
 
   // «Convertir en trámite»: solo administrador y Subdirector(a) SEYCA. Mismas entradas, grupos y
   // conteos que el catálogo de trámites (un trámite con varios procedimientos inscritos cada uno en
@@ -402,6 +420,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="ID VITAL" v={solicitud.idVital} />
           <Campo k="Fecha de radicación" v={fechaRad} />
+          <Campo k="Registrada en SIC" v={formatearFechaHora(solicitud.createdAt)} />
           <Campo k="Actividad" v={txt(solicitud.nombreActividad)} />
           <Campo
             k="ID trámite en la autoridad"
@@ -440,7 +459,9 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         icon={interesados.length > 0 && esPersonaJuridica(interesados[0]) ? Building2 : User}
         titulo={interesados.length > 1 ? `Solicitantes (${interesados.length})` : "Solicitante"}
       >
-        {interesados.length === 0 ? (
+        {interesados.length === 0 && !txt(solicitud.solicitanteNombre) && !txt(solicitud.solicitanteIdentificacion) && !txt(solicitud.solicitanteCorreo) ? (
+          <p className="text-sm text-stone-400">VITAL no entregó los datos del solicitante de esta solicitud.</p>
+        ) : interesados.length === 0 ? (
           <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
             <Campo k="Nombre / razón social" v={txt(solicitud.solicitanteNombre)} />
             <Campo k="Identificación" v={txt(solicitud.solicitanteIdentificacion)} />
