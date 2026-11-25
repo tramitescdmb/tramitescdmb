@@ -28,12 +28,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!documento) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
   const urlArchivo = urlArchivoDeRuta(documento.storagePath);
-  if (!urlArchivo) {
+  if (urlArchivo === null) {
     // Registro antiguo con archivo en el almacén (antes de dejar de guardarlos).
     return redirigirAlmacen(await getSignedDownloadUrl(documento.storagePath));
   }
 
-  let r = await abrirDocumentoVital(urlArchivo);
+  // Un anexo que VITAL listó sin dirección: se busca la actual por el nombre.
+  let r: Awaited<ReturnType<typeof abrirDocumentoVital>> = urlArchivo
+    ? await abrirDocumentoVital(urlArchivo)
+    : { ok: false, motivo: "VITAL listó el anexo sin dirección de descarga." };
   if (!r.ok) {
     // La dirección pudo cambiar en VITAL: se busca la actual por el nombre.
     const actual = await urlActualAnexoVital(documento.solicitud.idVital, documento.nombre).catch(() => null);

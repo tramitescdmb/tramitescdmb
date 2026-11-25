@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { esSolicitudVitalReciente } from "@/lib/vital-conversion";
 import { urlDescargaVital } from "@/lib/vital-links";
+import { fechaDeFilaListado, mejorFechaRadicacionVital } from "@/lib/vital-fecha";
 
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
 const XROAD_URL = process.env.VITAL_XROAD_URL?.trim();
@@ -372,7 +373,8 @@ export async function listarSolicitudes(opts: {
     idVital: String(r.idVital ?? r.id_vital ?? ""),
     idTramite: Number(r.idTramite ?? r.id_tramite ?? opts.idTramite),
     idTramiteAutoridad: r.idTramiteAutoridad != null ? Number(r.idTramiteAutoridad) : null,
-    FechaRadicacion: (r.fechaRadicacion ?? r.FechaRadicacion ?? null) as string | null,
+    // VITAL no siempre entrega la fecha en la lista; se acepta con cualquiera de sus nombres y formatos.
+    FechaRadicacion: fechaDeFilaListado(r)?.toISOString() ?? null,
     nombreActividad: (r.nombreActividad ?? null) as string | null,
   })).filter((r) => r.idVital);
 }
@@ -389,11 +391,15 @@ async function consultarSolicitante(idVital: string): Promise<Record<string, unk
   return null;
 }
 
-export type DocumentoVital = { nombre_archivo: string; url_archivo: string };
+import { normalizarDocumentosVital, type DocumentoVital } from "@/lib/vital-documentos";
+export type { DocumentoVital };
 
 export async function consultarDocumentos(idVital: string): Promise<DocumentoVital[]> {
-  const data = await vitalPostReintentando<{ listaDocumentos?: DocumentoVital[]; lista_documentos?: DocumentoVital[] }>("/wsDocumentos", { id_vital: idVital });
-  return (data?.listaDocumentos ?? data?.lista_documentos ?? []).filter((d) => d?.url_archivo);
+  const data = await vitalPostReintentando<unknown>("/wsDocumentos", { id_vital: idVital });
+  const docs = normalizarDocumentosVital(data);
+  const sinUrl = docs.filter((d) => !d.url_archivo).length;
+  if (sinUrl > 0) console.warn(`[VITAL] ${idVital}: ${sinUrl} de ${docs.length} anexos llegan sin dirección de descarga.`);
+  return docs;
 }
 
 /**
@@ -472,7 +478,7 @@ async function guardarMetadatosAnexos(solicitudId: string, documentos: Documento
         data: { solicitudId, nombre: doc.nombre_archivo, storagePath: ruta, mimeType: "", tamanoBytes: 0 },
       });
       porNombre.set(doc.nombre_archivo, { id: "", nombre: doc.nombre_archivo, storagePath: ruta });
-    } else if (previo.storagePath !== ruta && previo.storagePath.startsWith(PREFIJO_ANEXO_VITAL)) {
+    } else if (doc.url_archivo && previo.storagePath !== ruta && previo.storagePath.startsWith(PREFIJO_ANEXO_VITAL)) {
       await db.solicitudVitalDocumento.update({ where: { id: previo.id }, data: { storagePath: ruta } });
     }
   }
@@ -505,10 +511,52 @@ export async function completarAnexosVital(solicitudId: string): Promise<{ ok: t
     }
   }
   await guardarMetadatosAnexos(solicitud.id, lista);
-  if (solicitud.documentosReportados !== lista.length) {
-    await db.solicitudVital.update({ where: { id: solicitud.id }, data: { documentosReportados: lista.length } });
+  const fechaDeducida = solicitud.fechaRadicacion
+    ? null
+    : mejorFechaRadicacionVital({ campos: solicitud.camposTramite, anexos: lista.map((d) => d.nombre_archivo) })?.fecha ?? null;
+  if (solicitud.documentosReportados !== lista.length || fechaDeducida) {
+    await db.solicitudVital.update({
+      where: { id: solicitud.id },
+      data: { documentosReportados: lista.length, ...(fechaDeducida ? { fechaRadicacion: fechaDeducida } : {}) },
+    });
   }
   return { ok: true, total: lista.length };
+}
+
+/**
+ * Para solicitudes que quedaron sin formulario o sin solicitante (VITAL falló al
+ * sincronizarlas): vuelve a pedir esos datos y los guarda. No pisa lo que ya había.
+ */
+export async function completarDatosVital(solicitudId: string): Promise<{ ok: boolean }> {
+  const s = await db.solicitudVital.findUnique({
+    where: { id: solicitudId },
+    select: { id: true, idVital: true, camposTramite: true, solicitanteRaw: true, fechaRadicacion: true },
+  });
+  if (!s) return { ok: false };
+  const faltaCampos = s.camposTramite == null;
+  const faltaSolicitante = s.solicitanteRaw == null;
+  if (!faltaCampos && !faltaSolicitante && s.fechaRadicacion) return { ok: true };
+
+  const [campos, solicitantes] = await Promise.all([
+    faltaCampos ? consultarCamposSolicitud(s.idVital).catch((err) => (console.error(`[VITAL] ${s.idVital}: wsSolicitudes:`, err instanceof Error ? err.message : err), null)) : Promise.resolve(s.camposTramite),
+    faltaSolicitante ? consultarSolicitante(s.idVital).catch((err) => (console.error(`[VITAL] ${s.idVital}: wsSolicitante:`, err instanceof Error ? err.message : err), null)) : Promise.resolve(null),
+  ]);
+  const principal = solicitantes?.[0] ?? null;
+  const fechaDeducida = s.fechaRadicacion ? null : mejorFechaRadicacionVital({ campos })?.fecha ?? null;
+  const data = {
+    ...(faltaCampos && campos ? { camposTramite: campos as object } : {}),
+    ...(faltaSolicitante && solicitantes
+      ? {
+          solicitanteRaw: solicitantes as unknown as object,
+          solicitanteNombre: principal ? nombreDe(principal) : null,
+          solicitanteIdentificacion: principal ? identificacionDe(principal) : null,
+          solicitanteCorreo: principal ? correoDe(principal) : null,
+        }
+      : {}),
+    ...(fechaDeducida ? { fechaRadicacion: fechaDeducida } : {}),
+  };
+  if (Object.keys(data).length > 0) await db.solicitudVital.update({ where: { id: s.id }, data });
+  return { ok: (!faltaCampos || campos != null) && (!faltaSolicitante || solicitantes != null) };
 }
 
 function nombreDe(info: Record<string, unknown>): string | null {
@@ -539,10 +587,19 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
   ]);
 
   const principal = solicitantes?.[0] ?? null;
-  const fechaRadicacion = resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null;
+  // Si la lista de VITAL no trae la fecha, se usa la del formulario o la del paquete radicado.
+  const fechaRadicacion =
+    mejorFechaRadicacionVital({
+      listado: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
+      campos,
+      anexos: documentos?.map((d) => d.nombre_archivo) ?? [],
+    })?.fecha ?? null;
   // Solo las que llegan por primera vez y son recientes cuentan como «nuevas»: una
   // sincronización del histórico no debe avisar por cada solicitud vieja.
-  const yaExistia = (await db.solicitudVital.count({ where: { idVital: resumen.idVital } })) > 0;
+  const previa = await db.solicitudVital.findUnique({ where: { idVital: resumen.idVital }, select: { fechaRadicacion: true } });
+  const yaExistia = previa != null;
+  // Una fecha deducida (formulario o paquete) no reemplaza una que ya se tenía; la de VITAL sí.
+  const fechaParaActualizar = resumen.FechaRadicacion || !previa?.fechaRadicacion ? fechaRadicacion : null;
   const esNueva = !yaExistia && esSolicitudVitalReciente(fechaRadicacion);
 
   const solicitud = await db.solicitudVital.upsert({
@@ -551,7 +608,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       idVital: resumen.idVital,
       idTramiteVital: resumen.idTramite,
       idTramiteAutoridad: resumen.idTramiteAutoridad,
-      fechaRadicacion: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
+      fechaRadicacion,
       nombreActividad: resumen.nombreActividad,
       solicitanteNombre: principal ? nombreDe(principal) : null,
       solicitanteIdentificacion: principal ? identificacionDe(principal) : null,
@@ -563,7 +620,7 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
     },
     update: {
       idTramiteAutoridad: resumen.idTramiteAutoridad ?? undefined,
-      fechaRadicacion: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : undefined,
+      fechaRadicacion: fechaParaActualizar ?? undefined,
       nombreActividad: resumen.nombreActividad,
       solicitanteNombre: principal ? nombreDe(principal) : undefined,
       solicitanteIdentificacion: principal ? identificacionDe(principal) : undefined,
