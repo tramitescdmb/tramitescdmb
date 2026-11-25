@@ -31,7 +31,7 @@ export async function avisarSolicitudVitalNueva(s: {
     tipo: "VITAL_NUEVA",
     clave: claveAvisoVital(s.id),
     titulo: `Tiene una nueva solicitud de VITAL · ${s.idVital}`,
-    mensaje: `${nombreTramiteVital(s.idTramiteVital)}${s.solicitanteNombre ? ` — ${s.solicitanteNombre}` : ""}. Revísela y conviértala en trámite.`,
+    mensaje: `${nombreTramiteVital(s.idTramiteVital)}${s.solicitanteNombre ? ` — ${s.solicitanteNombre}` : ""}. Revise si es procedente convertirla en trámite.`,
     enlace: `/vital/${s.id}`,
   });
 }

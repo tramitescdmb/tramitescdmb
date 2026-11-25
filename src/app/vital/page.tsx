@@ -101,7 +101,7 @@ export default async function VitalSolicitudesPage({
           href="/vital?gestion=nuevas"
           className="block rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100"
         >
-          {nuevas === 1 ? "Tiene 1 nueva solicitud de VITAL" : `Tiene ${nuevas} nuevas solicitudes de VITAL`} por convertir en trámite. <span className="font-medium underline">Verlas</span>
+          {nuevas === 1 ? "Tiene 1 nueva solicitud de VITAL" : `Tiene ${nuevas} nuevas solicitudes de VITAL`}. Revise si es procedente {nuevas === 1 ? "convertirla" : "convertirlas"} en trámite. <span className="font-medium underline">Verlas</span>
         </Link>
       )}
 
