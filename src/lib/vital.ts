@@ -399,6 +399,7 @@ async function consultarSolicitante(idVital: string): Promise<Record<string, unk
   return null;
 }
 
+import { resumirRespuestaVital } from "@/lib/vital-resumen";
 import { normalizarDocumentosVital, type DocumentoVital } from "@/lib/vital-documentos";
 export type { DocumentoVital };
 
@@ -721,4 +722,28 @@ export async function diagnosticarSolicitudVital(idVital: string) {
       : { error: sol.error },
     wsSolicitante: solicitante.ok ? { filas: filasSolicitante?.length ?? 0, camposDeFecha: Object.keys((filasSolicitante?.[0] ?? {}) as object).filter((k) => /fecha/i.test(k)), fechaEncontrada: fechaDeRespuestaVital(filasSolicitante)?.toISOString() ?? null } : { error: solicitante.error },
   };
+}
+
+
+/** Servicios de VITAL que podrían traer la fecha de creación o la lista completa de anexos. */
+export const SERVICIOS_VITAL_SONDA = ["wsSolicitudesEstado", "wsSolicitudesRadicados", "wsServicio", "wsActividades", "wsTramitesInicializadosUsuarios"] as const;
+
+/** Prueba cada servicio candidato con el id de la solicitud; muestra lo que responde (o el error, que suele decir qué parámetro falta). */
+export async function sondearServiciosVital(idVital: string, servicios: readonly string[] = SERVICIOS_VITAL_SONDA) {
+  const salida: Record<string, unknown> = {};
+  for (const ws of servicios) {
+    const intentos: Record<string, unknown> = {};
+    for (const cuerpo of [{ id_vital: idVital }, { idVital }] as Record<string, unknown>[]) {
+      const clave = Object.keys(cuerpo)[0];
+      try {
+        const r = await vitalPost<unknown>(ws.startsWith("/") ? ws : `/${ws}`, cuerpo);
+        intentos[clave] = { ok: true, ...resumirRespuestaVital(r instanceof ArrayBuffer ? null : r) };
+        break;
+      } catch (e) {
+        intentos[clave] = { ok: false, error: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
+      }
+    }
+    salida[ws] = intentos;
+  }
+  return salida;
 }
