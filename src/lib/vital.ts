@@ -722,3 +722,59 @@ export async function diagnosticarSolicitudVital(idVital: string) {
     wsSolicitante: solicitante.ok ? { filas: filasSolicitante?.length ?? 0, camposDeFecha: Object.keys((filasSolicitante?.[0] ?? {}) as object).filter((k) => /fecha/i.test(k)), fechaEncontrada: fechaDeRespuestaVital(filasSolicitante)?.toISOString() ?? null } : { error: solicitante.error },
   };
 }
+
+
+/** Servicios de VITAL que podrían traer la fecha de creación o la lista completa de anexos. */
+export const SERVICIOS_VITAL_SONDA = ["wsSolicitudesEstado", "wsSolicitudesRadicados", "wsServicio", "wsActividades", "wsTramitesInicializadosUsuarios"] as const;
+
+const CLAVE_UTIL = /fecha|estado|radic|archivo|documento|url|nombre_?(archivo|documento)|tramite|mensaje|error|actividad/i;
+const CLAVE_PERSONAL = /nombre|apellido|correo|email|tel|celular|identific|documento_?id|direccion|razon/i;
+
+/** Resume una respuesta sin datos personales: rutas de campos, fechas, estados y nombres de archivo. */
+export function resumirRespuestaVital(v: unknown) {
+  const rutas = new Set<string>();
+  const valores: Record<string, unknown> = {};
+  const recorrer = (x: unknown, ruta: string, prof: number) => {
+    if (prof > 5 || x == null) return;
+    if (Array.isArray(x)) {
+      valores[`${ruta}.length`] = x.length;
+      x.slice(0, 5).forEach((y) => recorrer(y, `${ruta}[]`, prof + 1));
+      return;
+    }
+    if (typeof x === "object") {
+      for (const [k, y] of Object.entries(x as Record<string, unknown>)) {
+        const r = ruta ? `${ruta}.${k}` : k;
+        if (y !== null && typeof y === "object") recorrer(y, r, prof + 1);
+        else {
+          rutas.add(r);
+          if (CLAVE_UTIL.test(k) && !(CLAVE_PERSONAL.test(k) && !/archivo|documentos|url/i.test(k))) {
+            const t = typeof y === "string" ? (y.startsWith("http") ? y.split("?")[0] : y.slice(0, 120)) : y;
+            if (!(r in valores)) valores[r] = t;
+          }
+        }
+      }
+    }
+  };
+  recorrer(v, "", 0);
+  return { campos: [...rutas].slice(0, 80), valores };
+}
+
+/** Prueba cada servicio candidato con el id de la solicitud; muestra lo que responde (o el error, que suele decir qué parámetro falta). */
+export async function sondearServiciosVital(idVital: string, servicios: readonly string[] = SERVICIOS_VITAL_SONDA) {
+  const salida: Record<string, unknown> = {};
+  for (const ws of servicios) {
+    const intentos: Record<string, unknown> = {};
+    for (const cuerpo of [{ id_vital: idVital }, { idVital }] as Record<string, unknown>[]) {
+      const clave = Object.keys(cuerpo)[0];
+      try {
+        const r = await vitalPost<unknown>(ws.startsWith("/") ? ws : `/${ws}`, cuerpo);
+        intentos[clave] = { ok: true, ...resumirRespuestaVital(r instanceof ArrayBuffer ? null : r) };
+        break;
+      } catch (e) {
+        intentos[clave] = { ok: false, error: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
+      }
+    }
+    salida[ws] = intentos;
+  }
+  return salida;
+}
