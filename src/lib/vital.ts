@@ -732,26 +732,52 @@ export async function diagnosticarSolicitudVital(idVital: string) {
 
 /**
  * Pide a wsObtenerSolicitudes la solicitud tal como la lista VITAL (idVital, idTramite,
- * FechaRadicacion, nombreActividad, status) en ventanas de un día y de un mes alrededor
- * de la fecha esperada, para comparar con la «fecha de creación» del portal.
+ * FechaRadicacion, nombreActividad, status), igual que la sincronización: páginas de 50 y
+ * fecha final no posterior a ayer. Se prueba el día esperado y una ventana de dos semanas.
  */
 export async function sondearListadoVital(idVital: string, dia = "2026-11-17") {
   const solicitud = await db.solicitudVital.findUnique({ where: { idVital }, select: { idTramiteVital: true, fechaRadicacion: true } });
   const idTramite = solicitud?.idTramiteVital ?? (Number(idVital.slice(0, 3)) || 0);
+  const ayer = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const mas = (f: string, d: number) => new Date(Date.parse(`${f}T00:00:00Z`) + d * 86_400_000).toISOString().slice(0, 10);
+  const tope = (f: string) => (f > ayer ? ayer : f);
   const ventanas: [string, string][] = [
-    [dia, dia],
-    [`${dia.slice(0, 8)}01`, `${dia.slice(0, 8)}30`],
+    [dia, tope(dia)],
+    [mas(dia, -7), tope(mas(dia, 7))],
   ];
   const salida: Record<string, unknown> = { idTramite, fechaGuardadaEnSic: solicitud?.fechaRadicacion?.toISOString() ?? null };
   for (const [ini, fin] of ventanas) {
     try {
-      const r = await vitalPost<unknown>("/wsObtenerSolicitudes", { id_tramite: idTramite, fecha_inicio: ini, fecha_fin: fin, indice_registro_inicial: 0, registros_peticion: 100 });
-      const filas = (Array.isArray(r) ? r : ((r as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (r as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
-      const fila = filas.find((f) => String(f.idVital ?? f.id_vital) === idVital);
-      salida[`${ini} a ${fin}`] = { filasEnLaVentana: filas.length, estaLaSolicitud: Boolean(fila), fila: fila ? resumirRespuestaVital(fila).valores : null, camposDeUnaFila: filas[0] ? Object.keys(filas[0]) : [] };
+      let total = 0;
+      let fila: Record<string, unknown> | undefined;
+      let campos: string[] = [];
+      for (let indice = 0; indice < 500 && !fila; indice += 50) {
+        const pagina = await listarSolicitudesCrudas({ idTramite, fechaInicio: ini, fechaFin: fin, indiceRegistroInicial: indice });
+        if (pagina.length === 0) break;
+        total += pagina.length;
+        if (campos.length === 0) campos = Object.keys(pagina[0]);
+        fila = pagina.find((f) => String(f.idVital ?? f.id_vital) === idVital);
+        if (pagina.length < 50) break;
+      }
+      salida[`${ini} a ${fin}`] = { filasRevisadas: total, estaLaSolicitud: Boolean(fila), fila: fila ? resumirRespuestaVital(fila).valores : null, camposDeUnaFila: campos };
     } catch (e) {
       salida[`${ini} a ${fin}`] = { error: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
     }
   }
   return salida;
+}
+
+/** Filas de wsObtenerSolicitudes sin transformar (para ver todos los campos que VITAL entrega). */
+async function listarSolicitudesCrudas(opts: { idTramite: number; fechaInicio: string; fechaFin: string; indiceRegistroInicial: number }): Promise<Record<string, unknown>[]> {
+  const r = await vitalPostReintentando<unknown>("/wsObtenerSolicitudes", {
+    id_tramite: opts.idTramite,
+    fecha_inicio: opts.fechaInicio,
+    fecha_fin: opts.fechaFin,
+    indice_registro_inicial: opts.indiceRegistroInicial,
+    registros_peticion: 50,
+  }).catch((err) => {
+    if (err instanceof Error && SIN_DATOS_VITAL.test(err.message)) return [];
+    throw err;
+  });
+  return (Array.isArray(r) ? r : ((r as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (r as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
 }
