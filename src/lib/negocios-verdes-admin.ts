@@ -55,6 +55,7 @@ export async function negocioParaEditar(id: string) {
     telefonoSecundario: n.telefonoSecundario,
     whatsapp: n.whatsapp,
     email: n.email,
+    emailSecundario: n.emailSecundario,
     sitioWeb: n.sitioWeb,
     facebookUrl: n.facebookUrl,
     instagramUrl: n.instagramUrl,
@@ -112,6 +113,7 @@ export async function guardarNegocioNV(id: string | null, d: NegocioValidado, fi
     telefonoSecundario: d.telefonoSecundario,
     whatsapp: d.whatsapp,
     email: d.email,
+    emailSecundario: d.emailSecundario,
     sitioWeb: d.sitioWeb,
     facebookUrl: d.facebookUrl,
     instagramUrl: d.instagramUrl,
@@ -190,6 +192,7 @@ export async function negociosParaCsv() {
       telefono: n.telefono,
       whatsapp: n.whatsapp,
       email: n.email,
+      emailSecundario: n.emailSecundario,
       sitioWeb: n.sitioWeb,
       facebookUrl: n.facebookUrl,
       instagramUrl: n.instagramUrl,
@@ -219,12 +222,12 @@ export async function catalogoCsvNV() {
  * Aplica las filas válidas de un CSV: si el negocio existe (por id o por slug) se actualizan sus
  * datos públicos y su clasificación; si no, se crea sin publicar. Todo en una transacción.
  */
-export async function aplicarImportacionNV(filas: { id: string | null; slug: string | null; datos: NegocioValidado }[], usuarioId: string) {
+export async function aplicarImportacionNV(filas: { id: string | null; slug: string | null; datos: NegocioValidado; conservarCorreoSecundario?: boolean }[], usuarioId: string) {
   let creados = 0;
   let actualizados = 0;
   await db.$transaction(
     async (tx) => {
-      for (const { id, datos: d } of filas) {
+      for (const { id, datos: d, conservarCorreoSecundario } of filas) {
         const existente =
           (id ? await tx.nvNegocio.findUnique({ where: { id }, select: { id: true } }) : null) ??
           (await tx.nvNegocio.findUnique({ where: { slug: d.slug }, select: { id: true } }));
@@ -239,6 +242,7 @@ export async function aplicarImportacionNV(filas: { id: string | null; slug: str
           telefono: d.telefono,
           whatsapp: d.whatsapp,
           email: d.email,
+          ...(conservarCorreoSecundario ? {} : { emailSecundario: d.emailSecundario }),
           sitioWeb: d.sitioWeb,
           facebookUrl: d.facebookUrl,
           instagramUrl: d.instagramUrl,
@@ -277,22 +281,28 @@ export type FilaRevisionNV = { tipo: "negocio" | "persona"; id: string; nombre: 
  */
 export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
   const [negocios, personas] = await Promise.all([
-    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
-    db.nvPersona.findMany({ where: { correo: { not: null } }, select: { id: true, nombres: true, apellidos: true, municipio: true, activo: true, correo: true }, orderBy: { nombres: "asc" } }),
+    db.nvNegocio.findMany({ select: { id: true, nombre: true, municipio: true, activo: true, email: true, emailSecundario: true, latitud: true, longitud: true }, orderBy: { nombre: "asc" } }),
+    db.nvPersona.findMany({ where: { OR: [{ correo: { not: null } }, { correoSecundario: { not: null } }] }, select: { id: true, nombres: true, apellidos: true, municipio: true, activo: true, correo: true, correoSecundario: true }, orderBy: { nombres: "asc" } }),
   ]);
   const filas: FilaRevisionNV[] = [];
   for (const n of negocios) {
     const problemas: ProblemaDatoNV[] = [];
     const correo = problemaCorreo(n.email);
     if (correo) problemas.push({ grave: true, texto: `Correo «${n.email}»: ${correo}` });
+    const correo2 = problemaCorreo(n.emailSecundario);
+    if (correo2) problemas.push({ grave: true, texto: `Correo secundario «${n.emailSecundario}»: ${correo2}` });
     const u = verificarUbicacion(n.latitud, n.longitud, n.municipio);
     for (const t of u.errores) problemas.push({ grave: true, texto: `${t} (${n.latitud ?? "sin latitud"}, ${n.longitud ?? "sin longitud"})` });
     for (const t of u.avisos) problemas.push({ grave: false, texto: t });
     if (problemas.length) filas.push({ tipo: "negocio", id: n.id, nombre: n.nombre, municipio: n.municipio, activo: n.activo, problemas });
   }
   for (const p of personas) {
+    const problemas: ProblemaDatoNV[] = [];
     const correo = problemaCorreo(p.correo);
-    if (correo) filas.push({ tipo: "persona", id: p.id, nombre: `${p.nombres} ${p.apellidos ?? ""}`.trim(), municipio: p.municipio, activo: p.activo, problemas: [{ grave: true, texto: `Correo «${p.correo}»: ${correo}` }] });
+    if (correo) problemas.push({ grave: true, texto: `Correo «${p.correo}»: ${correo}` });
+    const correo2 = problemaCorreo(p.correoSecundario);
+    if (correo2) problemas.push({ grave: true, texto: `Correo secundario «${p.correoSecundario}»: ${correo2}` });
+    if (problemas.length) filas.push({ tipo: "persona", id: p.id, nombre: `${p.nombres} ${p.apellidos ?? ""}`.trim(), municipio: p.municipio, activo: p.activo, problemas });
   }
   return filas;
 }

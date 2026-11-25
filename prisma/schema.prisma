@@ -3030,6 +3030,8 @@ model NvNegocio {
   telefonoSecundario  String?
   whatsapp            String?
   email               String?
+  /// Segundo correo del negocio (antes se escribían dos en el mismo campo).
+  emailSecundario     String?
   sitioWeb            String?
   facebookUrl         String?
   instagramUrl        String?
@@ -3149,6 +3151,7 @@ model NvPersona {
   documento          String?
   telefono           String?
   correo             String?
+  correoSecundario   String?
   cargo              String?
   direccion          String?
   municipio          String?

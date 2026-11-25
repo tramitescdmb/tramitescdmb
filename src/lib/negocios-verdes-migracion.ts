@@ -11,6 +11,8 @@
  * - Las contraseñas no se traen: cada administrador entra con su cuenta del SIC.
  */
 
+import { repartirCorreos } from "@/lib/negocios-verdes-verificacion";
+
 type Fila = Record<string, unknown>;
 
 export type Origen = {
@@ -65,6 +67,11 @@ export const TABLAS_ORIGEN = [
 export type ArchivoPorCopiar = { url: string; ruta: string };
 
 const texto = (v: unknown): string | null => (v === null || v === undefined || v === "" ? null : String(v));
+/** Si el origen trae dos correos en un campo, el segundo pasa al campo secundario. */
+function dividirCorreos<P extends string, S extends string>(valor: string | null, principal: P, secundario: S) {
+  const r = repartirCorreos(valor, null);
+  return { [principal]: r.principal, [secundario]: r.secundario } as Record<P | S, string | null>;
+}
 const textoObligatorio = (v: unknown, campo: string): string => {
   const t = texto(v);
   if (t === null) throw new Error(`Falta ${campo}`);
@@ -246,7 +253,7 @@ export function convertirOrigen(o: Origen) {
     telefono: texto(n.telefono),
     telefonoSecundario: texto(n.telefono_secundario),
     whatsapp: texto(n.whatsapp),
-    email: texto(n.email),
+    ...dividirCorreos(texto(n.email), "email", "emailSecundario"),
     sitioWeb: texto(n.sitio_web),
     facebookUrl: texto(n.facebook_url),
     instagramUrl: texto(n.instagram_url),
@@ -301,7 +308,7 @@ export function convertirOrigen(o: Origen) {
       tipoDocumento: texto(p.tipo_documento),
       documento: texto(p.documento),
       telefono: texto(p.telefono),
-      correo: texto(p.correo),
+      ...dividirCorreos(texto(p.correo), "correo", "correoSecundario"),
       cargo: texto(p.cargo),
       direccion: texto(p.direccion),
       municipio: texto(p.municipio),

@@ -27,6 +27,11 @@ describe("validarNegocio", () => {
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "siete", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/no es un número/);
   });
 
+  it("un segundo correo en el campo principal pasa al correo secundario", () => {
+    expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, email: "a@x.com / b@y.com" }, { negocioId: null }).datos).toMatchObject({ email: "a@x.com", emailSecundario: "b@y.com" });
+    expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, email: "a@x.com", emailSecundario: "b@y" }, { negocioId: null }).errores.join(" ")).toMatch(/Correo secundario/);
+  });
+
   it("solo acepta imágenes de la carpeta del negocio o las que ya tenía", () => {
     const propias = new Set(["negocios-fotos/viejo/portada.jpg"]);
     expect(rutaImagenValida(`negocios-fotos/${N}/1-a.jpg`, N, new Set())).toBe(`negocios-fotos/${N}/1-a.jpg`);

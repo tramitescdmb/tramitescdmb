@@ -4,7 +4,7 @@
  * mismas claves que tenían en la plataforma anterior (nit, concesion_aguas, …).
  */
 import { esMunicipioNV, slugNV, type MunicipioNV } from "@/lib/negocios-verdes";
-import { problemaCorreo, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
+import { problemaCorreo, repartirCorreos, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
 
 export type TipoCampoFicha = "texto" | "textoLargo" | "fecha" | "entero" | "lista";
 
@@ -129,6 +129,7 @@ export type EntradaNegocio = {
   telefonoSecundario?: unknown;
   whatsapp?: unknown;
   email?: unknown;
+  emailSecundario?: unknown;
   sitioWeb?: unknown;
   facebookUrl?: unknown;
   instagramUrl?: unknown;
@@ -163,6 +164,7 @@ export type NegocioValidado = {
   telefonoSecundario: string | null;
   whatsapp: string | null;
   email: string | null;
+  emailSecundario: string | null;
   sitioWeb: string | null;
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -230,9 +232,13 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
   const latitud = coordenada(e.latitud, "Latitud", errores);
   const longitud = coordenada(e.longitud, "Longitud", errores);
   if (!errores.some((x) => x.endsWith("no es un número."))) errores.push(...verificarUbicacion(latitud, longitud).errores);
-  const email = txt(e.email, 200);
+  const correos = repartirCorreos(txt(e.email, 200), txt(e.emailSecundario, 200));
+  const email = correos.principal;
+  const emailSecundario = correos.secundario;
   const malCorreo = problemaCorreo(email);
   if (malCorreo) errores.push(malCorreo);
+  const malCorreo2 = problemaCorreo(emailSecundario);
+  if (malCorreo2) errores.push(`Correo secundario: ${malCorreo2}`);
   const veredaId = typeof e.veredaId === "string" && UUID.test(e.veredaId) ? e.veredaId : null;
 
   const fotos = Array.isArray(e.fotos) ? e.fotos.map((r) => rutaImagenValida(r, opciones.negocioId, anteriores)).filter((r): r is string => Boolean(r)).slice(0, 12) : [];
@@ -264,6 +270,7 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
       telefonoSecundario: txt(e.telefonoSecundario, 40),
       whatsapp: txt(e.whatsapp, 40),
       email,
+      emailSecundario,
       sitioWeb: txt(e.sitioWeb, 300),
       facebookUrl: txt(e.facebookUrl, 300),
       instagramUrl: txt(e.instagramUrl, 300),

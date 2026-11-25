@@ -18,6 +18,7 @@ export type PersonaFila = {
   documento: string;
   telefono: string;
   correo: string;
+  correoSecundario: string;
   cargo: string;
   direccion: string;
   municipio: string;
@@ -34,6 +35,7 @@ const VACIA: Omit<PersonaFila, "id" | "negocios"> = {
   documento: "",
   telefono: "",
   correo: "",
+  correoSecundario: "",
   cargo: "",
   direccion: "",
   municipio: "",
@@ -62,7 +64,7 @@ export function PersonasNV({ personas, puedeCrear, puedeEditar, puedeEliminar, b
   const visibles = useMemo(() => {
     const t = normalizarTexto(q);
     return personas
-      .filter((p) => p.tipo === tipo && (!municipio || p.municipio === municipio) && (!t || normalizarTexto(`${p.documento} ${p.nombres} ${p.apellidos} ${p.cargo} ${p.correo}`).includes(t)))
+      .filter((p) => p.tipo === tipo && (!municipio || p.municipio === municipio) && (!t || normalizarTexto(`${p.documento} ${p.nombres} ${p.apellidos} ${p.cargo} ${p.correo} ${p.correoSecundario}`).includes(t)))
       .sort((a, b) => `${b.nombres} ${b.apellidos}`.localeCompare(`${a.nombres} ${a.apellidos}`, "es"));
   }, [personas, tipo, q, municipio]);
   const paginas = Math.max(1, Math.ceil(visibles.length / POR_PAGINA));
@@ -243,6 +245,7 @@ export function PersonasNV({ personas, puedeCrear, puedeEditar, puedeEliminar, b
               {campo("documento", "Documento")}
               {campo("telefono", "Teléfono", { inputMode: "tel" })}
               {campo("correo", "Correo", { type: "email" })}
+              {campo("correoSecundario", "Correo secundario", { type: "email" })}
               {campo("cargo", "Cargo")}
               {campo("direccion", "Dirección")}
               <label className="block text-sm">

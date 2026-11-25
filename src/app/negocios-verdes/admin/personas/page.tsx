@@ -25,6 +25,7 @@ export default async function PersonasNegociosVerdes({ searchParams }: { searchP
         documento: p.documento ?? "",
         telefono: p.telefono ?? "",
         correo: p.correo ?? "",
+        correoSecundario: p.correoSecundario ?? "",
         cargo: p.cargo ?? "",
         direccion: p.direccion ?? "",
         municipio: p.municipio ?? "",

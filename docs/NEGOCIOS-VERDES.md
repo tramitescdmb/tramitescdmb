@@ -76,6 +76,16 @@ El script imprime el conteo por tabla (origen y destino), las imágenes copiadas
 administradores asociados, y deja un informe JSON en la carpeta temporal del sistema. Las contraseñas no se
 trasladan.
 
+## Correo secundario
+
+Cada negocio y cada persona tiene «Correo» y «Correo secundario». Si en el campo principal se
+escriben dos correos (separados por espacio, coma, punto y coma, «/» o «y»), al guardar o al importar
+el CSV el segundo pasa solo al correo secundario. El CSV trae la columna `email_secundario`; un CSV
+con la plantilla anterior (sin esa columna) no borra el correo secundario que ya tenga el negocio.
+
+Para los datos ya trasladados: `npm run nv:separar-correos -- --ensayo` muestra lo que cambiaría y
+`npm run nv:separar-correos` lo aplica. Se puede repetir: lo ya separado no se vuelve a tocar.
+
 ## Exposición a internet (pendiente con TI)
 
 Hoy nginx publica todo el SIC sin distinguir rutas. Antes de abrir el dominio a internet se debe

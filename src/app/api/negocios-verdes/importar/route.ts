@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const validas = filas.filter((f) => f.datos && f.errores.length === 0);
   if (validas.length === 0) return NextResponse.json({ error: "No hay filas válidas para importar.", ...resumen }, { status: 400 });
   const r = await aplicarImportacionNV(
-    validas.map((f) => ({ id: f.id, slug: f.slug, datos: f.datos! })),
+    validas.map((f) => ({ id: f.id, slug: f.slug, datos: f.datos!, conservarCorreoSecundario: f.conservarCorreoSecundario })),
     acceso.session.userId
   );
   await auditarNV({

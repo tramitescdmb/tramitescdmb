@@ -23,6 +23,7 @@ const negocio: NegocioParaCsv = {
   telefono: "3001234567",
   whatsapp: null,
   email: "cafe@ejemplo.co",
+  emailSecundario: null,
   sitioWeb: null,
   facebookUrl: null,
   instagramUrl: null,

@@ -21,6 +21,7 @@ export const ENCABEZADOS_CSV_NV = [
   "telefono",
   "whatsapp",
   "email",
+  "email_secundario",
   "sitio_web",
   "facebook_url",
   "instagram_url",
@@ -46,6 +47,7 @@ export type NegocioParaCsv = {
   telefono: string | null;
   whatsapp: string | null;
   email: string | null;
+  emailSecundario: string | null;
   sitioWeb: string | null;
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -83,6 +85,7 @@ export function construirCsvNV(negocios: NegocioParaCsv[]): string {
       n.telefono,
       n.whatsapp,
       n.email,
+      n.emailSecundario,
       n.sitioWeb,
       n.facebookUrl,
       n.instagramUrl,
@@ -108,6 +111,8 @@ export type FilaImportada = {
   slug: string | null;
   datos: NegocioValidado | null;
   errores: string[];
+  /** El archivo no trae la columna «email_secundario» (plantilla anterior): no se borra el que ya tenga. */
+  conservarCorreoSecundario: boolean;
 };
 
 const sinComilla = (t: string) => (t.startsWith("'") ? t.slice(1) : t);
@@ -148,6 +153,7 @@ export function interpretarCsvNV(texto: string, catalogo: CatalogoCsv): { filas:
       telefono: v("telefono"),
       whatsapp: v("whatsapp"),
       email: v("email"),
+      emailSecundario: v("email_secundario"),
       sitioWeb: v("sitio_web"),
       facebookUrl: v("facebook_url"),
       instagramUrl: v("instagram_url"),
@@ -164,7 +170,8 @@ export function interpretarCsvNV(texto: string, catalogo: CatalogoCsv): { filas:
     const val = validarNegocio(entrada, { negocioId: null });
     errores.push(...val.errores);
     const id = v("id");
-    return { fila: i + 2, id: /^[0-9a-f-]{36}$/i.test(id) ? id : null, slug: v("slug") || null, datos: errores.length === 0 ? val.datos : null, errores };
+    const conservarCorreoSecundario = !campos.includes("email_secundario") && !val.datos?.emailSecundario;
+    return { fila: i + 2, id: /^[0-9a-f-]{36}$/i.test(id) ? id : null, slug: v("slug") || null, datos: errores.length === 0 ? val.datos : null, errores, conservarCorreoSecundario };
   });
   return { filas, errorGeneral: null };
 }

@@ -66,7 +66,7 @@ export default async function FichaNegocioVerde({ params }: Props) {
     description: n.descripcionCorta ?? undefined,
     image: n.fotoPortadaUrl ?? undefined,
     telephone: n.telefono ?? undefined,
-    email: n.email ?? undefined,
+    email: n.email ?? n.emailSecundario ?? undefined,
     url: n.sitioWeb ?? undefined,
     address: { "@type": "PostalAddress", streetAddress: n.direccion ?? undefined, addressLocality: n.municipio, addressRegion: "Santander", addressCountry: "CO" },
     geo: n.latitud != null && n.longitud != null ? { "@type": "GeoCoordinates", latitude: n.latitud, longitude: n.longitud } : undefined,
@@ -170,6 +170,13 @@ export default async function FichaNegocioVerde({ params }: Props) {
               <Fila icono={Mail}>
                 <a href={`mailto:${n.email}`} className="hover:underline">
                   {n.email}
+                </a>
+              </Fila>
+            )}
+            {n.emailSecundario && (
+              <Fila icono={Mail}>
+                <a href={`mailto:${n.emailSecundario}`} className="hover:underline">
+                  {n.emailSecundario}
                 </a>
               </Fila>
             )}

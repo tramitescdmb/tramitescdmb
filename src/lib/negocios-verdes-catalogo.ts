@@ -1,7 +1,7 @@
 /** Validación (pura) de taxonomía y personas de Negocios Verdes. */
 import { esMunicipioNV, slugNV } from "@/lib/negocios-verdes";
 import { NATURALEZAS } from "@/lib/negocios-verdes-ficha";
-import { problemaCorreo } from "@/lib/negocios-verdes-verificacion";
+import { problemaCorreo, repartirCorreos } from "@/lib/negocios-verdes-verificacion";
 
 export type NivelTaxonomia = "categoria" | "subcategoria" | "actividad";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,9 +45,13 @@ export function validarPersona(e: Record<string, unknown>) {
   if (!esTipoPersona(e.tipo)) errores.push("Tipo de persona no válido.");
   const nombres = txt(e.nombres, 120);
   if (!nombres) errores.push("Escriba los nombres.");
-  const correo = txt(e.correo, 200);
+  const correos = repartirCorreos(txt(e.correo, 200), txt(e.correoSecundario, 200));
+  const correo = correos.principal;
+  const correoSecundario = correos.secundario;
   const malCorreo = problemaCorreo(correo);
   if (malCorreo) errores.push(malCorreo);
+  const malCorreo2 = problemaCorreo(correoSecundario);
+  if (malCorreo2) errores.push(`Correo secundario: ${malCorreo2}`);
   const municipio = txt(e.municipio);
   const naturaleza = txt(e.naturalezaJuridica);
   if (naturaleza && !(NATURALEZAS as readonly string[]).includes(naturaleza)) errores.push("Naturaleza jurídica no válida.");
@@ -64,6 +68,7 @@ export function validarPersona(e: Record<string, unknown>) {
             documento: txt(e.documento, 30),
             telefono: txt(e.telefono, 40),
             correo,
+            correoSecundario,
             cargo: txt(e.cargo, 120),
             direccion: txt(e.direccion),
             municipio: municipio && esMunicipioNV(municipio) ? municipio : municipio,

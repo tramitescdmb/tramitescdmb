@@ -5,7 +5,7 @@ import type { NegocioPublico } from "@/lib/negocios-verdes";
 const tax = (slug: string, nombre: string) => ({ id: slug, slug, nombre, icono: null, iconoUrl: null });
 const base: NegocioPublico = {
   id: "1", nombre: "Café de Girón", slug: "cafe-giron", municipio: "Girón", vereda: null, direccion: null, latitud: 7.07, longitud: -73.17,
-  descripcionCorta: "Café especial", descripcion: "secreto no", producto: null, telefono: null, telefonoSecundario: null, whatsapp: null, email: null, sitioWeb: null,
+  descripcionCorta: "Café especial", descripcion: "secreto no", producto: null, telefono: null, telefonoSecundario: null, whatsapp: null, email: null, emailSecundario: null, sitioWeb: null,
   facebookUrl: null, instagramUrl: null, fotoPortadaUrl: null, representanteLegal: "Ana", emprendimientoVerde: false, selloMarca: true, avalado: false, destacado: false,
   categoria: tax("bioproductos-x", "Bioproductos"), categorias: [tax("bioproductos-x", "Bioproductos")], subcategorias: [], actividades: [], productos: [], fotos: [],
 };
