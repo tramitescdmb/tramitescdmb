@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resumirRespuestaVital } from "@/lib/vital";
+import { resumirRespuestaVital } from "@/lib/vital-resumen";
 
 describe("resumirRespuestaVital", () => {
   it("muestra fechas, estados y archivos pero no datos personales", () => {
