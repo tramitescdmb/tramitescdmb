@@ -13,6 +13,40 @@ const entrada = "w-full rounded-[8px] border border-nv-borde bg-white px-3 py-2 
 const TIPOS = "image/jpeg,image/png,image/webp";
 /** Ancho mínimo (px) para que un banner se vea nítido a todo el ancho en pantallas de escritorio. */
 const ANCHO_MINIMO = 1920;
+/** Medidas de referencia del banner, visibles donde se suben. */
+const MEDIDAS_BANNER: [string, string][] = [
+  ["Mínimo", "1920 × 480 px"],
+  ["Recomendado", "2560 × 640 px"],
+  ["Proporción", "4:1 (ancho 4 veces el alto)"],
+  ["Formato", "JPG o WebP, menos de 2 MB"],
+];
+
+/** Recuadro con las medidas del banner: un rectángulo 4:1 a escala y la lista de medidas. */
+function MedidasBannerNV({ compacto = false }: { compacto?: boolean }) {
+  if (compacto) {
+    return (
+      <p className="rounded-[8px] bg-nv-claro px-3 py-2 text-xs text-nv-texto">
+        <strong>Medidas del banner:</strong> mínimo 1920 × 480 px · recomendado 2560 × 640 px · proporción 4:1 · JPG o WebP de menos de 2 MB.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-3 flex flex-col gap-4 rounded-[12px] border border-nv-borde bg-nv-claro p-4 sm:flex-row sm:items-center">
+      <div className="flex aspect-[4/1] w-full max-w-[320px] shrink-0 flex-col items-center justify-center rounded-[6px] border-2 border-dashed border-nv-primario bg-white text-nv-primario">
+        <span className="text-base font-semibold leading-tight">1920 × 480 px</span>
+        <span className="text-[11px]">mínimo · proporción 4:1</span>
+      </div>
+      <dl className="grid flex-1 grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+        {MEDIDAS_BANNER.map(([k, v]) => (
+          <div key={k} className="flex gap-2">
+            <dt className="text-nv-texto2">{k}:</dt>
+            <dd className="font-semibold text-nv-texto">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
 
 /**
  * «Apariencia del sitio», como en la plataforma anterior: logo y sellos institucionales, y banners
@@ -102,7 +136,8 @@ export function AparienciaNV({ logos, banners }: { logos: LogoNV[]; banners: Ban
             <input type="file" accept={TIPOS} className="sr-only" onChange={(e) => { subir("banner", "nuevo", e.target.files?.[0]); e.target.value = ""; }} />
           </label>
         </div>
-        <p className="mt-1 text-[13px] text-nv-texto2">Imágenes tipo banner (sin texto encima: si hace falta texto, va dentro de la propia imagen) que rotan arriba del inicio. Si no hay ninguno activo, se muestran 4 diapositivas genéricas por defecto. Se muestran a todo el ancho de la pantalla: para que se vean nítidos, súbalos de al menos {ANCHO_MINIMO} px de ancho (ideal 2560 px), en proporción 4:1 (por ejemplo 1920 × 480 px), en JPG o WebP de menos de 2 MB.</p>
+        <p className="mt-1 text-[13px] text-nv-texto2">Imágenes tipo banner (sin texto encima: si hace falta texto, va dentro de la propia imagen) que rotan arriba del inicio. Si no hay ninguno activo, se muestran 4 diapositivas genéricas por defecto. Se muestran a todo el ancho de la pantalla: para que se vean nítidos, respete estas medidas.</p>
+        <MedidasBannerNV />
         <ul className="mt-4 space-y-3">
           {banners.map((b, i) => (
             <li key={b.id} className="flex items-center gap-4 rounded-[12px] border border-nv-borde bg-white px-4 py-4">
@@ -163,6 +198,12 @@ export function AparienciaNV({ logos, banners }: { logos: LogoNV[]; banners: Ban
               // eslint-disable-next-line @next/next/no-img-element
               <img src={editando.imagenUrl} alt="" className="max-h-40 w-full rounded-[8px] object-cover" />
             )}
+            {editando.imagenUrl && tamanos[editando.id] && (
+              <p className={`text-xs ${tamanos[editando.id]![0] < ANCHO_MINIMO ? "text-red-700" : "text-nv-texto2"}`}>
+                Imagen actual: {tamanos[editando.id]![0]} × {tamanos[editando.id]![1]} px
+              </p>
+            )}
+            <MedidasBannerNV compacto />
             <label className="block text-sm">
               <span className="mb-1 block text-nv-texto2">Enlace al hacer clic (opcional)</span>
               <input value={editando.urlDestino} onChange={(e) => setEditando({ ...editando, urlDestino: e.target.value })} placeholder="https://… o /negocios-verdes/…" className={entrada} />
