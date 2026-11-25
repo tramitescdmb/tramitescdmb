@@ -91,6 +91,42 @@ export function fechaDeFilaListado(fila: Record<string, unknown>): Date | null {
   return null;
 }
 
+/**
+ * Busca la «fecha de creación» (o de radicación / solicitud) entre los datos que VITAL
+ * entrega fuera del formulario: lo que responden wsSolicitudes (sin el formulario) y
+ * wsSolicitante. El portal de VITAL la muestra como «Fecha de creación». Orden de
+ * preferencia: creación, radicación, solicitud.
+ */
+export function fechaDeRespuestaVital(respuesta: unknown): Date | null {
+  const prioridad = (clave: string): number => {
+    const k = clave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (!k.includes("fecha")) return -1;
+    if (/creac/.test(k)) return 0;
+    if (/radic/.test(k)) return 1;
+    if (/solicit/.test(k)) return 2;
+    return -1;
+  };
+  let mejor: { p: number; f: Date } | null = null;
+  const recorrer = (v: unknown, prof: number) => {
+    if (prof > 3 || v == null || typeof v !== "object") return;
+    if (Array.isArray(v)) {
+      for (const x of v) recorrer(x, prof + 1);
+      return;
+    }
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+      const p = prioridad(k);
+      if (p >= 0) {
+        const f = parsearFechaVital(x);
+        if (f && (!mejor || p < mejor.p)) mejor = { p, f };
+      } else {
+        recorrer(x, prof + 1);
+      }
+    }
+  };
+  recorrer(respuesta, 0);
+  return (mejor as { p: number; f: Date } | null)?.f ?? null;
+}
+
 const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Fecha de radicación / creación / solicitud escrita en el formulario del trámite. */
@@ -124,10 +160,13 @@ export function fechaDeNombresAnexos(nombres: string[]): Date | null {
 
 export function mejorFechaRadicacionVital(fuentes: {
   listado?: Date | null;
+  /** «Fecha de creación» que VITAL entrega en wsSolicitudes / wsSolicitante. */
+  respuesta?: Date | null;
   campos?: unknown;
   anexos?: string[];
 }): { fecha: Date; origen: OrigenFechaVital } | null {
   if (fuentes.listado) return { fecha: fuentes.listado, origen: "vital" };
+  if (fuentes.respuesta) return { fecha: fuentes.respuesta, origen: "vital" };
   const deCampos = fechaDeCamposVital(fuentes.campos);
   if (deCampos) return { fecha: deCampos, origen: "formulario" };
   const deAnexos = fechaDeNombresAnexos(fuentes.anexos ?? []);

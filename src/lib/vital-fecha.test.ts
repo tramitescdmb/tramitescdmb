@@ -49,3 +49,12 @@ describe("mejorFechaRadicacionVital", () => {
     expect(mejorFechaRadicacionVital({})).toBeNull();
   });
 });
+
+import { fechaDeRespuestaVital } from "@/lib/vital-fecha";
+describe("fechaDeRespuestaVital", () => {
+  it("encuentra la fecha de creación fuera del formulario y prefiere creación sobre radicación", () => {
+    expect(iso(fechaDeRespuestaVital({ id_vital: "1", fecha_creacion: "2026-11-17 00:00:00", fechaRadicacion: "2026-11-20" }))).toBe("2026-11-17T00:00:00.000Z");
+    expect(iso(fechaDeRespuestaVital([{ numero: 1, datos: { FechaCreacion: "17/11/2026" } }]))).toBe("2026-11-17T00:00:00.000Z");
+    expect(fechaDeRespuestaVital({ otro: "x" })).toBeNull();
+  });
+});

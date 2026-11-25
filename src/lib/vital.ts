@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { esSolicitudVitalReciente } from "@/lib/vital-conversion";
 import { urlDescargaVital } from "@/lib/vital-links";
-import { fechaDeFilaListado, mejorFechaRadicacionVital } from "@/lib/vital-fecha";
+import { fechaDeFilaListado, fechaDeRespuestaVital, mejorFechaRadicacionVital } from "@/lib/vital-fecha";
 
 const API_URL = process.env.VITAL_API_URL?.trim().replace(/\/+$/, "");
 const XROAD_URL = process.env.VITAL_XROAD_URL?.trim();
@@ -379,9 +379,17 @@ export async function listarSolicitudes(opts: {
   })).filter((r) => r.idVital);
 }
 
-async function consultarCamposSolicitud(idVital: string): Promise<unknown> {
-  const data = await vitalPostReintentando<{ campotramite?: unknown; campoTramite?: unknown; camposTramite?: unknown }>("/wsSolicitudes", { id_vital: idVital });
-  return data?.campotramite ?? data?.campoTramite ?? data?.camposTramite ?? data;
+async function consultarCamposSolicitud(idVital: string): Promise<{ campos: unknown; fechaCreacion: Date | null }> {
+  const data = await vitalPostReintentando<Record<string, unknown>>("/wsSolicitudes", { id_vital: idVital });
+  const campos = data?.campotramite ?? data?.campoTramite ?? data?.camposTramite ?? data;
+  // La «fecha de creación» puede venir junto al formulario (no dentro de él).
+  const resto = Object.fromEntries(Object.entries((data && typeof data === "object" ? data : {}) as Record<string, unknown>).filter(([k]) => !/^campos?tramite$/i.test(k)));
+  const fechaCreacion = fechaDeRespuestaVital(resto);
+  if (!fechaCreacion) {
+    // Para saber en qué campo la entrega VITAL cuando no se encuentra: solo los nombres, nunca los valores.
+    console.warn(`[VITAL] ${idVital}: wsSolicitudes sin fecha de creación; campos de la respuesta: ${Object.keys(resto).join(", ") || "(ninguno)"}`);
+  }
+  return { campos, fechaCreacion };
 }
 
 async function consultarSolicitante(idVital: string): Promise<Record<string, unknown>[] | null> {
@@ -537,12 +545,16 @@ export async function completarDatosVital(solicitudId: string): Promise<{ ok: bo
   const faltaSolicitante = s.solicitanteRaw == null;
   if (!faltaCampos && !faltaSolicitante && s.fechaRadicacion) return { ok: true };
 
-  const [campos, solicitantes] = await Promise.all([
-    faltaCampos ? consultarCamposSolicitud(s.idVital).catch((err) => (console.error(`[VITAL] ${s.idVital}: wsSolicitudes:`, err instanceof Error ? err.message : err), null)) : Promise.resolve(s.camposTramite),
+  const [respCampos, solicitantes] = await Promise.all([
+    // La fecha también se pide cuando falta aunque el formulario ya esté guardado.
+    !s.fechaRadicacion || faltaCampos ? consultarCamposSolicitud(s.idVital).catch((err) => (console.error(`[VITAL] ${s.idVital}: wsSolicitudes:`, err instanceof Error ? err.message : err), null)) : Promise.resolve(null),
     faltaSolicitante ? consultarSolicitante(s.idVital).catch((err) => (console.error(`[VITAL] ${s.idVital}: wsSolicitante:`, err instanceof Error ? err.message : err), null)) : Promise.resolve(null),
   ]);
+  const campos = faltaCampos ? respCampos?.campos ?? null : s.camposTramite;
   const principal = solicitantes?.[0] ?? null;
-  const fechaDeducida = s.fechaRadicacion ? null : mejorFechaRadicacionVital({ campos })?.fecha ?? null;
+  const fechaDeducida = s.fechaRadicacion
+    ? null
+    : mejorFechaRadicacionVital({ respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes), campos })?.fecha ?? null;
   const data = {
     ...(faltaCampos && campos ? { camposTramite: campos as object } : {}),
     ...(faltaSolicitante && solicitantes
@@ -576,7 +588,7 @@ function correoDe(info: Record<string, unknown>): string | null {
 }
 
 export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
-  const [campos, solicitantes, documentos] = await Promise.all([
+  const [respCampos, solicitantes, documentos] = await Promise.all([
     consultarCamposSolicitud(resumen.idVital).catch(() => null),
     consultarSolicitante(resumen.idVital).catch(() => null),
     // Si wsDocumentos falla, `null`: no se pisa el conteo que ya se tenía con un 0 falso.
@@ -586,11 +598,14 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
     }),
   ]);
 
+  const campos = respCampos?.campos ?? null;
   const principal = solicitantes?.[0] ?? null;
-  // Si la lista de VITAL no trae la fecha, se usa la del formulario o la del paquete radicado.
+  // Si la lista de VITAL no trae la fecha: la «fecha de creación» de wsSolicitudes/wsSolicitante,
+  // luego la del formulario y, por último, la del paquete radicado.
   const fechaRadicacion =
     mejorFechaRadicacionVital({
       listado: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
+      respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes),
       campos,
       anexos: documentos?.map((d) => d.nombre_archivo) ?? [],
     })?.fecha ?? null;
@@ -681,4 +696,37 @@ export async function sincronizarTramite(opts: {
     if (pagina.length < tam) break;
   }
   return { total, errores };
+}
+
+
+/** Quita la parte variable de las direcciones (consulta y credenciales) para poder mostrarlas. */
+function sinConsulta(v: unknown, prof = 0): unknown {
+  if (prof > 6) return "…";
+  if (typeof v === "string") return /^https?:\/\//i.test(v) ? v.split("?")[0] : v;
+  if (Array.isArray(v)) return v.map((x) => sinConsulta(x, prof + 1));
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, sinConsulta(x, prof + 1)]));
+  return v;
+}
+
+/**
+ * Diagnóstico para el administrador: qué responde VITAL para una solicitud (anexos tal
+ * como llegan, nombres de los campos que acompañan al formulario y la fecha de creación
+ * que se encontraría). No devuelve el contenido del formulario ni del solicitante.
+ */
+export async function diagnosticarSolicitudVital(idVital: string) {
+  const [docs, sol, solicitante] = await Promise.all([
+    vitalPostReintentando<unknown>("/wsDocumentos", { id_vital: idVital }).then((r) => ({ ok: true as const, r }), (e) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) })),
+    vitalPostReintentando<Record<string, unknown>>("/wsSolicitudes", { id_vital: idVital }).then((r) => ({ ok: true as const, r }), (e) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) })),
+    vitalPostReintentando<unknown>("/wsSolicitante", { id_vital: idVital }).then((r) => ({ ok: true as const, r }), (e) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) })),
+  ]);
+  const resto = sol.ok ? Object.fromEntries(Object.entries(sol.r ?? {}).filter(([k]) => !/^campos?tramite$/i.test(k))) : null;
+  const filasSolicitante = solicitante.ok ? (Array.isArray(solicitante.r) ? solicitante.r : [solicitante.r]) : null;
+  return {
+    idVital,
+    wsDocumentos: docs.ok ? { respuesta: sinConsulta(docs.r), interpretados: normalizarDocumentosVital(docs.r).map((d) => ({ nombre: d.nombre_archivo, conDireccion: Boolean(d.url_archivo) })) } : { error: docs.error },
+    wsSolicitudes: sol.ok
+      ? { camposFueraDelFormulario: resto ? Object.keys(resto) : [], fechaEncontrada: fechaDeRespuestaVital(resto)?.toISOString() ?? null, camposDelFormularioQueHablanDeFecha: Object.keys((sol.r?.campotramite ?? sol.r?.campoTramite ?? sol.r?.camposTramite ?? {}) as object).filter((k) => /fecha/i.test(k)) }
+      : { error: sol.error },
+    wsSolicitante: solicitante.ok ? { filas: filasSolicitante?.length ?? 0, camposDeFecha: Object.keys((filasSolicitante?.[0] ?? {}) as object).filter((k) => /fecha/i.test(k)), fechaEncontrada: fechaDeRespuestaVital(filasSolicitante)?.toISOString() ?? null } : { error: solicitante.error },
+  };
 }
