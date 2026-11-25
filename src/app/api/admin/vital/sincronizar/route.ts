@@ -4,7 +4,8 @@ import { verificarSesion as getSession } from "@/lib/permisos";
 import { ETIQUETA_CACHE_VISOR_VITAL } from "@/lib/visor-puntos-externos";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { registrarEjecucion } from "@/lib/procesos-programados";
-import { sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
+import { db } from "@/lib/db";
+import { completarDatosVital, sincronizarTramite, tramitesASincronizar, descubrirTramitesNuevos, nombreTramiteVital, vitalConfigurado, listarSolicitudes } from "@/lib/vital";
 
 export const maxDuration = 300;
 
@@ -18,6 +19,20 @@ export async function GET(req: NextRequest) {
   }
   if (!vitalConfigurado()) {
     return NextResponse.json({ error: "VITAL no está configurado." }, { status: 503 });
+  }
+
+  // Relleno: ?completar=N pide a VITAL la «fecha de creación» (y el formulario o solicitante si
+  // faltan) de hasta N solicitudes guardadas sin fecha. Solo llena vacíos; se repite hasta que `pendientes` sea 0.
+  const completar = Number(req.nextUrl.searchParams.get("completar"));
+  if (Number.isFinite(completar) && completar > 0) {
+    const lote = await db.solicitudVital.findMany({ where: { fechaRadicacion: null }, select: { id: true }, orderBy: { createdAt: "desc" }, take: Math.min(completar, 100) });
+    let ok = 0;
+    for (const { id } of lote) {
+      const r = await completarDatosVital(id).catch(() => ({ ok: false }));
+      if (r.ok) ok++;
+    }
+    const pendientes = await db.solicitudVital.count({ where: { fechaRadicacion: null } });
+    return NextResponse.json({ procesadas: lote.length, completadas: ok, pendientes });
   }
 
   const cuerpo = await registrarEjecucion("vital", "programado", null, async () => {
