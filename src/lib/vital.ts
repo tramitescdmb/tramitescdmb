@@ -399,7 +399,7 @@ async function consultarSolicitante(idVital: string): Promise<Record<string, unk
   return null;
 }
 
-import { resumirRespuestaVital } from "@/lib/vital-resumen";
+import { encontrarArchivosEnFormulario, resumirRespuestaVital } from "@/lib/vital-resumen";
 import { normalizarDocumentosVital, type DocumentoVital } from "@/lib/vital-documentos";
 export type { DocumentoVital };
 
@@ -712,10 +712,15 @@ export async function diagnosticarSolicitudVital(idVital: string) {
     vitalPostReintentando<Record<string, unknown>>("/wsSolicitudes", { id_vital: idVital }).then((r) => ({ ok: true as const, r }), (e) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) })),
     vitalPostReintentando<unknown>("/wsSolicitante", { id_vital: idVital }).then((r) => ({ ok: true as const, r }), (e) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) })),
   ]);
+  const campos = sol.ok ? (sol.r?.campotramite ?? sol.r?.campoTramite ?? sol.r?.camposTramite ?? sol.r ?? {}) : {};
+  const urlsEnFormulario = encontrarArchivosEnFormulario(campos);
+  const listado = await sondearListadoVital(idVital);
   const resto = sol.ok ? Object.fromEntries(Object.entries(sol.r ?? {}).filter(([k]) => !/^campos?tramite$/i.test(k))) : null;
   const filasSolicitante = solicitante.ok ? (Array.isArray(solicitante.r) ? solicitante.r : [solicitante.r]) : null;
   return {
     idVital,
+    wsObtenerSolicitudes: listado,
+    urlsOArchivosEnElFormulario: urlsEnFormulario,
     wsDocumentos: docs.ok ? { respuesta: sinConsulta(docs.r), interpretados: normalizarDocumentosVital(docs.r).map((d) => ({ nombre: d.nombre_archivo, conDireccion: Boolean(d.url_archivo) })) } : { error: docs.error },
     wsSolicitudes: sol.ok
       ? { camposFueraDelFormulario: resto ? Object.keys(resto) : [], fechaEncontrada: fechaDeRespuestaVital(resto)?.toISOString() ?? null, camposDelFormularioQueHablanDeFecha: Object.keys((sol.r?.campotramite ?? sol.r?.campoTramite ?? sol.r?.camposTramite ?? {}) as object).filter((k) => /fecha/i.test(k)) }
@@ -725,25 +730,28 @@ export async function diagnosticarSolicitudVital(idVital: string) {
 }
 
 
-/** Servicios de VITAL que podrían traer la fecha de creación o la lista completa de anexos. */
-export const SERVICIOS_VITAL_SONDA = ["wsSolicitudesEstado", "wsSolicitudesRadicados", "wsServicio", "wsActividades", "wsTramitesInicializadosUsuarios"] as const;
-
-/** Prueba cada servicio candidato con el id de la solicitud; muestra lo que responde (o el error, que suele decir qué parámetro falta). */
-export async function sondearServiciosVital(idVital: string, servicios: readonly string[] = SERVICIOS_VITAL_SONDA) {
-  const salida: Record<string, unknown> = {};
-  for (const ws of servicios) {
-    const intentos: Record<string, unknown> = {};
-    for (const cuerpo of [{ id_vital: idVital }, { idVital }] as Record<string, unknown>[]) {
-      const clave = Object.keys(cuerpo)[0];
-      try {
-        const r = await vitalPost<unknown>(ws.startsWith("/") ? ws : `/${ws}`, cuerpo);
-        intentos[clave] = { ok: true, ...resumirRespuestaVital(r instanceof ArrayBuffer ? null : r) };
-        break;
-      } catch (e) {
-        intentos[clave] = { ok: false, error: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
-      }
+/**
+ * Pide a wsObtenerSolicitudes la solicitud tal como la lista VITAL (idVital, idTramite,
+ * FechaRadicacion, nombreActividad, status) en ventanas de un día y de un mes alrededor
+ * de la fecha esperada, para comparar con la «fecha de creación» del portal.
+ */
+export async function sondearListadoVital(idVital: string, dia = "2026-11-17") {
+  const solicitud = await db.solicitudVital.findUnique({ where: { idVital }, select: { idTramiteVital: true, fechaRadicacion: true } });
+  const idTramite = solicitud?.idTramiteVital ?? (Number(idVital.slice(0, 3)) || 0);
+  const ventanas: [string, string][] = [
+    [dia, dia],
+    [`${dia.slice(0, 8)}01`, `${dia.slice(0, 8)}30`],
+  ];
+  const salida: Record<string, unknown> = { idTramite, fechaGuardadaEnSic: solicitud?.fechaRadicacion?.toISOString() ?? null };
+  for (const [ini, fin] of ventanas) {
+    try {
+      const r = await vitalPost<unknown>("/wsObtenerSolicitudes", { id_tramite: idTramite, fecha_inicio: ini, fecha_fin: fin, indice_registro_inicial: 0, registros_peticion: 100 });
+      const filas = (Array.isArray(r) ? r : ((r as { solicitudes?: unknown[]; data?: unknown[] })?.solicitudes ?? (r as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
+      const fila = filas.find((f) => String(f.idVital ?? f.id_vital) === idVital);
+      salida[`${ini} a ${fin}`] = { filasEnLaVentana: filas.length, estaLaSolicitud: Boolean(fila), fila: fila ? resumirRespuestaVital(fila).valores : null, camposDeUnaFila: filas[0] ? Object.keys(filas[0]) : [] };
+    } catch (e) {
+      salida[`${ini} a ${fin}`] = { error: (e instanceof Error ? e.message : String(e)).slice(0, 300) };
     }
-    salida[ws] = intentos;
   }
   return salida;
 }

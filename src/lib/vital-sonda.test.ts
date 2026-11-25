@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resumirRespuestaVital } from "@/lib/vital-resumen";
+import { encontrarArchivosEnFormulario, resumirRespuestaVital } from "@/lib/vital-resumen";
 
 describe("resumirRespuestaVital", () => {
   it("muestra fechas, estados y archivos pero no datos personales", () => {
@@ -14,5 +14,19 @@ describe("resumirRespuestaVital", () => {
     expect(r.valores["documentos.length"]).toBe(1);
     expect(r.valores["documentos[].url_archivo"]).toBe("https://v/x/455236.rtf");
     expect(JSON.stringify(r.valores)).not.toMatch(/Elias|a@b.co|5638359|token/);
+  });
+});
+
+describe("encontrarArchivosEnFormulario", () => {
+  it("devuelve solo direcciones y archivos, sin otros datos del formulario", () => {
+    const r = encontrarArchivosEnFormulario({
+      Nombre: "Elias",
+      "Adjuntar Documento": "292770031_69_Nacional.zip",
+      anexos: [{ ruta: "https://vital.minambiente.gov.co/VitalFiletraffic/x/plano.pdf?t=1" }],
+    });
+    expect(r).toEqual({
+      "Adjuntar Documento": "292770031_69_Nacional.zip",
+      "anexos[0].ruta": "https://vital.minambiente.gov.co/VitalFiletraffic/x/plano.pdf",
+    });
   });
 });

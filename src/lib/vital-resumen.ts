@@ -1,4 +1,4 @@
-const CLAVE_UTIL = /fecha|estado|radic|archivo|documento|url|nombre_?(archivo|documento)|tramite|mensaje|error|actividad/i;
+const CLAVE_UTIL = /fecha|estado|status|radic|archivo|documento|url|nombre_?(archivo|documento)|tramite|mensaje|error|actividad/i;
 const CLAVE_PERSONAL = /nombre|apellido|correo|email|tel|celular|identific|documento_?id|direccion|razon/i;
 
 /** Resume una respuesta sin datos personales: rutas de campos, fechas, estados y nombres de archivo. */
@@ -28,5 +28,21 @@ export function resumirRespuestaVital(v: unknown) {
   };
   recorrer(v, "", 0);
   return { campos: [...rutas].slice(0, 80), valores };
+}
+
+
+const PATRON_ARCHIVO = /https?:\/\/|VitalFiletraffic|\.(zip|pdf|rtf|docx?|xlsx?|pptx?|jpe?g|png|kml|kmz|shp|dwg)(\?|$)/i;
+
+/** Valores del formulario que parecen una dirección o un archivo (solo esos; ningún otro dato). */
+export function encontrarArchivosEnFormulario(v: unknown, ruta = "", prof = 0, salida: Record<string, string> = {}): Record<string, string> {
+  if (prof > 5 || v == null) return salida;
+  if (typeof v === "string") {
+    if (PATRON_ARCHIVO.test(v)) salida[ruta || "(raíz)"] = v.split("?")[0].slice(0, 300);
+  } else if (Array.isArray(v)) {
+    v.forEach((x, i) => encontrarArchivosEnFormulario(x, `${ruta}[${i}]`, prof + 1, salida));
+  } else if (typeof v === "object") {
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) encontrarArchivosEnFormulario(x, ruta ? `${ruta}.${k}` : k, prof + 1, salida);
+  }
+  return salida;
 }
 
