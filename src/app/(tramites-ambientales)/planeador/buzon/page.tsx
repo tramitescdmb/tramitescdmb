@@ -4,6 +4,7 @@ import type { TipoNotificacion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession } from "@/lib/permisos";
 import { formatearFechaHora } from "@/lib/fecha";
+import { TIPOS_FUERA_DEL_BUZON } from "@/lib/notificaciones";
 import { CabeceraTablero } from "@/components/tablero";
 
 const ICONO: Record<TipoNotificacion, { Icono: typeof Inbox; clase: string }> = {
@@ -32,11 +33,11 @@ export default async function BuzonVisitasPage() {
   const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const [pendientes, atendidas] = await Promise.all([
     db.notificacion.findMany({
-      where: { usuarioId: session.userId, resueltaEn: null },
+      where: { usuarioId: session.userId, resueltaEn: null, tipo: { notIn: TIPOS_FUERA_DEL_BUZON } },
       orderBy: [{ leidaEn: { sort: "asc", nulls: "first" } }, { updatedAt: "desc" }],
     }),
     db.notificacion.findMany({
-      where: { usuarioId: session.userId, resueltaEn: { gte: hace30 } },
+      where: { usuarioId: session.userId, resueltaEn: { gte: hace30 }, tipo: { notIn: TIPOS_FUERA_DEL_BUZON } },
       orderBy: { resueltaEn: "desc" },
       take: 50,
     }),

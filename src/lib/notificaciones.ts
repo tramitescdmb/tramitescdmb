@@ -221,8 +221,14 @@ export async function avisarProfesionalVisita(
   });
 }
 
+/**
+ * Tipos de aviso que NO van al «Buzón de visitas» del planeador: tienen su propio lugar
+ * (la solicitud de VITAL se gestiona en /vital y sale aparte en la campana).
+ */
+export const TIPOS_FUERA_DEL_BUZON: TipoNotificacion[] = ["VITAL_NUEVA"];
+
 export async function contarNoLeidas(usuarioId: string): Promise<number> {
-  return db.notificacion.count({ where: { usuarioId, leidaEn: null, resueltaEn: null } });
+  return db.notificacion.count({ where: { usuarioId, leidaEn: null, resueltaEn: null, tipo: { notIn: TIPOS_FUERA_DEL_BUZON } } });
 }
 
 export async function avisarConceptoVisita(solicitudId: string, actorId: string, rechazo?: string): Promise<void> {
