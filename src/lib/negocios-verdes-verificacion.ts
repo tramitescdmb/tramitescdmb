@@ -111,29 +111,6 @@ const DOMINIOS_MAL_ESCRITOS: Record<string, string> = {
   "yahooo.com": "yahoo.com",
 };
 
-/** Correos escritos en un mismo texto («a@x.com / b@y.com», «a@x.com, b@y.com», «a@x.com y b@y.com»). */
-export function separarCorreos(texto: string | null | undefined): string[] {
-  return (texto ?? "")
-    .split(/[\s,;/|]+/)
-    .map((s) => s.replace(/^[-–(<[]+|[-–)>\].:]+$/g, "").trim())
-    .filter((s) => s.includes("@"));
-}
-
-/**
- * Reparte el correo principal y el secundario: si el principal trae exactamente dos correos y el
- * secundario está vacío, el segundo pasa al campo secundario. En cualquier otro caso no cambia nada
- * (y el verificador sigue señalando lo que esté mal).
- */
-export function repartirCorreos(principal: string | null | undefined, secundario: string | null | undefined): { principal: string | null; secundario: string | null } {
-  const p = (principal ?? "").trim() || null;
-  const s = (secundario ?? "").trim() || null;
-  if (p && !s && (p.match(/@/g) ?? []).length === 2) {
-    const partes = separarCorreos(p);
-    if (partes.length === 2) return { principal: partes[0]!, secundario: partes[1]! };
-  }
-  return { principal: p, secundario: s };
-}
-
 /** Devuelve el motivo si el correo está mal escrito, o null si está bien. */
 export function problemaCorreo(correo: string | null | undefined): string | null {
   const c = (correo ?? "").trim();

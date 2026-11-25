@@ -4,7 +4,8 @@
  * mismas claves que tenían en la plataforma anterior (nit, concesion_aguas, …).
  */
 import { esMunicipioNV, slugNV, type MunicipioNV } from "@/lib/negocios-verdes";
-import { problemaCorreo, repartirCorreos, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
+import { problemaCorreo, verificarUbicacion } from "@/lib/negocios-verdes-verificacion";
+import { repartirCorreos } from "@/lib/negocios-verdes-correos";
 
 export type TipoCampoFicha = "texto" | "textoLargo" | "fecha" | "entero" | "lista";
 
@@ -237,8 +238,9 @@ export function validarNegocio(e: EntradaNegocio, opciones: { negocioId: string 
   const emailSecundario = correos.secundario;
   const malCorreo = problemaCorreo(email);
   if (malCorreo) errores.push(malCorreo);
-  const malCorreo2 = problemaCorreo(emailSecundario);
-  if (malCorreo2) errores.push(`Correo secundario: ${malCorreo2}`);
+  const malSecundario = problemaCorreo(emailSecundario);
+  if (malSecundario) errores.push(`Correo secundario: ${malSecundario}`);
+  else if (email && emailSecundario && email.toLowerCase() === emailSecundario.toLowerCase()) errores.push("El correo secundario es igual al principal: escriba otro o déjelo vacío.");
   const veredaId = typeof e.veredaId === "string" && UUID.test(e.veredaId) ? e.veredaId : null;
 
   const fotos = Array.isArray(e.fotos) ? e.fotos.map((r) => rutaImagenValida(r, opciones.negocioId, anteriores)).filter((r): r is string => Boolean(r)).slice(0, 12) : [];

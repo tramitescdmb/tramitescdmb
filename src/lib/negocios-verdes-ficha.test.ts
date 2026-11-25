@@ -27,6 +27,14 @@ describe("validarNegocio", () => {
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, latitud: "siete", longitud: "-73" }, { negocioId: null }).errores.join(" ")).toMatch(/no es un número/);
   });
 
+  it("correo secundario: opcional, bien escrito y distinto del principal", () => {
+    const base = { nombre: "A", municipio: "Tona", categoriaId: CAT };
+    expect(validarNegocio(base, { negocioId: null }).datos).toMatchObject({ emailSecundario: null });
+    expect(validarNegocio({ ...base, email: "info@a.co", emailSecundario: " ventas@a.co " }, { negocioId: null }).datos).toMatchObject({ email: "info@a.co", emailSecundario: "ventas@a.co" });
+    expect(validarNegocio({ ...base, emailSecundario: "ventas@gmailcom" }, { negocioId: null }).errores.join(" ")).toMatch(/^Correo secundario: .*gmail\.com/);
+    expect(validarNegocio({ ...base, email: "info@a.co", emailSecundario: "INFO@a.co" }, { negocioId: null }).errores.join(" ")).toMatch(/igual al principal/);
+  });
+
   it("un segundo correo en el campo principal pasa al correo secundario", () => {
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, email: "a@x.com / b@y.com" }, { negocioId: null }).datos).toMatchObject({ email: "a@x.com", emailSecundario: "b@y.com" });
     expect(validarNegocio({ nombre: "A", municipio: "Tona", categoriaId: CAT, email: "a@x.com", emailSecundario: "b@y" }, { negocioId: null }).errores.join(" ")).toMatch(/Correo secundario/);

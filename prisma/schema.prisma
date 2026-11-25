@@ -3030,7 +3030,6 @@ model NvNegocio {
   telefonoSecundario  String?
   whatsapp            String?
   email               String?
-  /// Segundo correo del negocio (antes se escribían dos en el mismo campo).
   emailSecundario     String?
   sitioWeb            String?
   facebookUrl         String?

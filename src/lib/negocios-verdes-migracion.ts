@@ -11,7 +11,7 @@
  * - Las contraseñas no se traen: cada administrador entra con su cuenta del SIC.
  */
 
-import { repartirCorreos } from "@/lib/negocios-verdes-verificacion";
+import { repartirCorreos } from "@/lib/negocios-verdes-correos";
 
 type Fila = Record<string, unknown>;
 

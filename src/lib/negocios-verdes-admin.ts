@@ -289,8 +289,8 @@ export async function revisionDatosNV(): Promise<FilaRevisionNV[]> {
     const problemas: ProblemaDatoNV[] = [];
     const correo = problemaCorreo(n.email);
     if (correo) problemas.push({ grave: true, texto: `Correo «${n.email}»: ${correo}` });
-    const correo2 = problemaCorreo(n.emailSecundario);
-    if (correo2) problemas.push({ grave: true, texto: `Correo secundario «${n.emailSecundario}»: ${correo2}` });
+    const secundario = problemaCorreo(n.emailSecundario);
+    if (secundario) problemas.push({ grave: true, texto: `Correo secundario «${n.emailSecundario}»: ${secundario}` });
     const u = verificarUbicacion(n.latitud, n.longitud, n.municipio);
     for (const t of u.errores) problemas.push({ grave: true, texto: `${t} (${n.latitud ?? "sin latitud"}, ${n.longitud ?? "sin longitud"})` });
     for (const t of u.avisos) problemas.push({ grave: false, texto: t });

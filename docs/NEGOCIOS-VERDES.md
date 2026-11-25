@@ -29,11 +29,34 @@ módulo, solo ve Negocios Verdes.
 |---|---|---|
 | Negocios | Administrador | Crear, editar y eliminar negocios: datos públicos, clasificación, portada, galería, productos, ficha técnica interna y puntajes por año. En la ficha del negocio, «Personas vinculadas» asigna responsable CDMB, delegado y representante (un vínculo vigente por tipo; el anterior pasa al historial con su fecha de fin). |
 | Personas | Administrador | Directorio de responsables, delegados y representantes. No se elimina una persona con vínculos: se desactiva. |
-| Importar / exportar | Cualquiera con panel exporta; importa quien puede crear y editar | CSV con las mismas columnas de la plataforma anterior (punto y coma, abre en Excel). Importar primero revisa sin cambiar nada; actualiza por `id` o `slug` y crea los demás sin publicar. Si hay filas con error se corrigen o se importan solo las válidas. Nunca toca fotos, productos, ficha técnica ni puntajes. |
+| Importar / exportar | Cualquiera con panel exporta; importa quien puede crear y editar | CSV con las mismas columnas de la plataforma anterior (punto y coma, abre en Excel). Importar primero revisa sin cambiar nada; actualiza por `id` o `slug` y crea los demás sin publicar. Si hay filas con error se corrigen o se importan solo las válidas. Nunca toca fotos, productos, ficha técnica, puntajes ni el teléfono secundario (no está en el CSV). El correo secundario va en la columna `email_secundario`; un CSV sin esa columna no lo borra. |
 | Clasificación | Administrador de configuración | Categorías, subcategorías y actividades productivas. Las que están en uso no se eliminan: se desactivan y dejan de verse en el sitio. |
 | Apariencia del sitio | Administrador de configuración | Logos (Negocios Verdes, GOV.CO, Colombia, Potencia de la vida) y banners de inicio. Las imágenes van al NAS en `negocios-verdes/sitio-assets/`; al cambiar o quitar una se borra la anterior. |
 
 Cada cambio queda en la auditoría documental con quién lo hizo.
+
+## Correos del negocio
+
+Cada negocio tiene **Correo** y **Correo secundario** (opcional), en «Datos públicos» de la ficha del panel.
+Los dos se validan igual (sin espacios, una sola @, dominio completo) y el secundario no puede repetir el
+principal. Si el negocio está publicado, ambos salen en «Información de contacto» de su ficha pública.
+«Revisión de datos» también señala los correos secundarios mal escritos. Las personas (responsables CDMB,
+delegados y representantes) también tienen correo secundario.
+
+Si al guardar (panel o CSV) se escriben dos correos en «Correo», el segundo pasa solo a «Correo secundario»
+con la misma regla del script de abajo; lo que no se puede separar sin perder nada queda como está y el
+verificador lo señala.
+
+Negocios y personas que ya traen dos correos en «Correo» (aviso «Tiene más de un correo»): el script
+`scripts/negocios-verdes-correo-secundario.ts` deja el primero como correo y pasa el segundo a «Correo
+secundario». No separa (y los lista para corregir a mano) los que tienen tres o más correos, texto
+además de los correos, correos pegados o ya otro correo secundario. Cada cambio queda en la auditoría.
+En la VM:
+
+```bash
+sudo -u tramites bash -lc "cd /opt/tramites/app && npm run nv:correo-secundario -- --ensayo"   # qué cambiaría
+sudo -u tramites bash -lc "cd /opt/tramites/app && npm run nv:correo-secundario"               # aplicar
+```
 
 ## Sitio público: páginas
 
@@ -75,16 +98,6 @@ comando (no se guarda en `.env` ni en el repositorio).
 El script imprime el conteo por tabla (origen y destino), las imágenes copiadas o fallidas y los
 administradores asociados, y deja un informe JSON en la carpeta temporal del sistema. Las contraseñas no se
 trasladan.
-
-## Correo secundario
-
-Cada negocio y cada persona tiene «Correo» y «Correo secundario». Si en el campo principal se
-escriben dos correos (separados por espacio, coma, punto y coma, «/» o «y»), al guardar o al importar
-el CSV el segundo pasa solo al correo secundario. El CSV trae la columna `email_secundario`; un CSV
-con la plantilla anterior (sin esa columna) no borra el correo secundario que ya tenga el negocio.
-
-Para los datos ya trasladados: `npm run nv:separar-correos -- --ensayo` muestra lo que cambiaría y
-`npm run nv:separar-correos` lo aplica. Se puede repetir: lo ya separado no se vuelve a tocar.
 
 ## Exposición a internet (pendiente con TI)
 
