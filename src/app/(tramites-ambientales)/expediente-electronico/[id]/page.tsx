@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Archive, ArrowLeft, CheckCircle2, Download, FileText, History, Lock, ShieldCheck } from "lucide-react";
+import { Archive, ArrowLeft, CheckCircle2, Download, ExternalLink, FileText, History, Lock, ShieldCheck } from "lucide-react";
+import { urlVitalPublico } from "@/lib/vital-links";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeVerExpedienteTramite } from "@/lib/permisos";
 import { EstadoBadge } from "@/components/EstadoBadge";
@@ -181,7 +182,12 @@ export default async function ExpedienteElectronicoDetallePage({ params }: { par
 
       {vital && vital.documentos.length > 0 && (
         <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Anexos de la solicitud en VITAL {vital.idVital}</h2>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Anexos de la solicitud en VITAL {vital.idVital}</h2>
+            <a href={urlVitalPublico(vital.idVital)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-cdmb-700 hover:underline">
+              Ver anexos en VITAL <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          </div>
           <ul className="space-y-1">
             {vital.documentos.map((a) => (
               <li key={a.id} className="flex items-center gap-1.5 text-sm">

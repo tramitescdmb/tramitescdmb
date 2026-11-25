@@ -241,6 +241,26 @@ function CamposFormulario({ datos }: { datos: unknown }) {
 type AnexoGuardado = { id: string; nombre: string };
 
 /**
+ * Acceso directo a la solicitud en el portal de VITAL, junto a la lista de anexos:
+ * allí se pueden ver y descargar los anexos aunque la descarga desde el SIC no
+ * esté disponible. Es la misma dirección del botón «Ver en VITAL» de la ficha.
+ */
+function BotonAnexosEnVital({ idVital }: { idVital: string }) {
+  return (
+    <a
+      href={urlVitalPublico(idVital)}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex flex-none items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+      title="Ver y descargar los anexos de esta solicitud en el portal de VITAL (minambiente.gov.co)"
+    >
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+      Ver anexos en VITAL
+    </a>
+  );
+}
+
+/**
  * Lista de anexos. Va aparte (en <Suspense>) porque, si la solicitud aún no tiene
  * la lista guardada, se consulta VITAL en vivo y eso puede tardar: el resto de la
  * ficha se muestra de una vez.
@@ -268,7 +288,11 @@ async function AnexosVital({ solicitudId, idVital, reportados: reportadosGuardad
   const faltan = Math.max(0, (reportados ?? 0) - documentos.length);
 
   return (
-    <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}>
+    <Tarjeta
+      icon={FileText}
+      titulo={`Documentos adjuntos (${Math.max(documentos.length, reportados ?? 0)})`}
+      extra={documentos.length > 0 || faltan > 0 || fallo ? <BotonAnexosEnVital idVital={idVital} /> : undefined}
+    >
       {fallo && documentos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-amber-300 px-3 py-2 text-sm text-amber-800">
           <p>No se pudo mostrar la lista de anexos.</p>
@@ -463,7 +487,11 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
 
       <Suspense
         fallback={
-          <Tarjeta icon={FileText} titulo={`Documentos adjuntos (${Math.max(solicitud.documentos.length, solicitud.documentosReportados ?? 0)})`}>
+          <Tarjeta
+            icon={FileText}
+            titulo={`Documentos adjuntos (${Math.max(solicitud.documentos.length, solicitud.documentosReportados ?? 0)})`}
+            extra={<BotonAnexosEnVital idVital={solicitud.idVital} />}
+          >
             <p className="text-sm text-stone-400">Consultando la lista de anexos en VITAL…</p>
           </Tarjeta>
         }

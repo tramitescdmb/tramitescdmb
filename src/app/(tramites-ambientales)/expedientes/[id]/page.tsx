@@ -2,7 +2,8 @@ import Link from "next/link";
 import { nombreFlujo } from "@/lib/flujo-nombre";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, CheckCircle2, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, GitBranch, CheckCheck, Workflow } from "lucide-react";
+import { Eye, Lock, MapPin, Hand, User, FileText, Clock, AlertTriangle, Check, CheckCircle2, Inbox, Tag, Printer, Hash, ChevronDown, Footprints, ListOrdered, History, Settings2, CalendarDays, ClipboardCheck, MessageSquare, GitBranch, CheckCheck, Workflow, ExternalLink } from "lucide-react";
+import { urlVitalPublico } from "@/lib/vital-links";
 import { FlujoTrabajoPanel } from "@/components/FlujoTrabajoPanel";
 import { usuarioFlujo, type UsuarioFlujo } from "@/lib/flujos";
 import { PestanasDetalle } from "@/components/sgdea/PestanasDetalle";
@@ -528,6 +529,11 @@ export default async function ExpedienteDetallePage({
               </Link>{" "}
               · Anexos en VITAL ({Math.max(solicitudVital.documentos.length, solicitudVital.documentosReportados ?? 0)})
             </summary>
+            <p className="mt-1 text-xs">
+              <a href={urlVitalPublico(solicitudVital.idVital)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-cdmb-700 hover:underline">
+                Ver anexos en VITAL <ExternalLink className="h-3 w-3" aria-hidden />
+              </a>
+            </p>
             {solicitudVital.documentos.length === 0 ? (
               <p className="mt-1 text-xs text-stone-500">
                 La lista de anexos se consulta en la{" "}

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verificarSesion as getSession, obtenerPermisosUsuario, puedeConsultarVital } from "@/lib/permisos";
 import { getSignedDownloadUrl } from "@/lib/storage";
-import { abrirDocumentoVital, urlActualAnexoVital, urlArchivoDeRuta } from "@/lib/vital";
+import { abrirDocumentoVital, urlActualAnexoVital, urlArchivoDeRuta, urlVitalPublico } from "@/lib/vital";
 
 /**
  * Abre un anexo de una solicitud de VITAL. Los anexos no se guardan en el NAS:
@@ -44,7 +44,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
   if (!r.ok) {
     console.error(`[VITAL] ${documento.solicitud.idVital}: no se pudo abrir «${documento.nombre}»: ${r.motivo}`);
-    return pagina(`No se pudo mostrar el anexo «${documento.nombre}».`);
+    return pagina(documento.nombre, documento.solicitud.idVital);
   }
 
   const headers = new Headers({
@@ -57,10 +57,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new NextResponse(r.cuerpo, { status: 200, headers });
 }
 
-function pagina(mensaje: string) {
-  const esc = mensaje.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+/**
+ * Página breve cuando el anexo no se pudo traer: no explica la falla (eso queda en
+ * el registro del servidor) y ofrece abrir la solicitud en el portal de VITAL,
+ * donde el anexo se puede ver y descargar.
+ */
+function pagina(nombre: string, idVital: string) {
+  const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  const enVital = esc(urlVitalPublico(idVital));
+  const boton =
+    "display:inline-block;padding:.5rem .9rem;border-radius:.4rem;text-decoration:none;font-weight:600";
   return new NextResponse(
-    `<!doctype html><meta charset="utf-8"><title>Anexo de VITAL</title><body style="font-family:sans-serif;padding:2rem;max-width:40rem"><p>${esc}</p><p>Intente de nuevo en unos minutos.</p></body>`,
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anexo de VITAL</title>` +
+      `<body style="font-family:system-ui,sans-serif;padding:2rem 1rem;max-width:40rem;margin:auto;color:#1c1917">` +
+      `<p>No se pudo abrir el anexo «${esc(nombre)}» desde el SIC.</p>` +
+      `<p>Puede verlo y descargarlo en el portal de VITAL, solicitud ${esc(idVital)}.</p>` +
+      `<p><a href="${enVital}" target="_blank" rel="noreferrer" style="${boton};background:#15803d;color:#fff">Ver anexos en VITAL</a></p></body>`,
     { status: 502, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
