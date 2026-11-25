@@ -11,6 +11,8 @@ export type BannerNV = { id: string; imagenUrl: string | null; urlDestino: strin
 
 const entrada = "w-full rounded-[8px] border border-nv-borde bg-white px-3 py-2 text-sm focus:border-nv-primario focus:outline-none";
 const TIPOS = "image/jpeg,image/png,image/webp";
+/** Ancho mínimo (px) para que un banner se vea nítido a todo el ancho en pantallas de escritorio. */
+const ANCHO_MINIMO = 1920;
 
 /**
  * «Apariencia del sitio», como en la plataforma anterior: logo y sellos institucionales, y banners
@@ -21,6 +23,8 @@ export function AparienciaNV({ logos, banners }: { logos: LogoNV[]; banners: Ban
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [editando, setEditando] = useState<BannerNV | null>(null);
+  /** Tamaño real (px) de cada banner, leído al cargar la miniatura. */
+  const [tamanos, setTamanos] = useState<Record<string, [number, number]>>({});
 
   async function ejecutar(fn: () => Promise<unknown>) {
     setOcupado(true);
@@ -98,17 +102,25 @@ export function AparienciaNV({ logos, banners }: { logos: LogoNV[]; banners: Ban
             <input type="file" accept={TIPOS} className="sr-only" onChange={(e) => { subir("banner", "nuevo", e.target.files?.[0]); e.target.value = ""; }} />
           </label>
         </div>
-        <p className="mt-1 text-[13px] text-nv-texto2">Imágenes tipo banner (sin texto encima: si hace falta texto, va dentro de la propia imagen) que rotan arriba del inicio. Si no hay ninguno activo, se muestran 4 diapositivas genéricas por defecto.</p>
+        <p className="mt-1 text-[13px] text-nv-texto2">Imágenes tipo banner (sin texto encima: si hace falta texto, va dentro de la propia imagen) que rotan arriba del inicio. Si no hay ninguno activo, se muestran 4 diapositivas genéricas por defecto. Se muestran a todo el ancho de la pantalla: para que se vean nítidos, súbalos de al menos {ANCHO_MINIMO} px de ancho (ideal 2560 px), en proporción 4:1 (por ejemplo 1920 × 480 px), en JPG o WebP de menos de 2 MB.</p>
         <ul className="mt-4 space-y-3">
           {banners.map((b, i) => (
             <li key={b.id} className="flex items-center gap-4 rounded-[12px] border border-nv-borde bg-white px-4 py-4">
               {b.imagenUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={b.imagenUrl} alt="" className="h-14 w-24 flex-none rounded-[8px] object-cover" />
+                <img src={b.imagenUrl} alt="" onLoad={(e) => { const { naturalWidth: w, naturalHeight: h } = e.currentTarget; setTamanos((t) => (t[b.id]?.[0] === w ? t : { ...t, [b.id]: [w, h] })); }} className="h-14 w-24 flex-none rounded-[8px] object-cover" />
               ) : (
                 <span className="h-14 w-24 flex-none rounded-[8px] bg-nv-claro" />
               )}
-              <p className="min-w-0 flex-1 truncate text-[15px]">{b.urlDestino || "Sin destino (decorativo)"}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px]">{b.urlDestino || "Sin destino (decorativo)"}</p>
+                {tamanos[b.id] && (
+                  <p className={`text-xs ${tamanos[b.id]![0] < ANCHO_MINIMO ? "text-red-700" : "text-nv-texto2"}`}>
+                    {tamanos[b.id]![0]} × {tamanos[b.id]![1]} px
+                    {tamanos[b.id]![0] < ANCHO_MINIMO && ` · baja resolución: se verá borroso a todo el ancho; suba una de al menos ${ANCHO_MINIMO} px de ancho`}
+                  </p>
+                )}
+              </div>
               <div className="flex flex-col">
                 <button type="button" aria-label="Subir" disabled={i === 0 || ocupado} onClick={() => mover(i, -1)} className="rounded p-0.5 text-nv-texto2 hover:text-nv-texto disabled:opacity-30">
                   <ArrowUp className="h-5 w-5" />
