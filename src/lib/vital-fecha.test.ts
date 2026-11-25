@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fechaDeCamposVital, fechaDeFilaListado, fechaDeNombresAnexos, mejorFechaRadicacionVital, parsearFechaVital } from "@/lib/vital-fecha";
+import { fechaDeCamposVital, fechaDeFilaListado, mejorFechaRadicacionVital, parsearFechaVital } from "@/lib/vital-fecha";
 
 const iso = (d: Date | null) => d?.toISOString() ?? null;
 
@@ -32,20 +32,11 @@ describe("fechaDeCamposVital", () => {
   });
 });
 
-describe("fechaDeNombresAnexos", () => {
-  it("lee el día del paquete que arma VITAL al radicar", () => {
-    const nombres = ["455236.rtf", "476423093_136_Solicitud_rionegro_ctm12_20261117033842.zip", "AcuseRecibido_1210009153754726001.pdf"];
-    expect(iso(fechaDeNombresAnexos(nombres))).toBe("2026-11-17T00:00:00.000Z");
-    expect(fechaDeNombresAnexos(["292770031_69_Nacional.zip"])).toBeNull();
-  });
-});
-
 describe("mejorFechaRadicacionVital", () => {
-  it("prefiere la de VITAL, luego el formulario y luego el paquete", () => {
+  it("prefiere la de VITAL y luego el formulario; nunca el nombre de un anexo", () => {
     const listado = new Date("2026-11-20T00:00:00Z");
-    expect(mejorFechaRadicacionVital({ listado, anexos: ["x_20261117033842.zip"] })?.origen).toBe("vital");
-    expect(mejorFechaRadicacionVital({ campos: { "Fecha solicitud": "2026-11-18" }, anexos: ["x_20261117033842.zip"] })?.origen).toBe("formulario");
-    expect(mejorFechaRadicacionVital({ anexos: ["x_20261117033842.zip"] })?.origen).toBe("anexo");
+    expect(mejorFechaRadicacionVital({ listado })?.origen).toBe("vital");
+    expect(mejorFechaRadicacionVital({ campos: { "Fecha solicitud": "2026-11-18" } })?.origen).toBe("formulario");
     expect(mejorFechaRadicacionVital({})).toBeNull();
   });
 });

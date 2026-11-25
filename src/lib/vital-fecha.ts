@@ -6,16 +6,14 @@
  * creación. Por eso se toma el mejor dato disponible, en este orden:
  *   1. la fecha que trae la lista de VITAL (con cualquiera de sus nombres);
  *   2. una fecha del formulario del trámite (campo «fecha de radicación / creación / solicitud»);
- *   3. la marca de tiempo del paquete que VITAL arma al radicar
- *      (p. ej. `476423093_136_Solicitud_rionegro_ctm12_20261117033842.zip`).
+ * El nombre de los anexos NO se usa: no es un dato confiable de la fecha.
  */
 
-export type OrigenFechaVital = "vital" | "formulario" | "anexo";
+export type OrigenFechaVital = "vital" | "formulario";
 
 export const ETIQUETA_ORIGEN_FECHA_VITAL: Record<OrigenFechaVital, string> = {
   vital: "",
   formulario: "según el formulario de VITAL",
-  anexo: "según el paquete radicado en VITAL",
 };
 
 const CLAVES_FECHA_LISTADO = [
@@ -142,34 +140,15 @@ export function fechaDeCamposVital(campos: unknown): Date | null {
   return null;
 }
 
-/**
- * Marca de tiempo AAAAMMDDhhmmss del paquete que VITAL genera al radicar
- * (`…_Solicitud_…_20261117033842.zip`). Se toma la más antigua de los anexos.
- */
-export function fechaDeNombresAnexos(nombres: string[]): Date | null {
-  let mejor: Date | null = null;
-  for (const n of nombres) {
-    const m = n.match(/(?:^|_)((?:19|20)\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?=\.[a-z0-9]+$|_)/i);
-    if (!m) continue;
-    // Se usa solo el día: la hora del nombre del archivo no indica la zona horaria.
-    const f = armar(+m[1], +m[2], +m[3]);
-    if (f && (!mejor || f < mejor)) mejor = f;
-  }
-  return mejor;
-}
-
 export function mejorFechaRadicacionVital(fuentes: {
   listado?: Date | null;
   /** «Fecha de creación» que VITAL entrega en wsSolicitudes / wsSolicitante. */
   respuesta?: Date | null;
   campos?: unknown;
-  anexos?: string[];
 }): { fecha: Date; origen: OrigenFechaVital } | null {
   if (fuentes.listado) return { fecha: fuentes.listado, origen: "vital" };
   if (fuentes.respuesta) return { fecha: fuentes.respuesta, origen: "vital" };
   const deCampos = fechaDeCamposVital(fuentes.campos);
   if (deCampos) return { fecha: deCampos, origen: "formulario" };
-  const deAnexos = fechaDeNombresAnexos(fuentes.anexos ?? []);
-  if (deAnexos) return { fecha: deAnexos, origen: "anexo" };
   return null;
 }

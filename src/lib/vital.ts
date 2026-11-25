@@ -521,7 +521,7 @@ export async function completarAnexosVital(solicitudId: string): Promise<{ ok: t
   await guardarMetadatosAnexos(solicitud.id, lista);
   const fechaDeducida = solicitud.fechaRadicacion
     ? null
-    : mejorFechaRadicacionVital({ campos: solicitud.camposTramite, anexos: lista.map((d) => d.nombre_archivo) })?.fecha ?? null;
+    : mejorFechaRadicacionVital({ campos: solicitud.camposTramite })?.fecha ?? null;
   if (solicitud.documentosReportados !== lista.length || fechaDeducida) {
     await db.solicitudVital.update({
       where: { id: solicitud.id },
@@ -607,7 +607,6 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
       listado: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
       respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes),
       campos,
-      anexos: documentos?.map((d) => d.nombre_archivo) ?? [],
     })?.fecha ?? null;
   // Solo las que llegan por primera vez y son recientes cuentan como «nuevas»: una
   // sincronización del histórico no debe avisar por cada solicitud vieja.
