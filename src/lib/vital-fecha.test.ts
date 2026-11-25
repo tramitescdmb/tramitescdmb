@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fechaDeCamposVital, fechaDeFilaListado, mejorFechaRadicacionVital, parsearFechaVital } from "@/lib/vital-fecha";
+import { fechaDeFilaListado, mejorFechaRadicacionVital, parsearFechaVital } from "@/lib/vital-fecha";
 
 const iso = (d: Date | null) => d?.toISOString() ?? null;
 
@@ -25,18 +25,11 @@ describe("fechaDeFilaListado", () => {
   });
 });
 
-describe("fechaDeCamposVital", () => {
-  it("toma la fecha de radicación escrita en el formulario", () => {
-    expect(iso(fechaDeCamposVital({ "Fecha de Radicación": "17/11/2026", Municipio: "68001" }))).toBe("2026-11-17T00:00:00.000Z");
-    expect(fechaDeCamposVital({ "Fecha de inicio de obra": "2026-01-01" })).toBeNull();
-  });
-});
-
 describe("mejorFechaRadicacionVital", () => {
-  it("prefiere la de VITAL y luego el formulario; nunca el nombre de un anexo", () => {
+  it("usa la que entrega VITAL; nunca la del formulario ni el nombre de un anexo", () => {
     const listado = new Date("2026-11-20T00:00:00Z");
     expect(mejorFechaRadicacionVital({ listado })?.origen).toBe("vital");
-    expect(mejorFechaRadicacionVital({ campos: { "Fecha solicitud": "2026-11-18" } })?.origen).toBe("formulario");
+    expect(mejorFechaRadicacionVital({ respuesta: listado })?.origen).toBe("vital");
     expect(mejorFechaRadicacionVital({})).toBeNull();
   });
 });

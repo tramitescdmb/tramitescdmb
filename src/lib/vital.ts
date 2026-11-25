@@ -519,14 +519,8 @@ export async function completarAnexosVital(solicitudId: string): Promise<{ ok: t
     }
   }
   await guardarMetadatosAnexos(solicitud.id, lista);
-  const fechaDeducida = solicitud.fechaRadicacion
-    ? null
-    : mejorFechaRadicacionVital({ campos: solicitud.camposTramite })?.fecha ?? null;
-  if (solicitud.documentosReportados !== lista.length || fechaDeducida) {
-    await db.solicitudVital.update({
-      where: { id: solicitud.id },
-      data: { documentosReportados: lista.length, ...(fechaDeducida ? { fechaRadicacion: fechaDeducida } : {}) },
-    });
+  if (solicitud.documentosReportados !== lista.length) {
+    await db.solicitudVital.update({ where: { id: solicitud.id }, data: { documentosReportados: lista.length } });
   }
   return { ok: true, total: lista.length };
 }
@@ -554,7 +548,7 @@ export async function completarDatosVital(solicitudId: string): Promise<{ ok: bo
   const principal = solicitantes?.[0] ?? null;
   const fechaDeducida = s.fechaRadicacion
     ? null
-    : mejorFechaRadicacionVital({ respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes), campos })?.fecha ?? null;
+    : mejorFechaRadicacionVital({ respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes) })?.fecha ?? null;
   const data = {
     ...(faltaCampos && campos ? { camposTramite: campos as object } : {}),
     ...(faltaSolicitante && solicitantes
@@ -606,7 +600,6 @@ export async function sincronizarSolicitud(resumen: SolicitudVitalResumen) {
     mejorFechaRadicacionVital({
       listado: resumen.FechaRadicacion ? new Date(resumen.FechaRadicacion) : null,
       respuesta: respCampos?.fechaCreacion ?? fechaDeRespuestaVital(solicitantes),
-      campos,
     })?.fecha ?? null;
   // Solo las que llegan por primera vez y son recientes cuentan como «nuevas»: una
   // sincronización del histórico no debe avisar por cada solicitud vieja.

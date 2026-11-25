@@ -443,7 +443,7 @@ export default async function VitalDetallePage({ params }: { params: Promise<{ i
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
           <Campo k="ID VITAL" v={solicitud.idVital} />
-          <Campo k="Fecha de creación en VITAL" v={fechaRad} />
+          <Campo k="Fecha de radicación" v={fechaRad} />
           <Campo k="Actividad" v={txt(solicitud.nombreActividad)} />
           <Campo
             k="ID trámite en la autoridad"

@@ -1,19 +1,17 @@
 /**
- * Fecha de radicación de una solicitud de VITAL.
+ * Fecha de radicación de una solicitud de VITAL. OJO: la fecha del formulario la digita el
+ * ciudadano y no es la fecha de creación; no se usa como respaldo.
  *
  * `wsObtenerSolicitudes` no siempre la entrega: para varias solicitudes (también en
  * SINCA) la columna llega vacía aunque el portal de VITAL sí muestra la fecha de
- * creación. Por eso se toma el mejor dato disponible, en este orden:
- *   1. la fecha que trae la lista de VITAL (con cualquiera de sus nombres);
- *   2. una fecha del formulario del trámite (campo «fecha de radicación / creación / solicitud»);
- * El nombre de los anexos NO se usa: no es un dato confiable de la fecha.
+ * creación. Se toma la que trae la lista de VITAL (con cualquiera de sus nombres) o la que
+ * entregan wsSolicitudes / wsSolicitante. Ni el formulario ni el nombre de los anexos sirven.
  */
 
-export type OrigenFechaVital = "vital" | "formulario";
+export type OrigenFechaVital = "vital";
 
 export const ETIQUETA_ORIGEN_FECHA_VITAL: Record<OrigenFechaVital, string> = {
   vital: "",
-  formulario: "según el formulario de VITAL",
 };
 
 const CLAVES_FECHA_LISTADO = [
@@ -125,30 +123,13 @@ export function fechaDeRespuestaVital(respuesta: unknown): Date | null {
   return (mejor as { p: number; f: Date } | null)?.f ?? null;
 }
 
-const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-/** Fecha de radicación / creación / solicitud escrita en el formulario del trámite. */
-export function fechaDeCamposVital(campos: unknown): Date | null {
-  if (!campos || typeof campos !== "object" || Array.isArray(campos)) return null;
-  for (const [k, v] of Object.entries(campos as Record<string, unknown>)) {
-    const clave = sinTildes(k);
-    if (clave.includes("fecha") && /radic|creac|solicit|presenta/.test(clave)) {
-      const f = parsearFechaVital(typeof v === "object" && v && "value" in v ? (v as { value: unknown }).value : v);
-      if (f) return f;
-    }
-  }
-  return null;
-}
 
 export function mejorFechaRadicacionVital(fuentes: {
   listado?: Date | null;
   /** «Fecha de creación» que VITAL entrega en wsSolicitudes / wsSolicitante. */
   respuesta?: Date | null;
-  campos?: unknown;
 }): { fecha: Date; origen: OrigenFechaVital } | null {
   if (fuentes.listado) return { fecha: fuentes.listado, origen: "vital" };
   if (fuentes.respuesta) return { fecha: fuentes.respuesta, origen: "vital" };
-  const deCampos = fechaDeCamposVital(fuentes.campos);
-  if (deCampos) return { fecha: deCampos, origen: "formulario" };
   return null;
 }
